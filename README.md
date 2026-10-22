@@ -661,8 +661,13 @@ does not set.
 
 ## Development
 
+[uv](https://docs.astral.sh/uv/) manages the tool chain. `uv sync` creates
+`.venv` with Ruff, shfmt, and `git-filter-repo` from `uv.lock`; `uv run` puts
+them on `PATH`. The app itself has no dependencies and runs on the system Python.
+
 ```console
-bash run-tests.sh
+uv sync
+uv run bash run-tests.sh
 ```
 
 462 checks against throwaway repos in a temp dir: a real bare `origin`, a stub
@@ -742,14 +747,17 @@ Formatting contracts:
 
 - `.editorconfig`: `indent_size = 2` for everything
 - `pyproject.toml`: Ruff, `indent-width = 2`, `ignore = ["BLE001", "S110"]`
-- `.markdownlint.json`: `{"default": true, "MD013": false, "MD060": true}`
+- `.markdownlint.json`: defaults, `MD013` off, `MD060` on, `MD024` siblings only
 
 ```console
-ruff format --config pyproject.toml engine.py ui/server.py tools/*.py
-ruff check --config pyproject.toml --fix engine.py ui/server.py tools/*.py
-shfmt -i 2 -w run-tests.sh docker-entrypoint.sh
-markdownlint README.md
+uv run ruff format engine.py ui/server.py tools/*.py
+uv run ruff check --fix engine.py ui/server.py tools/*.py
+uv run shfmt -i 2 -w run-tests.sh docker-entrypoint.sh
+markdownlint README.md CHANGELOG.md
 ```
+
+The two QA tools need Playwright: `uv sync --group qa`, then
+`uv run playwright install chromium`.
 
 ### Layout
 
@@ -766,7 +774,8 @@ markdownlint README.md
 | `docker/tailscale-serve.json` | the `tailscale serve` config the sidecar mounts          |
 | `.env.example`                | the settings `docker compose` reads from `.env`          |
 | `Dockerfile`                  | Debian slim + git, gh, git-filter-repo, gnupg            |
-| `pyproject.toml`              | the version, under `[project]`, and the Ruff settings    |
+| `pyproject.toml`              | the version, the dependency groups, the Ruff settings    |
+| `uv.lock`                     | the pinned tool chain `uv sync` installs                 |
 
 The front end is a single page with four views (dashboard, repo, signing,
 access). It reaches the server through one `fetch` wrapper and follows a run over
