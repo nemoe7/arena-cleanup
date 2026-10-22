@@ -22,11 +22,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - UI type sizes come from one ramp per width class, held in `--fs-*` tokens. Inline SVG icons replace the text glyphs.
 - At 360 px the signing fields, commit metadata, and access labels stack. Create key is disabled while gpg is missing.
 - The test suite is pytest under `tests/`: the engine, web app, and compose checks keep the bash fixtures. `uv run pytest` runs it, in CI too.
-- The browser walk and the spacing audit are Playwright tests in `tests/e2e/`. A second CI job installs Chromium and runs them.
+- The spacing audit is a Playwright test in `tests/e2e/`; a second CI job installs Chromium for it. The browser walk is `scripts/walk.py`, run by hand; it saves its screenshots where you point it.
 
 ### Removed
 
-- `run-tests.sh`, `tools/walk.py`, and `tools/measure.py`; the tests under `tests/` replace them.
+- `run-tests.sh` and `tools/`; `tests/` and `scripts/walk.py` replace them.
 
 ## [0.1.0] - 2026-10-22
 

@@ -700,7 +700,7 @@ rollups, and a throwaway GPG key. Pty-driven runs type answers into the prompts.
   storage report, cancellation, and input validation.
 - `tests/test_compose.py`: the compose file, `.env.example`, and the sidecar
   wiring.
-- `tests/e2e/`: the browser walk and the spacing audit (below).
+- `tests/e2e/`: the spacing audit in a real browser (below).
 
 The path and signing tests skip when `git-filter-repo` or `gpg` is missing. The
 summary lists every skip, so a green run cannot hide one.
@@ -736,34 +736,46 @@ root's `gh/` directory:
 
 A temporary root is removed when the server stops.
 
-### Browser tests
+### Spacing audit
 
-`tests/e2e/` drives a real Chromium against a fresh demo instance. It needs
-Playwright: `uv sync --group qa`, then `uv run playwright install chromium`.
-Without them the tests skip. `E2E_CHROMIUM=<binary>` points them at another
-Chromium.
+`tests/e2e/test_spacing.py` drives a real Chromium against a fresh demo
+instance. It needs Playwright: `uv sync --group qa`, then `uv run playwright
+install chromium`. Without them the tests skip. `E2E_CHROMIUM=<binary>` points
+them at another Chromium.
 
 ```console
 uv run pytest tests/e2e
 ```
 
-`test_walk.py` presses every control in the app and asserts what each one did.
-It clicks cards, the command switch, every toggle, the path chips, cancel, copy,
-every back button, and the token form. It goes through the states that are easy
-to forget: offline, signed out, a rejected token, a cancelled run. It runs at
-desktop and phone widths and fails on any console error.
+It reads the computed padding, margin, and gap of each visible element, per
+view and width. Every non-zero value has to be even or the 1 px border
+allowance. Every font size has to come from the width's type ramp.
+`docs/design.md` records the scale and the ramps.
 
-`docs/walk/` holds screenshots from an earlier manual walk.
+### The walk
 
-The cancel test parks a real run at the PR gate, where the stub `gh` reports a
+`scripts/walk.py` presses every control in the app and asserts what each one
+did. It starts its own demo, so it needs no server and no flag beyond an
+output directory. It clicks cards, the command switch, every toggle, the path
+chips, cancel, copy, every back button, and the token form. It goes through the
+states that are easy to forget: offline, signed out, a rejected token, a
+cancelled run.
+
+```console
+uv run scripts/walk.py --out /tmp/walk
+# with a Chromium of your own instead of the one Playwright fetched
+uv run scripts/walk.py --out /tmp/walk --chromium /path/to/chrome
+```
+
+It runs 37 steps at desktop and phone width. It saves one screenshot per
+step plus `walk-report.json` under `--out`. A step fails on a false assertion
+or a console error, and the exit code is then non-zero. It is a hand-run tool:
+CI does not run it.
+
+The cancel step parks a real run at the PR gate, where the stub `gh` reports a
 check that never finishes. It presses **Cancel** there and waits for
-`cancelled`, so the button meets a live process. The signed-out tests write or
+`cancelled`, so the button meets a live process. The signed-out steps write or
 remove the demo's `gh/signed-in` marker and re-check `/api/auth`.
-
-`test_spacing.py` reads the computed padding, margin, and gap of every visible
-element in the four views at both widths. Every non-zero value has to be even
-or the 1 px border allowance. Every font size has to come from the width's type
-ramp. `docs/design.md` records the scale and the ramps.
 
 The walk found four bugs while being written:
 
@@ -789,7 +801,7 @@ Four workflows run on GitHub:
 
 | Workflow | Job |
 | --- | --- |
-| `ci.yml` | the formatting checks and `pytest` on every push to `main` and every pull request; a second job installs Chromium and runs `tests/e2e` |
+| `ci.yml` | the formatting checks and `pytest` on every push to `main` and pull request. A second job installs Chromium for the spacing audit |
 | `pr-check.yml` | holds pull requests to Conventional Commit subjects and a Summary, Changes, Validation body (`scripts/check_pr.py`) |
 | `container-scan.yml` | builds the image and prints a Trivy report when an image input changes; it never fails the build |
 | `docker.yml` | after a green CI run on `main`, builds the image on a native runner per architecture. Both digests go under `latest`; the untagged versions the move leaves behind are deleted |
@@ -803,7 +815,7 @@ Four workflows run on GitHub:
 | `ui/static/fonts/`            | Inter and JetBrains Mono, self-hosted (OFL)              |
 | `engine.py`                   | the rewrite engine; spawned per run, one process each    |
 | `tests/`                      | the pytest suite: engine, web app, compose               |
-| `tests/e2e/`                  | the browser walk and the spacing audit (Playwright)      |
+| `tests/e2e/`                  | the spacing audit in a real browser (Playwright)         |
 | `docker-compose.yml`          | `arena-cleanup` + `arena-cleanup-tailscale`              |
 | `docker/tailscale-serve.json` | the `tailscale serve` config the sidecar mounts          |
 | `.env.example`                | the settings `docker compose` reads from `.env`          |
@@ -813,6 +825,7 @@ Four workflows run on GitHub:
 | `.github/workflows/`          | CI, the PR contract, the container scan, the image push  |
 | `scripts/check_pr.py`         | the commit, title, and body contract `pr-check.yml` runs |
 | `scripts/demo.py`             | throwaway repos, stub `gh`, key, and identity, served    |
+| `scripts/walk.py`             | presses every control, screenshots each step             |
 
 The front end is a single page with four views (dashboard, repo, signing,
 access). It reaches the server through one `fetch` wrapper and follows a run over
