@@ -51,6 +51,9 @@ STATUS_TTL = 8.0  # seconds a repo status is reused before asking git again
 STARTED = time.time()  # when this process came up, for /healthz
 GIT_TIMEOUT = 20
 URL_RE = re.compile(r"^(git@|ssh://|https?://|git://|file://)")
+GITHUB_WEB_RE = re.compile(
+  r"^(?:https?://)?(?:www\.)?github\.com/([^/\s]+)/([^/\s?#]+)", re.IGNORECASE
+)
 
 
 def tool_version() -> str:
@@ -171,6 +174,15 @@ def repo_id(path: str) -> str:
   import hashlib
 
   return hashlib.sha1(os.path.realpath(path).encode()).hexdigest()[:12]
+
+
+def normalize_source(source: str) -> str:
+  """Turn a pasted GitHub page address into its clone URL; leave anything else alone."""
+  match = GITHUB_WEB_RE.match(source.strip())
+  if not match:
+    return source.strip()
+  owner, name = match.groups()
+  return f"https://github.com/{owner}/{name.removesuffix('.git')}.git"
 
 
 def repo_name(source: str) -> str:
@@ -1171,9 +1183,9 @@ class Handler(BaseHTTPRequestHandler):
     try:
       if path == "/api/repos":
         body = self._body()
-        source = str(body.get("source") or "").strip()
+        source = normalize_source(str(body.get("source") or ""))
         if not source:
-          raise BadRequest("paste a .git URL or a path to a work tree")
+          raise BadRequest("paste a repository URL or a path to a work tree")
         if URL_RE.match(source):
           entry, err = clone_url(source, self.reg)
         else:
