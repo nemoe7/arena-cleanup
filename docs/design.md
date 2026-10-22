@@ -99,6 +99,23 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - 2026-10-22 audit, before the fixes: nine font sizes at 1280 px and six at 360 px. The signing fields, commit rows, and access rows broke at 360 px. Create key stayed enabled without gpg, and icons were text glyphs.
 - 2026-10-22 after the fixes: screenshots of the four views at 1280 and 360 px, plus measure reports. They show five sizes at 1280 px, stacked rows at 360 px, and inline SVG icons. The 8 px scale check still reports the 6, 10, and 12 px steps; see the decision below.
 - Readiness: implemented; the spacing audit runs in `tests/e2e/`, the walk from `scripts/walk.py`.
+- Boards: `uv run scripts/design_boards.py` renders the seven boards below into `docs/design/` from the live stylesheet and the demo fixture. Run it again after a token or component change.
+
+### Boards
+
+![Lay of the land: the four views and the moves between them](design/flow.png)
+
+![Repository view: deep-dive wireframe and key actions](design/wireframe-repo.png)
+
+![Example views: default, signed out, after a run](design/views.png)
+
+![Component states: run status, phase rows, arena row pills](design/states.png)
+
+![Global components: buttons, pills, fields, toggles, banners, cards](design/components.png)
+
+![Style guide: type ramp, colour roles, surfaces, radius, spacing, icons](design/style.png)
+
+![Do and do not: spacing, type, icons, phone width, banners, honest pills](design/do-dont.png)
 
 ## Decisions and history
 
