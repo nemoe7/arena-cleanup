@@ -336,6 +336,17 @@ def arena_select_lists_the_newest_first(w: Walker, demo: Demo) -> None:
   w.page.select_option("#arena", options[1])
   w.page.wait_for_timeout(200)
   assert f"--arena {options[1]}" in w.start_argv()
+  pressed = '#sidebar button[data-branch][aria-pressed="true"]'
+  assert w.page.get_attribute(pressed, "data-branch") == options[1], (
+    "the row follows the select"
+  )
+  w.click(f'#sidebar button[data-branch="{newest}"]', 200)
+  assert w.page.input_value("#arena") == newest, "the select follows the row"
+  assert w.page.get_attribute(pressed, "data-branch") == newest
+  assert f"--arena {newest}" in w.start_argv()
+  assert w.page.input_value("#branch") == "", (
+    "an arena row never sets the target branch"
+  )
 
 
 @step("desktop")
@@ -345,7 +356,14 @@ def sidebar_and_branch_selector(w: Walker, demo: Demo) -> None:
   sidebar = w.text("#sidebar")
   assert "Repo" in sidebar
   assert "arena/session-3" in sidebar
-  assert w.count("#sidebar button[data-branch]") == 0, "arena rows are not targets"
+  assert w.count('#sidebar button[data-branch][aria-pressed="true"]') == 1, (
+    "one branch, one mark"
+  )
+  w.click("#sidebar button[data-branch]", 200)
+  assert w.page.input_value("#branch") == "", (
+    "an arena row never sets the target branch"
+  )
+  assert "--arena" not in w.start_argv(), "one branch needs no --arena"
   assert w.count("#sidebar .row-btn .ahead") == 1
   assert "HEAD" not in sidebar, "the HEAD block is gone"
   assert w.count("#reset-btn") == 0 and w.count("#divergence") == 0, (

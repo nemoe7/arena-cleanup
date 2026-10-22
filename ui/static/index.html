@@ -270,9 +270,9 @@
   .arena-row .prlink:hover .pill { border-color: var(--line-2); }
   .arena-row > .pill { flex: none; }
   /* a long arena name keeps its width and pushes the counts onto a second line */
-  .row-btn.static { flex-wrap: wrap; row-gap: 2px; }
-  .row-btn.static .txt { flex: 1 0 auto; max-width: 100%; }
-  .row-btn.static .tail { display: inline-flex; gap: 8px; margin-left: auto; }
+  .row-btn.select { flex-wrap: wrap; row-gap: 2px; }
+  .row-btn.select .txt { flex: 1 0 auto; max-width: 100%; }
+  .row-btn.select .tail { display: inline-flex; gap: 8px; margin-left: auto; }
   .row-btn .ahead { display: inline-flex; align-items: center; gap: 2px; }
 
   /* what the selected task will do, in one sentence */
@@ -315,9 +315,9 @@
   }
   .row-btn:hover { background: var(--surface-2); color: var(--text); }
   .row-btn .txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: var(--fs-1); }
-  /* the arena rows inform; a run finds its branch itself */
-  .row-btn.static { cursor: default; }
-  .row-btn.static:hover { background: none; color: inherit; }
+  /* an arena row selects the branch the run pulls from; the selected row keeps its mark */
+  .row-btn.select[aria-pressed="true"] { background: var(--surface-2); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
+  .row-btn.select:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .row-btn .meta { flex: none; color: var(--dim); font: var(--fs-1) var(--mono); }
 
   .main-col { padding: 20px 24px 32px; display: flex; flex-direction: column; gap: 16px; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
@@ -1078,9 +1078,9 @@
     state.paths = [];
     closeTree();
     $("repo-title").textContent = repo.name;
-    renderSidebar();
     renderBranchSelect();
     renderArenaSelect();
+    renderSidebar();
     renderPaths();
     renderCommand();
     resetPhases();
@@ -1117,7 +1117,9 @@
     const branches = el("div", { class: "side-group" },
       el("div", { class: "side-label" }, "Arena branches", el("span", {}, String((s.arena || []).length))),
       ...((s.arena && s.arena.length)
-        ? s.arena.map((b) => el("div", { class: "row-btn static", "data-branch": b },
+        ? s.arena.map((b) => el("button", { type: "button", class: "row-btn select", "data-branch": b,
+             "aria-pressed": String(selectedArena(s) === b), title: "Pull from this arena branch",
+             onclick: () => selectArena(b) },
              el("i", { class: "dot", style: `background:${dotFor((s.pr || {})[b])}` }),
              el("span", { class: "txt" }, b),
              el("span", { class: "tail" },
@@ -1128,6 +1130,23 @@
     side.replaceChildren(
       el("div", { class: "side-group" }, el("div", { class: "side-label" }, "Repo"), kv),
       branches);
+  }
+
+  // The run pulls from the selected arena branch. With one branch there is
+  // nothing to choose, so its row only shows which branch that is.
+  function selectedArena(s) {
+    if (state.arena) return state.arena;
+    const names = s.arena || [];
+    return names.length === 1 ? names[0] : "";
+  }
+
+  function selectArena(name) {
+    if ((state.repo?.status?.arena || []).length >= 2 && name !== state.arena) {
+      state.arena = name;
+      $("arena").value = name;
+      renderCommand();
+    }
+    renderSidebar();
   }
 
   function renderBranchSelect() {
@@ -1167,9 +1186,9 @@
       }
       if (!$("view-repo").hidden) {
         $("repo-title").textContent = repo.name;
-        renderSidebar();
         renderBranchSelect();
         renderArenaSelect();
+        renderSidebar();
       }
     } catch { /* keep the last good view */ }
   }
@@ -2008,7 +2027,7 @@
   };
 
   $("branch").onchange = (ev) => { state.branch = ev.target.value; renderSidebar(); renderCommand(); };
-  $("arena").onchange = (ev) => { state.arena = ev.target.value; renderCommand(); };
+  $("arena").onchange = (ev) => { state.arena = ev.target.value; renderSidebar(); renderCommand(); };
 
   $("browse").onclick = async () => {
     const tree = $("tree");

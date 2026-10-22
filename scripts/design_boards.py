@@ -355,7 +355,7 @@ def wireframe_board(_: dict[str, bytes]) -> str:
   )
   sidebar = (
     block("Repo — branch · default", height=24)
-    + block("Arena branches — ↑ N · PR", height=24)
+    + block("Arena branches — a click selects the one to pull from", height=24)
     + block("Commits — 1 of 1 · Reload", height=24)
     + block("6f5a842  chore: init", height=24)
   )

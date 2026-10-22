@@ -70,6 +70,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - `btn`: 34 px high, 12 px side padding, 8 px radius, and 44 px high on a phone. Variants: `primary`, `ghost`, and `icon-btn`.
 - `pill`: dot and word, 999 px radius, `ok`, `warn`, `mono` variants.
 - `commit`: grid `auto minmax(0, 1fr)`, the subject truncated by an ellipsis, the metadata on a second row.
+- `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`. The selected row carries a 2 px accent bar and the text colour.
 - `opt.row`: grid `128px minmax(0, 1fr) auto`; the label, the control, and Browse or the slider readout. `check`: a label with a native checkbox, `danger` colours a checked destructive option.
 - `sign-row`: label column of 120 px and a value column; on a phone the label takes a full row.
 - `sign-fields`: name and e-mail side by side; one column on a phone.
@@ -131,6 +132,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-22: the whole options card folds, not the Target branch row alone. The select names the default branch first, keeps the empty value, and lists no `arena/*` branch; the server refuses one too.
 - Accepted 2026-10-22: with two or more arena branches the page selects one, newest tip first, in the options card. The engine gained `--arena NAME` for it and keeps the full flow. The page never passes `-b arena/*`.
 - Accepted 2026-10-22: the sidebar grows to 320 px. The commit list sits below the repo facts and the arena rows. The HEAD block goes. The hash leads each commit row. Below 980 px the sidebar stacks under the run card instead of hiding. The commit list then grows with the page: one scroll per screen.
+- Accepted 2026-10-22: a click on a sidebar arena row selects the arena branch the run pulls from. The Arena branch select follows the row and the row follows the select. The marked row never sets the target branch. With one arena branch the row only shows which branch that is.
 - Accepted 2026-10-22: the options card loses its hint texts and the task note above it. Each option is one row. The switches become checkboxes with Title Case labels; Update Tags is the positive form of `--no-tags`. Keep arena branch goes. The reset before every run drops local copies, so a kept branch never reaches the next run. The timeout is a slider with ten stops and a readout.
 - Accepted 2026-10-22: a managed clone holds nothing of its own. The server resets it to origin before every run and drops local `arena/*` copies. The page loses the Reset button, the dirty chip, and On divergence; `--on-divergence` stays a CLI flag.
 - Accepted 2026-10-22: the card and the sidebar show how far each arena branch is ahead of the default branch. The clone's own drift stays out of sight. Nobody commits in the container, and the engine handles that divergence itself.
