@@ -1,0 +1,8 @@
+# Keep the build context to what the image actually needs: the engine, the UI
+# and the entrypoint. Tests, docs, screenshots, caches and git metadata would
+# only slow the build down.
+*
+!engine.py
+!ui/
+!ui/**
+!docker-entrypoint.sh

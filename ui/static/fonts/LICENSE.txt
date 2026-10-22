@@ -1,0 +1,8 @@
+Both font files here are licensed under the SIL Open Font License, 1.1.
+
+  inter.woff2        Inter (variable), by Rasmus Andersson
+                     https://github.com/rsms/inter
+  jetbrains-mono.woff2  JetBrains Mono (variable), by JetBrains
+                     https://github.com/JetBrains/JetBrainsMono
+
+They are served from this directory so the UI needs no network access.

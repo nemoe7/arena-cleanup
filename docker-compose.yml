@@ -1,0 +1,112 @@
+# cp .env.example .env   (name, email, Tailscale auth key)
+# docker compose up -d
+#
+# docker compose reads .env from this directory on its own, so the variables
+# below are substituted from that file; nothing needs exporting in your shell.
+# `docker compose config` prints the result without starting anything.
+#
+# The app is UI-only: paste a repo URL in the dashboard and it is cloned into
+# the arena-home volume. REPO_PATH is optional - set it to also work on a
+# checkout that already exists on this machine (it appears as /repo).
+#
+# TLS: `tailscale serve` gives it a real HTTPS name on your tailnet. That is
+# what makes it installable as a PWA from a phone - a PWA needs a secure
+# origin, and plain http:// over the LAN is not one.
+#
+# Neither container declares an ACL tag. Everything runs as the tailnet's
+# default owner identity and inherits whatever policy that identity already
+# has; if you want tags later, set them in the Tailscale admin console, not
+# here.
+
+services:
+  arena-cleanup:
+    build:
+      context: .
+    image: arena-cleanup:latest
+    container_name: arena-cleanup
+    environment:
+      # gh token; alternatively run `docker compose exec arena-cleanup gh auth login`
+      GH_TOKEN: ${GH_TOKEN:-}
+      # git identity - the engine refuses to rewrite commits without one
+      GIT_AUTHOR_NAME: ${GIT_AUTHOR_NAME:-}
+      GIT_AUTHOR_EMAIL: ${GIT_AUTHOR_EMAIL:-}
+    volumes:
+      # gh credentials, git config, the GPG key, the repo registry and every
+      # clone made from a URL all live here
+      - arena-home:/home/arena
+      # optional: an existing checkout on the host
+      - ${REPO_PATH:-./repo}:/repo
+    ports:
+      # Loopback only. Public access is the Tailscale sidecar's job, and the app
+      # has no authentication of its own.
+      - "127.0.0.1:8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - >-
+          import urllib.request, sys;
+          sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8080/healthz", timeout=3).status == 200 else 1)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      tailnet:
+        # The sidecar's hostname is `arena-cleanup`, which is what gives the
+        # node its MagicDNS name - and which also makes `arena-cleanup` resolve
+        # to the sidecar itself inside that container. The proxy therefore
+        # dials this alias instead, a name that can only mean the app.
+        aliases:
+          - arena-app
+
+  arena-cleanup-tailscale:
+    image: tailscale/tailscale:latest
+    container_name: arena-cleanup-tailscale
+    hostname: arena-cleanup
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY:?set TS_AUTHKEY to a tailscale auth key}
+      # keep the node and its key in the volume, so a rebuild rejoins as the
+      # same machine instead of littering the tailnet with duplicates
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "false"
+      TS_AUTH_ONCE: "false"
+      # proxy the tailnet name to the app's own port
+      TS_SERVE_CONFIG: /config/serve.json
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - ./docker/tailscale-serve.json:/config/serve.json:ro
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      # NET_ADMIN for the tun device and routes, SYS_MODULE as Tailscale
+      # documents for the kernel's wireguard path
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      net.ipv4.ip_forward: "1"
+      net.ipv6.conf.all.forwarding: "1"
+    restart: unless-stopped
+    healthcheck:
+      # `tailscale status --json` exits non-zero until the node is logged in and
+      # running, so this is a real readiness check and not a liveness poke
+      test: ["CMD", "tailscale", "status", "--json"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      arena-cleanup:
+        condition: service_healthy
+    networks:
+      - tailnet
+
+networks:
+  tailnet:
+    driver: bridge
+
+volumes:
+  arena-home:
+  tailscale-state:

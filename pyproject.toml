@@ -1,0 +1,7 @@
+[tool.ruff]
+indent-width = 2
+required-version = "0.16.6"
+
+[tool.ruff.lint]
+ignore = ["BLE001", "S110"]
+extend-safe-fixes = ["C408", "PERF102", "RUF059"]
