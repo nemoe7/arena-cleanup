@@ -1,0 +1,9 @@
+# Version tags are the pin here; docker.yml's workflow_run builds main only.
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        "*": ref-pin
+  dangerous-triggers:
+    ignore:
+      - docker.yml
