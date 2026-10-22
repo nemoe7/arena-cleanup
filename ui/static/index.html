@@ -263,12 +263,18 @@
 
   .arena-list { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--line); padding-top: 12px; }
   .arena-row { display: flex; align-items: center; gap: 8px; font-size: var(--fs-2); min-width: 0; flex-wrap: wrap; row-gap: 2px; }
-  .arena-row .bname { font-family: var(--mono); font-size: var(--fs-1); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* the name takes the free width, so the pills need no auto margin */
+  .arena-row .bname { flex: 1 1 auto; min-width: 0; font-family: var(--mono); font-size: var(--fs-1); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* the checks pill is the link: one control, no orphan "Pull request" label */
-  .arena-row .prlink { margin-left: auto; flex: none; display: inline-flex; align-items: center;
+  .arena-row .prlink { flex: none; display: inline-flex; align-items: center;
     text-decoration: none; border-radius: 999px; min-height: 24px; }
   .arena-row .prlink:hover .pill { border-color: var(--line-2); }
-  .arena-row > .pill { margin-left: auto; }
+  .arena-row > .pill { flex: none; }
+  /* a long arena name keeps its width and pushes the counts onto a second line */
+  .row-btn.static { flex-wrap: wrap; row-gap: 2px; }
+  .row-btn.static .txt { flex: 1 0 auto; max-width: 100%; }
+  .row-btn.static .tail { display: inline-flex; gap: 8px; margin-left: auto; }
+  .row-btn .ahead { display: inline-flex; align-items: center; gap: 2px; }
 
   /* what the selected task will do, in one sentence */
   .task-note { margin: 0; max-width: 132ch; color: var(--dim); font-size: var(--fs-2); line-height: 1.55; }
@@ -927,6 +933,13 @@
   }
 
   // -------------------------------------------------------------- dashboard
+  // the commits an arena branch carries beyond the default branch
+  function aheadPill(n, base, cls = "pill mono ahead") {
+    const count = Number(n ?? 0);
+    const title = `${count} commit${count === 1 ? "" : "s"} ahead of origin/${base}`;
+    return el("span", { class: cls, title }, icon("arrow-up"), el("span", { class: "n" }, String(count)));
+  }
+
   function checksPill(pr, checked, reason) {
     if (!pr && checked === false) {
       return el("span", {
@@ -984,7 +997,6 @@
     } else {
       meta.append(el("span", { class: "pill mono" }, s.branch));
       if (s.dirty) meta.append(el("span", { class: "pill warn" }, `${s.dirty} uncommitted`));
-      if (s.ahead || s.behind) meta.append(el("span", { class: "pill warn mono" }, icon("arrow-up"), String(s.ahead), " ", icon("arrow-down"), String(s.behind)));
     }
 
     let arena = null;
@@ -998,6 +1010,7 @@
           arena.append(el("div", { class: "arena-row" },
             el("i", { class: "dot", style: `background:${pr ? (pr.state === 'passing' ? 'var(--ok)' : pr.state === 'failing' ? 'var(--err)' : 'var(--info)') : 'var(--line-2)'};margin-left:2px` }),
             el("span", { class: "bname" }, name),
+            aheadPill((s.ahead || {})[name], s.default),
             pr && pr.url
               ? el("a", { class: "prlink", href: pr.url, target: "_blank", rel: "noopener",
                   title: `Open pull request ${pr.number ? "#" + pr.number : ""} on GitHub`,
@@ -1121,7 +1134,9 @@
         ? s.arena.map((b) => el("div", { class: "row-btn static", "data-branch": b },
              el("i", { class: "dot", style: `background:${dotFor((s.pr || {})[b])}` }),
              el("span", { class: "txt" }, b),
-             el("span", { class: "meta" }, metaFor((s.pr || {})[b], s.pr_checked))))
+             el("span", { class: "tail" },
+               aheadPill((s.ahead || {})[b], s.default, "meta ahead"),
+               el("span", { class: "meta" }, metaFor((s.pr || {})[b], s.pr_checked)))))
         : [el("div", { class: "row-btn", style: "cursor:default;color:var(--dim)" }, el("span", { class: "txt" }, "none on origin"))]));
 
     const head = el("div", { class: "side-group" },

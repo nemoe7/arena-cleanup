@@ -392,13 +392,13 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
     ).splitlines()
     if b.startswith("origin/arena/")
   ]
-  ahead = behind = 0
+  # Commits each arena branch carries beyond the default branch: the work a
+  # run rewrites and publishes. The clone's own drift is the engine's business.
+  ahead: dict[str, int] = {}
   if default:
-    counts = git(
-      "rev-list", "--left-right", "--count", f"HEAD...origin/{default}", cwd=cwd
-    ).split()
-    if len(counts) == 2:
-      ahead, behind = (int(counts[0]), int(counts[1]))
+    for name in arena:
+      count = git("rev-list", "--count", f"origin/{default}..origin/{name}", cwd=cwd)
+      ahead[name] = int(count or 0)
 
   # PR state for each arena branch, bounded. A repo with many branches must
   # not turn one dashboard load into a dozen API calls. `pr_checked` lets the
@@ -420,7 +420,6 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
     "default": default or "?",
     "dirty": len(dirty),
     "ahead": ahead,
-    "behind": behind,
     "arena": arena,
     "pr": checks,
     "pr_checked": authenticated,

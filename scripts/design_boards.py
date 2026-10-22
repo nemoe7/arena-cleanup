@@ -501,7 +501,7 @@ def components_board(_: dict[str, bytes]) -> str:
     + '<div class="row" style="gap:8px">'
     + pill("mono", "main", dot=False)
     + pill("", "clean", dot=False)
-    + pill("warn mono", f"{icon('arrow-up')}1 {icon('arrow-down')}2", dot=False)
+    + pill("mono ahead", f"{icon('arrow-up')}23", dot=False)
     + pill("ok", "clean")
     + pill("err", "failing")
     + pill("run", "running")
@@ -692,11 +692,11 @@ def do_dont_board(_: dict[str, bytes]) -> str:
     )
 
   def meta_pills(gaps: tuple[int, int, int]) -> str:
-    drift = f"{icon('arrow-up')}1 {icon('arrow-down')}2"
+    ahead = f"{icon('arrow-up')}23"
     return "".join(
       f'<span class="pill {cls}" style="margin-right:{g}px">{t}</span>'
       for g, cls, t in zip(
-        gaps, ("mono", "warn", "warn mono"), ("main", "3 uncommitted", drift)
+        gaps, ("mono", "warn", "mono ahead"), ("main", "3 uncommitted", ahead)
       )
     )
 

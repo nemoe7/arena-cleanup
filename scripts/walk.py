@@ -237,6 +237,8 @@ def dashboard_renders(w: Walker, demo: Demo) -> None:
   assert w.text("#ver").strip() == f"v{demo.api('/api/env')['version']}"
   assert w.count("#env span.on") >= MIN_TOOLS_READY
   assert w.page.get_attribute("#add-source", "placeholder")
+  ahead = [int(t) for t in w.page.locator(".arena-row .ahead .n").all_text_contents()]
+  assert ahead and max(ahead) > 0, "arena rows show commits beyond the default branch"
 
 
 @step("desktop")
@@ -322,6 +324,7 @@ def sidebar_and_branch_selector(w: Walker, demo: Demo) -> None:
   assert "Repo" in sidebar
   assert "arena/session-3" in sidebar
   assert w.count("#sidebar button[data-branch]") == 0, "arena rows are not targets"
+  assert w.count("#sidebar .row-btn .ahead") == 1
   assert w.page.input_value("#branch") == ""
   options = [o.text_content() for o in w.page.locator("#branch option").all()]
   assert options == ["main (default)"]
@@ -513,7 +516,7 @@ def signed_out_banner_and_honest_pills(w: Walker, demo: Demo) -> None:
   w.goto(2500)
   assert w.visible("#auth-banner")
   pills = w.page.eval_on_selector_all(
-    ".arena-row .pill", "els => els.map(e => e.innerText)"
+    ".arena-row .pill:not(.ahead)", "els => els.map(e => e.innerText)"
   )
   assert pills
   assert all("checks unavailable" in p for p in pills), pills
@@ -546,7 +549,7 @@ def checks_come_back_after_signing_in(w: Walker, demo: Demo) -> None:
   demo.wait_until_checked(True)
   w.goto(2200)
   pills = w.page.eval_on_selector_all(
-    ".arena-row .pill", "els => els.map(e => e.innerText)"
+    ".arena-row .pill:not(.ahead)", "els => els.map(e => e.innerText)"
   )
   assert any("PR #" in p for p in pills), pills
   demo.sign_in(True)

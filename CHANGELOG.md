@@ -26,7 +26,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - An add bar that takes a GitHub page address: `github.com/owner/repo`, with or without `https://`, `.git`, or a page suffix.
 - Cards and the repository title show the name only.
 - Design boards in `docs/design/`, rendered by `scripts/design_boards.py` and embedded in `docs/design.md`.
-- The repository card meta drops the tag count; it shows the branch, the tree state, and the drift.
+- The repository card meta drops the tag count; it shows the branch and the tree state.
+- Arena rows on the card and in the sidebar show `↑ N` with a tooltip. N counts the commits beyond the default branch.
 - A shallow history: one Back leaves a sub-view, the next one leaves the page.
 - The card shows `N uncommitted` only when the clone is dirty.
 - The app copy says repo and repos.

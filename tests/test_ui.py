@@ -223,6 +223,8 @@ def test_add_by_path(ui: UI, world: World, ids: dict[str, str]) -> None:
   assert len(ui.get("/api/repos")) == 1
   assert added["status"]["ok"] is True, added
   assert added["status"]["default"] == "main"
+  status = added["status"]
+  assert set(status["ahead"]) == set(status["arena"]), "one count per arena branch"
   assert added["managed"] is False
   assert len(json.loads((ui.data / "repos.json").read_text())) == 1
 
@@ -241,14 +243,15 @@ def test_github_page_addresses_normalize_to_clone_urls() -> None:
 def test_add_by_clone_url(ui: UI, world: World, ids: dict[str, str]) -> None:
   bare = world.root / "work.git"
   world.git("clone", "-q", "--bare", str(world.work), str(bare), cwd=world.root)
-  # give the bare repo one arena branch so the clone has something to report
-  world.git(
-    f"--git-dir={bare}",
-    "update-ref",
-    "refs/heads/arena/ui-test",
-    "refs/heads/main",
-    cwd=world.root,
-  )
+  # give the bare repo two arena branches: one level with main, one a commit ahead
+
+  def git_bare(*args: str) -> str:
+    return world.git(f"--git-dir={bare}", *args, cwd=world.root)
+
+  git_bare("update-ref", "refs/heads/arena/ui-test", "refs/heads/main")
+  tree = git_bare("rev-parse", "main^{tree}")
+  ahead_tip = git_bare("commit-tree", tree, "-p", "main", "-m", "one more")
+  git_bare("update-ref", "refs/heads/arena/ui-ahead", ahead_tip)
   clone = ui.post("/api/repos", {"source": f"file://{bare}"})
   ids["clone"] = clone["id"]
   ids["clone_path"] = clone["path"]
@@ -256,6 +259,8 @@ def test_add_by_clone_url(ui: UI, world: World, ids: dict[str, str]) -> None:
   assert (Path(clone["path"]) / ".git").is_dir()
   assert clone["status"]["default"] == "main"
   assert any(b.startswith("arena/") for b in clone["status"]["arena"])
+  assert clone["status"]["ahead"]["arena/ui-test"] == 0
+  assert clone["status"]["ahead"]["arena/ui-ahead"] == 1, "commits beyond main"
   assert len(ui.get("/api/repos")) == 2
   assert ui.status("POST", "/api/repos", {"source": "/nope/nope"}) == 400
   assert ui.status("POST", "/api/repos", {"source": "  "}) == 400
@@ -291,7 +296,6 @@ def test_reset_to_origin(ui: UI, world: World, ids: dict[str, str]) -> None:
   out = ui.post(f"/api/repos/{ids['repo']}/reset", {})
   assert out["reset"] == "origin/main"
   assert out["status"]["branch"] == "main"
-  assert out["status"]["ahead"] == 0
   assert world.rev() == world.rev("origin/main")
   assert (world.work / "scratch.txt").exists(), "a hard reset must keep untracked files"
   (world.work / "scratch.txt").unlink()
