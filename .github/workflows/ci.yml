@@ -44,10 +44,7 @@ jobs:
       - name: Lint Markdown
         uses: DavidAnson/markdownlint-cli2-action@v24.2.0
         with:
-          config: .markdownlint.json
-          globs: |
-            README.md
-            CHANGELOG.md
+          globs: "**/*.md"
       # The suite needs git, gpg, curl, and git-filter-repo; the runner has
       # the first three, and `uv run` puts the fourth on PATH.
       - run: uv run --no-sync bash run-tests.sh

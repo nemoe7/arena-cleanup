@@ -9,3 +9,6 @@ __pycache__/
 .playwright-cli/
 *.pyc
 .venv/
+
+# Arena session state (reports, uploads, scratch copies) never enters Git.
+arena-state/
