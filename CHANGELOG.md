@@ -29,7 +29,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The repository card meta drops the tag count; it shows the branch and the tree state.
 - Arena rows on the card and in the sidebar show `↑ N` with a tooltip. N counts the commits beyond the default branch.
 - `run -a/--arena NAME` answers the arena branch menu without a prompt. The page shows that select, newest tip first, when a repository has two or more arena branches. The card button uses the newest.
-- The repository sidebar is 320 px wide. It lists the commits below the repo facts and the arena rows. The HEAD block is gone. Below 980 px it stacks under the run card.
+- The repository sidebar is 320 px wide. It lists the commits below the repo facts and the arena rows. The HEAD block is gone. Below 980 px it stacks under the run card, and the commit list grows with the page.
 - A shallow history: one Back leaves a sub-view, the next one leaves the page.
 - A managed clone resets to origin before every run. The server fetches, checks out the default branch, resets hard, and drops local `arena/*` copies. The page has no Reset button, dirty chip, or On divergence control; `--on-divergence` stays a CLI flag.
 - The app copy says repo and repos.

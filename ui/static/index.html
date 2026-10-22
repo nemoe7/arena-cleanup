@@ -533,7 +533,7 @@
     /* One column: the run first, then the sidebar with the facts and the commits. */
     .detail { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: start; }
     .sidebar { order: 2; position: static; height: auto; overflow: visible; border-right: 0; border-top: 1px solid var(--line); }
-    .side-commits .commits { max-height: 360px; }
+    .side-commits .commits { overflow: visible; min-height: 0; }  /* one scroll: the page */
     .options { grid-template-columns: 1fr; }
     .grid { grid-template-columns: 1fr; }
   }

@@ -617,6 +617,9 @@ def phone_stacks_the_sidebar_below_the_run(w: Walker, demo: Demo) -> None:
     "#console-card", top
   )
   assert w.count("#sidebar .commit") >= 1
+  box = "e => [e.clientHeight, e.scrollHeight]"
+  shown, full = w.page.eval_on_selector("#commits", box)
+  assert shown == full, "the list grows with the page, no inner scroll"
 
 
 @step("phone")
