@@ -92,7 +92,7 @@ flags, and `arena-cleanup doctor` checks the setup.
    - **Claimed commits**: the e-mails and names whose commits a run rewrites
      onto the identity. Empty lists fall back to the built-in rules.
 3. About sits below the settings.
-4. **Clean & publish** runs the pipeline and streams the log. A click on the
+4. **Clean & Push** runs the pipeline and streams the log. A click on the
    card shows the repo view first: target branch, paths to remove, the
    divergence policy, the check timeout, and the options (dry run, skip the
    PR gate, keep empty commits, leave tags alone, keep the branch, force the

@@ -340,7 +340,7 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     '<div class="bar">'
     + block("● idle", width="60px")
     + '<div class="grow"></div>'
-    + block("Clean & publish", hi=True, width="120px")
+    + block("Clean & Push", hi=True, width="120px")
     + block("Cancel", width="60px")
     + "</div>"
     + "".join(
@@ -374,7 +374,7 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     + f'<div class="scr" style="width:auto">{commits}</div></div>'
   )
   actions = (
-    '<table class="sheet"><tr><td class="mono">Clean &amp; publish</td>'
+    '<table class="sheet"><tr><td class="mono">Clean &amp; Push</td>'
     "<td>starts the run with the options shown</td></tr>"
     '<tr><td class="mono">Cancel</td><td>terminates the child process; the log says cancelled</td></tr>'
     '<tr><td class="mono">Show log</td><td>unfolds the raw lines under the phase list</td></tr>'
@@ -484,8 +484,8 @@ def states_board(_: dict[str, bytes]) -> str:
 def components_board(_: dict[str, bytes]) -> str:
   buttons = (
     '<table class="sheet">'
-    '<tr><td>primary</td><td><button class="btn primary">Clean &amp; publish</button></td>'
-    '<td><button class="btn primary" disabled>Clean &amp; publish</button></td></tr>'
+    '<tr><td>primary</td><td><button class="btn primary">Clean &amp; Push</button></td>'
+    '<td><button class="btn primary" disabled>Clean &amp; Push</button></td></tr>'
     '<tr><td>default</td><td><button class="btn">Reload</button></td>'
     '<td><button class="btn" disabled>Reload</button></td></tr>'
     '<tr><td>ghost</td><td><button class="btn ghost">Re-check</button></td>'

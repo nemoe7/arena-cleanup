@@ -126,5 +126,6 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-22: in a narrow cell a segmented control wraps whole buttons onto a second row, never words.
 - Accepted 2026-10-22: a shallow history. The dashboard is the root entry and a sub-view is at most one entry deep. One Back leaves a sub-view, the next one leaves the page.
 - Accepted 2026-10-22: no command switch on the repository page. A local rewrite without a push is a terminal task, so `strip` lives in the CLI alone.
+- Accepted 2026-10-22: the primary button reads Clean & Push. The phase list keeps Publish for the push, tags, and cleanup step.
 - Accepted 2026-10-22: a tree selector for Remove paths. It reads `git ls-tree` of HEAD in the clone, so it works for path repositories and never calls GitHub. File contents stay out; a path only old commits carried stays a typed chip.
 - Accepted 2026-10-22: the card Remove X moves from the action row to the top right corner. At rest it is a bare glyph, so the primary button stands alone. The red frame returns on hover, on press, and while armed.

@@ -730,7 +730,7 @@
           <div class="card-head">
             <span class="status" id="status" role="status" aria-live="polite"><span class="led"></span><span id="statustext">idle</span></span>
             <div class="grow"></div>
-            <button class="btn primary" id="start">Clean &amp; publish</button>
+            <button class="btn primary" id="start">Clean &amp; Push</button>
             <button class="btn" id="cancel" disabled>Cancel</button>
           </div>
           <ol class="phases" id="phases"></ol>
@@ -758,7 +758,7 @@
       </div>
     </div>
     <div class="tabbar" id="tabbar">
-      <button class="btn primary" id="start-mobile">Clean &amp; publish</button>
+      <button class="btn primary" id="start-mobile">Clean &amp; Push</button>
       <button class="btn" id="cancel-mobile" disabled>Cancel</button>
     </div>
   </div>
@@ -1012,7 +1012,7 @@
     }
 
     const actions = el("div", { class: "card-actions" },
-      el("button", { class: "btn primary", onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, "Clean & publish"));
+      el("button", { class: "btn primary", onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, "Clean & Push"));
 
     return el("div", { class: "repo-card", role: "button", tabindex: "0",
         onclick: () => openRepo(repo.id),

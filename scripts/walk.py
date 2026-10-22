@@ -582,7 +582,7 @@ def phone_paste_box_is_a_tap_target(w: Walker, demo: Demo) -> None:
 
 
 @step("phone")
-def phone_clean_and_publish_runs(w: Walker, demo: Demo) -> None:
+def phone_clean_and_push_runs(w: Walker, demo: Demo) -> None:
   w.click(".repo-card", 700)
   w.click("#start-mobile", 4000)
   assert w.status_text().strip()
