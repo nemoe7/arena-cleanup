@@ -703,7 +703,9 @@ def do_dont_board(_: dict[str, bytes]) -> str:
     drift = f"{icon('arrow-up')}1 {icon('arrow-down')}2"
     return "".join(
       f'<span class="pill {cls}" style="margin-right:{g}px">{t}</span>'
-      for g, cls, t in zip(gaps, ("mono", "", "warn mono"), ("main", "clean", drift))
+      for g, cls, t in zip(
+        gaps, ("mono", "warn", "warn mono"), ("main", "3 uncommitted", drift)
+      )
     )
 
   spacing_do = f'<div class="off" style="gap:0">{meta_pills((6, 6, 0))}</div>'

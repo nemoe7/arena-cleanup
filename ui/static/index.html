@@ -951,7 +951,7 @@
       meta.append(el("span", { class: "pill err" }, el("i", { class: "dot" }), s.reason || "unavailable"));
     } else {
       meta.append(el("span", { class: "pill mono" }, s.branch));
-      meta.append(el("span", { class: "pill" }, s.dirty ? `${s.dirty} uncommitted` : "clean"));
+      if (s.dirty) meta.append(el("span", { class: "pill warn" }, `${s.dirty} uncommitted`));
       if (s.ahead || s.behind) meta.append(el("span", { class: "pill warn mono" }, icon("arrow-up"), String(s.ahead), " ", icon("arrow-down"), String(s.behind)));
     }
 
