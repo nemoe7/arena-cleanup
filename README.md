@@ -52,7 +52,6 @@ docker run --rm -p 127.0.0.1:8080:8080 -v arena-home:/home/arena \
 
 The `arena-home` volume keeps the `gh` token, the git identity, the GPG key,
 the repo registry, and the clones. A rebuilt container keeps all of them.
-Add `-v /path/to/repo:/repo` to work on a checkout from the host.
 
 ### Python
 
@@ -60,12 +59,11 @@ Python 3.11+, `git`, and an authenticated `gh`. `git-filter-repo` is needed
 only for path removal.
 
 ```console
-python3 ui/server.py --repo /path/to/repo
+python3 ui/server.py
 ```
 
 | flag     | default                                         | meaning                            |
 |----------|-------------------------------------------------|------------------------------------|
-| `--repo` | `$ARENA_REPO`                                   | register this work tree on startup |
 | `--data` | `$ARENA_DATA` or `~/.local/share/arena-cleanup` | repo registry and URL clones       |
 | `--host` | `0.0.0.0`                                       | interface to bind                  |
 | `--port` | `8080`                                          | port                               |
@@ -115,7 +113,6 @@ stacks into one column, and the primary actions stick to the bottom.
 | `GIT_AUTHOR_EMAIL`         | seeded into git config at start, while it is empty         |
 | `GH_TOKEN`                 | `gh` auth without an interactive login                     |
 | `ARENA_DATA`               | registry + clones (default `~/.local/share/arena-cleanup`) |
-| `ARENA_REPO`               | repo registered on startup (default `/repo`)               |
 | `ARENA_HOST`, `ARENA_PORT` | bind address (default `0.0.0.0:8080`)                      |
 | `TS_AUTHKEY`               | joins the Tailscale sidecar once; a volume keeps the node  |
 

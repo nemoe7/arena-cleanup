@@ -60,8 +60,7 @@ COPY ui /app/ui
 COPY docker-entrypoint.sh /usr/local/bin/arena-docker-entrypoint
 RUN chmod +x /app/engine.py /usr/local/bin/arena-docker-entrypoint
 
-ENV ARENA_REPO=/repo \
-    ARENA_HOST=0.0.0.0 \
+ENV ARENA_HOST=0.0.0.0 \
     ARENA_PORT=8080 \
     ARENA_DATA=/home/arena/.local/share/arena-cleanup \
     HOME=/home/arena
@@ -69,7 +68,6 @@ ENV ARENA_REPO=/repo \
 EXPOSE 8080
 
 USER arena
-WORKDIR /repo
 
 # /healthz is the purpose-built probe: cheap, no git, no gh, and it 200s only
 # when the server is actually serving. urllib raises on any non-2xx, so the
@@ -78,8 +76,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
   CMD python3 -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:%s/healthz' % os.environ.get('ARENA_PORT','8080'), timeout=4)"
 
 # One entry point: the web UI. Open http://localhost:8080 after `docker run`.
-#
-# No VOLUME for /repo: a bind mount is a host decision. A VOLUME line would
-# create an empty anonymous volume the first time someone forgets the mount.
 ENTRYPOINT ["/usr/local/bin/arena-docker-entrypoint"]
 CMD []

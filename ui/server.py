@@ -7,9 +7,9 @@ Every button press becomes an argv, never a shell string. The process output
 streams straight back to the browser. Nothing about the rewrite logic lives
 here: engine.py stays the only thing that touches git.
 
-    python3 ui/server.py [--data DIR] [--port 8080] [--repo PATH]
+    python3 ui/server.py [--data DIR] [--port 8080]
 
-Environment: ARENA_DATA, ARENA_PORT, ARENA_HOST, ARENA_REPO.
+Environment: ARENA_DATA, ARENA_PORT, ARENA_HOST.
 """
 
 from __future__ import annotations
@@ -1114,7 +1114,6 @@ CONTENT_TYPES = {
 class Handler(BaseHTTPRequestHandler):
   server_version = "arena-ui/" + VERSION
   reg: Registry
-  boot_repo: str = ""
   verbose = False
 
   # -- plumbing ----------------------------------------------------------
@@ -1463,28 +1462,10 @@ class Handler(BaseHTTPRequestHandler):
         return
 
 
-def bootstrap(args: argparse.Namespace, reg: Registry) -> str:
-  """Register the mounted repo on first boot; return its path for defaults."""
-  candidate = args.repo or os.environ.get("ARENA_REPO") or ""
-  # An empty bind mount is normal, because compose always mounts /repo. A path
-  # that is not a git work tree is silent rather than a warning on every boot.
-  if (
-    candidate
-    and os.path.isdir(candidate)
-    and git("rev-parse", "--is-inside-work-tree", cwd=candidate) == "true"
-  ):
-    entry, err = register_path(candidate, reg)
-    if entry:
-      return entry["path"]
-    print(f"arena-ui: {candidate}: {err}", file=sys.stderr, flush=True)
-  return ""
-
-
 def main() -> int:
   parser = argparse.ArgumentParser(
     prog="arena-ui", description="Web UI for arena-cleanup."
   )
-  parser.add_argument("--repo", default="", help="register this work tree on startup")
   parser.add_argument(
     "--data",
     default=os.environ.get(
@@ -1506,7 +1487,6 @@ def main() -> int:
   reg = Registry(Path(args.data).expanduser())
   Handler.reg = reg
   Handler.verbose = args.verbose
-  Handler.boot_repo = bootstrap(args, reg)
 
   httpd = ThreadingHTTPServer((args.host, args.port), Handler)
   httpd.daemon_threads = True

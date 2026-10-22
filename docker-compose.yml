@@ -6,8 +6,7 @@
 # `docker compose config` prints the result without starting anything.
 #
 # The app is UI-only: paste a repo URL in the dashboard and it is cloned into
-# the arena-home volume. REPO_PATH is optional. Set it to also work on a
-# checkout that already exists on this machine; it appears as /repo.
+# the arena-home volume.
 #
 # TLS: `tailscale serve` gives it a real HTTPS name on your tailnet. That is
 # what makes it installable as a PWA from a phone. A PWA needs a secure
@@ -33,8 +32,6 @@ services:
       # gh credentials, git config, the GPG key, the repo registry and every
       # clone made from a URL all live here
       - arena-home:/home/arena
-      # optional: an existing checkout on the host
-      - ${REPO_PATH:-./repo}:/repo
     ports:
       # Loopback only. Public access is the Tailscale sidecar's job, and the app
       # has no authentication of its own.

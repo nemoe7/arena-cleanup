@@ -28,6 +28,14 @@ def test_every_compose_variable_is_offered_in_env_example() -> None:
     assert re.search(rf"^{name}=", ENV_EXAMPLE, re.MULTILINE), name
 
 
+def test_the_app_mounts_only_its_home_volume() -> None:
+  # clones live in the home volume. No host checkout is bind-mounted, so the
+  # app service has that one volume and nothing from the host.
+  app = COMPOSE.split("  arena-cleanup-tailscale:")[0]
+  mounts = re.findall(r"^\s+- (.+):(/.+)$", app, re.MULTILINE)
+  assert mounts == [("arena-home", "/home/arena")]
+
+
 def test_env_files_stay_local() -> None:
   assert ".env" in GITIGNORE
   assert any(line.startswith(".env.*") for line in GITIGNORE)
