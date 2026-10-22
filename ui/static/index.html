@@ -238,7 +238,6 @@
     border: 1px solid var(--line-2); color: var(--muted);
   }
   .repo-name { font-weight: 600; font-size: var(--fs-3); letter-spacing: -.01em; overflow-wrap: anywhere; }
-  .repo-path { color: var(--dim); font: var(--fs-1)/1.4 var(--mono); overflow-wrap: anywhere; }
   .repo-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .pill {
     display: inline-flex; align-items: center; gap: 6px;
@@ -520,7 +519,7 @@
     .btn { font-size: 14px; }
     .pill { font-size: 12px; }
     .repo-name { font-size: 15px; }
-    .hint, .repo-path, .opt-label .desc, .phase-sub, .run-foot .hint, .commit .meta { font-size: 12px; }
+    .hint, .opt-label .desc, .phase-sub, .run-foot .hint, .commit .meta { font-size: 12px; }
     .phase-head { padding: 10px 12px; font-size: 13px; min-height: 44px; }
     .task-note { font-size: 12px; }
     .commit { font-size: 13px; grid-template-columns: 68px minmax(0, 1fr); row-gap: 4px; }
@@ -588,7 +587,7 @@
        16 field, 19 page title. Anything with its own desktop size is
        pinned here, after every other rule. */
     .pill, .pill.mono, .chip, .bname, .arena-row .bname, .hint, .card-head .hint,
-    .repo-path, .arena-row, .phase-sub, .commit .meta, .sign-key, .kv dt, .kv dd, .log-row,
+    .arena-row, .phase-sub, .commit .meta, .sign-key, .kv dt, .kv dd, .log-row,
     .env-dots, .run-foot .hint, .steps, .steps code, .steps kbd { font-size: 12px; }
     .banner, .toast, .wrap h2, .card-head h2, .skip, .steps,
     .opt-label label, .opt-label span.lbl, .phase-name, .toggle { font-size: 13px; }
@@ -655,7 +654,6 @@
         <div class="detail-head">
           <button class="btn ghost back" id="back"><span class="ico-svg" data-icon="arrow-left" aria-hidden="true"></span>All repos</button>
           <h1 id="repo-title">…</h1>
-          <span class="sub" id="repo-sub"></span>
           <div class="grow"></div>
           <div class="segmented" id="cmdswitch" role="group" aria-label="Command">
             <button data-cmd="run" aria-pressed="true" title="Rewrite the arena branch, sign every commit, push the default branch, then delete the local arena branch."><span class="seg-long">Clean &amp; publish</span><span class="seg-short">Publish</span></button>
@@ -929,8 +927,7 @@
     const head = el("div", { class: "repo-head" },
       el("span", { class: "repo-ico", "aria-hidden": "true" }, icon("git-branch")),
       el("div", { style: "min-width:0" },
-        el("div", { class: "repo-name" }, repo.name),
-        el("div", { class: "repo-path" }, s.ok ? s.path : repo.path)));
+        el("div", { class: "repo-name" }, repo.name)));
 
     const meta = el("div", { class: "repo-meta" });
     if (!s.ok) {
@@ -1062,7 +1059,6 @@
     state.branch = "";
     state.paths = [];
     $("repo-title").textContent = repo.name;
-    $("repo-sub").textContent = repo.status?.path || repo.path;
     renderSidebar();
     renderBranchSelect();
     renderPaths();
@@ -1147,7 +1143,6 @@
         renderSidebar();
         renderBranchSelect();
       }
-      if (kept.status) $("repo-sub").textContent = repo.status?.path || repo.path;
     } catch { /* keep the last good view */ }
   }
 
@@ -1672,13 +1667,25 @@
     body.replaceChildren(...nodes);
   }
 
+  function cloneLinks(repos) {
+    if (!repos.length) return el("span", { class: "mono", style: "color:var(--dim)" }, "none yet");
+    const nodes = [];
+    repos.forEach((r, i) => {
+      if (i) nodes.push(", ");
+      nodes.push(r.url
+        ? el("a", { class: "mono", href: r.url, target: "_blank", rel: "noopener", title: r.url }, r.name)
+        : el("span", { class: "mono" }, r.name));
+    });
+    return el("span", {}, ...nodes);
+  }
+
   function storageCard() {
     const st = state.storage;
     if (!st) return el("div", {});
     const rows = st.items.map((item) =>
       pillRow(item.label,
         el("div", { class: "row" },
-          el("span", { class: "mono" }, item.path),
+          item.repos ? cloneLinks(item.repos) : el("span", { class: "mono" }, item.path),
           item.survives
             ? el("span", { class: "pill ok", title: `on the ${item.mount_point} mount` },
                 el("i", { class: "dot" }), "survives")

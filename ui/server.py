@@ -185,6 +185,18 @@ def normalize_source(source: str) -> str:
   return f"https://github.com/{owner}/{name.removesuffix('.git')}.git"
 
 
+def web_url(source: str) -> str:
+  """The page a clone URL came from, or "" for a path or a file:// clone."""
+  match = re.match(
+    r"^(?:https?://|ssh://(?:[^@/]+@)?|(?:[^@/]+@))([^/:]+)[/:](.+?)(?:\.git)?/?$",
+    source.strip(),
+  )
+  if not match:
+    return ""
+  host, path = match.groups()
+  return f"https://{host}/{path}"
+
+
 def repo_name(source: str) -> str:
   tail = source.rstrip("/").rsplit("/", 1)[-1].rsplit(":", 1)[-1]
   tail = tail.removesuffix(".git")
@@ -783,7 +795,9 @@ def mount_point_for(path: Path) -> str:
   return best if best != "/" else ""
 
 
-def storage_report(data_dir: Path) -> dict[str, Any]:
+def storage_report(
+  data_dir: Path, clones: list[dict[str, Any]] | None = None
+) -> dict[str, Any]:
   """
   What survives `docker rm`, a rebuild, or a fresh image pull - and what does not.
 
@@ -821,7 +835,12 @@ def storage_report(data_dir: Path) -> dict[str, Any]:
     item("git config", home / ".gitconfig", "volume", "identity, signing key, helper"),
     item("GPG keys", home / ".gnupg", "volume", "the key the signing panel creates"),
     item("repo registry", data_dir / "repos.json", "volume", "remembered repositories"),
-    item("URL clones", data_dir / "repos", "volume", "repos cloned from a URL"),
+    {
+      **item("URL clones", data_dir / "repos", "volume", "repos cloned from a URL"),
+      "repos": [
+        {"name": r["name"], "url": web_url(r.get("source", ""))} for r in clones or []
+      ],
+    },
     item("ssh keys", home / ".ssh", "volume", "only if you mount or generate them"),
   ]
 
@@ -1138,7 +1157,9 @@ class Handler(BaseHTTPRequestHandler):
       elif path == "/api/auth":
         self._json(auth_report())
       elif path == "/api/storage":
-        self._json(storage_report(self.reg.data))
+        self._json(
+          storage_report(self.reg.data, [r for r in self.reg.all() if r.get("managed")])
+        )
       elif path in ("/healthz", "/api/health"):
         # Deliberately cheap. docker's HEALTHCHECK and a Tailscale monitor both
         # poll this on a short interval. It must not shell out to git.

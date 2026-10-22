@@ -14,7 +14,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - User group: one developer who owns the repositories and the GitHub account. No research beyond that use.
 - Primary tasks: add a repository, run a cleanup, read the log, fix GitHub access, and set up signing.
-- Repository: a clone the server registered. Identifier: the server-minted `id`; the card shows `name` and `path`.
+- Repository: a clone the server registered. Identifier: the server-minted `id`; the card shows `name` only. The Storage card links each URL clone to its remote page.
 - Arena branch: a branch under the `arena/` prefix with its pull request and check count.
 - Run: one engine execution with five phases: Prepare, PR checks, Rewrite and sign, Publish, Finish.
 

@@ -36,6 +36,15 @@ GITHUB_FORMS = (
   "github.com/acme/shop-web",
   "  github.com/acme/shop-web\n",
 )
+WEB_PAGES = {
+  "https://github.com/acme/shop-web.git": "https://github.com/acme/shop-web",
+  "https://github.com/acme/shop-web": "https://github.com/acme/shop-web",
+  "git@github.com:acme/shop-web.git": "https://github.com/acme/shop-web",
+  "ssh://git@gitlab.com/acme/shop-web.git": "https://gitlab.com/acme/shop-web",
+  "https://gitlab.com/group/sub/shop-web.git/": "https://gitlab.com/group/sub/shop-web",
+  "file:///tmp/bare.git": "",
+  "/srv/repos/shop-web": "",
+}
 OTHER_SOURCES = (
   "git@github.com:acme/shop-web.git",
   "https://gitlab.com/acme/shop-web",
@@ -240,6 +249,14 @@ def test_github_page_addresses_normalize_to_clone_urls() -> None:
     assert normalize_source(source) == source
 
 
+def test_clone_urls_map_to_their_web_pages() -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui.server import web_url
+
+  for source, page in WEB_PAGES.items():
+    assert web_url(source) == page, source
+
+
 def test_add_by_clone_url(ui: UI, world: World, ids: dict[str, str]) -> None:
   bare = world.root / "work.git"
   world.git("clone", "-q", "--bare", str(world.work), str(bare), cwd=world.root)
@@ -370,6 +387,10 @@ def test_storage_report(ui: UI) -> None:
   assert all("survives" in i and "mount_point" in i for i in items)
   assert any(i["label"] == "GitHub token" for i in items)
   assert any(i["label"] == "git config" for i in items)
+  clones = next(i for i in items if i["label"] == "URL clones")
+  managed = [r["name"] for r in ui.get("/api/repos") if r.get("managed")]
+  assert [r["name"] for r in clones["repos"]] == managed
+  assert all(set(r) == {"name", "url"} for r in clones["repos"])
   assert storage["tools"]["git-filter-repo"] is True
   assert "home_mounted" in storage
   # existence alone must never be reported as survival
