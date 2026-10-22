@@ -47,7 +47,7 @@
 - NEVER count filename, receipt, summary, remembered rule, or partial read (head/tail/grep) as current full text.
 - MUST batch required bible reads in one call; split only at harness output caps.
 - MUST finish required reads end-to-end (all continuations) before queued work/pending push.
-- Run the arena-skill questionnaire after initial setup and after compaction, summary, or context replacement, before queued work.
+- Run arena-skill questionnaire immediately after initial visibility response, before first inbox poll, and after compaction/summary/context replacement, before queued work.
 - `references/REFERENCE.md` is supplementary: read/grep only needed parts; no end-to-end read; gate/read-cadence mechanics live there. Installation template copies are supplementary too.
 - Each new user chat message's first reply MUST state `Reasoning: on` or `Reasoning: off` once, after any owed 10-4 line. Tool results, steering notes, compaction/summary, continuations start no new turn.
 - In saved context, state the start sequence and full missing-context bible reads before queued work; no verbatim ARENA.md copy required.
@@ -145,11 +145,11 @@
 - Grep-verify each file edit landed before building on it.
 - Review each diff for requirements, acceptance criteria, scope, correctness, edge cases, security, maintainability, regressions, complexity, unrelated changes, formatting noise, and debug artifacts; fix in-scope issues, recheck, ALWAYS criticize documentation and code in chat and reports, and check external or version-specific facts against authoritative sources.
 - Before finishing, run repo validation entrypoints; parse every touched generated config.
-- MUST read open code-scanning alerts on the initial turn and when origin/main moves; address each without blocking PR creation.
+- On the initial turn and when origin/main moves, MUST check if code scanning is enabled; if enabled, read open alerts and address each without blocking PR creation; if disabled, continue to the next task.
 
 ## Style
 
-- `nemoe7` repos: 2-space indent beats formatter defaults; Markdown: markdownlint defaults + MD060, MD013 off; Python: Ruff defaults via project `ruff.toml` or one created exactly per AGENTS.md; gates `ruff check`/`ruff format`, no CLI overrides.
+- `nemoe7` repos: 2-space indent beats formatter defaults; Markdown: markdownlint defaults + MD060, MD013 off; Python: Ruff defaults in project `pyproject.toml` when suitable, else `ruff.toml`, with only AGENTS.md conventions until flagged; create missing config exactly before gates; gates `ruff check`/`ruff format`, no CLI overrides.
 - Add code/config comments ONLY when method complexity needs them.
 
 ## Git

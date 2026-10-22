@@ -103,6 +103,7 @@ CALL_STOP_SECONDS=3
 TURN_ENDED_META='turn_ended_at'
 REMOVED_META='state_removed_at'
 REPORT_CHANGE_VIEW_SECONDS=60
+REPORT_IDLE_SECONDS=30*60
 AGENT_KEY_RE=re.compile('[A-Za-z0-9_-]{20,64}\\Z')
 AGENT_HOST_RE=re.compile('https://[A-Za-z0-9.-]+\\Z')
 def now():return datetime.now(timezone.utc).isoformat()
@@ -518,6 +519,9 @@ def restore_replies(replies,acknowledged):
 def replies_list(value):return json.loads(value)if value else[]
 def message_row(row):
 	record=dict(row);record.pop('seq',None)
+	if'answer_data'in record:
+		data=record.pop('answer_data')
+		if data is not None:record['answer_data']=json.loads(data)
 	if'replies'in record:record['replies']=replies_list(record['replies'])
 	return record
 def reply_reference(text):match=REPLY_REFERENCE.match(text or'');return match.group(1)if match else None
@@ -555,6 +559,52 @@ def custom_answer(field,value):
 		typed=value[len(label)+2:]
 		if typed.strip():return True
 	return False
+FORMAT_SLOT=re.compile('\\{([^{}]+)\\}')
+def validate_submission_format(value,fields):
+	if value is None:return None
+	if not isinstance(value,dict)or set(value)-{'fields','template'}:raise ValueError('Submission format takes fields and an optional template')
+	if len(json.dumps(value,ensure_ascii=False).encode('utf-8'))>MAX_REPORT:raise ValueError('Submission format exceeds the report size limit')
+	known={field['id']:field for field in fields};mappings=value.get('fields',{})
+	if not isinstance(mappings,dict)or set(mappings)-set(known):raise ValueError('Submission format names unknown fields')
+	slots={f"{field_id}.{part}"for field_id in known for part in('question','answer')}
+	def template(text,allowed):
+		if not isinstance(text,str)or not text.strip():raise ValueError('A submission template is nonblank text')
+		if set(FORMAT_SLOT.findall(text))-allowed:raise ValueError('Submission template contains an unknown placeholder')
+	for(field_id,mapping)in mappings.items():
+		if not isinstance(mapping,dict)or set(mapping)-{'question','answers','custom_answer'}:raise ValueError('Field format takes question, answers, and custom_answer')
+		if'question'in mapping and(not isinstance(mapping['question'],str)or not 1<=len(mapping['question'].strip())<=500):raise ValueError('A mapped question is 1–500 characters')
+		presets={option for option in known[field_id].get('options',[])if custom_label(option)is None};answers=mapping.get('answers',{})
+		if not isinstance(answers,dict)or set(answers)-presets:raise ValueError('Answer maps name preset choices only')
+		if any(not isinstance(text,str)or not text.strip()for text in answers.values()):raise ValueError('Mapped preset answers are nonblank text')
+		if'custom_answer'in mapping:template(mapping['custom_answer'],{'custom'})
+	if'template'in value:template(value['template'],slots)
+	return value
+def expand_submission_template(text,values):
+	parts,size,position=[],0,0
+	for match in FORMAT_SLOT.finditer(text):
+		for part in(text[position:match.start()],values[match.group(1)]):
+			size+=len(part.encode('utf-8'))
+			if size>MAX_REPORT:raise ValueError('Expanded submission exceeds the report size limit')
+			parts.append(part)
+		position=match.end()
+	tail=text[position:]
+	if size+len(tail.encode('utf-8'))>MAX_REPORT:raise ValueError('Expanded submission exceeds the report size limit')
+	return''.join(parts)+tail
+def formatted_selection(field,item,mapping):
+	presets=[option for option in field['options']if custom_label(option)is None];labels={custom_label(option)for option in field['options']}-{None}
+	if isinstance(item,str):
+		if mapping is None and item in field['options']:label=custom_label(item);return('custom',label)if label is not None else('preset',item),item
+		if item in presets:item={'type':'preset','value':item}
+		else:
+			for label in labels:
+				if item.startswith(f"{label}: "):item={'type':'custom','label':label,'value':item[len(label)+2:]};break
+	if not isinstance(item,dict)or set(item)-{'type','value','label'}or not isinstance(item.get('value'),str):raise ValueError(f"{field['id']}: choose a preset or enter a custom answer")
+	text=item['value']
+	if item.get('type')=='preset'and set(item)=={'type','value'}and text in presets:return('preset',text),mapping.get('answers',{}).get(text,text)if mapping is not None else text
+	if item.get('type')=='custom'and set(item)=={'type','label','value'}and item['label']in labels and text.strip():
+		if mapping is None:return('custom',item['label']),f"{item['label']}: {text}"
+		wrapper=mapping.get('custom_answer');return('custom',item['label']),expand_submission_template(wrapper,{'custom':text})if wrapper is not None else text
+	raise ValueError(f"{field['id']}: invalid selection or blank custom answer")
 def option_continuation(line):
 	if not line.strip()or BLOCK_START.match(line):return False
 	return not BLANK.match(line)and not ANCHOR.match(line)
@@ -598,7 +648,10 @@ def parse_fields(markdown):
 			position+=1
 		question['prompt']=prompt or f"Field {index}";question['id']=anchor if anchor and anchor not in used else slug(question['prompt'],used);used.add(question['id']);anchor=None;blocks.append(('markdown','\n'.join(chunk)));blocks.append(('field',question));chunk=[];questions.append(question)
 	blocks.append(('markdown','\n'.join(chunk)))
-	if questions:Store.validate_fields(questions)
+	if questions:
+		Store.validate_fields(questions)
+		for question in questions:
+			if question['type']!='text'and not any(custom_label(option)is not None for option in question['options']):question['options'].append('Something else...: ___')
 	return blocks,questions
 def field_html(question):
 	prompt=html.escape(question['prompt'],quote=True);name=html.escape(question['id'],quote=True);body=f'<div class="question" data-field="{name}"';body+=f' data-type="{question["type"]}">';body+=f'<small class="question-id">Question ID: <code>{name}</code></small>'
@@ -607,7 +660,7 @@ def field_html(question):
 	for option in question['options']:
 		value=html.escape(option,quote=True);checked=' checked'if option in question['default']else'';label=custom_label(option)
 		if label is None:group+=f'<label class="option"><input type="{control}" name="{name}" value="{value}"{checked}> {html.escape(option)}</label>';continue
-		named=html.escape(label,quote=True);group+=f'<label class="option"><input type="{control}" name="{name}" value="{value}"{checked} data-label="{named}" aria-label="{named}"><textarea class="custom-text" rows="1" data-custom="{named}" placeholder="{named}:" aria-label="{named}, your own answer"></textarea></label>'
+		named=html.escape(label,quote=True);group+=f'<label class="option"><input type="{control}" name="{name}" value="{value}"{checked} data-label="{named}" aria-label="{named}"><textarea class="custom-text" rows="1" data-custom="{named}" placeholder="Something else..." aria-label="{named}, your own answer"></textarea></label>'
 	return f"{body}{group}</div></div>"
 TASK_STATUSES='upcoming','finished'
 TASK_UNSPECIFIED='unspecified'
@@ -633,7 +686,7 @@ SAVED_STATE='saved-state.ndjson'
 NOTE_LINE_KEYS='id','text','at','acknowledged_at','ack_type','ack_text','ack_edited_at','replies','ack_edited_seen_count','seen_at','task_id'
 TASK_LINE_KEYS='id','title','details','status','completed_at','order','report_id','type'
 SUBMISSION_LINE_KEYS='id','report_id','text','at','acknowledged_at','ack_type','ack_text','ack_edited_at','replies','ack_edited_seen_count','seen_at','task_id'
-REPORT_LINE_KEYS='id','title','markdown','published_at','seen_at','source'
+REPORT_LINE_KEYS='id','title','markdown','published_at','seen_at','ack_seen_at','pinned','source'
 def task_row(row):
 	shaped={'id':row[0],'title':row[1],'details':json.loads(row[2]),'status':row[3],'order':row[4],'updated_at':row[5],'completed_at':row[6]if len(row)>6 else None,'blocked':bool(row[7])if len(row)>7 else False}
 	if len(row)>8 and row[8]:shaped['report_id']=row[8]
@@ -664,10 +717,14 @@ def saved_note_line(record):
 	return{key:record.get(key)for key in NOTE_LINE_KEYS}
 def saved_answer_line(record):
 	if not isinstance(record,dict):raise TypeError('Every saved answer is an object')
-	return{key:record.get(key)for key in SUBMISSION_LINE_KEYS}
+	line={key:record.get(key)for key in SUBMISSION_LINE_KEYS}
+	if record.get('answer_data')is not None:line['answer_data']=record['answer_data']
+	return line
 def saved_report_line(record):
 	if not isinstance(record,dict):raise TypeError('Every saved report is an object')
-	return{key:record.get(key)for key in REPORT_LINE_KEYS}
+	line={key:record.get(key)for key in REPORT_LINE_KEYS}
+	if record.get('submission_format')is not None:line['submission_format']=record['submission_format']
+	return line
 def state_ndjson(lines):return''.join(json.dumps(line,ensure_ascii=False)+'\n'for line in lines)
 def saved_task_line(record):
 	if not isinstance(record,dict):raise TypeError('Every saved task is an object')
@@ -997,6 +1054,29 @@ def read_set_actions(line):
 		if head not in('arena-preview','preview.py')or index+1>=len(tokens):return None
 		actions.append(tokens[index+1].strip('"\''))
 	return tuple(actions)
+def inbox_pipeline_warning(line):
+	lexer=shlex.shlex(agent_line(line),posix=False,punctuation_chars=';&|()\n');lexer.whitespace=' \t\r';lexer.whitespace_split=True
+	try:tokens=list(lexer)
+	except ValueError:return None
+	piece=[]
+	for token in[*tokens,';']:
+		if token not in(';','&&','||','|','|&','&','(',')','\n'):piece.append(token);continue
+		try:words=[''.join(shlex.split(word))for word in piece]
+		except ValueError:return None
+		piece=[]
+		while words and('='in words[0]or words[0]in SHELL_KEYWORDS):words.pop(0)
+		while words and words[0].rsplit('/',1)[-1]in PR_CHECK_WRAPPERS:
+			words.pop(0)
+			while words and(words[0].startswith('-')or'='in words[0]or words[0].isdigit()):words.pop(0)
+		head=words.pop(0).rsplit('/',1)[-1]if words else''
+		if head in SHELL_BASENAMES:
+			for(index,word)in enumerate(words[:-1]):
+				if word.startswith('-')and'c'in word:
+					warning=inbox_pipeline_warning(words[index+1])
+					if warning:return warning
+					break
+		if head in('arena-preview','preview.py')and words[:1]in(['read'],['poll'])and token in('|','|&'):return'INBOX BLOCKED: read and poll need full output. Run without a pipe.'
+	return None
 def read_set_input_warning(line,root=None,cwd=None):
 	kept=[];delimiters=[]
 	for row in agent_line(line).splitlines():
@@ -1374,10 +1454,10 @@ def agent_line(line):
 	else:return line or''
 	return' '.join(rest).strip()or(line or'')
 def pr_check_wait(state_dir,line,command=None):
-	line=agent_line(line);warning=worktree_warning(state_dir,'gate')
-	if warning:print(warning,file=sys.stderr,flush=True);return PR_CHECK_REFUSED
-	name=long_run_name(line)
+	line=agent_line(line);name=long_run_name(line)
 	if not name:return PR_CHECK_OTHER
+	warning=worktree_warning(state_dir,'gate')
+	if warning:print(warning,file=sys.stderr,flush=True);return PR_CHECK_REFUSED
 	if command is not None and line.strip()!=command.strip():print(f"RUN BLOCKED: automatic routing would replay a mixed shell line. Use `arena-preview run start {name} -- <remaining command>`; do not repeat completed commands.",file=sys.stderr,flush=True);return PR_CHECK_REFUSED
 	if not detach_run(state_dir,name,['bash','-c',line]):print(DETACHED_BLOCK.format(name=name),file=sys.stderr,flush=True);return PR_CHECK_REFUSED
 	print(DETACHED_NOTICE.format(name=name),file=sys.stderr,flush=True);return PR_CHECK_RUNS
@@ -1594,7 +1674,7 @@ class ReportHeld(ValueError):pass
 def format_report_state(rows):
 	lines=[]
 	for row in rows:
-		lines.append(f"{row['id']} {row['title']}");lines.append(f"  published: {local_stamp(row['published_at'])or'never'}");lines.append(f"  updated: {local_stamp(row['updated_at'])}");lines.append(f"  stale: {'yes'if row['stale']else'no'}");lines.append(f"  viewed: {local_stamp(row['viewed_at'])or'never'}")
+		lines.append(f"{row['id']} {row['title']}");lines.append(f"  published: {local_stamp(row['published_at'])or'never'}");lines.append(f"  updated: {local_stamp(row['updated_at'])}");lines.append(f"  stale: {'yes'if row['stale']else'no'}");lines.append(f"  pinned: {'yes'if row.get('pinned')else'no'}");lines.append(f"  viewed: {local_stamp(row['viewed_at'])or'never'}")
 		if not row['answers']:lines.append('  answers: none')
 		for answer in row['answers']:lines.append(f"  answers: {answer['id']} acknowledged {'yes'if answer['acknowledged']else'no'}, agent-seen {'yes'if answer['seen']else'no'}")
 	return'\n'.join(lines)+('\n'if lines else'')
@@ -1628,6 +1708,8 @@ class Store:
 			if'task_id'not in columns:db.execute('ALTER TABLE submissions ADD COLUMN task_id TEXT')
 			if'replies'not in columns:db.execute('ALTER TABLE submissions ADD COLUMN replies TEXT')
 			if'ack_edited_seen_count'not in columns:db.execute('ALTER TABLE submissions ADD COLUMN ack_edited_seen_count INTEGER NOT NULL DEFAULT 0')
+			submission_columns={row['name']for row in db.execute('PRAGMA table_info(submissions)')}
+			if'answer_data'not in submission_columns:db.execute('ALTER TABLE submissions ADD COLUMN answer_data TEXT')
 			columns={row['name']for row in db.execute('PRAGMA table_info(reports)')}
 			if'seen_at'not in columns:db.execute('ALTER TABLE reports ADD COLUMN seen_at TEXT');db.execute('UPDATE submissions SET seen_at = acknowledged_at WHERE seen_at IS NULL AND acknowledged_at IS NOT NULL')
 			columns={row['name']for row in db.execute('PRAGMA table_info(reports)')}
@@ -1638,6 +1720,9 @@ class Store:
 			if'ack_seen_at'not in columns:db.execute('ALTER TABLE reports ADD COLUMN ack_seen_at TEXT')
 			if'viewed_at'not in columns:db.execute('ALTER TABLE reports ADD COLUMN viewed_at TEXT')
 			columns={row['name']for row in db.execute('PRAGMA table_info(reports)')}
+			if'submission_format'not in columns:db.execute('ALTER TABLE reports ADD COLUMN submission_format TEXT')
+			if'last_viewed_at'not in columns:db.execute('ALTER TABLE reports ADD COLUMN last_viewed_at TEXT')
+			if'pinned'not in columns:db.execute('ALTER TABLE reports ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0')
 			if'published_at'not in columns:db.execute('ALTER TABLE reports ADD COLUMN published_at TEXT');db.execute('UPDATE reports SET published_at = updated_at WHERE published_at IS NULL')
 			columns={row['name']for row in db.execute('PRAGMA table_info(uploads)')}
 			if'note_id'not in columns:db.execute('ALTER TABLE uploads ADD COLUMN note_id TEXT');db.execute('UPDATE uploads SET note_id = id WHERE note_id IS NULL')
@@ -1708,19 +1793,24 @@ class Store:
 			else:raise RuntimeError('The state holds no free six-character ID for a bible note')
 			listed='\n'.join(f"- `{path}`"for path in paths);text=f"Bible checkpoint after a {READ_SET_INTERVAL_MINUTES}-minute interval. Read each listed path in full with the read tool only if its current full text is absent from context, then acknowledge this note.\nAnswer the questionnaire only if any required bible text was absent from context before this check.\n{listed}";record=self.note(note_id,text,shared=db,autosave=False,quiet=True,blocking=True);db.execute('INSERT INTO meta(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',(READ_SET_SLOT_META,slot));db.execute('INSERT INTO meta(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',(READ_SET_LAST_META,moment.isoformat()))
 		self.autosave();return record
-	def submission(self,submission_id,report_id,text,at=None,acknowledged_at=None,ack_type=None,ack_text=None,seen_at=None,task_id=None,ack_edited_at=None,shared=None,autosave=True,replies=None,ack_edited_seen_count=None):
-		identifier(submission_id);identifier(report_id);submission_text(text);receipt=restore_receipt(acknowledged_at,ack_type,ack_text,ack_edited_at);more=restore_replies(replies,receipt[0]);seen_reply_count=restore_reply_seen_count(ack_edited_seen_count,more)
+	def submission(self,submission_id,report_id,text,at=None,acknowledged_at=None,ack_type=None,ack_text=None,seen_at=None,task_id=None,ack_edited_at=None,shared=None,autosave=True,replies=None,ack_edited_seen_count=None,answer_data=None):
+		identifier(submission_id);identifier(report_id);submission_text(text)
+		if answer_data is not None:
+			if not isinstance(answer_data,dict)or set(answer_data)!={'revision','answers'}or not isinstance(answer_data['revision'],str)or not isinstance(answer_data['answers'],dict):raise ValueError('Saved answer data requires a revision and raw answers')
+			when(answer_data['revision'])
+			if len(json.dumps(answer_data,ensure_ascii=False).encode('utf-8'))>MAX_REPORT:raise ValueError('Saved answer data exceeds the report size limit')
+		receipt=restore_receipt(acknowledged_at,ack_type,ack_text,ack_edited_at);more=restore_replies(replies,receipt[0]);seen_reply_count=restore_reply_seen_count(ack_edited_seen_count,more)
 		with self.transaction(shared,autosave=autosave)as db:
 			if shared is None:db.execute('BEGIN IMMEDIATE')
 			existing=db.execute('SELECT * FROM submissions WHERE id = ?',(submission_id,)).fetchone()
 			if existing:
-				if existing['text']!=text:raise ValueError('This message ID already belongs to different text')
+				if existing['text']!=text or answer_data is not None and json.loads(existing['answer_data']or'null')!=answer_data:raise ValueError('This message ID already belongs to different text')
 				self.release_report_tasks(db,report_id);return message_row(existing)
-			db.execute('INSERT INTO submissions (id, report_id, text, at, acknowledged_at, ack_type, ack_text, ack_edited_at, seen_at, task_id, replies, ack_edited_seen_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',(submission_id,report_id,text,at or now(),*receipt,when(seen_at)if seen_at is not None else None,task_id,more,seen_reply_count));self.release_report_tasks(db,report_id);reset_poll_count(db);clear_skip_poll(db);return message_row(db.execute('SELECT * FROM submissions WHERE id = ?',(submission_id,)).fetchone())
+			db.execute('INSERT INTO submissions (id, report_id, text, at, acknowledged_at, ack_type, ack_text, ack_edited_at, seen_at, task_id, replies, ack_edited_seen_count, answer_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',(submission_id,report_id,text,at or now(),*receipt,when(seen_at)if seen_at is not None else None,task_id,more,seen_reply_count,json.dumps(answer_data,ensure_ascii=False)if answer_data is not None else None));self.release_report_tasks(db,report_id);reset_poll_count(db);clear_skip_poll(db);return message_row(db.execute('SELECT * FROM submissions WHERE id = ?',(submission_id,)).fetchone())
 	def submissions(self):
 		with closing(self.connect())as db:return[message_row(row)for row in db.execute('SELECT * FROM submissions ORDER BY at, seq')]
 	def report_sources(self):
-		with closing(self.connect())as db:return[dict(row)for row in db.execute('SELECT id, title, markdown, published_at, seen_at, source FROM reports ORDER BY seq, id')]
+		with closing(self.connect())as db:return[dict(row,pinned=bool(row['pinned']),submission_format=json.loads(row['submission_format'])if row['submission_format']else None)for row in db.execute('SELECT id, title, markdown, published_at, seen_at, ack_seen_at, pinned, submission_format, source FROM reports ORDER BY seq, id')]
 	def state(self):
 		tasks=self.tasks()
 		with closing(self.connect())as db:
@@ -2128,12 +2218,13 @@ class Store:
 				for row in history:key=autosave_scope_key(row['scope']);receipts.setdefault(key,{}).update(row.get('receipts',{}));receipts[key][row['save_id']]=row['digest']
 				db.execute('INSERT OR REPLACE INTO meta VALUES (?, ?)',(AUTOSAVE_HISTORY,json.dumps(history)));db.execute('INSERT OR REPLACE INTO meta VALUES (?, ?)',(AUTOSAVE_RECEIPTS,json.dumps(receipts)))
 			for table in('notes','reports','submissions','tasks'):db.execute(f"DELETE FROM {table}")
-			self.import_reports(reports,shared=db);self.import_tasks(tasks,replace_tasks,autosave=False,shared=db)
+			self.import_tasks(tasks,replace_tasks,autosave=False,shared=db)
 			for record in messages:
 				if'text'not in record or'title'in record:raise ValueError('Each record must be a note, task or report answer')
 				options={key:record.get(key)for key in('acknowledged_at','ack_type','ack_text','ack_edited_at','seen_at','task_id','replies','ack_edited_seen_count')};args=[record['id']];writer=self.note
-				if'report_id'in record:writer=self.submission;args.append(record['report_id'])
+				if'report_id'in record:writer=self.submission;args.append(record['report_id']);options['answer_data']=record.get('answer_data')
 				writer(*args,record['text'],record.get('at'),shared=db,autosave=False,**options)
+			self.import_reports(reports,shared=db)
 		receipt={'notes':sum('report_id'not in r for r in messages),'answers':sum('report_id'in r for r in messages),'reports':len(reports),'tasks':len(tasks)};return receipt
 	def import_reports(self,records,shared=None):
 		if not isinstance(records,list):raise TypeError('Import a list of report objects')
@@ -2150,11 +2241,51 @@ class Store:
 			seen_at=record.get('seen_at')
 			if seen_at is not None and not isinstance(seen_at,str):raise ValueError('A saved seen stamp is text')
 			if seen_at is not None:when(seen_at)
+			metadata=record.get('submission_format')
+			if metadata is not None:metadata=validate_submission_format(metadata,parse_fields(markdown)[1])
+			pinned=record.get('pinned',False)
+			if not isinstance(pinned,bool):raise TypeError('A saved report pin is a boolean')
+			ack_seen_at=record.get('ack_seen_at')
+			if ack_seen_at is not None:
+				if not isinstance(ack_seen_at,str):raise ValueError('A saved acknowledgement-view stamp is text')
+				when(ack_seen_at)
 			source=record.get('source')
 			if source is not None and not isinstance(source,str):raise ValueError('A saved report source path is text')
-			prepared.append((report_id,title,markdown,published_at,seen_at,seen_at is not None,source))
-		with self.transaction(shared)as db:
-			for(report_id,title,markdown,published_at,seen_at,ever_seen,source)in prepared:highest=db.execute('SELECT COALESCE(MAX(seq), 0) FROM reports').fetchone()[0];db.execute('INSERT INTO reports\n             (id, title, markdown, updated_at, published_at, seq, seen_at, ever_seen, source)\n             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)\n             ON CONFLICT(id) DO UPDATE SET title = excluded.title,\n               markdown = excluded.markdown, updated_at = excluded.updated_at,\n               source = COALESCE(excluded.source, reports.source),\n               published_at = COALESCE(reports.published_at, excluded.published_at),\n               seen_at = COALESCE(reports.seen_at, excluded.seen_at),\n               ever_seen = MAX(reports.ever_seen, excluded.ever_seen)',(report_id,title,markdown,now(),published_at,highest+1,seen_at,ever_seen,source))
+			prepared.append((report_id,title,markdown,published_at,seen_at,seen_at is not None,source,ack_seen_at,pinned,metadata))
+		state_root=self.path.parent.resolve();created=[]
+		try:
+			with self.transaction(shared)as db:
+				for(report_id,title,markdown,published_at,seen_at,ever_seen,source,ack_seen_at,pinned,metadata)in prepared:
+					target=None
+					if source:
+						candidate=Path(source)
+						if not candidate.is_absolute():candidate=state_root/candidate
+						try:relative=candidate.relative_to(state_root)
+						except ValueError:relative=None
+						if relative is not None and relative.parts and'..'not in relative.parts and relative.suffix.lower()=='.md':
+							current=state_root;valid=True
+							for part in relative.parts[:-1]:
+								current=current/part
+								if current.is_symlink()or current.exists()and not current.is_dir():valid=False;break
+							leaf=current/relative.parts[-1]
+							if valid and not leaf.is_symlink()and not leaf.exists():target=leaf
+					if target is None:
+						reports_dir=state_root/'reports'
+						if reports_dir.is_symlink()or reports_dir.exists()and not reports_dir.is_dir():reports_dir=state_root
+						stem=f"{report_id}.md";target=reports_dir/stem;suffix=2
+						while target.is_symlink()or target.exists():target=reports_dir/f"{report_id}-{suffix}.md";suffix+=1
+					parent=target.parent;missing_dirs=[];probe=parent
+					while probe!=state_root and not probe.exists():missing_dirs.append(probe);probe=probe.parent
+					for directory in reversed(missing_dirs):directory.mkdir();created.append(directory)
+					with target.open('xb')as stream:stream.write(markdown.encode('utf-8'))
+					created.append(target);highest=db.execute('SELECT COALESCE(MAX(seq), 0) FROM reports').fetchone()[0];db.execute('INSERT INTO reports\n               (id, title, markdown, updated_at, published_at, seq, seen_at, ever_seen, source,\n                ack_seen_at, pinned, submission_format)\n               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n               ON CONFLICT(id) DO UPDATE SET title = excluded.title,\n                 markdown = excluded.markdown, updated_at = excluded.updated_at,\n                 source = COALESCE(excluded.source, reports.source),\n                 published_at = COALESCE(reports.published_at, excluded.published_at),\n                 seen_at = COALESCE(reports.seen_at, excluded.seen_at),\n                 ack_seen_at = COALESCE(reports.ack_seen_at, excluded.ack_seen_at),\n                 pinned = MAX(reports.pinned, excluded.pinned),\n                 submission_format = excluded.submission_format,\n                 ever_seen = MAX(reports.ever_seen, excluded.ever_seen)',(report_id,title,markdown,now(),published_at,highest+1,seen_at,ever_seen,str(target),ack_seen_at,int(pinned),json.dumps(metadata)if metadata is not None else None))
+		except Exception:
+			for path in reversed(created):
+				try:
+					if path.is_dir():path.rmdir()
+					else:path.unlink(missing_ok=True)
+				except OSError:pass
+			raise
 		return len(prepared)
 	def import_tasks(self,records,replace=False,autosave=True,shared=None):
 		if not isinstance(records,list):raise TypeError('Import a list of task objects')
@@ -2275,21 +2406,31 @@ class Store:
 		if not isinstance(host,str)or not AGENT_HOST_RE.fullmatch(host):host=None
 		return{'key':key,'host':host,'at':clip_stamp(record.get('at'))}
 	def stale_report_rows(self,db):
-		stale=[];rows=db.execute('SELECT id, markdown FROM reports WHERE published_at IS NOT NULL ORDER BY seq, id')
+		linked={};tasks=[dict(row)for row in db.execute('SELECT id, status, report_id FROM tasks')]
+		for task in link_task_answers(db,tasks):
+			reports={task['report_id']}|{answer['report_id']for answer in task.get('answers',[])}
+			for report_id in reports-{None}:linked.setdefault(report_id,[]).append(task['status'])
+		stale=[];current=import_stamp(now());rows=db.execute('SELECT id, updated_at, viewed_at, last_viewed_at FROM reports WHERE published_at IS NOT NULL AND pinned = 0 ORDER BY seq, id')
 		for row in rows:
-			try:fields=len(parse_fields(row['markdown'])[1])
-			except ValueError:continue
-			if fields==0:stale.append({'id':row['id'],'reason':'no fields'});continue
-			pending=db.execute(f"SELECT count(*) FROM submissions WHERE report_id = ? AND {PENDING_SUBMISSIONS}",(row['id'],)).fetchone()[0];answered=db.execute('SELECT count(*) FROM submissions WHERE report_id = ?',(row['id'],)).fetchone()[0]
-			if answered and not pending:stale.append({'id':row['id'],'reason':'latest submission acknowledged'})
+			statuses=linked.get(row['id'])
+			if statuses:
+				if all(status=='finished'for status in statuses):stale.append({'id':row['id'],'reason':'all linked tasks finished'})
+				continue
+			stamps=[import_stamp(row[key])for key in('updated_at','viewed_at','last_viewed_at')];latest=max((stamp for stamp in stamps if stamp is not None),default=None)
+			if latest is not None and current-latest>=timedelta(seconds=REPORT_IDLE_SECONDS):stale.append({'id':row['id'],'reason':'unlinked and idle for 30 minutes'})
 		return stale
+	def pin_report(self,report_id,pinned):
+		identifier(report_id)
+		with self.transaction()as db:
+			changed=db.execute('UPDATE reports SET pinned = ? WHERE id = ?',(int(pinned),report_id))
+			if changed.rowcount==0:raise FileNotFoundError('Report not found')
 	def stale_report_ids(self,db):return[record['id']for record in self.stale_report_rows(db)]
 	def stale_reports(self):
 		with closing(self.connect())as db:return self.stale_report_rows(db)
 	def report_state(self,report_id=None):
 		with closing(self.connect())as db:
-			rows=db.execute('SELECT id, title, published_at, updated_at, viewed_at FROM reports'+(' WHERE id = ?'if report_id else'')+' ORDER BY updated_at DESC',(report_id,)if report_id else()).fetchall();stale={row['id']for row in self.stale_report_rows(db)};out=[]
-			for row in rows:answers=db.execute('SELECT id, acknowledged_at, seen_at FROM submissions WHERE report_id = ? ORDER BY seq',(row['id'],)).fetchall();out.append({'id':row['id'],'title':row['title'],'published_at':row['published_at'],'updated_at':row['updated_at'],'viewed_at':row['viewed_at'],'stale':row['id']in stale,'answers':[{'id':answer['id'],'acknowledged':answer['acknowledged_at']is not None,'seen':answer['seen_at']is not None}for answer in answers]})
+			rows=db.execute('SELECT id, title, published_at, updated_at, viewed_at, pinned FROM reports'+(' WHERE id = ?'if report_id else'')+' ORDER BY updated_at DESC',(report_id,)if report_id else()).fetchall();stale={row['id']for row in self.stale_report_rows(db)};out=[]
+			for row in rows:answers=db.execute('SELECT id, acknowledged_at, seen_at FROM submissions WHERE report_id = ? ORDER BY seq',(row['id'],)).fetchall();out.append({'id':row['id'],'title':row['title'],'published_at':row['published_at'],'updated_at':row['updated_at'],'viewed_at':row['viewed_at'],'stale':row['id']in stale,'pinned':bool(row['pinned']),'answers':[{'id':answer['id'],'acknowledged':answer['acknowledged_at']is not None,'seen':answer['seen_at']is not None}for answer in answers]})
 			return out
 	def reminder(self,advance=False,routine=True):
 		order_notice=False
@@ -2411,21 +2552,21 @@ class Store:
 			age=seconds_since(report['viewed_at'])
 			if answered is not None and age is not None and 0<=age<REPORT_CHANGE_VIEW_SECONDS:remaining=max(1,int(REPORT_CHANGE_VIEW_SECONDS-age));raise ReportHeld(f"The owner is reading this report: retry after {remaining} s without a view.")
 		if hold_answer and answered is not None:raise ReportHeld('The report has a submitted answer; publish the update under a new ID.')
-	def publish(self,report_id,title,source):
+	def publish(self,report_id,title,source,submission_format=None):
 		identifier(report_id)
 		if not isinstance(title,str)or not title.strip()or len(title)>200:raise ValueError('Report title must contain 1–200 characters')
 		source=Path(source)
 		if source.suffix.lower()!='.md':raise ValueError('Publish a UTF-8 .md source file')
 		with source.open('rb')as stream:data=stream.read(MAX_REPORT+1)
 		if len(data)>MAX_REPORT:raise ValueError('Report exceeds the 2 MB limit; split it into reports')
-		text=data.decode('utf-8');text=embed_report_images(text,source.resolve().parent);fields=parse_fields(text)[1]
+		text=data.decode('utf-8');text=embed_report_images(text,source.resolve().parent);fields=parse_fields(text)[1];metadata=validate_submission_format(submission_format,fields)
 		with self.transaction()as db:
 			report=db.execute('SELECT ack_seen_at, viewed_at FROM reports WHERE id = ?',(report_id,)).fetchone()
 			if report is not None:self.guard_report_change(db,report_id,report)
 			else:
 				answered=db.execute('SELECT 1 FROM submissions WHERE report_id = ? LIMIT 1',(report_id,)).fetchone()
 				if answered is not None:raise ValueError(f"Report {report_id} has submitted answers; publish the update under a new ID")
-			self.refuse_shared_id(db,'reports','tasks',report_id);highest=db.execute('SELECT COALESCE(MAX(seq), 0) FROM reports').fetchone()[0];db.execute('INSERT INTO reports (id, title, markdown, updated_at, published_at, seq, source)\n           VALUES (?, ?, ?, ?, ?, ?, ?)\n           ON CONFLICT(id) DO UPDATE SET title = excluded.title,\n             markdown = excluded.markdown, updated_at = excluded.updated_at,\n             source = excluded.source,\n             seq = COALESCE(reports.seq, excluded.seq), seen_at = NULL',(report_id,title,text,now(),now(),highest+1,str(source.resolve())))
+			self.refuse_shared_id(db,'reports','tasks',report_id);highest=db.execute('SELECT COALESCE(MAX(seq), 0) FROM reports').fetchone()[0];db.execute('INSERT INTO reports (id, title, markdown, updated_at, published_at, seq, source, submission_format)\n           VALUES (?, ?, ?, ?, ?, ?, ?, ?)\n           ON CONFLICT(id) DO UPDATE SET title = excluded.title,\n             markdown = excluded.markdown, updated_at = excluded.updated_at,\n             source = excluded.source, submission_format = excluded.submission_format,\n             seq = COALESCE(reports.seq, excluded.seq), seen_at = NULL',(report_id,title,text,now(),now(),highest+1,str(source.resolve()),json.dumps(metadata)if metadata is not None else None))
 		return len(fields)
 	def unpublish(self,report_id,dismissed_by_owner=False,*,stale_only=False):
 		identifier(report_id)
@@ -2464,14 +2605,14 @@ class Store:
 		with closing(self.connect())as db,db:
 			row=db.execute('SELECT 1 FROM reports WHERE id = ?',(report_id,)).fetchone()
 			if row is None:raise FileNotFoundError('Report not found')
-			stamp=now()if active else None;db.execute('UPDATE reports SET viewed_at = ? WHERE id = ?',(stamp,report_id))
+			stamp=now()if active else None;db.execute('UPDATE reports SET viewed_at = ?, last_viewed_at = COALESCE(?, last_viewed_at) WHERE id = ?',(stamp,stamp,report_id))
 		return{'id':report_id,'viewed_at':clip_stamp(stamp)}
 	def report(self,report_id,shared=None):
 		identifier(report_id)
 		with self.transaction(shared)as db:
 			row=db.execute('SELECT * FROM reports WHERE id = ?',(report_id,)).fetchone()
 			if row is None:raise FileNotFoundError('Report not found')
-			return dict(row)
+			return dict(row,submission_format=json.loads(row['submission_format'])if row['submission_format']else None)
 	@staticmethod
 	def validate_fields(fields):
 		if not 1<=len(fields)<=50:raise ValueError('A report holds 1–50 fields')
@@ -2493,27 +2634,28 @@ class Store:
 			if revision!=report['updated_at']:raise ReportChanged('Report changed. Your entries are kept; copy them before refreshing, reviewing and resending')
 			fields=parse_fields(report['markdown'])[1]
 			if not fields:raise ValueError('This report has no fields to answer')
-			return self.submit(report_id,report['title'],fields,note_id,answers,shared=db)
-	def submit(self,report_id,title,fields,note_id,answers,shared=None):
+			return self.submit(report_id,report['title'],fields,note_id,answers,shared=db,submission_format=report['submission_format'],revision=revision)
+	def submit(self,report_id,title,fields,note_id,answers,shared=None,submission_format=None,revision=None):
 		if not isinstance(answers,dict):raise TypeError('Answers is a JSON object keyed by field ID')
-		known={field['id']for field in fields};unknown=set(answers)-known
-		if unknown:raise ValueError(f"Unknown field IDs: {', '.join(sorted(unknown))}")
-		lines=[f"REPORT {report_id} {title}:"]
+		known={field['id']for field in fields}
+		if set(answers)-known:raise ValueError(f"Unknown field IDs: {', '.join(sorted(set(answers)-known))}")
+		metadata=validate_submission_format(submission_format,fields);mappings=metadata.get('fields',{})if metadata is not None else{};lines=[f"REPORT {report_id} {title}:"];slots,answered={},False
 		for field in fields:
-			field_id=field['id'];value=answers.get(field_id)
-			if field['type']=='text':
-				if value is None:rendered='(skipped)'
-				elif not isinstance(value,str):raise ValueError(f"{field_id}: text answers must be strings")
-				else:rendered=value if value.strip()else'(skipped)'
-			elif value is None:rendered='(skipped)'
-			elif field['type']=='choice':
-				if value not in field['options']and not custom_answer(field,value):raise ValueError(f"{field_id}: choose one of "+', '.join(field['options']))
-				rendered=value
+			field_id=field['id'];value=answers.get(field_id);mapping=mappings.get(field_id,{})if metadata is not None else None
+			if value is None or field['type']=='checkbox'and value==[]or field['type']=='text'and isinstance(value,str)and not value.strip():rendered='(skipped)'
+			elif field['type']=='text':
+				if not isinstance(value,str):raise ValueError(f"{field_id}: text answers must be strings")
+				rendered,answered=value,True
+			elif field['type']=='choice':_,rendered=formatted_selection(field,value,mapping);answered=True
 			else:
-				if not isinstance(value,list)or len({item for item in value if isinstance(item,str)})!=len(value)or any(item not in field['options']and not custom_answer(field,item)for item in value):raise ValueError(f"{field_id}: select options only: "+', '.join(field['options']))
-				rendered=', '.join(value)if value else'(skipped)'
-			lines.append(f"  {field['prompt']} ({field_id}): {rendered}")
-		return self.submission(note_id,report_id,'\n'.join(lines),shared=shared)
+				if not isinstance(value,list)or any(not isinstance(item,(str,dict))for item in value):raise ValueError(f"{field_id}: select options only")
+				selections=[formatted_selection(field,item,mapping)for item in value]
+				if len({key for(key,_)in selections})!=len(value):raise ValueError(f"{field_id}: repeated selections")
+				rendered=', '.join(text for(_,text)in selections);answered=True
+			question=(mapping or{}).get('question',field['prompt']);slots[f"{field_id}.question"]=question;slots[f"{field_id}.answer"]=rendered;lines.append(f"  {question} ({field_id}): {rendered}")
+		if not answered:raise ValueError('A report submission carries at least one answer')
+		if metadata is not None and'template'in metadata:lines=[lines[0],expand_submission_template(metadata['template'],slots)]
+		data={'revision':revision,'answers':answers}if revision is not None else None;return self.submission(note_id,report_id,'\n'.join(lines),shared=shared,answer_data=data)
 def open_link(renderer,tokens,index,options,env):
 	token=tokens[index];href=token.attrGet('href')or''
 	if href and not href.startswith('#'):token.attrSet('target','_blank');token.attrSet('rel','noopener noreferrer')
@@ -2956,7 +3098,7 @@ def pre_command(state_dir,line,command,root,done='',shell=''):
 	elif'git push'in command and'main-fresh'not in finished:
 		mark('main-fresh');warning=main_drift_warning(Path.cwd())
 		if warning:report(warning)
-	warning=read_set_input_warning(line,root)
+	warning=inbox_pipeline_warning(line)or read_set_input_warning(line,root)
 	if warning:report(warning);return finish(130)
 	if routed:return finish(0)
 	warning=idle_wait(line)
@@ -3015,9 +3157,11 @@ class PreviewArgumentParser(argparse.ArgumentParser):
 	def print_usage(self,file=None):pass
 	def exit(self,status=0,message=None):super().exit(status,message.removeprefix('arena-preview: ')if message else message)
 def main():
-	parser=PreviewArgumentParser(description=CLI_DESCRIPTION,prog='arena-preview');parser.add_argument('-r','--reminder',action='store_true',help='Print unacked-count reminder; exit');commands=parser.add_subparsers(dest='command',required=False);serve=commands.add_parser('serve',help='Serve preview page; -p names port');serve.add_argument('-p','--port',type=int,default=DEFAULT_PORT,help=f"Port (default: {DEFAULT_PORT}; only supported port)");init=commands.add_parser('init',help='Create state directory and database');init.add_argument('--tz',help='CLI stamp IANA zone; TZ env wins');questionnaire_parser=commands.add_parser('questionnaire',help='Show questions and schema, or submit ordered JSON');questionnaire_parser.add_argument('answers',nargs='?',help='Ordered answer JSON');commands.add_parser('read',help='Print every pending note, answer and upload');commands.add_parser('skills',help='List skill names, full descriptions, and paths without loading skills');note_group=commands.add_parser('note',help='Read stored notes');note_verbs=note_group.add_subparsers(dest='verb',required=True);note_list=note_verbs.add_parser('list',help='Stored note IDs by page, newest first; acknowledged included');note_list.add_argument('--page',type=int,default=1,help='Page number (default: 1)');note_list.add_argument('--page-size',type=int,default=20,help='IDs per page, 1 to 100 (default: 20)');note_reread=note_verbs.add_parser('show',help='Reread stored note by short or full ID');note_reread.add_argument('id',help='Six or all note ID characters');image_uri=commands.add_parser('image-data-uri',help='Print Markdown: one local image as data URI');image_uri.add_argument('path',type=Path,help='One local PNG, JPEG, GIF or WebP file up to 2 MiB');commands.add_parser('key',help='Print the recorded agent key, host and use line');pre=commands.add_parser('pre',help='Run all pre-Bash gates in order; list completed steps');pre.add_argument('--line',default='',help='Shell command line from hook');pre.add_argument('--command',dest='command_text',default='',help='Command reached by DEBUG trap');pre.add_argument('--repo',default='.',help='Bible repository');pre.add_argument('--shell',default='',help='Shell name');pre.add_argument('--done',default='',help="This shell's completed steps, space-separated");run_group=commands.add_parser('run',help='Start long command; read result');run_verbs=run_group.add_subparsers(dest='verb',required=True);route=run_verbs.add_parser('start',help='Detach command, keep output tail; show exit on later call');route.add_argument('--task',dest='task_id',metavar='TASK-ID',help='Link run to upcoming task, not current task');route.add_argument('--after',metavar='GATE',help='Run only after this gate passes');route.add_argument('name',help='Short run name; example: gates');route.add_argument('command_args',nargs=argparse.REMAINDER,help='Command after --');route_run=commands.add_parser('route-run',help='Run command here; record exit for later call');route_run.add_argument('name',help='Run name already recorded by caller');route_run.add_argument('command_args',nargs=argparse.REMAINDER,help='Command after --');logs=run_verbs.add_parser('logs',help='Print routed run status and recorded output tail');logs.add_argument('name',help='Run name to read');worktree=commands.add_parser('worktree',help='Create or collect detached task worktree beside root gate');worktree_action=worktree.add_subparsers(dest='worktree_action',required=True);worktree_start=worktree_action.add_parser('start',help='Create detached worktree beside root gate, or without one');worktree_start.add_argument('name',help='Short worktree name');worktree_start.add_argument('destination',type=Path,help='New path outside root');worktree_start.add_argument('--gate',default=None,help='Running root gate name; optional');worktree_start.add_argument('--allow',action='append',default=[],help='Glob of paths task may change');worktree_collect=worktree_action.add_parser('collect',help='Print allowed detached-worktree patch after root gate passes');worktree_collect.add_argument('name',help='Worktree name to collect');rename=commands.add_parser('rename',help='Move note, answer, report, or task to new ID');rename.add_argument('old_id',help='Stored ID or unique record prefix');rename.add_argument('new_id',help='Destination record ID');gate=commands.add_parser('gate',help='Inbox gate; -p blocks on any unacked note; -l names blocked line');gate.add_argument('-p','--push',action='store_true',help='Block on any unacked note or answer, regardless of call count');gate.add_argument('-l','--line',default='',help='Command line from hook; blocked calls name commands to drop');commands.add_parser('poll',help='Wait for owner answer or gate completion');download=commands.add_parser('download-request',help='Request HTTPS browser download; preview Approve click required; -a allows proxy fallback');download.add_argument('url',help='One HTTPS URL without embedded credentials');download.add_argument('-a','--allow-proxy',action='store_true',help='Owner may opt in to AllOrigins and CodeTabs fallback for this request');ack=commands.add_parser('ack',help='Answer notes with inline Markdown; omit IDs for one pending item');ack.add_argument('ids',nargs='*');ack.add_argument('markdown',help='Literal inline Markdown answer');ack.add_argument('--id',dest='task_id');ack.add_argument('--title',dest='task_title');ack.add_argument('--type',dest='task_type',choices=TASK_TYPES);ack.add_argument('--detail',dest='task_detail',action='append');report_group=commands.add_parser('report',help='Publish, withdraw and inspect reports');report_verbs=report_group.add_subparsers(dest='verb',required=True);publish=report_verbs.add_parser('publish',help='Publish report; -i ID, -t title');publish.add_argument('source',type=Path);publish.add_argument('-i','--id',required=True);publish.add_argument('-t','--title',required=True);unpublish=report_verbs.add_parser('unpublish',help='Withdraw report by ID, or all stale reports with --stale');unpublish.add_argument('report_id',nargs='?');unpublish.add_argument('--stale',action='store_true',help='Withdraw every stale report');report_verbs.add_parser('stale',help='List stale published report IDs and reasons without changing state');report_state=report_verbs.add_parser('state',help='Print publication, owner view stamp and answer visibility for one report or all');report_state.add_argument('report_id',nargs='?');task_group=commands.add_parser('task',help='Read and update tasks');task_verbs=task_group.add_subparsers(dest='verb',required=True);task_list=task_verbs.add_parser('list',help='List tasks; -f includes finished');task_list.add_argument('-f','--full',action='store_true',help='print every task, finished included');task_show=task_verbs.add_parser('show',help='Print one stored task in full');task_show.add_argument('task_id',metavar='TASK-ID');task=task_verbs.add_parser('set',help='Write/update task; -s status, -o order, -d details, -A append, -m message, -r report, -u unblocked, -a amend, --type type');task.add_argument('id_arg',nargs='?',metavar='TASK-ID');task.add_argument('title_arg',nargs='?',metavar='TASK-TITLE');task.add_argument('detail_arg',nargs='*',metavar='TASK-DETAIL');task.add_argument('-d','--details',dest='task_details',action='append',help='One step per line; max 120 characters; repeatable');task.add_argument('-A','--append',dest='append_details',action='store_true',help='Append provided details instead of replacing stored details');task.add_argument('-u','--unblocked',dest='blocked',action='store_false',default=None,help='Clear report wait or legacy blocked mark');task.add_argument('-m','--msg-id',help='Message task answers; mark it as having a task');task.add_argument('-r','--report',metavar='REPORT-ID',help='Awaited report; answer clears blocked mark');task.add_argument('-a','--amend',metavar='PREV-ID',help='Rename task under this ID to given ID');task.add_argument('-b','--blocked-by',dest='blocked_by',action='append',metavar='TASK-ID',help='Dependency task; repeatable; cycles refused');task.add_argument('-s','--status',choices=TASK_STATUSES,default=None);task.add_argument('--type',dest='task_type',choices=TASK_TYPES,default=None,help='Primary deliverable type; omitted flag keeps stored type');task.add_argument('-o','--order',type=int,default=None,help='1-based place within div, not end');task_unlink=task_verbs.add_parser('unlink',help='Unlink a submission from all tasks; retain its history');task_unlink.add_argument('submission_id');task_remove=task_verbs.add_parser('remove',help='Delete task by ID');task_remove.add_argument('task_id');state_group=commands.add_parser('state',help='Import or clear stored state');state_verbs=state_group.add_subparsers(dest='verb',required=True);state_import=state_verbs.add_parser('import',help='Import NDJSON backup; replace live state');state_import.add_argument('source',nargs='?',type=Path);state_import.add_argument('-r','--replace-tasks',action='store_true');state_verbs.add_parser('clear',help='Empty all state tables in place; keep agent key record');args=parser.parse_args()
+	parser=PreviewArgumentParser(description=CLI_DESCRIPTION,prog='arena-preview');parser.add_argument('-r','--reminder',action='store_true',help='Print unacked-count reminder; exit');commands=parser.add_subparsers(dest='command',required=False);serve=commands.add_parser('serve',help='Serve preview page; -p names port');serve.add_argument('-p','--port',type=int,default=DEFAULT_PORT,help=f"Port (default: {DEFAULT_PORT}; only supported port)");init=commands.add_parser('init',help='Create state directory and database');init.add_argument('--tz',help='CLI stamp IANA zone; TZ env wins');questionnaire_parser=commands.add_parser('questionnaire',help='Show questions and schema, or submit ordered JSON');questionnaire_parser.add_argument('answers',nargs='?',help='Ordered answer JSON');commands.add_parser('read',help='Print every pending note, answer and upload');commands.add_parser('skills',help='List skill names, full descriptions, and paths without loading skills');note_group=commands.add_parser('note',help='Read stored notes');note_verbs=note_group.add_subparsers(dest='verb',required=True);note_list=note_verbs.add_parser('list',help='Stored note IDs by page, newest first; acknowledged included');note_list.add_argument('--page',type=int,default=1,help='Page number (default: 1)');note_list.add_argument('--page-size',type=int,default=20,help='IDs per page, 1 to 100 (default: 20)');note_reread=note_verbs.add_parser('show',help='Reread stored note by short or full ID');note_reread.add_argument('id',help='Six or all note ID characters');image_uri=commands.add_parser('image-data-uri',help='Print Markdown: one local image as data URI');image_uri.add_argument('path',type=Path,help='One local PNG, JPEG, GIF or WebP file up to 2 MiB');commands.add_parser('key',help='Print the recorded agent key, host and use line');pre=commands.add_parser('pre',help='Run all pre-Bash gates in order; list completed steps');pre.add_argument('--line',default='',help='Shell command line from hook');pre.add_argument('--command',dest='command_text',default='',help='Command reached by DEBUG trap');pre.add_argument('--repo',default='.',help='Bible repository');pre.add_argument('--shell',default='',help='Shell name');pre.add_argument('--done',default='',help="This shell's completed steps, space-separated");run_group=commands.add_parser('run',help='Start long command; read result');run_verbs=run_group.add_subparsers(dest='verb',required=True);route=run_verbs.add_parser('start',help='Detach command, keep output tail; show exit on later call');route.add_argument('--task',dest='task_id',metavar='TASK-ID',help='Link run to upcoming task, not current task');route.add_argument('--after',metavar='GATE',help='Run only after this gate passes');route.add_argument('name',help='Short run name; example: gates');route.add_argument('command_args',nargs=argparse.REMAINDER,help='Command after --');route_run=commands.add_parser('route-run',help='Run command here; record exit for later call');route_run.add_argument('name',help='Run name already recorded by caller');route_run.add_argument('command_args',nargs=argparse.REMAINDER,help='Command after --');logs=run_verbs.add_parser('logs',help='Print routed run status and recorded output tail');logs.add_argument('name',help='Run name to read');worktree=commands.add_parser('worktree',help='Create or collect detached task worktree beside root gate');worktree_action=worktree.add_subparsers(dest='worktree_action',required=True);worktree_start=worktree_action.add_parser('start',help='Create detached worktree beside root gate, or without one');worktree_start.add_argument('name',help='Short worktree name');worktree_start.add_argument('destination',type=Path,help='New path outside root');worktree_start.add_argument('--gate',default=None,help='Running root gate name; optional');worktree_start.add_argument('--allow',action='append',default=[],help='Glob of paths task may change');worktree_collect=worktree_action.add_parser('collect',help='Print allowed detached-worktree patch after root gate passes');worktree_collect.add_argument('name',help='Worktree name to collect');rename=commands.add_parser('rename',help='Move note, answer, report, or task to new ID');rename.add_argument('old_id',help='Stored ID or unique record prefix');rename.add_argument('new_id',help='Destination record ID');gate=commands.add_parser('gate',help='Inbox gate; -p blocks on any unacked note; -l names blocked line');gate.add_argument('-p','--push',action='store_true',help='Block on any unacked note or answer, regardless of call count');gate.add_argument('-l','--line',default='',help='Command line from hook; blocked calls name commands to drop');commands.add_parser('poll',help='Wait for owner answer or gate completion');download=commands.add_parser('download-request',help='Request HTTPS browser download; preview Approve click required; -a allows proxy fallback');download.add_argument('url',help='One HTTPS URL without embedded credentials');download.add_argument('-a','--allow-proxy',action='store_true',help='Owner may opt in to AllOrigins and CodeTabs fallback for this request');ack=commands.add_parser('ack',help='Answer notes with inline Markdown; omit IDs for one pending item');ack.add_argument('ids',nargs='*');ack.add_argument('markdown',help='Literal inline Markdown answer');ack.add_argument('--id',dest='task_id');ack.add_argument('--title',dest='task_title');ack.add_argument('--type',dest='task_type',choices=TASK_TYPES);ack.add_argument('--detail',dest='task_detail',action='append');report_group=commands.add_parser('report',help='Publish, withdraw and inspect reports');report_verbs=report_group.add_subparsers(dest='verb',required=True);publish=report_verbs.add_parser('publish',help='Publish report; -i ID, -t title');publish.add_argument('source',type=Path);publish.add_argument('--submission-format',type=Path,help='Optional question, answer, and template JSON');publish.add_argument('-i','--id',required=True);publish.add_argument('-t','--title',required=True);unpublish=report_verbs.add_parser('unpublish',help='Withdraw report by ID, or all stale reports with --stale');unpublish.add_argument('report_id',nargs='?');unpublish.add_argument('--stale',action='store_true',help='Withdraw every stale report');report_verbs.add_parser('stale',help='List stale published report IDs and reasons without changing state')
+	for verb in('pin','unpin'):pin=report_verbs.add_parser(verb,help=f"{verb.capitalize()} a report against staleness");pin.add_argument('report_id')
+	report_state=report_verbs.add_parser('state',help='Print publication, owner view stamp and answer visibility for one report or all');report_state.add_argument('report_id',nargs='?');task_group=commands.add_parser('task',help='Read and update tasks');task_verbs=task_group.add_subparsers(dest='verb',required=True);task_list=task_verbs.add_parser('list',help='List tasks; -f includes finished');task_list.add_argument('-f','--full',action='store_true',help='print every task, finished included');task_show=task_verbs.add_parser('show',help='Print one stored task in full');task_show.add_argument('task_id',metavar='TASK-ID');task=task_verbs.add_parser('set',help='Write/update task; -s status, -o order, -d details, -A append, -m message, -r report, -u unblocked, -a amend, --type type');task.add_argument('id_arg',nargs='?',metavar='TASK-ID');task.add_argument('title_arg',nargs='?',metavar='TASK-TITLE');task.add_argument('detail_arg',nargs='*',metavar='TASK-DETAIL');task.add_argument('-d','--details',dest='task_details',action='append',help='One step per line; max 120 characters; repeatable');task.add_argument('-A','--append',dest='append_details',action='store_true',help='Append provided details instead of replacing stored details');task.add_argument('-u','--unblocked',dest='blocked',action='store_false',default=None,help='Clear report wait or legacy blocked mark');task.add_argument('-m','--msg-id',help='Message task answers; mark it as having a task');task.add_argument('-r','--report',metavar='REPORT-ID',help='Awaited report; answer clears blocked mark');task.add_argument('-a','--amend',metavar='PREV-ID',help='Rename task under this ID to given ID');task.add_argument('-b','--blocked-by',dest='blocked_by',action='append',metavar='TASK-ID',help='Dependency task; repeatable; cycles refused');task.add_argument('-s','--status',choices=TASK_STATUSES,default=None);task.add_argument('--type',dest='task_type',choices=TASK_TYPES,default=None,help='Primary deliverable type; omitted flag keeps stored type');task.add_argument('-o','--order',type=int,default=None,help='1-based place within div, not end');task_unlink=task_verbs.add_parser('unlink',help='Unlink a submission from all tasks; retain its history');task_unlink.add_argument('submission_id');task_remove=task_verbs.add_parser('remove',help='Delete task by ID');task_remove.add_argument('task_id');state_group=commands.add_parser('state',help='Import or clear stored state');state_verbs=state_group.add_subparsers(dest='verb',required=True);state_import=state_verbs.add_parser('import',help='Import NDJSON backup; replace live state');state_import.add_argument('source',nargs='?',type=Path);state_import.add_argument('-r','--replace-tasks',action='store_true');state_verbs.add_parser('clear',help='Empty all state tables in place; keep agent key record');args=parser.parse_args()
 	if args.command=='serve'and args.port!=DEFAULT_PORT:serve.error(f"--port must be {DEFAULT_PORT}")
-	verb=getattr(args,'verb',None);grouped_commands={('note','list'):'note-list',('note','show'):'note',('run','start'):'route',('run','logs'):'logs',('report','publish'):'publish',('report','unpublish'):'unpublish',('report','stale'):'stale-reports',('report','state'):'report-state',('task','list'):'task-list',('task','show'):'task-show',('task','set'):'task',('task','remove'):'task-remove',('task','unlink'):'task-unlink',('state','import'):'import-state',('state','clear'):'clear-state'};args.command=grouped_commands.get((args.command,verb),args.command)
+	verb=getattr(args,'verb',None);grouped_commands={('note','list'):'note-list',('note','show'):'note',('run','start'):'route',('run','logs'):'logs',('report','publish'):'publish',('report','unpublish'):'unpublish',('report','stale'):'stale-reports',('report','state'):'report-state',('report','pin'):'report-pin',('report','unpin'):'report-unpin',('task','list'):'task-list',('task','show'):'task-show',('task','set'):'task',('task','remove'):'task-remove',('task','unlink'):'task-unlink',('state','import'):'import-state',('state','clear'):'clear-state'};args.command=grouped_commands.get((args.command,verb),args.command)
 	if args.command=='route':
 		command_args=args.command_args;separator=command_args.index('--')if'--'in command_args else len(command_args)
 		if any(argument==option or argument.startswith(option+'=')for argument in command_args[:separator]for option in('--task','--after')):parser.error('put --task and --after before the run name. Use: arena-preview run start --task <id> <name> -- <command>')
@@ -3100,7 +3244,12 @@ def main():
 			short=[i[:6]for i in ids];print('ok '+' '.join(short));untracked=[record_id for record_id in ids if not any(record.get('task_id')is not None for(_,record)in store.id_matches(record_id)if record['id']==record_id)]
 			if untracked:print('link it with: '+'; '.join(f'arena-preview task set <id> "<title>" -m {i}'for i in untracked))
 		elif args.command=='publish':
-			count=store.publish(args.id,args.title,args.source);revision=store.report(args.id)['updated_at'];warnings=verify_publication(store,args.id,revision,count);plural=''if count==1 else's';print(f"Published {args.id}, {count} field{plural}. Verified.")
+			metadata=None
+			if args.submission_format is not None:
+				with args.submission_format.open('rb')as stream:data=stream.read(MAX_REPORT+1)
+				if len(data)>MAX_REPORT:raise ValueError('Submission format exceeds the report size limit')
+				metadata=json.loads(data.decode('utf-8'))
+			count=store.publish(args.id,args.title,args.source,submission_format=metadata);revision=store.report(args.id)['updated_at'];warnings=verify_publication(store,args.id,revision,count);plural=''if count==1 else's';print(f"Published {args.id}, {count} field{plural}. Verified.")
 			for warning in warnings or():print(f"{args.source}:{warning['line']}: Warning: possible unparsed {warning['marker']} marker. Keep spaces outside the markers. Literal marker text can be intentional.",file=sys.stderr)
 			if not count and'{#'in Path(args.source).read_text('utf-8'):print('Warning: 0 fields parsed. A `{#id}` marker ends a prompt line, then the `- ( ) option` lines follow.',file=sys.stderr)
 		elif args.command=='report':
@@ -3116,6 +3265,7 @@ def main():
 		elif args.command=='stale-reports':
 			reports=store.stale_reports();print(f"Stale reports {len(reports)}")
 			for report in reports:print(f"{report['id']}\t{report['reason']}")
+		elif args.command in{'report-pin','report-unpin'}:report_id=store.resolve_id(args.report_id);pinned=args.command=='report-pin';store.pin_report(report_id,pinned);print(f"{'Pinned'if pinned else'Unpinned'} {report_id}.")
 		elif args.command=='report-state':
 			rows=store.report_state(args.report_id)
 			if args.report_id and not rows:print(f"No report {args.report_id}",file=sys.stderr);raise SystemExit(1)

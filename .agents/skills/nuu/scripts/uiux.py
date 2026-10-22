@@ -21,7 +21,7 @@ from pathlib import Path
 from measure import check as check_measurements
 from measure import parse_sheet
 
-VERSION = "0.1.0"
+VERSION = "0.1.3"
 HOME = Path(__file__).resolve().parent.parent
 CATALOG = HOME / "data" / "vendor" / "ui-ux-pro-max"
 WIDTHS = (1280, 360)
@@ -325,7 +325,9 @@ def teach(root, record, create=False):
       "mapping_required": list(RECORD_SECTIONS),
     }
   template = (HOME / "references/design-document.md").read_text(encoding="utf-8")
-  fields = re.findall(r"^\d+\. \*\*(.+?)\*\*:\s*Record (.+)$", template, re.MULTILINE)
+  fields = re.findall(
+    r"^\d+\. \*\*(.+?)\*\*:\s*(?:Record|Link) (.+)$", template, re.MULTILINE
+  )
   text = (
     "# Design record\n\n"
     + "\n\n".join(
@@ -443,6 +445,7 @@ def browser(args):
     "flow": load(args.flow) if args.flow else [],
     "edit": load(args.edit) if args.edit else None,
     "authorized_edit": args.authorize_edit,
+    "overlaps": args.overlaps,
   }
   process = subprocess.run(
     ["node", str(HOME / "scripts" / "browser.cjs")],
@@ -690,6 +693,7 @@ def main(argv=None):
       command.add_argument("--profile", choices=("project", "house"), default="project")
       command.add_argument("--edit", type=Path)
       command.add_argument("--authorize-edit", action="store_true")
+      command.add_argument("--overlaps", action="store_true")
   args = parser.parse_args(argv)
   root = args.project.resolve()
   if not root.is_dir():

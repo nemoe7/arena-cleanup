@@ -44,6 +44,8 @@ The matrix contains project widths from `--widths` plus 360 and 1280 px, light a
 
 The default profile is `project`. `--profile house` also runs the existing `measure.py check` logic against captured values and the bundled sheet. The standalone `measure.py check` and `ruler` commands keep their existing inputs and behavior.
 
+Use inspect --overlaps for bounded rectangle intersections, sampled top-to-bottom hit-test order, and ancestor stacking properties, and report coverage limits instead of a global z-distance.
+
 `--artifacts` selects the screenshot root. Each invocation creates a new capture directory, so earlier screenshots remain unchanged. `--selector` limits inspected elements. `--timeout` sets each action's seconds. The default viewport height is 900 px. Flows and authorized live edits run on the first capture only; other captures show a fresh page. This scope appears in the report.
 
 | Browser ID | Evidence |

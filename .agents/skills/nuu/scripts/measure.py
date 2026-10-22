@@ -1,4 +1,4 @@
-"""Measure a rendered page against the nemo-ui-ux sheet.
+"""Measure a rendered page against the Nemo UI/UX sheet.
 
 Two commands:
 

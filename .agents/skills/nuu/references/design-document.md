@@ -18,6 +18,8 @@ Use these eleven sections for new design records, and map their contents onto ex
 10. **Evidence and handoff**: Link dated screenshots, measurements, task-flow results, research findings, implementation readiness, and known limits.
 11. **Decisions and history**: Record significant decisions with their status, context, evidence, tradeoffs, implementation links, and change history.
 
+Visual-reference template: [design-visuals.md](design-visuals.md).
+
 ## Filled example
 
 ```markdown
@@ -97,6 +99,7 @@ Use these eleven sections for new design records, and map their contents onto ex
 
 ## Evidence and handoff
 
+- Visual references: [Inbox workflow](design-visuals/inbox.md), [Shared components](design-visuals/components.md), and [Style reference](design-visuals/styles.md).
 - Screenshots, measurements, task-flow checks, and participant research: <dated screenshots; measurements; task-flow results; participant research links>.
 - Implementation readiness: <readiness status and unresolved blockers>.
 - This example is not verification evidence.
@@ -112,5 +115,5 @@ Use these eleven sections for new design records, and map their contents onto ex
 
 - Mark decisions as proposed, accepted, or retired, and keep unresolved questions distinct from settled implementation facts.
 - Mark missing research, measurements, approvals, and test coverage as unknown or not run instead of inventing evidence.
-- A screenshot belongs beside the entry when the pattern is new.
+- Keep overview wireframes, workflow views, applicable component states, and shared style examples in separate local visual-reference documents, and link them from the authoritative design record.
 - Delete an entry only with the code it describes.

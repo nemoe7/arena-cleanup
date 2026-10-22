@@ -3,7 +3,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const VERSION = '0.1.0';
+const VERSION = '0.1.3';
 const request = JSON.parse(fs.readFileSync(0, 'utf8'));
 
 function emit(value) {
@@ -25,6 +25,91 @@ function dependency() {
     if (error.code !== 'MODULE_NOT_FOUND') throw error;
     return null;
   }
+}
+
+async function overlaps(page, selector) {
+  return page.evaluate(selector => {
+    const MAX_ELEMENTS = 100, MAX_PAIRS = 50, MAX_ANCESTORS = 12;
+    function selectorFor(element) {
+      if (element.id) return `#${CSS.escape(element.id)}`;
+      const parent = element.parentElement;
+      if (!parent) return element.tagName.toLowerCase();
+      const siblings = [...parent.children].filter(node => node.tagName === element.tagName);
+      return `${selectorFor(parent)} > ${element.tagName.toLowerCase()}:nth-of-type(${siblings.indexOf(element) + 1})`;
+    }
+    function stacking(element) {
+      const chain = [];
+      let current = element, truncated = false;
+      while (current && current.nodeType === 1) {
+        if (chain.length >= MAX_ANCESTORS) { truncated = true; break; }
+        const style = getComputedStyle(current);
+        chain.push({selector: selectorFor(current), position: style.position, zIndex: style.zIndex,
+          opacity: style.opacity, transform: style.transform, isolation: style.isolation,
+          mixBlendMode: style.mixBlendMode, filter: style.filter, backdropFilter: style.backdropFilter,
+          contain: style.contain, containerType: style.containerType, clipPath: style.clipPath,
+          willChange: style.willChange, pointerEvents: style.pointerEvents});
+        current = current.parentElement;
+      }
+      return {ancestors: chain, truncated};
+    }
+    const matched = [...document.querySelectorAll(selector)];
+    const candidates = [];
+    for (const element of matched) {
+      const style = getComputedStyle(element);
+      if (style.display === 'none' || style.visibility === 'hidden') continue;
+      const box = element.getBoundingClientRect();
+      if (box.width > 0 && box.height > 0) candidates.push({element, selector: selectorFor(element), box});
+    }
+    const elements = candidates.slice(0, MAX_ELEMENTS);
+    const pairs = [];
+    let pairsTruncated = false;
+    for (let i = 0; i < elements.length; i++) {
+      for (let j = i + 1; j < elements.length; j++) {
+        const first = elements[i], second = elements[j];
+        const x = Math.max(first.box.x, second.box.x), y = Math.max(first.box.y, second.box.y);
+        const right = Math.min(first.box.x + first.box.width, second.box.x + second.box.width);
+        const bottom = Math.min(first.box.y + first.box.height, second.box.y + second.box.height);
+        if (right <= x || bottom <= y) continue;
+        if (pairs.length >= MAX_PAIRS) { pairsTruncated = true; break; }
+        const width = right - x, height = bottom - y;
+        const relation = first.element.contains(second.element) ? 'ancestor'
+          : second.element.contains(first.element) ? 'descendant' : 'separate';
+        const points = [[x + width / 2, y + height / 2], [x + width * 0.25, y + height * 0.25],
+          [x + width * 0.75, y + height * 0.25], [x + width * 0.25, y + height * 0.75],
+          [x + width * 0.75, y + height * 0.75]];
+        const samples = points.map(([px, py]) => {
+          const inside = px >= 0 && py >= 0 && px < innerWidth && py < innerHeight;
+          const hit = inside && typeof document.elementsFromPoint === 'function'
+            ? document.elementsFromPoint(px, py) : [];
+          const order = [];
+          for (const candidate of [first, second]) {
+            const index = hit.findIndex(node => candidate.element === node || candidate.element.contains(node));
+            if (index >= 0) order.push({selector: candidate.selector, index});
+          }
+          order.sort((a, b) => a.index - b.index);
+          return {x: px, y: py, inside_viewport: inside,
+            topmost: hit[0] ? selectorFor(hit[0]) : null,
+            hit_order: order.map(row => row.selector),
+            stack: hit.slice(0, 8).map(selectorFor)};
+        });
+        const firstWins = samples.some(sample => sample.hit_order[0] === first.selector && sample.hit_order.includes(second.selector));
+        const secondWins = samples.some(sample => sample.hit_order[0] === second.selector && sample.hit_order.includes(first.selector));
+        const topmost = firstWins && !secondWins ? first.selector : secondWins && !firstWins ? second.selector
+          : firstWins && secondWins ? 'mixed' : 'unconfirmed';
+        const firstStack = stacking(first.element), secondStack = stacking(second.element);
+        pairs.push({first: first.selector, second: second.selector, relation,
+          intersection: {x, y, width, height, area: width * height},
+          topmost, samples,
+          stacking: {[first.selector]: firstStack.ancestors, [second.selector]: secondStack.ancestors},
+          ancestors_truncated: firstStack.truncated || secondStack.truncated});
+      }
+      if (pairsTruncated) break;
+    }
+    return {status: 'checked', elements_considered: elements.length, elements_total: candidates.length,
+      pairs, truncated: {elements: candidates.length > MAX_ELEMENTS, pairs: pairsTruncated},
+      limits: {max_elements: MAX_ELEMENTS, max_pairs: MAX_PAIRS, max_ancestors: MAX_ANCESTORS, sample_points: 5,
+        z_distance: 'not_computed; CSS z-index is scoped to stacking contexts'}};
+  }, selector);
 }
 
 async function metrics(page, selector) {
@@ -151,6 +236,9 @@ async function flow(page, context, steps, output, timeout) {
 
 async function run() {
   if (request.command !== 'doctor') {
+  if (request.overlaps !== undefined && typeof request.overlaps !== 'boolean') {
+    throw new Error('Overlaps flag must be a boolean');
+  }
     url(request.url);
     validateFlow(request.flow || []);
     if (!Array.isArray(request.widths) || !request.widths.length ||
@@ -246,6 +334,7 @@ async function run() {
               }
             }
             row.measurements = await metrics(page, request.selector);
+            if (request.overlaps) row.overlaps = await overlaps(page, request.selector);
             row.screenshot = path.join(output, `${width}-${scheme}-${motion}.png`);
             await page.screenshot({path: row.screenshot, fullPage: true, timeout});
             row.status = 'captured';
