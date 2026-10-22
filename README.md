@@ -123,8 +123,8 @@ is unset, the matching constant at the top of `engine.py` applies:
 `CLAIM_EMAILS` or `CLAIM_NAMES`. `ARENA_PREFIX` and `SIGN_COMMITS` stay
 constants.
 
-`GET /healthz` returns the version, uptime, and repo count; compose uses it as
-the app's healthcheck and gates the sidecar on it.
+`GET /healthz` returns the version, uptime, and repo count. The image's
+health check polls it, and compose gates the sidecar on that check.
 
 The app has no authentication of its own. Keep it on `127.0.0.1` and behind
 the tailnet or an SSH tunnel. Every option from the browser is validated

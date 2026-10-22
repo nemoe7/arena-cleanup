@@ -499,10 +499,6 @@
   .banner code { font-family: var(--mono); font-size: var(--fs-1); }
   .steps { margin: 10px 0 0; padding-left: 20px; color: var(--muted); font-size: var(--fs-2); line-height: 1.75; }
   .steps code, .steps kbd { font-family: var(--mono); font-size: var(--fs-1); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
-  .pubkey {
-    width: 100%; min-height: 108px; resize: vertical; background: #0a0c0f; color: #b9c0c8;
-    border: 1px solid var(--line-2); border-radius: 8px; padding: 10px; font: var(--fs-1)/1.6 var(--mono);
-  }
 
   /* --------------------------------------------------------------- mobile */
   .tabbar { display: none; }
@@ -997,13 +993,13 @@
       el("button", { class: "btn primary", onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, "Clean & publish"),
       el("div", { class: "grow" }),
       (() => {
-        // Deleting a card can delete its clone, so the first click only arms
+        // Removing a card deletes its URL clone, so the first click only arms
         // the button; the second confirms. No browser modal, and it works on
         // a phone.
         let timer = 0;
         const disarm = () => { btn.classList.remove("armed"); btn.replaceChildren(icon("x")); btn.setAttribute("aria-label", `Remove ${repo.name}`); };
         const btn = el("button", {
-          class: "btn ghost rm", title: "Forget this repo", "aria-label": `Remove ${repo.name}`,
+          class: "btn ghost rm", title: "Remove this repo", "aria-label": `Remove ${repo.name}`,
           onclick: async (e) => {
             e.stopPropagation();
             if (!btn.classList.contains("armed")) {
@@ -1015,7 +1011,7 @@
             }
             clearTimeout(timer);
             try {
-              await post(`/api/repos/${repo.id}/remove`, {});
+              await post(`/api/repos/${repo.id}/remove`, { delete: true });
               toast("removed");
               loadRepos();
             } catch (err) { toast(err.message); disarm(); }

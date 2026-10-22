@@ -37,18 +37,6 @@ services:
       # has no authentication of its own.
       - "127.0.0.1:8080:8080"
     restart: unless-stopped
-    healthcheck:
-      test:
-        - CMD
-        - python3
-        - -c
-        - >-
-          import urllib.request, sys;
-          sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8080/healthz", timeout=3).status == 200 else 1)
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
     networks:
       tailnet:
         # The sidecar's hostname is `arena-cleanup`, which gives the node its

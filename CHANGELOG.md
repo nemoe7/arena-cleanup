@@ -34,4 +34,5 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - One Settings page behind the gear icon: Identity, GitHub access, Commit signing, and Claimed commits, then the informing cards. `#/access` and `#/signing` redirect to it.
 - The options card keeps two columns above 980 px; four columns overflowed between 981 and 1179 px. The divergence control wraps whole buttons, not words.
 - Log rows show the clock of the browser. The engine stamps each line in the server zone.
+- Remove on a card deletes its URL clone from the volume; a path repo is only forgotten.
 - Reset to origin in the repository sidebar: fetch, check out the default branch, and reset it hard. Untracked files stay.

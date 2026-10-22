@@ -238,7 +238,6 @@ def register_path(
     "name": os.path.basename(root),
     "source": source or root,
     "managed": managed,
-    "added": time.time(),
   }
   return reg.add(entry), ""
 
@@ -1320,8 +1319,6 @@ class Handler(BaseHTTPRequestHandler):
         self._handle_signing(self._body())
       elif path == "/api/settings":
         self._handle_settings(self._body())
-      elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "signing":
-        self._handle_signing(self._body(), self._repo(parts[2]))
       elif (
         len(parts) == 3
         and parts[0] == "api"
@@ -1402,9 +1399,7 @@ class Handler(BaseHTTPRequestHandler):
       raise BadRequest("unknown action")
     self._json(settings_report())
 
-  def _handle_signing(
-    self, body: dict[str, Any], repo: dict[str, Any] | None = None
-  ) -> None:
+  def _handle_signing(self, body: dict[str, Any]) -> None:
     action = body.get("action")
     if action == "create":
       fingerprint, err = generate_key(
