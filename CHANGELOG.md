@@ -39,5 +39,6 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The repository page runs the full flow only. The Rewrite locally switch is gone, and `strip` stays a CLI command.
 - The card Remove X sits top right as a bare glyph. A red frame comes on hover, on press, and while armed.
 - The primary button reads Clean & Push on the card, the run card, and the phone bar.
+- The options card folds from its head. Closed, the head shows the branch pill and what differs from the defaults.
 - Browse under Remove paths opens the HEAD tree of the clone, one level per request. A click on a row or its plus adds the path chip; `GET /api/repos/<id>/tree?path=` serves the level.
 - The demo histories keep tests under `tests/` and the workflow under `.github/workflows/`, so the tree has folders to open.

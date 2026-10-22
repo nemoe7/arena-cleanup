@@ -315,7 +315,8 @@ def flow_board(_: dict[str, bytes]) -> str:
 
 def wireframe_board(_: dict[str, bytes]) -> str:
   options = (
-    block("Target branch — current (main) ›", height=28)
+    block("Options ▾ — main (default) · defaults", height=28)
+    + block("Target branch — main (default)", height=28)
     + block("Remove paths — one chip per path · Browse", height=28)
     + block("HEAD tree — folders first, a click adds the chip", height=28)
     + block(

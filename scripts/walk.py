@@ -370,6 +370,19 @@ def keyboard_backspace_removes_a_chip(w: Walker, demo: Demo) -> None:
 
 
 @step("desktop")
+def options_card_folds_as_a_whole(w: Walker, demo: Demo) -> None:
+  assert w.page.is_visible("#options")
+  assert w.page.is_hidden("#options-sum")
+  w.click("#options-fold", 300)
+  assert w.page.is_hidden("#options")
+  assert w.page.is_visible("#options-sum")
+  assert w.page.is_visible("#branch-now")
+  assert w.page.get_attribute("#options-fold", "aria-expanded") == "false"
+  w.click("#options-fold", 300)
+  assert w.page.is_visible("#options")
+
+
+@step("desktop")
 def tree_selector_adds_a_folder_chip(w: Walker, demo: Demo) -> None:
   w.click("#browse", 500)
   assert w.count("#tree .tree-row") > 0

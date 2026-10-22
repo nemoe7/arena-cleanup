@@ -573,3 +573,6 @@ def test_the_tree_route_lists_one_level_of_head(
   page = ui.text("/")
   assert 'id="browse"' in page
   assert 'id="tree" role="tree"' in page
+  assert 'id="options-fold" aria-expanded="true" aria-controls="options"' in page
+  assert 'id="options-sum"' in page
+  assert not re.search(r"branch-opt|opt-sum|<details", page), "the branch-only fold"
