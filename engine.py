@@ -32,10 +32,19 @@ import subprocess
 import sys
 import tempfile
 import time
+import tomllib
 from collections.abc import Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from pathlib import Path
 
-__version__ = "3.0.0"
+
+def project_version() -> str:
+  """The version from pyproject.toml, the one place it is set."""
+  with (Path(__file__).resolve().parent / "pyproject.toml").open("rb") as fh:
+    return tomllib.load(fh)["project"]["version"]
+
+
+__version__ = project_version()
 PROG = "arena-cleanup"
 
 # =============================================================================
@@ -131,7 +140,7 @@ class Log:
   # -- internals ----------------------------------------------------------
   @staticmethod
   def _stamp() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+    return datetime.now(UTC).astimezone().isoformat(timespec="seconds")
 
   def status(self, text: str) -> None:
     """
@@ -1262,7 +1271,7 @@ def filter_paths(log: Log, cfg: Settings, *, apply: bool) -> PathStats:
 
 def write_backup(log: Log, label: str) -> str:
   """Bundle every ref before an irreversible rewrite; return the path."""
-  stamp = datetime.now(timezone.utc).astimezone().strftime("%Y%m%dT%H%M%S")
+  stamp = datetime.now(UTC).astimezone().strftime("%Y%m%dT%H%M%S")
   path = os.path.join(tempfile.gettempdir(), f"git-pre-{label}-{stamp}.bundle")
   log.info("creating backup bundle")
   git("bundle", "create", path, "--all")

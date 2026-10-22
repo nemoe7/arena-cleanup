@@ -52,6 +52,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN useradd --create-home --uid 1000 --shell /bin/bash arena
 
 WORKDIR /app
+COPY pyproject.toml /app/pyproject.toml
 COPY engine.py /app/engine.py
 COPY ui /app/ui
 

@@ -25,6 +25,8 @@ check() { if [ "$2" = "$3" ]; then ok "$1"; else bad "$1 (expected [$3], got [$2
 
 # ---------------------------------------------------------------- fixtures ---
 ME_EMAIL="60245796+nemoe7@users.noreply.github.com"
+# the one place the version is set; the engine and the UI must both report it
+PROJECT_VERSION="$(python3 -c 'import sys, tomllib; print(tomllib.load(open(sys.argv[1], "rb"))["project"]["version"])' "$HERE/pyproject.toml")"
 export GIT_CONFIG_GLOBAL="$T/gitconfig"
 cat >"$GIT_CONFIG_GLOBAL" <<EOF
 [user]
@@ -689,6 +691,7 @@ out="$(arena-cleanup -V 2>&1)"
 rc=$?
 check "-V exits 0" "$rc" "0"
 echo "$out" | grep -qE "arena-cleanup [0-9]+\.[0-9]+\.[0-9]+" && ok "-V prints the version" || bad "-V output"
+check "-V prints the pyproject version" "${out##* }" "$PROJECT_VERSION"
 
 out="$(arena-cleanup doctor -v 2>&1)" # -v on a non-run command
 echo "$out" | grep -q '^\$ ' && ok "-v works with doctor" || bad "-v with doctor"
@@ -1373,8 +1376,8 @@ start_ui || bad "the UI did not start"
 ok "the UI starts and answers /api/env"
 
 env_json="$(curl -fsS "$API/api/env")"
-check "it reports the UI version" "$(echo "$env_json" | q 'd["version"].split(".")[0]')" "3"
-echo "$env_json" | q 'd["tool"]' | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' && ok "it reports the engine version" || bad "engine version missing"
+check "it reports the UI version" "$(echo "$env_json" | q 'd["version"]')" "$PROJECT_VERSION"
+check "it reports the engine version" "$(echo "$env_json" | q 'd["tool"]')" "$PROJECT_VERSION"
 echo "$env_json" | q 'd["tools"]["git"]' | grep -q True && ok "it detects git" || bad "git not detected"
 echo "$env_json" | q 'd["tools"]["gh"]' | grep -q True && ok "it sees gh signed in" || bad "gh looks signed out to the UI"
 echo "$env_json" | q 'd["data"]' | grep -qx "$UIDATA" && ok "it honours --data" || bad "--data ignored"
@@ -1562,6 +1565,7 @@ grep -q '200' "$T/healthz.head" && ok "/healthz answers 200" || bad "/healthz di
 check "/healthz reports ok" "$(q 'd["ok"]' <"$T/healthz.json")" "True"
 echo "$(q 'd["version"]' <"$T/healthz.json")" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' &&
   ok "/healthz carries the version" || bad "/healthz has no version"
+check "/healthz reports the pyproject version" "$(q 'd["version"]' <"$T/healthz.json")" "$PROJECT_VERSION"
 echo "$(q 'type(d["uptime"]).__name__' <"$T/healthz.json")" | grep -qx float &&
   ok "/healthz carries uptime" || bad "/healthz has no uptime"
 check "/healthz counts the registered repos" "$(curl -fsS "$API/api/repos" | q 'len(d)')" \
