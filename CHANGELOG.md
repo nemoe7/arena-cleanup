@@ -37,3 +37,4 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Remove on a card deletes its URL clone from the volume; a path repo is only forgotten.
 - Reset to origin in the repository sidebar: fetch, check out the default branch, and reset it hard. Untracked files stay.
 - The repository page runs the full flow only. The Rewrite locally switch is gone, and `strip` stays a CLI command.
+- The card Remove X sits top right as a bare glyph. A red frame comes on hover, on press, and while armed.
