@@ -26,3 +26,4 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - An add bar that takes a GitHub page address: `github.com/owner/repo`, with or without `https://`, `.git`, or a page suffix.
 - Cards and the repository title show the name only. The Storage row `URL clones` links each clone to its page on the remote.
 - Design boards in `docs/design/`, rendered by `scripts/design_boards.py` and embedded in `docs/design.md`.
+- The repository card meta drops the tag count; it shows the branch, the tree state, and the drift.

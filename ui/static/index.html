@@ -936,7 +936,6 @@
       meta.append(el("span", { class: "pill mono" }, s.branch));
       meta.append(el("span", { class: "pill" }, s.dirty ? `${s.dirty} uncommitted` : "clean"));
       if (s.ahead || s.behind) meta.append(el("span", { class: "pill warn mono" }, icon("arrow-up"), String(s.ahead), " ", icon("arrow-down"), String(s.behind)));
-      meta.append(el("span", { class: "pill mono" }, `${s.tags} tags`));
     }
 
     let arena = null;

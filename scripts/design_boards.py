@@ -697,22 +697,15 @@ def do_dont_board(_: dict[str, bytes]) -> str:
       "</div></div>"
     )
 
-  spacing_do = (
-    '<div class="off">'
-    + "".join(
-      f'<span class="chip" style="margin-right:{g}px">{t}</span>'
-      for g, t in ((6, "main"), (6, "clean"), (0, "0 tags"))
+  def meta_pills(gaps: tuple[int, int, int]) -> str:
+    drift = f"{icon('arrow-up')}1 {icon('arrow-down')}2"
+    return "".join(
+      f'<span class="pill {cls}" style="margin-right:{g}px">{t}</span>'
+      for g, cls, t in zip(gaps, ("mono", "", "warn mono"), ("main", "clean", drift))
     )
-    + "</div>"
-  )
-  spacing_dont = (
-    '<div class="off" style="gap:0">'
-    + "".join(
-      f'<span class="chip" style="margin-right:{g}px">{t}</span>'
-      for g, t in ((5, "main"), (9, "clean"), (0, "0 tags"))
-    )
-    + "</div>"
-  )
+
+  spacing_do = f'<div class="off" style="gap:0">{meta_pills((6, 6, 0))}</div>'
+  spacing_dont = f'<div class="off" style="gap:0">{meta_pills((5, 9, 0))}</div>'
   type_do = (
     '<p style="margin:0;font-size:var(--fs-3);font-weight:600">shop-web</p>'
     f'<p style="margin:6px 0 0">{pill("mono", "6f5a842", dot=False)}</p>'

@@ -412,7 +412,6 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
       else "gh is not installed, so pull requests and checks cannot be read"
     ),
     "head": git("log", "-1", "--format=%h%x09%s", cwd=cwd),
-    "tags": len(git("for-each-ref", "refs/tags", cwd=cwd).splitlines()),
     "remote": git("remote", "get-url", "origin", cwd=cwd),
   }
 
