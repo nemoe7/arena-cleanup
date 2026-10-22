@@ -1,0 +1,10 @@
+# Secrets and local settings: the compose file reads this file, the image
+# never gets it (.dockerignore keeps it out of the build context).
+.env
+.env.*
+!.env.example
+
+__pycache__/
+.ruff_cache/
+.playwright-cli/
+*.pyc

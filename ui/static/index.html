@@ -1,0 +1,2085 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#08090b">
+<meta name="description" content="Clean Arena agent branches, sign the rewrite, publish to your default branch.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="arena">
+<meta name="application-name" content="arena-cleanup">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<title>arena-cleanup</title>
+<style>
+  /* Spacing scale: 1 (optical nudge) then every even step - 2 4 6 8 10 12 16
+     20 24 32 40. Every padding, margin and gap in this file lands on it;
+     tools/measure.py fails the build when one drifts off. */
+  @font-face {
+    font-family: "Inter";
+    src: url("fonts/inter.woff2") format("woff2");
+    font-weight: 100 900;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "JetBrains Mono";
+    src: url("fonts/jetbrains-mono.woff2") format("woff2");
+    font-weight: 100 800;
+    font-display: swap;
+  }
+
+  :root {
+    --bg: #08090b;
+    --surface: #0d0f12;
+    --surface-2: #12151a;
+    --surface-3: #171b21;
+    --line: #1b1f25;
+    --line-2: #262c34;
+    --text: #e9ebee;
+    --muted: #9ba2ab;
+    --dim: #7d858f;
+    --accent: #6e79d6;
+    --accent-hi: #868ff0;
+    --accent-soft: rgba(110, 121, 214, .14);
+    --ok: #46b95c;
+    --warn: #d6a032;
+    --err: #f0574f;
+    --info: #5aa2f7;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --r: 10px;
+    --pad: 20px;
+    font-synthesis: none;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  button, a, select, input, [role="button"] { touch-action: manipulation; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scrollbar-gutter: stable; }
+  html, body { height: 100%; }
+
+  /* one scrollbar look everywhere, and a gutter that is reserved up front so
+     a view that grows a scrollbar does not shove the page 10px sideways */
+  * { scrollbar-width: thin; scrollbar-color: #2b313a transparent; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: #2b313a; border-radius: 999px;
+    border: 2px solid transparent; background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #3c4450; background-clip: padding-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 400 13.5px/1.55 var(--sans);
+    font-feature-settings: "cv05" 1, "ss03" 1;
+    letter-spacing: -.006em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior-y: none;
+  }
+  ::selection { background: rgba(110, 121, 214, .3); }
+  button, input, select, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+  /* view headings take focus so a screen reader lands on the new screen;
+     they are not controls, so they do not wear a ring */
+  .view h1:focus-visible, .view h2:focus-visible { outline: none; }
+  a { color: inherit; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+  .skip {
+    position: fixed; left: 8px; top: -60px; z-index: 40; padding: 12px 16px;
+    background: var(--surface-3); border: 1px solid var(--accent); border-radius: 8px;
+    color: var(--text); text-decoration: none; font-weight: 600; font-size: 13px;
+    transition: top .12s ease-out;
+  }
+  .skip:focus { top: 8px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important; scroll-behavior: auto !important;
+    }
+  }
+  h1, h2, h3 { letter-spacing: -.02em; }
+  /* columns of numbers should not jitter as they change */
+  .log-row .t, .pill.mono, .kv dd, #statustext, .repo-card .meta, .arena-row .prlink {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .app { display: flex; flex-direction: column; min-height: 100%; }
+
+  /* ------------------------------------------------------------- top bar */
+  .topbar {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; gap: 12px;
+    height: 56px; padding: 0 var(--pad); flex: none;
+    border-bottom: 1px solid var(--line);
+    background: rgba(8, 9, 11, .86);
+    backdrop-filter: saturate(160%) blur(12px);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 8px; align-self: stretch; font-weight: 620; font-size: 14px;
+    color: inherit; text-decoration: none; border-radius: 8px; padding: 4px 6px; margin-left: -6px;
+  }
+  .brand:hover { background: var(--surface-2); }
+  .brand svg { display: block; }
+  .chip {
+    font: 500 11px/1 var(--mono); color: var(--muted);
+    border: 1px solid var(--line-2); border-radius: 6px;
+    padding: 2px 6px; background: var(--surface-2);
+  }
+  .grow { flex: 1; }
+
+  .env-dots { display: flex; align-items: center; gap: 12px; color: var(--dim); font-size: 11.5px; }
+  .env-dots span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--dim); }
+  .env-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--err); display: inline-block; }
+  .env-dots span.on i { background: var(--ok); }
+
+  .rm { color: var(--dim); }
+  .rm.armed { color: var(--err); border-color: rgba(240, 87, 79, .5); background: rgba(240, 87, 79, .1); }
+  .icon-btn {
+    display: inline-grid; place-items: center; width: 32px; height: 32px;
+    border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface-2);
+    color: var(--muted); cursor: pointer;
+  }
+  .icon-btn:hover { color: var(--text); background: var(--surface-3); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 34px; padding: 0 12px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--line-2); background: var(--surface-2); color: var(--text);
+    font-weight: 560; font-size: 13px; white-space: nowrap;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .045);
+    transition: background .12s, border-color .12s;
+  }
+  .btn:hover { background: var(--surface-3); border-color: #313842; }
+  .btn:active { transform: translateY(.5px); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.primary {
+    background: var(--accent); border-color: #5c67c6; color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 1px 2px rgba(0, 0, 0, .5);
+  }
+  .btn.primary:hover { background: var(--accent-hi); }
+  /* a ghost button is a real button with a quieter fill, not a label: same
+     border, same height, same contrast as the rest, so Copy and Cancel do not
+     read as disabled next to the primary */
+  .btn.ghost { background: transparent; border-color: var(--line-2); color: var(--text); }
+  .btn.ghost:hover { background: var(--surface-2); border-color: #313842; }
+  .btn.ghost:disabled { color: var(--dim); border-color: var(--line); }
+  .btn.danger { color: #ff9a94; }
+  .btn.danger:hover { background: rgba(240, 87, 79, .1); border-color: rgba(240, 87, 79, .35); }
+  .btn.back { padding: 0 10px; }
+  .btn .spin {
+    width: 12px; height: 12px; border-radius: 50%; display: inline-block;
+    border: 1.6px solid currentColor; border-right-color: transparent;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .btn[aria-busy="true"] { cursor: progress; }
+  .btn kbd, kbd.k { font: 500 10.5px/1 var(--mono); color: rgba(255,255,255,.72); border: 1px solid rgba(255,255,255,.2); border-radius: 4px; padding: 2px 4px; }
+
+  /* -------------------------------------------------------------- layout */
+  main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .view:focus { outline: none; }
+  #view-dashboard, #view-signing { overflow-y: auto; scrollbar-gutter: stable; }
+  .wrap { width: min(1180px, 100%); margin: 0 auto; padding: 24px var(--pad) 40px; }
+
+  /* ----------------------------------------------------------- dashboard */
+  .hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+  .hero h1, .wrap h1.page-title { font-size: 20px; font-weight: 640; margin: 0; }
+
+  /* one border, not two: the bar is the field shell, so the input inside it
+     drops its own frame and only the bar lights up */
+  .addbar {
+    display: flex; gap: 8px; align-items: center; padding: 6px 6px 6px 12px;
+    border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface-2);
+    transition: border-color .12s, box-shadow .12s;
+  }
+  .addbar:focus-within { border-color: #3d4655; box-shadow: 0 0 0 3px var(--accent-soft); }
+  .addbar .field { flex: 1; min-width: 0; height: 34px; border: 0; background: transparent; padding: 0; }
+  .addbar .field:focus { box-shadow: none; }
+  .field {
+    width: 100%; height: 34px; background: var(--surface-2); border: 1px solid var(--line-2);
+    border-radius: 8px; padding: 0 10px; color: var(--text); font-size: 13px; min-width: 0;
+  }
+  .field:focus { border-color: #3d4655; box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
+  /* the ring has to survive the rule above: keyboard focus gets a solid one */
+  .field:focus-visible { outline: 2px solid var(--accent-hi); outline-offset: 1px; }
+  .mono-field { font-family: var(--mono); font-size: 12.5px; }
+  select.field { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--dim) 50%), linear-gradient(135deg, var(--dim) 50%, transparent 50%); background-position: right 12px center, right 8px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 24px; }
+
+  .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); margin-top: 20px; }
+
+  .repo-card {
+    display: flex; flex-direction: column; gap: 12px;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+    padding: 16px; text-align: left; cursor: pointer; color: inherit;
+    transition: border-color .12s, background .12s, transform .12s;
+  }
+  .repo-card:hover { border-color: #2c333c; background: #0f1216; }
+  .repo-card:active { transform: translateY(1px); }
+  .repo-head { display: flex; align-items: flex-start; gap: 10px; }
+  .repo-ico {
+    width: 30px; height: 30px; border-radius: 8px; flex: none;
+    display: grid; place-items: center; background: var(--surface-3);
+    border: 1px solid var(--line-2); color: var(--muted);
+  }
+  .repo-name { font-weight: 600; font-size: 14px; letter-spacing: -.01em; overflow-wrap: anywhere; }
+  .repo-path { color: var(--dim); font: 11.5px/1.4 var(--mono); overflow-wrap: anywhere; }
+  .repo-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11.5px; font-weight: 520; border-radius: 999px;
+    padding: 4px 8px; border: 1px solid var(--line-2); background: var(--surface-2); color: var(--muted);
+    white-space: nowrap; min-width: 0; max-width: 100%;
+  }
+  .pill .ptxt { overflow: hidden; text-overflow: ellipsis; }
+  .pill b { font-weight: 600; color: var(--text); }
+  .pill.ok { color: #8fe0a0; border-color: rgba(70,185,92,.3); background: rgba(70,185,92,.09); }
+  .pill.warn { color: #f0c674; border-color: rgba(214,160,50,.32); background: rgba(214,160,50,.09); }
+  .pill.err { color: #ff9a94; border-color: rgba(240,87,79,.32); background: rgba(240,87,79,.09); }
+  .pill.run { color: #9dc7ff; border-color: rgba(90,162,247,.32); background: rgba(90,162,247,.09); }
+  .pill.mono { font-family: var(--mono); font-size: 11px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+
+  .arena-list { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .arena-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; min-width: 0; flex-wrap: wrap; row-gap: 2px; }
+  .arena-row .bname { font-family: var(--mono); font-size: 11.5px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* the checks pill is the link: one control, no orphan "Pull request" label */
+  .arena-row .prlink { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 4px;
+    text-decoration: none; border-radius: 999px; min-height: 24px; }
+  .arena-row .prlink .ext { color: var(--dim); font-size: 11px; line-height: 1; }
+  .arena-row .prlink:hover .pill { border-color: var(--line-2); }
+  .arena-row .prlink:hover .ext, .arena-row .prlink:focus-visible .ext { color: var(--accent-hi); }
+
+  /* what the selected task will do, in one sentence */
+  .task-note { margin: 0; max-width: 132ch; color: var(--dim); font-size: 12.5px; line-height: 1.55; }
+  .card-actions { display: flex; gap: 8px; align-items: center; }
+  .card-actions .btn { height: 30px; font-size: 12.5px; padding: 0 12px; }
+
+  .empty-state {
+    border: 1px dashed var(--line-2); border-radius: 12px; padding: 32px 20px;
+    text-align: center; color: var(--dim); margin-top: 20px; display: grid; gap: 6px; justify-items: center;
+  }
+  .empty-state strong { color: var(--text); font-weight: 560; }
+  .empty-state code { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+  /* ----------------------------------------------------------- repo view */
+  .detail { display: grid; grid-template-columns: 264px minmax(0, 1fr); flex: 1; min-height: 0; }
+  .sidebar {
+    border-right: 1px solid var(--line); background: var(--surface);
+    padding: 16px 12px; overflow: auto; scrollbar-gutter: stable; display: flex; flex-direction: column; gap: 20px;
+  }
+  .side-group { display: flex; flex-direction: column; gap: 4px; }
+  .side-label {
+    font-size: 11.5px; font-weight: 600; letter-spacing: 0;
+    color: var(--muted); padding: 0 6px 4px; display: flex; justify-content: space-between;
+  }
+  .kv { display: grid; grid-template-columns: 68px 1fr; gap: 2px 8px; padding: 0 6px; font-size: 12px; }
+  .kv dt { color: var(--dim); }
+  .kv dd { margin: 0; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kv dd.mono { font-family: var(--mono); font-size: 11.5px; }
+
+  .row-btn {
+    display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: 0;
+    text-align: left; color: var(--muted); padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12.5px;
+  }
+  .row-btn:hover { background: var(--surface-2); color: var(--text); }
+  .row-btn .txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: 11.5px; }
+  .row-btn.sel { background: var(--surface-2); color: var(--text); }
+  .row-btn.sel .dot { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .row-btn .meta { flex: none; color: var(--dim); font: 11px var(--mono); }
+
+  .main-col { padding: 20px 24px 32px; display: flex; flex-direction: column; gap: 16px; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
+  .detail-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .detail-head h1 { font-size: 17px; margin: 0; }
+  .detail-head .sub { color: var(--dim); font-size: 12px; font-family: var(--mono); }
+
+  .card { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); flex: none; }
+  /* every page that stacks cards gets the gap from one place */
+  .stack { display: grid; gap: 16px; align-content: start; }
+  .card-head { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 16px; border-bottom: 1px solid var(--line); }
+  .card-head h2 { margin: 0; font-size: 12.5px; font-weight: 600; }
+  .card-head .hint { color: var(--dim); font-size: 11.5px; }
+  .card-body { padding: 16px; }
+
+  .options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 20px; }
+  .opt { padding: 8px 2px; border-bottom: 1px solid var(--line); min-width: 0; }
+  .opt-label { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  .opt-label label, .opt-label span.lbl { font-weight: 560; font-size: 12.5px; }
+  .opt-label .desc { color: var(--dim); font-size: 11.5px; }
+
+  /* the branch row folds away on a phone and sits inline on a wide screen */
+  .branch-opt > summary { display: none; }
+  .branch-opt .opt-sum {
+    display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none;
+    font-size: 13px; font-weight: 560; padding: 2px 0;
+  }
+  .branch-opt .opt-sum::-webkit-details-marker { display: none; }
+  .branch-opt .opt-sum .pill { margin-left: auto; }
+  .branch-opt .opt-sum .caret { color: var(--dim); transition: transform .12s; }
+  .branch-opt[open] .opt-sum .caret { transform: rotate(90deg); }
+  /* the pill is the collapsed stand-in; open on a wide screen it only repeats the select */
+  @media (min-width: 981px) {
+    .branch-opt[open] .opt-sum #branch-now { display: none; }
+    .branch-opt[open] .opt-sum .caret { margin-left: auto; }
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 34px; padding: 4px 6px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface-2); }
+  .chips:focus-within { border-color: #3d4655; box-shadow: 0 0 0 3px var(--accent-soft); }
+  .chips input { flex: 1; min-width: 90px; height: 22px; border: 0; background: none; outline: none; font: 12px var(--mono); }
+  .chips input::placeholder { color: var(--dim); font-family: var(--mono); }
+  .chip-x { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-2); background: var(--surface-3); border-radius: 6px; padding: 2px 4px 2px 8px; font: 11.5px var(--mono); }
+  .chip-x button { border: 0; background: none; color: var(--dim); cursor: pointer; padding: 0 3px; font-size: 14px; line-height: 1; }
+  .chip-x button:hover { color: var(--err); }
+
+  .toggles { display: flex; flex-wrap: wrap; gap: 6px; }
+  .toggle {
+    display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line-2);
+    background: var(--surface-2); color: var(--muted); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 12.5px;
+  }
+  .toggle:hover { border-color: #313842; color: var(--text); }
+  .toggle .sw { width: 26px; height: 15px; border-radius: 999px; background: #23272e; position: relative; transition: background .15s; flex: none; }
+  .toggle .sw::after { content: ""; position: absolute; inset: 2px auto 2px 2px; width: 11px; border-radius: 50%; background: #7d848d; transition: transform .15s, background .15s; }
+  .toggle[aria-pressed="true"] { color: var(--text); border-color: #38414f; background: var(--surface-3); }
+  .toggle[aria-pressed="true"] .sw { background: var(--accent-soft); }
+  .toggle[aria-pressed="true"] .sw::after { transform: translateX(11px); background: var(--accent-hi); }
+  .toggle.danger[aria-pressed="true"] .sw::after { background: var(--warn); }
+  .toggle small { color: var(--dim); font-size: 11.5px; }
+
+  .seg-row, .segmented { display: inline-flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--line-2); }
+  .seg-row button, .segmented button { border: 0; background: none; color: var(--muted); padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 520; }
+  /* the phone gets short tab labels; the wide screen keeps the full verbs */
+  .seg-short { display: none; }
+  .seg-row button[aria-pressed="true"], .segmented button[aria-pressed="true"] { background: var(--surface-3); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-2); }
+
+  .console { display: flex; flex-direction: column; position: relative; }
+  .console .card-head { border-bottom: 0; }
+
+  /* GitHub-run shape: one row per stage, ticked off as the run moves */
+  .phases { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .phase { border-bottom: 1px solid var(--line); }
+  .phase:last-child { border-bottom: 0; }
+  .phase-head {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 8px 16px; background: none; border: 0; color: var(--text);
+    font-size: 13px; text-align: left; cursor: pointer;
+  }
+  .phase-head:hover { background: var(--surface-2); }
+  .phase-head:focus-visible { outline-offset: -2px; }
+  .phase-ico {
+    width: 16px; height: 16px; flex: none; display: grid; place-items: center;
+    color: var(--dim); font-size: 11px; line-height: 1;
+  }
+  .phase[data-state="run"] .phase-ico { color: var(--accent-hi); }
+  .phase[data-state="done"] .phase-ico { color: var(--ok); }
+  .phase[data-state="fail"] .phase-ico { color: var(--err); }
+  .phase[data-state="skip"] .phase-ico { color: var(--dim); }
+  .phase-name { font-weight: 560; flex: none; }
+  .phase-sub {
+    color: var(--dim); font: 11.5px var(--mono); min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .phase-time {
+    margin-left: auto; color: var(--dim); font: 11px var(--mono); flex: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .phase-caret { color: var(--dim); flex: none; transition: transform .12s; }
+  .phase-head[aria-expanded="true"] .phase-caret { transform: rotate(90deg); }
+  .phase-log { border-top: 1px solid var(--line); background: #0a0c0f; }
+  .phase-log .log-row { grid-template-columns: 68px 40px minmax(0, 1fr); }
+  .run-foot {
+    display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+    border-top: 1px solid var(--line);
+  }
+  .run-foot .hint { color: var(--dim); font-size: 11.5px; }
+  .logwrap { position: relative; border-top: 1px solid var(--line); }
+  .logwrap .log { max-height: 340px; padding: 8px 0 12px; }
+  .status { display: inline-flex; align-items: center; gap: 8px; font: 500 11px/1 var(--mono); color: var(--muted); border: 1px solid var(--line-2); border-radius: 999px; padding: 4px 8px; background: var(--surface-2); }
+  .status .led { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
+  .status.running .led { background: var(--accent-hi); animation: pulse 1.4s ease-in-out infinite; }
+  .status.ok .led { background: var(--ok); }
+  .status.fail .led { background: var(--err); }
+  @keyframes pulse { 0%, 100% { opacity: .35; transform: scale(.85); } 50% { opacity: 1; transform: scale(1); } }
+
+  /* no overscroll containment here: with the wheel over the log and the log at
+     its end, the page around it has to keep scrolling */
+  .log { flex: 1; overflow: auto; padding: 8px 0 12px; font: 12px/1.7 var(--mono); scrollbar-gutter: stable; }
+  .log-row { display: grid; grid-template-columns: 74px 44px minmax(0, 1fr); gap: 10px; padding: 0 16px; }
+  .log-row .t { color: #4f555e; }
+  .log-row .lv { font-weight: 600; font-size: 11px; letter-spacing: .05em; padding-top: 2px; color: var(--dim); }
+  .log-row .msg { color: #c6cbd2; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .log-row.ok .lv { color: var(--ok); }
+  .log-row.warn .lv { color: var(--warn); }
+  .log-row.error .lv { color: var(--err); }
+  .log-row.info .lv { color: var(--info); }
+  .log-row.cont .t, .log-row.cont .lv { visibility: hidden; }
+  .log-row.cont .msg { color: #8b939d; }
+
+  .commits { display: flex; flex-direction: column; }
+  .commit {
+    display: grid; grid-template-columns: 68px minmax(0, 1fr) auto; gap: 12px;
+    align-items: center; padding: 8px 16px; border-top: 1px solid var(--line); font-size: 12.5px;
+  }
+  .commit:first-child { border-top: 0; }
+  .commit .sha { font: 11.5px var(--mono); color: var(--dim); }
+  .commit .subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .commit .meta {
+    display: flex; align-items: center; gap: 8px; color: var(--dim);
+    font-size: 11.5px; white-space: nowrap;
+  }
+  .commit .sig { color: var(--ok); font-size: 11px; }
+  .commit .sig.none { color: var(--dim); }
+
+  .empty-log { display: grid; place-items: center; gap: 8px; height: 100%; min-height: 190px; color: var(--dim); text-align: center; padding: 20px; }
+  .empty-log p { margin: 0; max-width: 380px; font-size: 12.5px; line-height: 1.6; }
+  .empty-log code { font-family: var(--mono); color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-size: 12px; }
+  .jump { position: absolute; right: 16px; bottom: 16px; border: 1px solid var(--line-2); background: var(--surface-3); border-radius: 999px; padding: 4px 12px; font-size: 11.5px; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.55); display: none; }
+  .jump.show { display: block; }
+
+  /* --------------------------------------------------------------- signing */
+  .sign-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .sign-row:last-child { border-bottom: 0; }
+  .sign-key { font: 11.5px var(--mono); color: var(--muted); overflow-wrap: anywhere; flex: 1; min-width: 220px; }
+  .sign-key b { color: var(--text); font-weight: 600; }
+  .banner {
+    display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; border-radius: 8px;
+    font-size: 12.5px; line-height: 1.5; border: 1px solid;
+  }
+  .banner.warn { color: #f2ce8a; border-color: rgba(214,160,50,.34); background: rgba(214,160,50,.08); }
+  .banner.ok { color: #9fe3ad; border-color: rgba(70,185,92,.3); background: rgba(70,185,92,.07); }
+  .banner.err { color: #ffa8a2; border-color: rgba(240,87,79,.32); background: rgba(240,87,79,.08); }
+  .banner .ico { flex: none; margin-top: 1px; }
+  .banner code { font-family: var(--mono); font-size: 11.5px; }
+  .steps { margin: 10px 0 0; padding-left: 20px; color: var(--muted); font-size: 12.5px; line-height: 1.75; }
+  .steps code, .steps kbd { font-family: var(--mono); font-size: 11.5px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+  .pubkey {
+    width: 100%; min-height: 108px; resize: vertical; background: #0a0c0f; color: #b9c0c8;
+    border: 1px solid var(--line-2); border-radius: 8px; padding: 10px; font: 11.5px/1.6 var(--mono);
+  }
+
+  /* --------------------------------------------------------------- mobile */
+  .tabbar { display: none; }
+  #start { min-width: 88px; }
+  /* installed-app quirks */
+  @media (display-mode: standalone) {
+    .topbar { padding-top: env(safe-area-inset-top); }
+    body { overscroll-behavior-y: contain; }
+  }
+  .install-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(10px);
+    background: var(--surface-3); border: 1px solid var(--line-2); padding: 8px 16px; border-radius: 10px;
+    font-size: 12.5px; opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s;
+    box-shadow: 0 12px 34px rgba(0,0,0,.6); z-index: 60; max-width: calc(100vw - 32px); text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (min-width: 1180px) {
+    .options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 980px) {
+    :root { --pad: 16px; }
+    .options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .branch-opt > summary { display: flex; }
+    .branch-opt .opt-body { padding-top: 8px; }
+    .detail { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .options { grid-template-columns: 1fr; }
+    .grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 720px) {
+    :root { --pad: 14px; }
+    /* one scale on a phone: 15 body, 13 controls, 12 metadata. Before this the
+       page mixed 11.5, 12, 12.5, 13 and 14 in the same view */
+    body { font-size: 15px; }
+    .btn { font-size: 14px; }
+    .pill { font-size: 12px; }
+    .repo-name { font-size: 15px; }
+    .hint, .repo-path, .opt-label .desc, .phase-sub, .run-foot .hint, .commit .meta { font-size: 12px; }
+    .phase-head { padding: 10px 12px; font-size: 13px; min-height: 44px; }
+    .task-note { font-size: 12px; }
+    .commit { font-size: 13px; }
+    .run-foot { flex-wrap: wrap; }
+    .logwrap .log { max-height: 52vh; }
+    .topbar { height: 52px; gap: 8px; }
+    /* the top bar is crowded on a phone: shorten the tab labels, keep the
+       brand on one line, and drop the version chip (it lives in the title) */
+    .segmented .seg-long { display: none; }
+    .segmented .seg-short { display: inline; }
+    .brand .name { white-space: nowrap; }
+    #ver { display: none; }
+    .brand .name { font-size: 13.5px; }
+    .env-dots span span, .env-dots .lbl { display: none; }
+    .env-dots { gap: 8px; }
+    .hero h1 { font-size: 19px; }
+    /* stacked, the bar is not a frame any more: the field and the button
+       stand on their own, so there is no box inside a box */
+    .addbar { flex-direction: column; align-items: stretch; gap: 10px; padding: 0; border: 0; background: none; }
+    .addbar:focus-within { box-shadow: none; }
+    .addbar .field { border: 1px solid var(--line-2); background: var(--surface-2); border-radius: 8px; }
+    /* a 34px field is a desktop control; on a phone this box is the first
+       thing you touch, so give it and its button a real touch target */
+    /* flex:1 becomes flex-basis:0 on the main (vertical) axis once the row
+       turns into a column, which silently overrides height - so opt out */
+    /* below 16px iOS Safari zooms the page when a field takes focus */
+    .field, .mono-field, input, select, textarea { font-size: 16px; }
+    .addbar .field { flex: 0 0 auto; height: 48px; padding: 0 12px; }
+    .addbar .btn { height: 48px; font-size: 15px; }
+    #start { display: none; }  /* the tab bar carries the run controls on a phone */
+    .main-col { padding: 12px 12px 88px; }
+    .wrap { padding: 16px var(--pad) 88px; }
+    .detail-head h1 { font-size: 15px; }
+    .card-head { flex-wrap: wrap; height: auto; padding: 10px 12px; gap: 6px; }
+    .log { font-size: 11.5px; }
+    .log-row { grid-template-columns: 58px 38px minmax(0, 1fr); gap: 8px; padding: 0 12px; }
+    .tabbar {
+      display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+      border-top: 1px solid var(--line); background: rgba(10, 12, 15, .94);
+      backdrop-filter: blur(14px); padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+      gap: 8px;
+    }
+    .tabbar .btn { flex: 1; height: 42px; }
+    .console { min-height: 46vh; }
+    .segmented { width: 100%; }
+  .segmented button { flex: 1; }
+
+    /* 44px is the smallest thing a thumb hits reliably; the desktop sizes are
+       tuned for a mouse, so the phone gets its own set */
+    .icon-btn, .rm { width: 44px; height: 44px; }
+    .arena-row .prlink { min-height: 44px; }
+    .btn, .btn.back { min-height: 44px; }
+    .field, select.field { height: 44px; }
+    .segmented button, .seg-row button, .toggle { min-height: 44px; }
+    .tabbar .btn { height: 46px; font-size: 15px; }
+    .chip-x { padding: 4px 4px 4px 10px; }
+    .chip-x button { padding: 4px 6px; }
+    .chips { min-height: 44px; }
+    .chips input { height: 32px; }
+
+    /* one scale, enforced: 12 metadata, 13 note, 14 control, 15 body,
+       16 field, 19 page title. Anything with its own desktop size is
+       pinned here, after every other rule. */
+    .pill, .pill.mono, .chip, .bname, .arena-row .bname, .hint, .card-head .hint,
+    .repo-path, .arena-row, .phase-sub, .commit .meta, .sign-key, .kv dt, .kv dd, .log-row, .ext,
+    .arena-row .prlink .ext, .env-dots, .run-foot .hint, .steps, .steps code, .steps kbd { font-size: 12px; }
+    .banner, .toast, .wrap h2, .card-head h2, .skip, .steps,
+    .opt-label label, .opt-label span.lbl, .phase-name, .toggle { font-size: 13px; }
+    .status, #statustext, .phase-ico, .commit .sig, .commit .sha, .toggle small { font-size: 12px; }
+    .segmented button, .seg-row button { font-size: 14px; }
+    .brand .name, .repo-card .btn, .card-actions .btn, .run-foot .btn { font-size: 14px; }
+    .wrap h1, .hero h1, .wrap h1.page-title { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <a class="brand" href="#/" aria-label="arena-cleanup, back to the dashboard">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+        <path d="M8.3 1.6 16.4 9.7a1 1 0 0 1 0 1.4l-5.3 5.3a1 1 0 0 1-1.4 0L1.6 8.3A1 1 0 0 1 1.3 7.6V2.3a1 1 0 0 1 1-1h5.3a1 1 0 0 1 .7.3Z" fill="#6e79d6"/>
+        <circle cx="5.4" cy="5.4" r="1.5" fill="#08090b"/>
+        <path d="M9.2 12.6l1.5 1.5 3.1-3.7" stroke="#0a0b0e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">arena-cleanup</span>
+      <span class="chip" id="ver">v?</span>
+    </a>
+    <div class="grow"></div>
+    <div class="env-dots" id="env"></div>
+    <button class="icon-btn" id="access-btn" title="GitHub access" aria-label="GitHub access">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="5.2" cy="8" r="2.6" stroke="currentColor" stroke-width="1.2"/><path d="M7.8 8H14M11.6 8v2.2M13.2 8v1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+    </button>
+    <button class="icon-btn" id="signing-btn" title="Commit signing" aria-label="Commit signing">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1.8 3 3.8v4.1c0 3 2.1 5.6 5 6.3 2.9-.7 5-3.3 5-6.3V3.8L8 1.8Z" stroke="currentColor" stroke-width="1.2"/><path d="M5.8 7.8 7.3 9.3l3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+    </button>
+  </header>
+
+  <main id="main" tabindex="-1">
+  <!-- =========================================================== dashboard -->
+  <div class="view" id="view-dashboard">
+    <div class="wrap">
+      <div class="hero">
+        <h1 tabindex="-1">Repositories</h1>
+      </div>
+
+      <div id="offline-banner" hidden></div>
+      <div id="auth-banner" hidden></div>
+
+      <div class="addbar">
+        <input class="field mono-field" id="add-source" spellcheck="false" autocomplete="off"
+               placeholder="Paste a .git URL…" aria-label="Repository URL">
+        <button class="btn primary" id="add-btn">Add repository</button>
+      </div>
+
+      <div class="grid" id="repo-grid"></div>
+      <div class="empty-state" id="repo-empty" hidden>
+        <strong>No repositories yet</strong>
+        <span>Paste a <code>.git</code> URL above to clone it into this instance.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ repo view -->
+  <div class="view" id="view-repo" hidden>
+    <div class="detail">
+      <aside class="sidebar" id="sidebar"></aside>
+      <div class="main-col">
+        <div class="detail-head">
+          <button class="btn ghost back" id="back">← All repos</button>
+          <h1 id="repo-title">…</h1>
+          <span class="sub" id="repo-sub"></span>
+          <div class="grow"></div>
+          <div class="segmented" id="cmdswitch" role="group" aria-label="Command">
+            <button data-cmd="run" aria-pressed="true" title="Rewrite the arena branch, sign every commit, push the default branch, then delete the local arena branch."><span class="seg-long">Clean &amp; publish</span><span class="seg-short">Publish</span></button>
+            <button data-cmd="strip" aria-pressed="false" title="Rewrite and sign the arena branch locally. Nothing leaves this container."><span class="seg-long">Rewrite locally</span><span class="seg-short">Rewrite</span></button>
+            <button data-cmd="doctor" aria-pressed="false" title="Read git, gh, the identity and the signing key. Nothing is written."><span class="seg-long">Check setup</span><span class="seg-short">Check</span></button>
+          </div>
+        </div>
+
+        <p class="task-note" id="task-note"></p>
+
+        <section class="card" id="options-card">
+          <div class="card-body options" id="options">
+            <details class="opt branch-opt" id="opt-branch" open>
+              <summary class="opt-sum"><span>Target branch</span><span class="pill mono" id="branch-now">current</span><span class="caret">›</span></summary>
+              <div class="opt-body">
+                <div class="opt-label"><label class="sr-only" for="branch">Target branch</label><span class="desc">clean it directly, no PR</span></div>
+                <select class="field mono-field" id="branch"></select>
+              </div>
+            </details>
+            <div class="opt" id="opt-paths">
+              <div class="opt-label"><label for="pathin">Remove paths</label><span class="desc">git filter-repo, every ref</span></div>
+              <div class="chips" id="chips">
+                <input id="pathin" placeholder="add a file or folder…" spellcheck="false" autocomplete="off" aria-label="Add a path to remove">
+              </div>
+            </div>
+            <div class="opt" id="opt-div">
+              <div class="opt-label"><span class="lbl">On divergence</span><span class="desc">local vs origin</span></div>
+              <div class="seg-row" id="divergence">
+                <button data-v="ask" aria-pressed="true" title="Cancels the run and reports the commits that differ. Nothing is pushed.">Ask, then stop</button>
+                <button data-v="remote" aria-pressed="false" title="Drops local commits that origin does not have, then rewrites what origin has.">Follow origin</button>
+                <button data-v="local" aria-pressed="false" title="Keeps the local commits and pushes them over origin.">Overwrite origin</button>
+              </div>
+            </div>
+            <div class="opt" id="opt-timeout">
+              <div class="opt-label"><label for="timeout">PR check timeout</label><span class="desc">minutes, 0 = don’t wait</span></div>
+              <input class="field mono-field" id="timeout" type="number" min="0" max="240" value="15">
+            </div>
+            <div class="opt" style="grid-column:1/-1">
+              <div class="opt-label"><span class="lbl">Options</span></div>
+              <div class="toggles" id="toggles">
+                <button class="toggle" data-opt="dry_run" aria-pressed="false"
+                  title="Prints every step it would take and writes nothing."><span class="sw"></span>Dry run <small>writes nothing</small></button>
+                <button class="toggle" data-opt="skip_pr_check" data-only="run" aria-pressed="false"
+                  title="Publishes even when the pull request still has running or failing checks."><span class="sw"></span>Ignore PR checks <small>publish anyway</small></button>
+                <button class="toggle" data-opt="keep_empty" aria-pressed="false"
+                  title="Keeps commits that would be empty once the removed paths are gone."><span class="sw"></span>Keep emptied commits <small>do not drop them</small></button>
+                <button class="toggle" data-opt="no_tags" data-only="run" aria-pressed="false"
+                  title="Leaves tags pointing at the old commits instead of moving them to the rewrite."><span class="sw"></span>Leave tags alone <small>they stay on old commits</small></button>
+                <button class="toggle" data-opt="keep_branch" data-only="run" aria-pressed="false"
+                  title="Keeps the local arena branch after publishing instead of deleting it."><span class="sw"></span>Keep arena branch <small>do not delete it</small></button>
+                <button class="toggle danger" data-opt="force" data-only="run" aria-pressed="false"
+                  title="Pushes even when the push would drop commits that are on the default branch."><span class="sw"></span>Force the push <small>may drop commits</small></button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card console" id="console-card">
+          <div class="card-head">
+            <span class="status" id="status" role="status" aria-live="polite"><span class="led"></span><span id="statustext">idle</span></span>
+            <div class="grow"></div>
+            <button class="btn primary" id="start">Clean &amp; publish</button>
+            <button class="btn" id="cancel" disabled>Cancel</button>
+          </div>
+          <ol class="phases" id="phases"></ol>
+          <div class="run-foot">
+            <button class="btn ghost" id="logtoggle" aria-expanded="false" aria-controls="logwrap">Show log</button>
+            <span class="hint" id="logmeta"></span>
+            <div class="grow"></div>
+            <button class="btn ghost" id="copy">Copy log</button>
+          </div>
+          <div class="logwrap" id="logwrap" hidden>
+            <div class="log" id="log" role="log" aria-live="polite" aria-relevant="additions"></div>
+            <button class="jump" id="jump">↓ latest</button>
+          </div>
+        </section>
+
+        <section class="card" id="commits-card">
+          <div class="card-head">
+            <h2>Commits</h2>
+            <span class="hint" id="commits-hint"></span>
+            <div class="grow"></div>
+            <button class="btn ghost" id="commits-refresh">Reload</button>
+          </div>
+          <div class="commits" id="commits"></div>
+        </section>
+      </div>
+    </div>
+    <div class="tabbar" id="tabbar">
+      <button class="btn primary" id="start-mobile">Clean &amp; publish</button>
+      <button class="btn" id="cancel-mobile" disabled>Cancel</button>
+    </div>
+  </div>
+
+  <!-- =============================================================== access -->
+  <div class="view" id="view-access" hidden>
+    <div class="wrap" style="max-width:760px">
+      <div class="detail-head" style="margin-bottom:16px">
+        <button class="btn ghost back" id="access-back">← Back</button>
+        <h1 class="page-title" tabindex="-1">GitHub access</h1>
+      </div>
+      <div id="access-body" class="stack"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================== signing -->
+  <div class="view" id="view-signing" hidden>
+    <div class="wrap" style="max-width:760px">
+      <div class="detail-head" style="margin-bottom:16px">
+        <button class="btn ghost back" id="signing-back">← Back</button>
+        <h1 class="page-title" tabindex="-1">Commit signing</h1>
+      </div>
+      <div id="signing-body" class="stack"></div>
+    </div>
+  </div>
+  </main>
+</div>
+
+
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, attrs = {}, ...kids) => {
+    const node = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === "class") node.className = v;
+      else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+      else if (v !== false && v != null) node.setAttribute(k, v);
+    }
+    for (const kid of kids.flat()) {
+      if (kid == null || kid === false) continue;
+      node.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+    }
+    return node;
+  };
+
+  const state = {
+    repos: [],
+    repo: null,
+    command: "run",
+    opts: { dry_run: false, skip_pr_check: false, keep_empty: false, no_tags: false, keep_branch: false, force: false },
+    divergence: "ask",
+    paths: [],
+    branch: "",
+    job: null,
+    es: null,
+    autoscroll: true,
+    phases: [],
+    phase: null,
+    signing: null,
+  };
+
+  const ICONS = {
+    repo: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="5" cy="3.5" r="1.5" stroke="currentColor"/><circle cx="5" cy="12.5" r="1.5" stroke="currentColor"/><circle cx="11.5" cy="6" r="1.5" stroke="currentColor"/><path d="M5 5v6M11.5 7.6c0 1.9-1.9 2.3-3.9 2.8" stroke="currentColor"/></svg>',
+  };
+  function icon(name, cls = "repo-ico") {
+    const box = el("div", { class: cls });
+    box.innerHTML = ICONS[name] || "";
+    return box;
+  }
+
+  const toast = (msg) => {
+    const node = $("toast");
+    node.textContent = msg;
+    node.classList.add("show");
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => node.classList.remove("show"), 2200);
+  };
+
+  async function api(path, init) {
+    const res = await fetch(path, init);
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.error || res.statusText);
+    return body;
+  }
+  const post = (path, body) =>
+    api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+
+  // ------------------------------------------------------------------ views
+  // The address bar is the state: refresh, Back and Forward all land on the
+  // screen they expect, and a repo view can be bookmarked or sent to someone.
+  function hashFor(view) {
+    if (view === "repo") return "#/repo/" + (state.repo?.id || "");
+    return { dashboard: "#/", access: "#/access", signing: "#/signing" }[view] || "#/";
+  }
+
+  function titleFor(view) {
+    if (view === "repo" && state.repo) return `${state.repo.name}, arena-cleanup`;
+    return { access: "GitHub access, arena-cleanup", signing: "Commit signing, arena-cleanup" }[view] || "arena-cleanup";
+  }
+
+  function show(view) {
+    for (const name of ["dashboard", "repo", "signing", "access"]) {
+      $("view-" + name).hidden = name !== view;
+    }
+    // remember where we are, so a sub-view can send you back to the place you
+    // actually came from instead of guessing from whatever was open last
+    state.view = view;
+    document.title = titleFor(view);
+    const want = hashFor(view);
+    if (location.hash !== want) {
+      state.selfNav = want;
+      location.hash = want;
+    }
+    window.scrollTo(0, 0);
+    // keyboard and screen-reader users land on the new screen, not back at
+    // the top of the document
+    const panel = $("view-" + view);
+    // focus the heading, not the Back button: a heading cannot be re-activated
+    // by the Enter key that got you here, which a focused button can
+    const heading = panel.querySelector("h1, h2");
+    if (heading) heading.focus({ preventScroll: true });
+  }
+
+  // Translate a hash into a screen. Used on load and on Back/Forward.
+  async function applyHash() {
+    const hash = location.hash || "#/";
+    if (hash === "#/access") return openAccess();
+    if (hash === "#/signing") return openSigning();
+    const match = hash.match(/^#\/repo\/([^/]+)$/);
+    if (match && state.repos.some((r) => r.id === match[1])) return openRepo(match[1]);
+    state.repo = null;
+    show("dashboard");
+    await loadRepos();
+  }
+
+  // Back from a sub-view: return to the screen that opened it.
+  function goBack() {
+    show(state.returnTo || "dashboard");
+  }
+
+  // -------------------------------------------------------------- dashboard
+  function checksPill(pr, checked, reason) {
+    if (!pr && checked === false) {
+      return el("span", {
+        class: "pill warn",
+        title: reason || "gh is not signed in, so pull requests and their checks cannot be read",
+      }, "checks unavailable");
+    }
+    if (!pr) return el("span", { class: "pill mono" }, "no PR");
+    const cls = pr.state === "passing" ? "ok" : pr.state === "failing" ? "err" : pr.state === "running" ? "run" : "mono";
+    if (pr.state === "none") return el("span", { class: "pill mono" }, `PR #${pr.number}, no checks`);
+    return el("span", { class: "pill " + cls, title: pr.title },
+      el("i", { class: "dot" }),
+      `PR #${pr.number}`,
+      `, ${pr.passed}/${pr.total}`);
+  }
+
+  function repoCard(repo) {
+    const s = repo.status || {};
+    const head = el("div", { class: "repo-head" },
+      icon("repo"),
+      el("div", { style: "min-width:0" },
+        el("div", { class: "repo-name" }, repo.name),
+        el("div", { class: "repo-path" }, s.ok ? s.path : repo.path)));
+
+    const meta = el("div", { class: "repo-meta" });
+    if (!s.ok) {
+      meta.append(el("span", { class: "pill err" }, el("i", { class: "dot" }), s.reason || "unavailable"));
+    } else {
+      meta.append(el("span", { class: "pill mono" }, s.branch));
+      meta.append(el("span", { class: "pill" }, s.dirty ? `${s.dirty} uncommitted` : "clean"));
+      if (s.ahead || s.behind) meta.append(el("span", { class: "pill warn mono" }, `↑${s.ahead} ↓${s.behind}`));
+      meta.append(el("span", { class: "pill mono" }, `${s.tags} tags`));
+    }
+
+    let arena = null;
+    if (s.ok) {
+      arena = el("div", { class: "arena-list" });
+      if (!s.arena.length) {
+        arena.append(el("div", { class: "arena-row", style: "color:var(--dim)" }, "no arena/* branches on origin"));
+      } else {
+        for (const name of s.arena.slice(0, 3)) {
+          const pr = (s.pr || {})[name];
+          arena.append(el("div", { class: "arena-row" },
+            el("i", { class: "dot", style: `background:${pr ? (pr.state === 'passing' ? 'var(--ok)' : pr.state === 'failing' ? 'var(--err)' : 'var(--info)') : 'var(--line-2)'};margin-left:2px` }),
+            el("span", { class: "bname" }, name),
+            pr && pr.url
+              ? el("a", { class: "prlink", href: pr.url, target: "_blank", rel: "noopener",
+                  title: `Open pull request ${pr.number ? "#" + pr.number : ""} on GitHub`,
+                  "aria-label": `Open pull request ${pr.number ? "#" + pr.number : ""} on GitHub`,
+                  onclick: (e) => e.stopPropagation() },
+                  checksPill(pr, s.pr_checked, s.pr_reason),
+                  el("span", { class: "ext", "aria-hidden": "true" }, "↗"))
+              : checksPill(pr, s.pr_checked, s.pr_reason)));
+        }
+      }
+    }
+
+    const actions = el("div", { class: "card-actions" },
+      el("button", { class: "btn primary", onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, "Clean & publish"),
+      el("button", { class: "btn ghost", onclick: (e) => { e.stopPropagation(); openRepo(repo.id); } }, "Open"),
+      el("div", { class: "grow" }),
+      (() => {
+        // Deleting a card can delete its clone, so the first click only arms
+        // the button; the second confirms. No browser modal, and it works on
+        // a phone.
+        let timer = 0;
+        const disarm = () => { btn.classList.remove("armed"); btn.textContent = "×"; btn.setAttribute("aria-label", `Remove ${repo.name}`); };
+        const btn = el("button", {
+          class: "btn ghost rm", title: "Forget this repository", "aria-label": `Remove ${repo.name}`,
+          onclick: async (e) => {
+            e.stopPropagation();
+            if (!btn.classList.contains("armed")) {
+              btn.classList.add("armed");
+              btn.textContent = "Remove?";
+              btn.setAttribute("aria-label", `Confirm removing ${repo.name}`);
+              timer = setTimeout(disarm, 4000);
+              return;
+            }
+            clearTimeout(timer);
+            try {
+              await post(`/api/repos/${repo.id}/remove`, {});
+              toast("removed");
+              loadRepos();
+            } catch (err) { toast(err.message); disarm(); }
+          },
+        }, "×");
+        return btn;
+      })());
+
+    return el("div", { class: "repo-card", role: "button", tabindex: "0",
+        onclick: () => openRepo(repo.id),
+        onkeydown: (e) => { if (e.key === "Enter") openRepo(repo.id); } },
+      head, meta, arena, actions);
+  }
+
+  async function loadRepos() {
+    if (!state.auth) await refreshAuth();
+    try {
+      state.repos = await api("/api/repos");
+      state.unreachable = false;
+    } catch (err) {
+      // "no repositories" and "cannot ask the server" look identical on screen
+      // unless we keep them apart - and an empty dashboard here would be a lie
+      state.repos = [];
+      state.unreachable = true;
+    }
+    const grid = $("repo-grid");
+    grid.replaceChildren(...state.repos.map(repoCard));
+    $("repo-empty").hidden = state.unreachable || state.repos.length > 0;
+    grid.hidden = state.unreachable;
+    const box = $("offline-banner");
+    box.hidden = !state.unreachable;
+    if (state.unreachable) {
+      box.replaceChildren(el("div", { class: "banner err", style: "margin-bottom:16px" },
+        el("span", { class: "ico" }, "⚠"),
+        el("div", { style: "flex:1" },
+          el("b", {}, "Cannot reach the server."),
+          " Every button here changes a git repository, so nothing is cached. Check that the container is running, then ",
+          el("button", { class: "btn ghost", style: "padding:2px 8px;margin-left:4px", onclick: () => loadRepos() }, "retry"), ".")));
+    }
+  }
+
+  async function addRepo() {
+    const input = $("add-source");
+    const source = input.value.trim();
+    if (!source) return;
+    if (!/^(git@|ssh:|git:|https?:)/i.test(source)) {
+      toast("Use a git URL: https://host/owner/repo.git or git@host:owner/repo.git");
+      input.focus();
+      return;
+    }
+    const btn = $("add-btn");
+    btn.disabled = true;
+    btn.textContent = "Cloning…";
+    try {
+      const repo = await post("/api/repos", { source });
+      input.value = "";
+      toast(`added ${repo.name}`);
+      await loadRepos();
+      openRepo(repo.id);
+    } catch (err) {
+      toast(err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Add repository";
+    }
+  }
+
+  // ------------------------------------------------------------- repo view
+  function openRepo(id) {
+    const repo = state.repos.find((r) => r.id === id);
+    if (!repo) return;
+    state.repo = repo;
+    state.branch = "";
+    state.paths = [];
+    $("repo-title").textContent = repo.name;
+    $("repo-sub").textContent = repo.status?.path || repo.path;
+    renderSidebar();
+    renderBranchSelect();
+    renderPaths();
+    renderCommand();
+    resetPhases();
+    setStatus("", "idle");
+    $("log").replaceChildren();
+    $("logmeta").textContent = "";
+    setLogOpen(false);
+    show("repo");
+    refreshStatus();
+    loadCommits();
+  }
+
+  function dotFor(pr) {
+    if (!pr) return "var(--line-2)";
+    return pr.state === "passing" ? "var(--ok)" : pr.state === "failing" ? "var(--err)" : "var(--info)";
+  }
+  function metaFor(pr, checked) {
+    if (!pr) return checked === false ? "cannot check" : "no PR";
+    if (pr.failed) return `#${pr.number}, ${pr.failed} failing`;
+    if (pr.running) return `#${pr.number}, ${pr.running} running`;
+    return `#${pr.number}, ${pr.passed}/${pr.total}`;
+  }
+
+  function renderSidebar() {
+    const s = state.repo?.status || {};
+    const side = $("sidebar");
+    const kv = el("dl", { class: "kv" });
+    const add = (k, v, mono) => { kv.append(el("dt", {}, k), el("dd", { class: mono ? "mono" : "" }, v ?? "…")); };
+    add("branch", s.branch, false);
+    add("default", s.default, false);
+    add("changes", s.dirty ? `${s.dirty} uncommitted` : "clean", false);
+    add("remote", s.remote || "not set", true);
+
+    const branches = el("div", { class: "side-group" },
+      el("div", { class: "side-label" }, "Arena branches", el("span", {}, String((s.arena || []).length))),
+      ...((s.arena && s.arena.length)
+        ? s.arena.map((b) => el("button", {
+            class: "row-btn" + (state.branch === b ? " sel" : ""),
+            "data-branch": b,
+            onclick: () => { state.branch = state.branch === b ? "" : b; $("branch").value = state.branch; renderSidebar(); renderBranchSelect(); renderCommand(); },
+          }, el("i", { class: "dot", style: `background:${dotFor((s.pr || {})[b])}` }),
+             el("span", { class: "txt" }, b),
+             el("span", { class: "meta" }, metaFor((s.pr || {})[b], s.pr_checked))))
+        : [el("div", { class: "row-btn", style: "cursor:default;color:var(--dim)" }, el("span", { class: "txt" }, "none on origin"))]));
+
+    const head = el("div", { class: "side-group" },
+      el("div", { class: "side-label" }, "HEAD"),
+      el("div", { style: "padding:0 6px;color:var(--muted);font:11.5px/1.5 var(--mono);overflow-wrap:anywhere" }, s.head || "unknown"));
+
+    side.replaceChildren(
+      el("div", { class: "side-group" }, el("div", { class: "side-label" }, "Repository"), kv),
+      branches, head);
+  }
+
+  function renderBranchSelect() {
+    const s = state.repo?.status || {};
+    const seen = new Set();
+    const options = [el("option", { value: "" }, `current (${s.branch || "?"})`)];
+    for (const b of [s.branch, s.default, ...(s.arena || [])]) {
+      if (!b || b === "?" || seen.has(b)) continue;
+      seen.add(b);
+      options.push(el("option", { value: b }, b));
+    }
+    $("branch").replaceChildren(...options);
+    $("branch").value = state.branch;
+    $("branch-now").textContent = state.branch || `current (${s.branch || "?"})`;
+  }
+
+  async function refreshStatus() {
+    if (!state.repo) return;
+    try {
+      const repo = await api(`/api/repos/${state.repo.id}`);
+      const kept = state.repo;
+      state.repo = repo;
+      if (state.repos.find((r) => r.id === repo.id)) {
+        state.repos = state.repos.map((r) => (r.id === repo.id ? repo : r));
+      }
+      if (!$("view-repo").hidden) {
+        $("repo-title").textContent = repo.name;
+        renderSidebar();
+        renderBranchSelect();
+      }
+      if (kept.status) $("repo-sub").textContent = repo.status?.path || repo.path;
+    } catch { /* keep the last good view */ }
+  }
+
+  function renderPaths() {
+    const box = $("chips");
+    for (const node of [...box.querySelectorAll(".chip-x")]) node.remove();
+    for (const p of state.paths) {
+      const chip = el("span", { class: "chip-x" }, el("span", {}, p),
+        el("button", { "aria-label": "remove", onclick: () => {
+          state.paths = state.paths.filter((x) => x !== p);
+          renderPaths();
+          renderCommand();
+        } }, "×"));
+      box.insertBefore(chip, $("pathin"));
+    }
+  }
+
+  function payload() {
+    const body = { action: state.command, paths: state.paths, dry_run: state.opts.dry_run };
+    if (state.command !== "doctor") body.keep_empty = state.opts.keep_empty;
+    if (state.command === "run") {
+      body.branch = state.branch || "";
+      body.divergence = state.divergence;
+      body.force = state.opts.force;
+      body.skip_pr_check = state.opts.skip_pr_check;
+      body.keep_branch = state.opts.keep_branch;
+      body.no_tags = state.opts.no_tags;
+      body.timeout = $("timeout").value;
+    }
+    return body;
+  }
+
+  function commandLine() {
+    const body = payload();
+    const parts = [state.command];
+    if (body.dry_run) parts.push("--dry-run");
+    if (state.command === "run" && state.branch) parts.push("--branch", state.branch);
+    for (const p of state.paths) parts.push("--path", p);
+    if (state.command !== "doctor" && body.keep_empty) parts.push("--keep-empty");
+    if (state.command === "run") {
+      if (body.skip_pr_check) parts.push("--skip-pr-check");
+      if (body.keep_branch) parts.push("--keep-branch");
+      if (body.no_tags) parts.push("--no-tags");
+      if (body.force) parts.push("--force");
+      if (body.divergence !== "ask") parts.push("--on-divergence", body.divergence);
+      parts.push("--check-timeout", String(Number($("timeout").value || 15) * 60));
+    }
+    return parts.join(" ");
+  }
+
+  const VERB = { run: "Clean & publish", strip: "Rewrite locally", doctor: "Check setup" };
+  const NOTE = {
+    run: "Rewrites the arena branch, signs every commit, pushes the default branch, moves the tags and deletes the local arena branch. Pull request checks have to pass first.",
+    strip: "Rewrites and signs the arena branch inside this container. No push, no pull request check, no change to origin.",
+    doctor: "Reads git, gh, the commit identity and the signing key, then prints what is missing. Nothing is written.",
+  };
+
+  function renderCommand() {
+    const isRun = state.command === "run";
+    $("opt-branch").style.display = isRun ? "" : "none";
+    $("opt-div").style.display = isRun ? "" : "none";
+    $("opt-timeout").style.display = isRun ? "" : "none";
+    $("opt-paths").style.display = state.command === "doctor" ? "none" : "";
+    for (const node of document.querySelectorAll("#toggles .toggle")) {
+      const key = node.dataset.opt;
+      node.style.display =
+        isRun || (state.command === "strip" && ["dry_run", "keep_empty"].includes(key)) ? "" : "none";
+    }
+    $("options-card").style.display = state.command === "doctor" ? "none" : "";
+    for (const node of document.querySelectorAll('.toggle[data-only="run"]')) {
+      node.hidden = state.command !== "run";
+    }
+    $("task-note").textContent = NOTE[state.command];
+    const line = commandLine();
+    for (const id of ["start", "start-mobile"]) {
+      $(id).textContent = VERB[state.command];
+      $(id).title = `Runs: ${line}`;
+      $(id).dataset.argv = line;
+    }
+  }
+
+  // ------------------------------------------------------------------- jobs
+  // ------------------------------------------------------------ run stages
+  // GitHub's run view, not a wall of text: one row per stage, ticked off as
+  // the engine reaches it, and the raw log one click away.
+  const PHASES = [
+    { id: "prepare", name: "Prepare", sub: "fetch, branches, checkout" },
+    { id: "pr", name: "PR checks", sub: "read the pull request" },
+    { id: "rewrite", name: "Rewrite and sign", sub: "claim, trim, sign" },
+    { id: "publish", name: "Publish", sub: "push, tags, cleanup" },
+    { id: "sync", name: "Finish", sub: "back to the default branch" },
+  ];
+  const PHASE_TESTS = [
+    ["pr", /(^|\s)pr\b|pull request|check|gate|status rollup/],
+    ["rewrite", /rewrit|claim|sign|filter-repo|remov|empty commit|--path|identity=/],
+    ["publish", /push|tag|lease|force/],
+    ["sync", /return|delet|done|nothing to publish|finished|cleanup/],
+    ["prepare", /fetch|branch|switch|checkout|scan|stale|pull|prune|starting/],
+  ];
+
+  function msgOf(text) {
+    const match = /^\d{4}-\d\d-\d\dT\S+\s+(?:INFO|OK|WARN|ERROR|DEBUG)\s+(.*)$/.exec(text);
+    return (match ? match[1] : text).toLowerCase();
+  }
+
+  function phaseFor(text) {
+    const msg = msgOf(text);
+    for (const [id, re] of PHASE_TESTS) if (re.test(msg)) return id;
+    return null;
+  }
+
+  function resetPhases() {
+    state.phases = PHASES.map((p) => ({ ...p, state: "idle", lines: 0, start: 0, end: 0 }));
+    state.phase = "prepare";
+    $("phases").replaceChildren(...state.phases.map((p) =>
+      el("li", { class: "phase", "data-phase": p.id, "data-state": "idle" },
+        el("button", {
+          class: "phase-head", "aria-expanded": "false", "aria-controls": "plog-" + p.id,
+          onclick: () => togglePhase(p.id),
+        },
+          el("span", { class: "phase-ico", "aria-hidden": "true" }, "·"),
+          el("span", { class: "phase-name" }, p.name),
+          el("span", { class: "phase-sub" }, p.sub),
+          el("span", { class: "phase-time" }),
+          el("span", { class: "phase-caret", "aria-hidden": "true" }, "›")),
+        el("div", { class: "phase-log", id: "plog-" + p.id, hidden: true }))));
+  }
+
+  function phaseNode(id) {
+    return document.querySelector(`.phase[data-phase="${id}"]`);
+  }
+
+  function paintPhase(p) {
+    const node = phaseNode(p.id);
+    if (!node) return;
+    node.dataset.state = p.state;
+    node.querySelector(".phase-ico").textContent =
+      { done: "✓", fail: "✕", run: "●", skip: "–", idle: "·" }[p.state] || "·";
+    node.querySelector(".phase-sub").textContent = p.sub;
+    const secs = p.start && p.end ? p.end - p.start : 0;
+    const done = p.state === "done" || p.state === "fail";
+    node.querySelector(".phase-time").textContent =
+      p.state === "run" ? "running" : done ? (secs < 0.1 ? "<0.1s" : secs.toFixed(1) + "s") : "";
+    node.querySelector(".phase-head").setAttribute(
+      "aria-label", `${p.name}: ${p.state === "idle" ? "not started" : p.state}${p.sub ? ", " + p.sub : ""}`);
+  }
+
+  function togglePhase(id) {
+    const head = phaseNode(id)?.querySelector(".phase-head");
+    const body = document.getElementById("plog-" + id);
+    if (!head || !body) return;
+    const open = head.getAttribute("aria-expanded") === "true";
+    head.setAttribute("aria-expanded", String(!open));
+    body.hidden = open;
+    if (!open) {
+      const rows = body.querySelectorAll(".log-row");
+      if (rows.length) rows[rows.length - 1].scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  function markEarlierDone(id) {
+    const upto = PHASES.findIndex((p) => p.id === id);
+    for (const p of state.phases) {
+      const at = PHASES.findIndex((x) => x.id === p.id);
+      if (at < upto && p.state === "run") p.state = "done";
+      paintPhase(p);
+    }
+  }
+
+  function finishPhases(ok, cancelled) {
+    const last = state.phases.find((p) => p.id === state.phase) || state.phases[0];
+    for (const p of state.phases) {
+      if (p.state === "run") p.state = p === last && !ok && !cancelled ? "fail" : "done";
+      if (p.state === "idle") p.state = "skip";
+      paintPhase(p);
+    }
+  }
+
+  function lineCount() {
+    return state.phases.reduce((n, p) => n + p.lines, 0);
+  }
+
+  function classify(text) {
+    const match = /^\d{4}-\d\d-\d\dT\S+\s+(INFO|OK|WARN|ERROR|DEBUG)\s+(.*)$/.exec(text);
+    if (match) {
+      const level = match[1].toLowerCase();
+      return el("div", { class: "log-row " + (level === "debug" ? "info" : level) },
+        el("span", { class: "t" }, text.slice(11, 19)),
+        el("span", { class: "lv" }, match[1]),
+        el("span", { class: "msg" }, match[2]));
+    }
+    if (/^\s{2,}\S/.test(text)) {
+      return el("div", { class: "log-row cont" },
+        el("span", {}), el("span", {}), el("span", { class: "msg" }, text));
+    }
+    return el("div", { class: "log-row" },
+      el("span", {}),
+      el("span", { class: "msg", style: "grid-column:2/-1;color:var(--muted)" }, text));
+  }
+
+  function appendLines(lines) {
+    if (!lines.length) return;
+    const log = $("log");
+    const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 70;
+    for (const line of lines) {
+      const text = line.text ?? "";
+      const node = classify(text);
+      log.append(node);
+      const id = phaseFor(text) || state.phase || "prepare";
+      state.phase = id;
+      const phase = state.phases.find((p) => p.id === id);
+      if (!phase) continue;
+      phase.lines += 1;
+      phase.start = phase.start || line.t || Date.now() / 1000;
+      phase.end = line.t || phase.end || Date.now() / 1000;
+      if (/^ok\b/i.test(msgOf(text)) || / done\b/.test(msgOf(text))) {
+        // a short status line for the row, so the list says what happened
+        phase.sub = text.replace(/^.*?\s(?:INFO|OK|WARN|ERROR)\s+/, "").slice(0, 64);
+      }
+      if (phase.state === "idle") phase.state = "run";
+      markEarlierDone(id);
+      document.getElementById("plog-" + id)?.append(node.cloneNode(true));
+    }
+    $("logmeta").textContent = `${lineCount()} lines`;
+    if (state.autoscroll && nearBottom && !$("logwrap").hidden) log.scrollTop = log.scrollHeight;
+    $("jump").classList.toggle("show", !nearBottom && log.scrollHeight > log.clientHeight);
+  }
+
+  function setStatus(kind, text) {
+    $("status").className = "status" + (kind ? " " + kind : "");
+    $("statustext").textContent = text;
+  }
+
+  function setLogOpen(open) {
+    $("logwrap").hidden = !open;
+    $("logtoggle").setAttribute("aria-expanded", String(open));
+    $("logtoggle").textContent = open ? "Hide log" : "Show log";
+    if (open) {
+      const log = $("log");
+      log.scrollTop = log.scrollHeight;
+      $("jump").classList.remove("show");
+    }
+  }
+
+  async function startJob(body) {
+    if (state.job || !state.repo) return;
+    $("log").replaceChildren();
+    resetPhases();
+    setStatus("running", "starting");
+    setStartEnabled(false);
+    try {
+      const job = await post(`/api/repos/${state.repo.id}/jobs`, body);
+      state.job = job.id;
+      setStatus("running", "running");
+      follow(job.id);
+    } catch (err) {
+      setStatus("fail", "error");
+      setLogOpen(true);
+      appendLines([{ text: err.message }]);
+      setStartEnabled(true);
+      state.job = null;
+    }
+  }
+
+  const setStartEnabled = (on) => {
+    for (const id of ["start", "start-mobile"]) {
+      $(id).disabled = !on;
+      $(id).classList.toggle("busy", !on);
+    }
+    for (const id of ["cancel", "cancel-mobile"]) $(id).disabled = on;
+    if (on) renderCommand();
+  };
+
+  async function oneClick(repo) {
+    openRepo(repo.id);
+    await new Promise((r) => setTimeout(r, 30));
+    await startJob({ action: "clean" });
+  }
+
+  function follow(id) {
+    const es = new EventSource(`/api/jobs/${id}/events`);
+    state.es = es;
+    const finish = (snap) => {
+      const secs = (snap.elapsed ?? 0).toFixed(1) + "s";
+      state.job = null;
+      const cancelled = !!snap.cancelled;
+      const ok = snap.exit === 0;
+      finishPhases(ok, cancelled);
+      // a run you stopped yourself is not a failure, and -15 is not a word
+      setStatus(
+        cancelled ? "" : ok ? "ok" : "fail",
+        cancelled ? `cancelled in ${secs}` : `exit ${snap.exit} in ${secs}`,
+      );
+      if (!ok && !cancelled) setLogOpen(true);
+      setStartEnabled(true);
+      refreshStatus();
+      loadRepos();
+      loadCommits();
+    };
+    es.onmessage = (ev) => {
+      const snap = JSON.parse(ev.data);
+      appendLines(snap.lines || []);
+      if (snap.status === "done") {
+        es.close();
+        state.es = null;
+        finish(snap);
+      }
+    };
+    es.onerror = () => {
+      es.close();
+      if (!state.job) return;
+      const poll = async () => {
+        try {
+          const snap = await api(`/api/jobs/${id}`);
+          appendLines(snap.lines || []);
+          if (snap.status === "done") {
+            finish(snap);
+            return;
+          }
+        } catch { /* keep trying */ }
+        setTimeout(poll, 1200);
+      };
+      setTimeout(poll, 600);
+    };
+  }
+
+  // ---------------------------------------------------------------- commits
+  function when(iso) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+
+  async function loadCommits() {
+    if (!state.repo) return;
+    const box = $("commits");
+    try {
+      const data = await api(`/api/repos/${state.repo.id}/commits?limit=20`);
+      $("commits-hint").textContent = data.total
+        ? `${data.shown} of ${data.total} on ${data.branch}`
+        : `nothing on ${data.branch}`;
+      if (!data.commits.length) {
+        box.replaceChildren(el("div", { class: "hint", style: "padding:16px" }, "This branch has no commits yet."));
+        return;
+      }
+      box.replaceChildren(...data.commits.map((c) =>
+        el("div", { class: "commit" },
+          el("span", { class: "sha" }, c.short),
+          el("span", { class: "subject", title: c.subject }, c.subject),
+          el("span", { class: "meta" },
+            el("span", { class: c.signed ? "sig" : "sig none", title: c.signed ? "Signed commit" : "Unsigned commit" },
+              c.signed ? "✓" : "·"),
+            el("span", {}, c.author),
+            el("span", {}, when(c.date))))));
+    } catch (err) {
+      $("commits-hint").textContent = "";
+      box.replaceChildren(el("div", { class: "hint", style: "padding:16px" }, err.message));
+    }
+  }
+
+  // ---------------------------------------------------------------- signing
+  function stepList(html) {
+    const ol = el("ol", { class: "steps" });
+    for (const line of html) ol.append(el("li", { html: "" }, line));
+    for (const li of ol.children) li.innerHTML = li.textContent;
+    return ol;
+  }
+
+  // --------------------------------------------------------------- access
+  function pillRow(label, valueNode) {
+    return el("div", { class: "sign-row" },
+      el("div", { style: "min-width:120px;color:var(--dim);font-size:12px" }, label),
+      el("div", { style: "min-width:0;flex:1" }, valueNode));
+  }
+
+  function renderAuthBanner() {
+    const box = $("auth-banner");
+    const a = state.auth;
+    if (!a) return;
+    box.hidden = false;
+    const gh = a.gh || {};
+    if (!gh.installed) {
+      box.replaceChildren(el("div", { class: "banner err", style: "margin-bottom:14px" },
+        el("span", { class: "ico" }, "⚠"),
+        el("div", {}, el("b", {}, "gh is not installed in this container."),
+          " Pull requests cannot be read and private repositories cannot be cloned.")));
+      return;
+    }
+    if (!gh.authenticated) {
+      box.replaceChildren(el("div", { class: "banner warn", style: "margin-bottom:14px" },
+        el("span", { class: "ico" }, "⚠"),
+        el("div", { style: "flex:1" },
+          el("b", {}, "GitHub is not connected."),
+          " PR checks cannot be read, private clones will fail, and pushes over HTTPS have no credentials.",
+          el("div", { style: "margin-top:8px" },
+            el("button", { class: "btn primary", onclick: openAccess }, "Connect GitHub")))));
+      return;
+    }
+    box.hidden = true;
+    box.replaceChildren();
+  }
+
+  async function refreshAuth() {
+    try {
+      state.auth = await api("/api/auth");
+      state.storage = await api("/api/storage");
+    } catch { /* the dashboard still works without it */ }
+    renderAuthBanner();
+  }
+
+  function openAccess() {
+    state.returnTo = state.view === "repo" ? "repo" : "dashboard";
+    show("access");
+    renderAccess();
+    refreshAuth().then(renderAccess);
+  }
+
+  async function renderAccess() {
+    const body = $("access-body");
+    const a = state.auth;
+    if (!a) {
+      body.replaceChildren(el("div", { class: "hint" }, "loading…"));
+      return;
+    }
+    const gh = a.gh || {};
+    const g = a.git || {};
+    const nodes = [];
+    const ghNodes = [];
+
+    // -- gh -------------------------------------------------------------
+    if (!gh.installed) {
+      ghNodes.push(el("div", { class: "banner err" }, "gh is not installed in this container. Rebuild the image; it bundles the GitHub CLI."));
+    } else if (gh.authenticated) {
+      ghNodes.push(el("div", { class: "banner ok" },
+        el("span", { class: "ico" }, "✓"),
+        el("div", {}, el("b", {}, `Signed in as @${gh.login}`), ` on ${gh.host}`,
+          gh.source === "environment" ? ". The token comes from the GH_TOKEN environment variable." : ".")));
+      if (gh.scopes) {
+        const missing = !/\brepo\b/.test(gh.scopes) ? " · no repo scope, so private repositories and PR checks are invisible" : "";
+        ghNodes.push(pillRow("token scopes", el("span", { class: "mono", style: "font-size:11.5px;color:var(--muted)" }, gh.scopes + missing)));
+      }
+      ghNodes.push(el("div", { style: "display:flex;gap:8px;margin-top:4px" },
+        el("button", { class: "btn", onclick: async () => {
+          await post("/api/auth", { action: "check" });
+          await refreshAuth();
+          renderAccess();
+          toast("re-checked");
+        } }, "Re-check"),
+        g.credentials_for_gh ? null : el("button", { class: "btn ghost", onclick: setupGit }, "Set up git credentials")));
+    } else {
+      ghNodes.push(el("div", { class: "banner warn" },
+        el("span", { class: "ico" }, "⚠"),
+        el("div", {}, el("b", {}, "Not signed in to GitHub."),
+          " Private clones, PR checks and HTTPS pushes will fail until gh has a token.")));
+      const input = el("input", { class: "field mono-field", type: "password", id: "token-input",
+        placeholder: "ghp_… or github_pat_…", autocomplete: "off", spellcheck: "false",
+        onkeydown: (e) => { if (e.key === "Enter") submitToken(); } });
+      ghNodes.push(el("label", { for: "token-input", class: "opt-label", style: "margin-top:10px" },
+        "Personal access token", el("span", { class: "desc" }, "repo, read:org")));
+      ghNodes.push(el("div", { style: "display:flex;gap:8px;margin-top:6px" },
+        input,
+        el("button", { class: "btn primary", id: "token-btn", onclick: submitToken }, "Sign in")));
+      ghNodes.push(el("div", { class: "hint", style: "margin-top:8px" },
+        "Create one at ",
+        el("a", { href: "https://github.com/settings/tokens/new?scopes=repo,read:org&description=arena-cleanup", target: "_blank", rel: "noopener", style: "text-decoration:underline" }, "github.com/settings/tokens"),
+        " with the ", el("code", {}, "repo"), " scope. It is handed to gh over stdin and stored in this container's volume, never in this page."));
+      ghNodes.push(el("div", { class: "hint", style: "margin-top:6px" },
+        "Prefer a browser login? Run ", el("code", {}, "docker exec -it arena-cleanup gh auth login"),
+        " next to this app, or set ", el("code", {}, "GH_TOKEN"), " when starting the container."));
+    }
+
+    nodes.push(el("div", { class: "card" },
+      el("div", { class: "card-head" }, el("h2", {}, "GitHub")),
+      el("div", { class: "card-body" }, ...ghNodes)));
+
+    // -- how git gets in -------------------------------------------------
+    const gitRows = [
+      pillRow("credential helper", g.credentials_for_gh
+        ? el("span", { class: "pill ok" }, el("i", { class: "dot" }), "gh auth git-credential")
+        : (g.credential_helpers && g.credential_helpers.length
+          ? el("span", { class: "mono", style: "font-size:11.5px" }, g.credential_helpers.join(", "))
+          : el("span", { class: "pill warn" }, "none"))),
+      pillRow("ssh keys", g.ssh_keys && g.ssh_keys.length
+        ? el("span", { class: "mono", style: "font-size:11.5px" }, g.ssh_keys.join(", "))
+        : el("span", { class: "hint" }, "none in this container")),
+    ];
+    const gitBanner = gh.authenticated && !g.credentials_for_gh
+      ? el("div", { class: "banner warn", style: "margin-bottom:10px" },
+          el("span", { class: "ico" }, "⚠"),
+          el("div", {}, el("b", {}, "git has no credential helper yet."),
+            " Cloning and pushing over HTTPS will fail. One click fixes it, and applies to every repo here."))
+      : null;
+    nodes.push(el("div", { class: "card" },
+      el("div", { class: "card-head" }, el("h2", {}, "How git reaches GitHub"),
+        el("div", { class: "grow" }),
+        gh.authenticated && !g.credentials_for_gh
+          ? el("button", { class: "btn", onclick: setupGit }, "Configure") : null),
+      el("div", { class: "card-body" },
+        gitBanner || el("div", {}),
+        ...gitRows,
+        el("div", { class: "hint", style: "margin-top:10px" },
+          "Repositories cloned with a ", el("code", {}, "git@github.com:"), " URL use SSH instead and ignore the credential helper. To use your own SSH key, mount it: ",
+          el("code", {}, "-v ~/.ssh:/home/arena/.ssh:ro")))));
+
+    // -- install ----------------------------------------------------------
+    nodes.push(installCard());
+
+    // -- what survives a rebuild -----------------------------------------
+    nodes.push(storageCard());
+
+    // -- about ------------------------------------------------------------
+    nodes.push(el("div", { class: "card" },
+      el("div", { class: "card-head" }, el("h2", {}, "About")),
+      el("div", { class: "card-body" },
+        pillRow("ui", el("span", { class: "mono", style: "font-size:11.5px" }, state.env ? `v${state.env.version}, engine ${state.env.tool}` : "?")),
+        pillRow("machine", el("span", { class: "mono", style: "font-size:11.5px" }, state.env ? `${state.env.arch}, python ${state.env.python}` : "?")),
+        pillRow("data", el("span", { class: "mono", style: "font-size:11.5px;overflow-wrap:anywhere" }, state.env ? state.env.data : "?")),
+        pillRow("identity", el("span", { class: "mono", style: "font-size:11.5px;overflow-wrap:anywhere" },
+          g.name ? `${g.name} <${g.email}>` : "not set, see Commit signing")))));
+
+    body.replaceChildren(...nodes);
+  }
+
+  function storageCard() {
+    const st = state.storage;
+    if (!st) return el("div", {});
+    const rows = st.items.map((item) =>
+      pillRow(item.label,
+        el("div", { style: "display:flex;gap:10px;align-items:baseline;flex-wrap:wrap" },
+          el("span", { class: "mono", style: "font-size:11.5px;overflow-wrap:anywhere" }, item.path),
+          item.survives
+            ? el("span", { class: "pill ok", title: `on the ${item.mount_point} mount` },
+                el("i", { class: "dot" }), "survives")
+            : item.exists
+              ? el("span", { class: "pill warn", title: "in the container's writable layer" }, "lost on rebuild")
+              : el("span", { class: "pill" }, "not yet"))));
+
+    const tools = Object.entries(st.tools).map(([name, ok]) =>
+      el("span", { class: "pill " + (ok ? "ok" : "err"), title: ok ? "installed in the image" : "missing from the image" },
+        el("i", { class: "dot" }), name));
+
+    const warning = st.home_mounted
+      ? el("div", { class: "banner ok", style: "margin-bottom:10px" },
+          el("span", { class: "ico" }, "✓"),
+          el("div", {}, el("b", {}, "This home directory is a mounted volume."),
+            " Everything below survives ", el("code", {}, "docker rm"), ", a rebuild and a new image pull."))
+      : el("div", { class: "banner warn", style: "margin-bottom:10px" },
+          el("span", { class: "ico" }, "⚠"),
+          el("div", {}, el("b", {}, "This home directory is not a mounted volume."),
+            " Credentials, keys and the repo registry live in the container's writable layer, so they are lost when the container is replaced. Mount one: ",
+            el("code", {}, "-v arena-home:/home/arena")));
+
+    return el("div", { class: "card" },
+      el("div", { class: "card-head" }, el("h2", {}, "What survives a rebuild"),
+        el("div", { class: "grow" }),
+        el("span", { class: "hint" }, st.home_mounted ? "volume" : "container layer")),
+      el("div", { class: "card-body" },
+        warning,
+        ...rows,
+        el("div", { style: "margin-top:12px;display:flex;gap:6px;flex-wrap:wrap" }, ...tools),
+        el("div", { class: "hint", style: "margin-top:10px" },
+          "The tools above come from the image, not the volume, so a rebuild reinstalls them and ",
+          el("code", {}, "git-filter-repo"), " never needs setting up twice. ",
+          st.env_token ? "GH_TOKEN is set in the environment and is re-supplied by whatever starts the container." : "")));
+  }
+
+  async function submitToken() {
+    const input = $("token-input");
+    const btn = $("token-btn");
+    const token = (input.value || "").trim();
+    if (!token) return;
+    btn.disabled = true;
+    btn.setAttribute("aria-busy", "true");
+    btn.replaceChildren(el("span", { class: "spin", "aria-hidden": "true" }), " Sign in");
+    try {
+      await post("/api/auth", { action: "token", token });
+      input.value = "";
+      await refreshAuth();
+      await loadRepos();
+      renderAccess();
+      toast("signed in");
+    } catch (err) {
+      toast(err.message);
+      btn.disabled = false;
+      btn.removeAttribute("aria-busy");
+      btn.textContent = "Sign in";
+    }
+  }
+
+  async function setupGit() {
+    try {
+      await post("/api/auth", { action: "setup_git" });
+      await refreshAuth();
+      renderAccess();
+      toast("git credentials configured");
+    } catch (err) {
+      toast(err.message);
+    }
+  }
+
+  // ---------------------------------------------------------------- pwa
+  function isStandalone() {
+    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  }
+
+  function isIos() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+
+  function installCard() {
+    if (isStandalone()) {
+      return el("div", { class: "card" },
+        el("div", { class: "card-head" }, el("h2", {}, "This device")),
+        el("div", { class: "card-body" },
+          pillRow("mode", el("span", { class: "pill ok" }, el("i", { class: "dot" }), "installed app"))));
+    }
+
+    const steps = [];
+    if (state.installPrompt) {
+      steps.push(el("button", {
+        class: "btn primary",
+        onclick: async () => {
+          const prompt = state.installPrompt;
+          state.installPrompt = null;
+          prompt.prompt();
+          const choice = await prompt.userChoice.catch(() => ({ outcome: "dismissed" }));
+          if (choice.outcome !== "accepted") toast("install dismissed");
+          renderAccess();
+        },
+      }, "Install app"));
+    } else if (isIos()) {
+      steps.push(el("div", { class: "hint", style: "line-height:1.7" },
+        "In Safari: tap the ", el("b", {}, "Share"), " button, scroll down, then ",
+        el("b", {}, "Add to Home Screen"), ". It opens full screen from then on, dark status bar and all."));
+    } else {
+      steps.push(el("div", { class: "hint", style: "line-height:1.7" },
+        "In Chrome or Edge: open the browser menu and choose ",
+        el("b", {}, "Install arena-cleanup"), " (or the install icon in the address bar). Safari on macOS: ",
+        el("b", {}, "File → Add to Dock"), "."));
+    }
+
+    // Installing needs a secure context. Plain http:// on a LAN address is not
+    // one, and the failure is silent, so say it here rather than in a console.
+    if (state.env && state.env.secure === false) {
+      steps.push(el("div", { class: "banner warn", style: "margin-top:10px" },
+        el("span", { class: "ico" }, "⚠"),
+        el("div", {}, el("b", {}, "This origin is not a secure context."),
+          " Browsers only install apps from ", el("code", {}, "localhost"), " or HTTPS, so installing will be refused here. ",
+          "Open the app at ", el("code", {}, "http://localhost:8080"), " on the same machine, put it behind a reverse proxy with a certificate, ",
+          "or reach it over Tailscale. All three give a secure origin.")));
+    }
+
+    return el("div", { class: "card" },
+      el("div", { class: "card-head" }, el("h2", {}, "Install on this device"),
+        el("div", { class: "grow" }),
+        el("span", { class: "hint" }, "PWA")),
+      el("div", { class: "card-body" },
+        el("div", { class: "install-row" }, ...steps),
+        el("div", { class: "hint", style: "margin-top:10px" },
+          "It installs as an app icon and opens without browser chrome. The shell is cached; ",
+          "repository state never is, so every dashboard load still asks this server.")));
+  }
+
+  async function openSigning() {
+    state.returnTo = state.view === "repo" ? "repo" : "dashboard";
+    show("signing");
+    $("signing-body").replaceChildren(el("div", { class: "hint" }, "loading…"));
+    try {
+      state.signing = await api("/api/signing");
+    } catch (err) {
+      $("signing-body").replaceChildren(el("div", { class: "banner err" }, err.message));
+      return;
+    }
+    renderSigning();
+  }
+
+  function renderSigning() {
+    const s = state.signing;
+    const body = $("signing-body");
+    const nodes = [];
+
+    if (!s.gpg) {
+      nodes.push(el("div", { class: "banner err" }, "gpg is not installed in this container, so commits cannot be signed. Rebuild the image (it includes gnupg2)."));
+    }
+
+    const active = s.keys.find((k) => k.fingerprint === s.active);
+    if (s.keys.length && s.signingkey && active) {
+      nodes.push(el("div", { class: "banner ok" }, "Signing is on: commits are signed with " + active.uid));
+    } else if (s.keys.length) {
+      nodes.push(el("div", { class: "banner warn" }, "A key exists but git is not configured to use it. Pick one below."));
+    } else if (s.gpg) {
+      nodes.push(el("div", { class: "banner warn" }, "No GPG key in this container yet. Create one below. The key is generated inside the container and never leaves it."));
+    }
+
+    // the warning the whole panel exists for
+    if (active && s.github.checked && !active.on_github) {
+      nodes.push(el("div", { class: "banner warn" },
+        el("span", { class: "ico" }, "⚠"),
+        el("div", {},
+          el("b", {}, "This key is not assigned to your GitHub account."),
+          " Commits will show as “Unverified” until you add the public key at ",
+          el("a", { href: "https://github.com/settings/gpg/new", target: "_blank", rel: "noopener", style: "text-decoration:underline" }, "github.com/settings/gpg/new"),
+          " (and the key's email matches a verified email on the account).")));
+    } else if (active && s.github.checked && active.on_github) {
+      nodes.push(el("div", { class: "banner ok" }, "This key is assigned to your GitHub account."));
+    } else if (s.github.error) {
+      nodes.push(el("div", { class: "banner warn" }, "Could not check GitHub: " + s.github.error));
+    }
+
+    // key list
+    const list = el("div", { class: "card" },
+      el("div", { class: "card-head" }, el("h2", {}, "Keys in this container"), el("div", { class: "grow" }), el("span", { class: "hint" }, `${s.keys.length} found`)),
+      el("div", { class: "card-body" }, ...(s.keys.length ? s.keys.map((k) =>
+        el("div", { class: "sign-row" },
+          el("div", { class: "sign-key" },
+            el("b", {}, k.uid || "(no uid)"),
+            el("div", {}, k.fingerprint),
+            k.on_github ? el("span", { class: "pill ok", style: "margin-top:6px" }, "on GitHub") : null),
+          k.fingerprint === s.active
+            ? el("span", { class: "pill ok" }, "active")
+            : el("button", { class: "btn", onclick: async () => {
+                await post("/api/signing", { action: "use", fingerprint: k.fingerprint });
+                await openSigning();
+              } }, "Use"),
+          el("button", { class: "btn ghost", onclick: async () => {
+            const out = await post("/api/signing", { action: "public_key", fingerprint: k.fingerprint });
+            navigator.clipboard?.writeText(out.public_key || "");
+            toast("public key copied");
+          } }, "Copy public key"))
+        ) : [el("div", { class: "hint" }, "No secret keys.")])));
+    nodes.push(list);
+
+    // create
+    const name = el("input", { class: "field", id: "gpg-name", placeholder: "Your name", value: s.git_name || "" });
+    const email = el("input", { class: "field", id: "gpg-email", placeholder: "you@example.com", value: s.git_email || "" });
+    const createBtn = el("button", { class: "btn primary", onclick: async () => {
+      createBtn.disabled = true;
+      createBtn.textContent = "Creating…";
+      try {
+        await post("/api/signing", { action: "create", name: name.value, email: email.value });
+        toast("key created");
+        await openSigning();
+      } catch (err) {
+        toast(err.message);
+      } finally {
+        createBtn.disabled = false;
+        createBtn.textContent = "Create key";
+      }
+    } }, "Create key");
+
+    nodes.push(el("div", { class: "card" },
+      el("div", { class: "card-head" }, el("h2", {}, s.keys.length ? "Create another key" : "Create a key"), el("span", { class: "hint" }, "ed25519, no passphrase, generated inside the container")),
+      el("div", { class: "card-body", style: "display:grid;gap:10px" },
+        el("div", { style: "display:grid;gap:10px;grid-template-columns:1fr 1fr" }, name, email),
+        createBtn,
+        el("div", { class: "hint" }, "The private key stays in /home/arena/.gnupg inside this container's volume. Export it if you also want to sign on your laptop."),
+      )));
+
+    // steps
+    nodes.push(el("div", { class: "card" },
+      el("div", { class: "card-head" }, el("h2", {}, "Add the public key to GitHub")),
+      el("div", { class: "card-body" },
+        stepList([
+          "Copy the public key (<b>Copy public key</b> above).",
+          "Open <a href=\"https://github.com/settings/gpg/new\" target=\"_blank\" rel=\"noopener\">github.com/settings/gpg/new</a>.",
+          "Paste the block that starts with <code>-----BEGIN PGP PUBLIC KEY BLOCK-----</code>.",
+          "Add the key, then come back here and press <b>Re-check</b>.",
+        ]),
+        el("div", { style: "margin-top:12px;display:flex;gap:8px;flex-wrap:wrap" },
+          el("button", { class: "btn", onclick: async () => { await openSigning(); toast("re-checked"); } }, "Re-check"),
+          el("a", { class: "btn ghost", href: "https://github.com/settings/keys", target: "_blank", rel: "noopener" }, "Open GitHub keys")))));
+
+    body.replaceChildren(...nodes);
+  }
+
+  // ---------------------------------------------------------------- wiring
+  $("add-btn").onclick = addRepo;
+  $("add-source").onkeydown = (ev) => { if (ev.key === "Enter") addRepo(); };
+  $("back").onclick = () => {
+    state.repo = null;  // don't let a closed repo come back as a "return" target
+    show("dashboard");
+    loadRepos();
+  };
+  $("signing-btn").onclick = openSigning;
+  $("access-btn").onclick = openAccess;
+  $("access-back").onclick = goBack;
+  $("signing-back").onclick = goBack;
+
+  window.addEventListener("hashchange", () => {
+    if (state.selfNav === location.hash) {
+      state.selfNav = null;
+      return;
+    }
+    applyHash();
+  });
+
+  $("cmdswitch").onclick = (ev) => {
+    const btn = ev.target.closest("button[data-cmd]");
+    if (!btn || state.job) return;
+    state.command = btn.dataset.cmd;
+    for (const b of $("cmdswitch").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b === btn));
+    renderCommand();
+  };
+
+  $("toggles").onclick = (ev) => {
+    const btn = ev.target.closest(".toggle");
+    if (!btn) return;
+    const key = btn.dataset.opt;
+    state.opts[key] = !state.opts[key];
+    btn.setAttribute("aria-pressed", String(state.opts[key]));
+    renderCommand();
+  };
+
+  $("divergence").onclick = (ev) => {
+    const btn = ev.target.closest("button[data-v]");
+    if (!btn) return;
+    state.divergence = btn.dataset.v;
+    for (const b of $("divergence").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b === btn));
+    renderCommand();
+  };
+
+  $("branch").onchange = (ev) => { state.branch = ev.target.value; renderSidebar(); renderCommand(); };
+
+  $("pathin").onkeydown = (ev) => {
+    if (ev.key === "Enter" && ev.target.value.trim()) {
+      ev.preventDefault();
+      const value = ev.target.value.trim().replace(/^\.\//, "").replace(/\/+$/, "");
+      if (value && !state.paths.includes(value)) state.paths.push(value);
+      ev.target.value = "";
+      renderPaths();
+      renderCommand();
+    } else if (ev.key === "Backspace" && !ev.target.value && state.paths.length) {
+      state.paths.pop();
+      renderPaths();
+      renderCommand();
+    }
+  };
+  $("timeout").oninput = renderCommand;
+
+  $("start").onclick = () => startJob(payload());
+  $("start-mobile").onclick = () => startJob(payload());
+  const cancelJob = async () => {
+    if (!state.job) return;
+    await post(`/api/jobs/${state.job}/cancel`).catch(() => {});
+    toast("cancelled");
+  };
+  $("cancel").onclick = cancelJob;
+  $("cancel-mobile").onclick = cancelJob;
+
+  $("logtoggle").onclick = () => setLogOpen($("logwrap").hidden);
+  $("commits-refresh").onclick = () => {
+    loadCommits();
+    toast("reloaded");
+  };
+
+  // the branch row folds on a phone; on a wide screen it is always open
+  const narrow = matchMedia("(max-width: 980px)");
+  const syncBranchOpen = () => {
+    const details = $("opt-branch");
+    if (!details.dataset.touched) details.open = !narrow.matches;
+  };
+  $("opt-branch").querySelector("summary").addEventListener("click", () => {
+    $("opt-branch").dataset.touched = "1";
+  });
+  narrow.addEventListener("change", syncBranchOpen);
+  syncBranchOpen();
+
+  $("copy").onclick = async () => {
+    const text = [...$("log").querySelectorAll(".log-row")].map((r) => r.querySelector(".msg")?.textContent ?? "").join("\n");
+    try { await navigator.clipboard.writeText(text); toast("copied"); }
+    catch {
+      const ta = el("textarea", {});
+      ta.value = text;
+      document.body.append(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      toast("copied");
+    }
+  };
+
+  $("log").onscroll = () => {
+    const log = $("log");
+    const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 70;
+    state.autoscroll = nearBottom;
+    $("jump").classList.toggle("show", !nearBottom && log.scrollHeight > log.clientHeight);
+  };
+  // the whole chip strip is the input's hit target, not just the 32px field
+  $("chips").addEventListener("click", (e) => {
+    if (e.target.id === "chips") $("pathin").focus();
+  });
+  $("jump").onclick = () => {
+    const log = $("log");
+    log.scrollTop = log.scrollHeight;
+    state.autoscroll = true;
+    $("jump").classList.remove("show");
+  };
+
+  document.addEventListener("keydown", (ev) => {
+    if ((ev.metaKey || ev.ctrlKey) && ev.key === "Enter" && !$("view-repo").hidden) {
+      ev.preventDefault();
+      if (!$("start").disabled) startJob(payload());
+    }
+  });
+
+  async function boot() {
+    resetPhases();
+    renderCommand();
+    try {
+      const env = await api("/api/env");
+      $("ver").textContent = "v" + env.version;
+      $("ver").title = `UI ${env.version}, engine ${env.tool}, python ${env.python}, ${env.arch}`;
+      const parts = [
+        ["git", env.tools.git, "git"],
+        ["gh", env.tools.gh, "gh"],
+        ["filter-repo", env.tools["git-filter-repo"], "git-filter-repo"],
+        ["gpg", env.tools.gpg, "gpg"],
+      ];
+      state.env = env;
+      // colour alone is not a status: each dot carries the words too, even
+      // when the phone layout hides the visible label
+      $("env").replaceChildren(...parts.map(([label, ok, title]) =>
+        el("span", {
+          class: ok ? "on" : "",
+          role: "img",
+          "aria-label": `${title} ${ok ? "ready" : "missing"}`,
+          title: `${title} ${ok ? "ready" : "missing"}`,
+        }, el("i", {}), el("span", { class: "lbl" }, label))));
+    } catch { /* the page still works without the badge */ }
+    await refreshAuth();
+    await loadRepos();
+    await applyHash();
+    // one primary input on a desktop screen: put the cursor in it. Phones get
+    // no autofocus, where the keyboard opening shifts the whole layout.
+    if (window.matchMedia("(pointer: fine)").matches && !location.hash.slice(2)
+        && state.view === "dashboard") {
+      $("add-source").focus({ preventScroll: true });
+    }
+    // a token can be added or revoked from a shell, so re-ask on a short clock
+    setInterval(refreshAuth, 15000);
+    setInterval(loadRepos, 20000);
+  }
+  window.addEventListener("online", () => loadRepos());
+  window.addEventListener("offline", () => loadRepos());
+
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    state.installPrompt = event;
+    if (!$("view-access").hidden) renderAccess();
+  });
+  window.addEventListener("appinstalled", () => {
+    state.installPrompt = null;
+    toast("installed");
+    if (!$("view-access").hidden) renderAccess();
+  });
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
+        /* no HTTPS, or a hardened browser: the app still works */
+      });
+    });
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
