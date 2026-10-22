@@ -805,13 +805,13 @@ Formatting contracts:
 
 - `.editorconfig`: `indent_size = 2` for everything
 - `pyproject.toml`: Ruff, `indent-width = 2`, `ignore = ["BLE001", "S110"]`
-- `.markdownlint.json`: defaults, `MD013` off, `MD060` on, `MD024` siblings only
+- `.markdownlint-cli2.jsonc`: every `*.md` outside `.agents/`, `ARENA.md`, and `LICENSE.md`; defaults, `MD013` off, `MD060` on, `MD024` siblings only
 
 ```console
 uv run ruff format engine.py ui/server.py tools/*.py
 uv run ruff check --fix engine.py ui/server.py tools/*.py
 uv run shfmt -i 2 -w run-tests.sh docker-entrypoint.sh
-markdownlint README.md CHANGELOG.md
+markdownlint-cli2
 ```
 
 The two QA tools need Playwright: `uv sync --group qa`, then
