@@ -40,7 +40,7 @@ PHONE_DEVICE = "iPhone 13"
 # the walk provokes these on purpose, so they are narration, not failures
 INDUCED = ("status of 400", "ERR_INTERNET_DISCONNECTED", "status of 404")
 
-DEMO_REPOS = 3
+DEMO_REPOS = 5
 MIN_TOOLS_READY = 2
 MIN_LOG_ROWS = 5
 TAP_TARGET_PX = 48
