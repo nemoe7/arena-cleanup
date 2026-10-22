@@ -54,6 +54,11 @@
     --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     --r: 10px;
     --pad: 20px;
+    --fs-1: 12px;
+    --fs-2: 13px;
+    --fs-3: 14px;
+    --fs-4: 16px;
+    --fs-5: 20px;
     font-synthesis: none;
   }
 
@@ -75,7 +80,7 @@
   ::-webkit-scrollbar-thumb:hover { background: #3c4450; background-clip: padding-box; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
-    font: 400 13.5px/1.55 var(--sans);
+    font: 400 var(--fs-3)/1.55 var(--sans);
     font-feature-settings: "cv05" 1, "ss03" 1;
     letter-spacing: -.006em;
     -webkit-font-smoothing: antialiased;
@@ -96,7 +101,7 @@
   .skip {
     position: fixed; left: 8px; top: -60px; z-index: 40; padding: 12px 16px;
     background: var(--surface-3); border: 1px solid var(--accent); border-radius: 8px;
-    color: var(--text); text-decoration: none; font-weight: 600; font-size: 13px;
+    color: var(--text); text-decoration: none; font-weight: 600; font-size: var(--fs-2);
     transition: top .12s ease-out;
   }
   .skip:focus { top: 8px; }
@@ -124,19 +129,19 @@
     backdrop-filter: saturate(160%) blur(12px);
   }
   .brand {
-    display: flex; align-items: center; gap: 8px; align-self: stretch; font-weight: 620; font-size: 14px;
+    display: flex; align-items: center; gap: 8px; align-self: stretch; font-weight: 620; font-size: var(--fs-3);
     color: inherit; text-decoration: none; border-radius: 8px; padding: 4px 6px; margin-left: -6px;
   }
   .brand:hover { background: var(--surface-2); }
   .brand svg { display: block; }
   .chip {
-    font: 500 11px/1 var(--mono); color: var(--muted);
+    font: 500 var(--fs-1)/1 var(--mono); color: var(--muted);
     border: 1px solid var(--line-2); border-radius: 6px;
     padding: 2px 6px; background: var(--surface-2);
   }
   .grow { flex: 1; }
 
-  .env-dots { display: flex; align-items: center; gap: 12px; color: var(--dim); font-size: 11.5px; }
+  .env-dots { display: flex; align-items: center; gap: 12px; color: var(--dim); font-size: var(--fs-1); }
   .env-dots span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--dim); }
   .env-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--err); display: inline-block; }
   .env-dots span.on i { background: var(--ok); }
@@ -154,7 +159,7 @@
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     height: 34px; padding: 0 12px; border-radius: 8px; cursor: pointer;
     border: 1px solid var(--line-2); background: var(--surface-2); color: var(--text);
-    font-weight: 560; font-size: 13px; white-space: nowrap;
+    font-weight: 560; font-size: var(--fs-2); white-space: nowrap;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .045);
     transition: background .12s, border-color .12s;
   }
@@ -182,7 +187,7 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .btn[aria-busy="true"] { cursor: progress; }
-  .btn kbd, kbd.k { font: 500 10.5px/1 var(--mono); color: rgba(255,255,255,.72); border: 1px solid rgba(255,255,255,.2); border-radius: 4px; padding: 2px 4px; }
+  .btn kbd, kbd.k { font: 500 var(--fs-1)/1 var(--mono); color: rgba(255,255,255,.72); border: 1px solid rgba(255,255,255,.2); border-radius: 4px; padding: 2px 4px; }
 
   /* -------------------------------------------------------------- layout */
   main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
@@ -193,7 +198,7 @@
 
   /* ----------------------------------------------------------- dashboard */
   .hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
-  .hero h1, .wrap h1.page-title { font-size: 20px; font-weight: 640; margin: 0; }
+  .hero h1, .wrap h1.page-title { font-size: var(--fs-5); font-weight: 640; margin: 0; }
 
   /* one border, not two: the bar is the field shell, so the input inside it
      drops its own frame and only the bar lights up */
@@ -207,12 +212,12 @@
   .addbar .field:focus { box-shadow: none; }
   .field {
     width: 100%; height: 34px; background: var(--surface-2); border: 1px solid var(--line-2);
-    border-radius: 8px; padding: 0 10px; color: var(--text); font-size: 13px; min-width: 0;
+    border-radius: 8px; padding: 0 10px; color: var(--text); font-size: var(--fs-2); min-width: 0;
   }
   .field:focus { border-color: #3d4655; box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
   /* the ring has to survive the rule above: keyboard focus gets a solid one */
   .field:focus-visible { outline: 2px solid var(--accent-hi); outline-offset: 1px; }
-  .mono-field { font-family: var(--mono); font-size: 12.5px; }
+  .mono-field { font-family: var(--mono); font-size: var(--fs-2); }
   select.field { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--dim) 50%), linear-gradient(135deg, var(--dim) 50%, transparent 50%); background-position: right 12px center, right 8px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 24px; }
 
   .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); margin-top: 20px; }
@@ -231,12 +236,12 @@
     display: grid; place-items: center; background: var(--surface-3);
     border: 1px solid var(--line-2); color: var(--muted);
   }
-  .repo-name { font-weight: 600; font-size: 14px; letter-spacing: -.01em; overflow-wrap: anywhere; }
-  .repo-path { color: var(--dim); font: 11.5px/1.4 var(--mono); overflow-wrap: anywhere; }
+  .repo-name { font-weight: 600; font-size: var(--fs-3); letter-spacing: -.01em; overflow-wrap: anywhere; }
+  .repo-path { color: var(--dim); font: var(--fs-1)/1.4 var(--mono); overflow-wrap: anywhere; }
   .repo-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .pill {
     display: inline-flex; align-items: center; gap: 6px;
-    font-size: 11.5px; font-weight: 520; border-radius: 999px;
+    font-size: var(--fs-1); font-weight: 520; border-radius: 999px;
     padding: 4px 8px; border: 1px solid var(--line-2); background: var(--surface-2); color: var(--muted);
     white-space: nowrap; min-width: 0; max-width: 100%;
   }
@@ -246,30 +251,30 @@
   .pill.warn { color: #f0c674; border-color: rgba(214,160,50,.32); background: rgba(214,160,50,.09); }
   .pill.err { color: #ff9a94; border-color: rgba(240,87,79,.32); background: rgba(240,87,79,.09); }
   .pill.run { color: #9dc7ff; border-color: rgba(90,162,247,.32); background: rgba(90,162,247,.09); }
-  .pill.mono { font-family: var(--mono); font-size: 11px; }
+  .pill.mono { font-family: var(--mono); font-size: var(--fs-1); }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
 
   .arena-list { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--line); padding-top: 12px; }
-  .arena-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; min-width: 0; flex-wrap: wrap; row-gap: 2px; }
-  .arena-row .bname { font-family: var(--mono); font-size: 11.5px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .arena-row { display: flex; align-items: center; gap: 8px; font-size: var(--fs-2); min-width: 0; flex-wrap: wrap; row-gap: 2px; }
+  .arena-row .bname { font-family: var(--mono); font-size: var(--fs-1); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* the checks pill is the link: one control, no orphan "Pull request" label */
   .arena-row .prlink { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 4px;
     text-decoration: none; border-radius: 999px; min-height: 24px; }
-  .arena-row .prlink .ext { color: var(--dim); font-size: 11px; line-height: 1; }
+  .arena-row .prlink .ext { color: var(--dim); font-size: var(--fs-1); line-height: 1; }
   .arena-row .prlink:hover .pill { border-color: var(--line-2); }
   .arena-row .prlink:hover .ext, .arena-row .prlink:focus-visible .ext { color: var(--accent-hi); }
 
   /* what the selected task will do, in one sentence */
-  .task-note { margin: 0; max-width: 132ch; color: var(--dim); font-size: 12.5px; line-height: 1.55; }
+  .task-note { margin: 0; max-width: 132ch; color: var(--dim); font-size: var(--fs-2); line-height: 1.55; }
   .card-actions { display: flex; gap: 8px; align-items: center; }
-  .card-actions .btn { height: 30px; font-size: 12.5px; padding: 0 12px; }
+  .card-actions .btn { height: 30px; font-size: var(--fs-2); padding: 0 12px; }
 
   .empty-state {
     border: 1px dashed var(--line-2); border-radius: 12px; padding: 32px 20px;
     text-align: center; color: var(--dim); margin-top: 20px; display: grid; gap: 6px; justify-items: center;
   }
   .empty-state strong { color: var(--text); font-weight: 560; }
-  .empty-state code { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .empty-state code { font-family: var(--mono); font-size: var(--fs-1); color: var(--muted); }
 
   /* ----------------------------------------------------------- repo view */
   .detail { display: grid; grid-template-columns: 264px minmax(0, 1fr); flex: 1; min-height: 0; }
@@ -279,48 +284,48 @@
   }
   .side-group { display: flex; flex-direction: column; gap: 4px; }
   .side-label {
-    font-size: 11.5px; font-weight: 600; letter-spacing: 0;
+    font-size: var(--fs-1); font-weight: 600; letter-spacing: 0;
     color: var(--muted); padding: 0 6px 4px; display: flex; justify-content: space-between;
   }
-  .kv { display: grid; grid-template-columns: 68px 1fr; gap: 2px 8px; padding: 0 6px; font-size: 12px; }
+  .kv { display: grid; grid-template-columns: 68px 1fr; gap: 2px 8px; padding: 0 6px; font-size: var(--fs-1); }
   .kv dt { color: var(--dim); }
   .kv dd { margin: 0; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .kv dd.mono { font-family: var(--mono); font-size: 11.5px; }
+  .kv dd.mono { font-family: var(--mono); font-size: var(--fs-1); }
 
   .row-btn {
     display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: 0;
-    text-align: left; color: var(--muted); padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12.5px;
+    text-align: left; color: var(--muted); padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: var(--fs-2);
   }
   .row-btn:hover { background: var(--surface-2); color: var(--text); }
-  .row-btn .txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: 11.5px; }
+  .row-btn .txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: var(--fs-1); }
   .row-btn.sel { background: var(--surface-2); color: var(--text); }
   .row-btn.sel .dot { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-  .row-btn .meta { flex: none; color: var(--dim); font: 11px var(--mono); }
+  .row-btn .meta { flex: none; color: var(--dim); font: var(--fs-1) var(--mono); }
 
   .main-col { padding: 20px 24px 32px; display: flex; flex-direction: column; gap: 16px; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
   .detail-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .detail-head h1 { font-size: 17px; margin: 0; }
-  .detail-head .sub { color: var(--dim); font-size: 12px; font-family: var(--mono); }
+  .detail-head h1 { font-size: var(--fs-4); margin: 0; }
+  .detail-head .sub { color: var(--dim); font-size: var(--fs-1); font-family: var(--mono); }
 
   .card { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); flex: none; }
   /* every page that stacks cards gets the gap from one place */
   .stack { display: grid; gap: 16px; align-content: start; }
   .card-head { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 16px; border-bottom: 1px solid var(--line); }
-  .card-head h2 { margin: 0; font-size: 12.5px; font-weight: 600; }
-  .card-head .hint { color: var(--dim); font-size: 11.5px; }
+  .card-head h2 { margin: 0; font-size: var(--fs-2); font-weight: 600; }
+  .card-head .hint { color: var(--dim); font-size: var(--fs-1); }
   .card-body { padding: 16px; }
 
   .options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 20px; }
   .opt { padding: 8px 2px; border-bottom: 1px solid var(--line); min-width: 0; }
   .opt-label { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
-  .opt-label label, .opt-label span.lbl { font-weight: 560; font-size: 12.5px; }
-  .opt-label .desc { color: var(--dim); font-size: 11.5px; }
+  .opt-label label, .opt-label span.lbl { font-weight: 560; font-size: var(--fs-2); }
+  .opt-label .desc { color: var(--dim); font-size: var(--fs-1); }
 
   /* the branch row folds away on a phone and sits inline on a wide screen */
   .branch-opt > summary { display: none; }
   .branch-opt .opt-sum {
     display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none;
-    font-size: 13px; font-weight: 560; padding: 2px 0;
+    font-size: var(--fs-2); font-weight: 560; padding: 2px 0;
   }
   .branch-opt .opt-sum::-webkit-details-marker { display: none; }
   .branch-opt .opt-sum .pill { margin-left: auto; }
@@ -334,16 +339,16 @@
 
   .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 34px; padding: 4px 6px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface-2); }
   .chips:focus-within { border-color: #3d4655; box-shadow: 0 0 0 3px var(--accent-soft); }
-  .chips input { flex: 1; min-width: 90px; height: 22px; border: 0; background: none; outline: none; font: 12px var(--mono); }
+  .chips input { flex: 1; min-width: 90px; height: 22px; border: 0; background: none; outline: none; font: var(--fs-1) var(--mono); }
   .chips input::placeholder { color: var(--dim); font-family: var(--mono); }
-  .chip-x { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-2); background: var(--surface-3); border-radius: 6px; padding: 2px 4px 2px 8px; font: 11.5px var(--mono); }
-  .chip-x button { border: 0; background: none; color: var(--dim); cursor: pointer; padding: 0 3px; font-size: 14px; line-height: 1; }
+  .chip-x { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-2); background: var(--surface-3); border-radius: 6px; padding: 2px 4px 2px 8px; font: var(--fs-1) var(--mono); }
+  .chip-x button { border: 0; background: none; color: var(--dim); cursor: pointer; padding: 0 3px; font-size: var(--fs-3); line-height: 1; }
   .chip-x button:hover { color: var(--err); }
 
   .toggles { display: flex; flex-wrap: wrap; gap: 6px; }
   .toggle {
     display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line-2);
-    background: var(--surface-2); color: var(--muted); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 12.5px;
+    background: var(--surface-2); color: var(--muted); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: var(--fs-2);
   }
   .toggle:hover { border-color: #313842; color: var(--text); }
   .toggle .sw { width: 26px; height: 15px; border-radius: 999px; background: #23272e; position: relative; transition: background .15s; flex: none; }
@@ -352,10 +357,10 @@
   .toggle[aria-pressed="true"] .sw { background: var(--accent-soft); }
   .toggle[aria-pressed="true"] .sw::after { transform: translateX(11px); background: var(--accent-hi); }
   .toggle.danger[aria-pressed="true"] .sw::after { background: var(--warn); }
-  .toggle small { color: var(--dim); font-size: 11.5px; }
+  .toggle small { color: var(--dim); font-size: var(--fs-1); }
 
   .seg-row, .segmented { display: inline-flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--line-2); }
-  .seg-row button, .segmented button { border: 0; background: none; color: var(--muted); padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 520; }
+  .seg-row button, .segmented button { border: 0; background: none; color: var(--muted); padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: var(--fs-2); font-weight: 520; }
   /* the phone gets short tab labels; the wide screen keeps the full verbs */
   .seg-short { display: none; }
   .seg-row button[aria-pressed="true"], .segmented button[aria-pressed="true"] { background: var(--surface-3); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-2); }
@@ -370,13 +375,13 @@
   .phase-head {
     display: flex; align-items: center; gap: 10px; width: 100%;
     padding: 8px 16px; background: none; border: 0; color: var(--text);
-    font-size: 13px; text-align: left; cursor: pointer;
+    font-size: var(--fs-2); text-align: left; cursor: pointer;
   }
   .phase-head:hover { background: var(--surface-2); }
   .phase-head:focus-visible { outline-offset: -2px; }
   .phase-ico {
     width: 16px; height: 16px; flex: none; display: grid; place-items: center;
-    color: var(--dim); font-size: 11px; line-height: 1;
+    color: var(--dim); font-size: var(--fs-1); line-height: 1;
   }
   .phase[data-state="run"] .phase-ico { color: var(--accent-hi); }
   .phase[data-state="done"] .phase-ico { color: var(--ok); }
@@ -384,11 +389,11 @@
   .phase[data-state="skip"] .phase-ico { color: var(--dim); }
   .phase-name { font-weight: 560; flex: none; }
   .phase-sub {
-    color: var(--dim); font: 11.5px var(--mono); min-width: 0;
+    color: var(--dim); font: var(--fs-1) var(--mono); min-width: 0;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .phase-time {
-    margin-left: auto; color: var(--dim); font: 11px var(--mono); flex: none;
+    margin-left: auto; color: var(--dim); font: var(--fs-1) var(--mono); flex: none;
     font-variant-numeric: tabular-nums;
   }
   .phase-caret { color: var(--dim); flex: none; transition: transform .12s; }
@@ -399,10 +404,10 @@
     display: flex; align-items: center; gap: 8px; padding: 8px 16px;
     border-top: 1px solid var(--line);
   }
-  .run-foot .hint { color: var(--dim); font-size: 11.5px; }
+  .run-foot .hint { color: var(--dim); font-size: var(--fs-1); }
   .logwrap { position: relative; border-top: 1px solid var(--line); }
   .logwrap .log { max-height: 340px; padding: 8px 0 12px; }
-  .status { display: inline-flex; align-items: center; gap: 8px; font: 500 11px/1 var(--mono); color: var(--muted); border: 1px solid var(--line-2); border-radius: 999px; padding: 4px 8px; background: var(--surface-2); }
+  .status { display: inline-flex; align-items: center; gap: 8px; font: 500 var(--fs-1)/1 var(--mono); color: var(--muted); border: 1px solid var(--line-2); border-radius: 999px; padding: 4px 8px; background: var(--surface-2); }
   .status .led { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
   .status.running .led { background: var(--accent-hi); animation: pulse 1.4s ease-in-out infinite; }
   .status.ok .led { background: var(--ok); }
@@ -411,10 +416,10 @@
 
   /* no overscroll containment here: with the wheel over the log and the log at
      its end, the page around it has to keep scrolling */
-  .log { flex: 1; overflow: auto; padding: 8px 0 12px; font: 12px/1.7 var(--mono); scrollbar-gutter: stable; }
+  .log { flex: 1; overflow: auto; padding: 8px 0 12px; font: var(--fs-1)/1.7 var(--mono); scrollbar-gutter: stable; }
   .log-row { display: grid; grid-template-columns: 74px 44px minmax(0, 1fr); gap: 10px; padding: 0 16px; }
   .log-row .t { color: #4f555e; }
-  .log-row .lv { font-weight: 600; font-size: 11px; letter-spacing: .05em; padding-top: 2px; color: var(--dim); }
+  .log-row .lv { font-weight: 600; font-size: var(--fs-1); letter-spacing: .05em; padding-top: 2px; color: var(--dim); }
   .log-row .msg { color: #c6cbd2; white-space: pre-wrap; overflow-wrap: anywhere; }
   .log-row.ok .lv { color: var(--ok); }
   .log-row.warn .lv { color: var(--warn); }
@@ -426,43 +431,54 @@
   .commits { display: flex; flex-direction: column; }
   .commit {
     display: grid; grid-template-columns: 68px minmax(0, 1fr) auto; gap: 12px;
-    align-items: center; padding: 8px 16px; border-top: 1px solid var(--line); font-size: 12.5px;
+    align-items: center; padding: 8px 16px; border-top: 1px solid var(--line); font-size: var(--fs-2);
   }
   .commit:first-child { border-top: 0; }
-  .commit .sha { font: 11.5px var(--mono); color: var(--dim); }
+  .commit .sha { font: var(--fs-1) var(--mono); color: var(--dim); }
   .commit .subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .commit .meta {
     display: flex; align-items: center; gap: 8px; color: var(--dim);
-    font-size: 11.5px; white-space: nowrap;
+    font-size: var(--fs-1); white-space: nowrap;
   }
-  .commit .sig { color: var(--ok); font-size: 11px; }
+  .commit .sig { color: var(--ok); font-size: var(--fs-1); }
   .commit .sig.none { color: var(--dim); }
 
   .empty-log { display: grid; place-items: center; gap: 8px; height: 100%; min-height: 190px; color: var(--dim); text-align: center; padding: 20px; }
-  .empty-log p { margin: 0; max-width: 380px; font-size: 12.5px; line-height: 1.6; }
-  .empty-log code { font-family: var(--mono); color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-size: 12px; }
-  .jump { position: absolute; right: 16px; bottom: 16px; border: 1px solid var(--line-2); background: var(--surface-3); border-radius: 999px; padding: 4px 12px; font-size: 11.5px; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.55); display: none; }
+  .empty-log p { margin: 0; max-width: 380px; font-size: var(--fs-2); line-height: 1.6; }
+  .empty-log code { font-family: var(--mono); color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-size: var(--fs-1); }
+  .jump { position: absolute; right: 16px; bottom: 16px; border: 1px solid var(--line-2); background: var(--surface-3); border-radius: 999px; padding: 4px 12px; font-size: var(--fs-1); cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.55); display: none; }
   .jump.show { display: block; }
 
   /* --------------------------------------------------------------- signing */
   .sign-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
   .sign-row:last-child { border-bottom: 0; }
-  .sign-key { font: 11.5px var(--mono); color: var(--muted); overflow-wrap: anywhere; flex: 1; min-width: 220px; }
+  .sign-row .k { min-width: 120px; color: var(--dim); font-size: var(--fs-1); }
+  .sign-row .v { min-width: 0; flex: 1; }
+  .sign-row .v .mono { font-family: var(--mono); font-size: var(--fs-1); overflow-wrap: anywhere; }
+  .sign-row .v .row { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .sign-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .sign-key { font: var(--fs-1) var(--mono); color: var(--muted); overflow-wrap: anywhere; flex: 1; min-width: 220px; }
   .sign-key b { color: var(--text); font-weight: 600; }
   .banner {
     display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; border-radius: 8px;
-    font-size: 12.5px; line-height: 1.5; border: 1px solid;
+    font-size: var(--fs-2); line-height: 1.5; border: 1px solid;
   }
   .banner.warn { color: #f2ce8a; border-color: rgba(214,160,50,.34); background: rgba(214,160,50,.08); }
   .banner.ok { color: #9fe3ad; border-color: rgba(70,185,92,.3); background: rgba(70,185,92,.07); }
   .banner.err { color: #ffa8a2; border-color: rgba(240,87,79,.32); background: rgba(240,87,79,.08); }
   .banner .ico { flex: none; margin-top: 1px; }
-  .banner code { font-family: var(--mono); font-size: 11.5px; }
-  .steps { margin: 10px 0 0; padding-left: 20px; color: var(--muted); font-size: 12.5px; line-height: 1.75; }
-  .steps code, .steps kbd { font-family: var(--mono); font-size: 11.5px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+  .ico-svg { display: inline-flex; width: 1em; height: 1em; flex: none; vertical-align: -.125em; }
+  .ico-svg svg, svg.ico-svg { display: block; width: 1em; height: 1em; fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .back .ico-svg { margin-right: 6px; }
+  .jump .ico-svg { margin-right: 4px; }
+  .phase-ico .idle { opacity: .45; }
+  .banner code { font-family: var(--mono); font-size: var(--fs-1); }
+  .steps { margin: 10px 0 0; padding-left: 20px; color: var(--muted); font-size: var(--fs-2); line-height: 1.75; }
+  .steps code, .steps kbd { font-family: var(--mono); font-size: var(--fs-1); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
   .pubkey {
     width: 100%; min-height: 108px; resize: vertical; background: #0a0c0f; color: #b9c0c8;
-    border: 1px solid var(--line-2); border-radius: 8px; padding: 10px; font: 11.5px/1.6 var(--mono);
+    border: 1px solid var(--line-2); border-radius: 8px; padding: 10px; font: var(--fs-1)/1.6 var(--mono);
   }
 
   /* --------------------------------------------------------------- mobile */
@@ -478,7 +494,7 @@
   .toast {
     position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(10px);
     background: var(--surface-3); border: 1px solid var(--line-2); padding: 8px 16px; border-radius: 10px;
-    font-size: 12.5px; opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s;
+    font-size: var(--fs-2); opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s;
     box-shadow: 0 12px 34px rgba(0,0,0,.6); z-index: 60; max-width: calc(100vw - 32px); text-align: center;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -507,7 +523,10 @@
     .hint, .repo-path, .opt-label .desc, .phase-sub, .run-foot .hint, .commit .meta { font-size: 12px; }
     .phase-head { padding: 10px 12px; font-size: 13px; min-height: 44px; }
     .task-note { font-size: 12px; }
-    .commit { font-size: 13px; }
+    .commit { font-size: 13px; grid-template-columns: 68px minmax(0, 1fr); row-gap: 4px; }
+    .commit .meta { grid-column: 1 / -1; white-space: normal; flex-wrap: wrap; }
+    .sign-fields { grid-template-columns: 1fr; }
+    .sign-row .k { flex-basis: 100%; min-width: 0; }
     .run-foot { flex-wrap: wrap; }
     .logwrap .log { max-height: 52vh; }
     .topbar { height: 52px; gap: 8px; }
@@ -539,7 +558,7 @@
     .wrap { padding: 16px var(--pad) 88px; }
     .detail-head h1 { font-size: 15px; }
     .card-head { flex-wrap: wrap; height: auto; padding: 10px 12px; gap: 6px; }
-    .log { font-size: 11.5px; }
+    .log { font-size: 12px; }
     .log-row { grid-template-columns: 58px 38px minmax(0, 1fr); gap: 8px; padding: 0 12px; }
     .tabbar {
       display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
@@ -634,7 +653,7 @@
       <aside class="sidebar" id="sidebar"></aside>
       <div class="main-col">
         <div class="detail-head">
-          <button class="btn ghost back" id="back">← All repos</button>
+          <button class="btn ghost back" id="back"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg>All repos</button>
           <h1 id="repo-title">…</h1>
           <span class="sub" id="repo-sub"></span>
           <div class="grow"></div>
@@ -650,7 +669,7 @@
         <section class="card" id="options-card">
           <div class="card-body options" id="options">
             <details class="opt branch-opt" id="opt-branch" open>
-              <summary class="opt-sum"><span>Target branch</span><span class="pill mono" id="branch-now">current</span><span class="caret">›</span></summary>
+              <summary class="opt-sum"><span>Target branch</span><span class="pill mono" id="branch-now">current</span><span class="caret"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></summary>
               <div class="opt-body">
                 <div class="opt-label"><label class="sr-only" for="branch">Target branch</label><span class="desc">clean it directly, no PR</span></div>
                 <select class="field mono-field" id="branch"></select>
@@ -710,7 +729,7 @@
           </div>
           <div class="logwrap" id="logwrap" hidden>
             <div class="log" id="log" role="log" aria-live="polite" aria-relevant="additions"></div>
-            <button class="jump" id="jump">↓ latest</button>
+            <button class="jump" id="jump"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14m-7-7 7 7 7-7"/></svg>latest</button>
           </div>
         </section>
 
@@ -735,7 +754,7 @@
   <div class="view" id="view-access" hidden>
     <div class="wrap" style="max-width:760px">
       <div class="detail-head" style="margin-bottom:16px">
-        <button class="btn ghost back" id="access-back">← Back</button>
+        <button class="btn ghost back" id="access-back"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg>Back</button>
         <h1 class="page-title" tabindex="-1">GitHub access</h1>
       </div>
       <div id="access-body" class="stack"></div>
@@ -746,7 +765,7 @@
   <div class="view" id="view-signing" hidden>
     <div class="wrap" style="max-width:760px">
       <div class="detail-head" style="margin-bottom:16px">
-        <button class="btn ghost back" id="signing-back">← Back</button>
+        <button class="btn ghost back" id="signing-back"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg>Back</button>
         <h1 class="page-title" tabindex="-1">Commit signing</h1>
       </div>
       <div id="signing-body" class="stack"></div>
@@ -794,8 +813,22 @@
   const ICONS = {
     repo: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="5" cy="3.5" r="1.5" stroke="currentColor"/><circle cx="5" cy="12.5" r="1.5" stroke="currentColor"/><circle cx="11.5" cy="6" r="1.5" stroke="currentColor"/><path d="M5 5v6M11.5 7.6c0 1.9-1.9 2.3-3.9 2.8" stroke="currentColor"/></svg>',
   };
-  function icon(name, cls = "repo-ico") {
-    const box = el("div", { class: cls });
+  // Line icons on a 24 px grid: 1em, stroked in the text color, so no text glyph has to render.
+  const line = (d) => `<svg viewBox="0 0 24 24"><path d="${d}"/></svg>`;
+  Object.assign(ICONS, {
+    "arrow-left": line("M19 12H5m7-7-7 7 7 7"),
+    "arrow-up": line("M12 19V5m-7 7 7-7 7 7"),
+    "arrow-down": line("M12 5v14m-7-7 7 7 7-7"),
+    "chevron-right": line("m9 6 6 6-6 6"),
+    external: line("M14 5h5v5M19 5l-9 9M18 13v6H5V6h6"),
+    check: line("m5 12 5 5L20 7"),
+    x: line("M6 6l12 12M18 6 6 18"),
+    warning: line("M12 3 2 21h20L12 3zm0 7v5m0 3v.5"),
+    dash: line("M6 12h12"),
+    dot: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/></svg>',
+  });
+  function icon(name, cls = name === "repo" ? "repo-ico" : "ico-svg") {
+    const box = el("span", { class: cls, "aria-hidden": "true" });
     box.innerHTML = ICONS[name] || "";
     return box;
   }
@@ -901,7 +934,7 @@
     } else {
       meta.append(el("span", { class: "pill mono" }, s.branch));
       meta.append(el("span", { class: "pill" }, s.dirty ? `${s.dirty} uncommitted` : "clean"));
-      if (s.ahead || s.behind) meta.append(el("span", { class: "pill warn mono" }, `↑${s.ahead} ↓${s.behind}`));
+      if (s.ahead || s.behind) meta.append(el("span", { class: "pill warn mono" }, icon("arrow-up"), String(s.ahead), " ", icon("arrow-down"), String(s.behind)));
       meta.append(el("span", { class: "pill mono" }, `${s.tags} tags`));
     }
 
@@ -922,7 +955,7 @@
                   "aria-label": `Open pull request ${pr.number ? "#" + pr.number : ""} on GitHub`,
                   onclick: (e) => e.stopPropagation() },
                   checksPill(pr, s.pr_checked, s.pr_reason),
-                  el("span", { class: "ext", "aria-hidden": "true" }, "↗"))
+                  el("span", { class: "ext", "aria-hidden": "true" }, icon("external")))
               : checksPill(pr, s.pr_checked, s.pr_reason)));
         }
       }
@@ -937,7 +970,7 @@
         // the button; the second confirms. No browser modal, and it works on
         // a phone.
         let timer = 0;
-        const disarm = () => { btn.classList.remove("armed"); btn.textContent = "×"; btn.setAttribute("aria-label", `Remove ${repo.name}`); };
+        const disarm = () => { btn.classList.remove("armed"); btn.replaceChildren(icon("x")); btn.setAttribute("aria-label", `Remove ${repo.name}`); };
         const btn = el("button", {
           class: "btn ghost rm", title: "Forget this repository", "aria-label": `Remove ${repo.name}`,
           onclick: async (e) => {
@@ -956,7 +989,7 @@
               loadRepos();
             } catch (err) { toast(err.message); disarm(); }
           },
-        }, "×");
+        }, icon("x"));
         return btn;
       })());
 
@@ -985,7 +1018,7 @@
     box.hidden = !state.unreachable;
     if (state.unreachable) {
       box.replaceChildren(el("div", { class: "banner err", style: "margin-bottom:16px" },
-        el("span", { class: "ico" }, "⚠"),
+        el("span", { class: "ico" }, icon("warning")),
         el("div", { style: "flex:1" },
           el("b", {}, "Cannot reach the server."),
           " Every button here changes a git repository, so nothing is cached. Check that the container is running, then ",
@@ -1077,7 +1110,7 @@
 
     const head = el("div", { class: "side-group" },
       el("div", { class: "side-label" }, "HEAD"),
-      el("div", { style: "padding:0 6px;color:var(--muted);font:11.5px/1.5 var(--mono);overflow-wrap:anywhere" }, s.head || "unknown"));
+      el("div", { style: "padding:0 6px;color:var(--muted);font:var(--fs-1)/1.5 var(--mono);overflow-wrap:anywhere" }, s.head || "unknown"));
 
     side.replaceChildren(
       el("div", { class: "side-group" }, el("div", { class: "side-label" }, "Repository"), kv),
@@ -1125,7 +1158,7 @@
           state.paths = state.paths.filter((x) => x !== p);
           renderPaths();
           renderCommand();
-        } }, "×"));
+        } }, icon("x")));
       box.insertBefore(chip, $("pathin"));
     }
   }
@@ -1233,11 +1266,11 @@
           class: "phase-head", "aria-expanded": "false", "aria-controls": "plog-" + p.id,
           onclick: () => togglePhase(p.id),
         },
-          el("span", { class: "phase-ico", "aria-hidden": "true" }, "·"),
+          el("span", { class: "phase-ico", "aria-hidden": "true" }, icon("dot", "ico-svg idle")),
           el("span", { class: "phase-name" }, p.name),
           el("span", { class: "phase-sub" }, p.sub),
           el("span", { class: "phase-time" }),
-          el("span", { class: "phase-caret", "aria-hidden": "true" }, "›")),
+          el("span", { class: "phase-caret", "aria-hidden": "true" }, icon("chevron-right"))),
         el("div", { class: "phase-log", id: "plog-" + p.id, hidden: true }))));
   }
 
@@ -1249,8 +1282,8 @@
     const node = phaseNode(p.id);
     if (!node) return;
     node.dataset.state = p.state;
-    node.querySelector(".phase-ico").textContent =
-      { done: "✓", fail: "✕", run: "●", skip: "–", idle: "·" }[p.state] || "·";
+    node.querySelector(".phase-ico").replaceChildren(
+      icon({ done: "check", fail: "x", run: "dot", skip: "dash" }[p.state] || "dot", p.state === "idle" ? "ico-svg idle" : "ico-svg"));
     node.querySelector(".phase-sub").textContent = p.sub;
     const secs = p.start && p.end ? p.end - p.start : 0;
     const done = p.state === "done" || p.state === "fail";
@@ -1464,7 +1497,7 @@
           el("span", { class: "subject", title: c.subject }, c.subject),
           el("span", { class: "meta" },
             el("span", { class: c.signed ? "sig" : "sig none", title: c.signed ? "Signed commit" : "Unsigned commit" },
-              c.signed ? "✓" : "·"),
+              icon(c.signed ? "check" : "dash")),
             el("span", {}, c.author),
             el("span", {}, when(c.date))))));
     } catch (err) {
@@ -1484,8 +1517,8 @@
   // --------------------------------------------------------------- access
   function pillRow(label, valueNode) {
     return el("div", { class: "sign-row" },
-      el("div", { style: "min-width:120px;color:var(--dim);font-size:12px" }, label),
-      el("div", { style: "min-width:0;flex:1" }, valueNode));
+      el("div", { class: "k" }, label),
+      el("div", { class: "v" }, valueNode));
   }
 
   function renderAuthBanner() {
@@ -1496,14 +1529,14 @@
     const gh = a.gh || {};
     if (!gh.installed) {
       box.replaceChildren(el("div", { class: "banner err", style: "margin-bottom:14px" },
-        el("span", { class: "ico" }, "⚠"),
+        el("span", { class: "ico" }, icon("warning")),
         el("div", {}, el("b", {}, "gh is not installed in this container."),
           " Pull requests cannot be read and private repositories cannot be cloned.")));
       return;
     }
     if (!gh.authenticated) {
       box.replaceChildren(el("div", { class: "banner warn", style: "margin-bottom:14px" },
-        el("span", { class: "ico" }, "⚠"),
+        el("span", { class: "ico" }, icon("warning")),
         el("div", { style: "flex:1" },
           el("b", {}, "GitHub is not connected."),
           " PR checks cannot be read, private clones will fail, and pushes over HTTPS have no credentials.",
@@ -1547,12 +1580,12 @@
       ghNodes.push(el("div", { class: "banner err" }, "gh is not installed in this container. Rebuild the image; it bundles the GitHub CLI."));
     } else if (gh.authenticated) {
       ghNodes.push(el("div", { class: "banner ok" },
-        el("span", { class: "ico" }, "✓"),
+        el("span", { class: "ico" }, icon("check")),
         el("div", {}, el("b", {}, `Signed in as @${gh.login}`), ` on ${gh.host}`,
           gh.source === "environment" ? ". The token comes from the GH_TOKEN environment variable." : ".")));
       if (gh.scopes) {
         const missing = !/\brepo\b/.test(gh.scopes) ? " · no repo scope, so private repositories and PR checks are invisible" : "";
-        ghNodes.push(pillRow("token scopes", el("span", { class: "mono", style: "font-size:11.5px;color:var(--muted)" }, gh.scopes + missing)));
+        ghNodes.push(pillRow("token scopes", el("span", { class: "mono", style: "color:var(--muted)" }, gh.scopes + missing)));
       }
       ghNodes.push(el("div", { style: "display:flex;gap:8px;margin-top:4px" },
         el("button", { class: "btn", onclick: async () => {
@@ -1564,7 +1597,7 @@
         g.credentials_for_gh ? null : el("button", { class: "btn ghost", onclick: setupGit }, "Set up git credentials")));
     } else {
       ghNodes.push(el("div", { class: "banner warn" },
-        el("span", { class: "ico" }, "⚠"),
+        el("span", { class: "ico" }, icon("warning")),
         el("div", {}, el("b", {}, "Not signed in to GitHub."),
           " Private clones, PR checks and HTTPS pushes will fail until gh has a token.")));
       const input = el("input", { class: "field mono-field", type: "password", id: "token-input",
@@ -1593,15 +1626,15 @@
       pillRow("credential helper", g.credentials_for_gh
         ? el("span", { class: "pill ok" }, el("i", { class: "dot" }), "gh auth git-credential")
         : (g.credential_helpers && g.credential_helpers.length
-          ? el("span", { class: "mono", style: "font-size:11.5px" }, g.credential_helpers.join(", "))
+          ? el("span", { class: "mono" }, g.credential_helpers.join(", "))
           : el("span", { class: "pill warn" }, "none"))),
       pillRow("ssh keys", g.ssh_keys && g.ssh_keys.length
-        ? el("span", { class: "mono", style: "font-size:11.5px" }, g.ssh_keys.join(", "))
+        ? el("span", { class: "mono" }, g.ssh_keys.join(", "))
         : el("span", { class: "hint" }, "none in this container")),
     ];
     const gitBanner = gh.authenticated && !g.credentials_for_gh
       ? el("div", { class: "banner warn", style: "margin-bottom:10px" },
-          el("span", { class: "ico" }, "⚠"),
+          el("span", { class: "ico" }, icon("warning")),
           el("div", {}, el("b", {}, "git has no credential helper yet."),
             " Cloning and pushing over HTTPS will fail. One click fixes it, and applies to every repo here."))
       : null;
@@ -1627,10 +1660,10 @@
     nodes.push(el("div", { class: "card" },
       el("div", { class: "card-head" }, el("h2", {}, "About")),
       el("div", { class: "card-body" },
-        pillRow("ui", el("span", { class: "mono", style: "font-size:11.5px" }, state.env ? `v${state.env.version}, engine ${state.env.tool}` : "?")),
-        pillRow("machine", el("span", { class: "mono", style: "font-size:11.5px" }, state.env ? `${state.env.arch}, python ${state.env.python}` : "?")),
-        pillRow("data", el("span", { class: "mono", style: "font-size:11.5px;overflow-wrap:anywhere" }, state.env ? state.env.data : "?")),
-        pillRow("identity", el("span", { class: "mono", style: "font-size:11.5px;overflow-wrap:anywhere" },
+        pillRow("ui", el("span", { class: "mono" }, state.env ? `v${state.env.version}, engine ${state.env.tool}` : "?")),
+        pillRow("machine", el("span", { class: "mono" }, state.env ? `${state.env.arch}, python ${state.env.python}` : "?")),
+        pillRow("data", el("span", { class: "mono" }, state.env ? state.env.data : "?")),
+        pillRow("identity", el("span", { class: "mono" },
           g.name ? `${g.name} <${g.email}>` : "not set, see Commit signing")))));
 
     body.replaceChildren(...nodes);
@@ -1641,8 +1674,8 @@
     if (!st) return el("div", {});
     const rows = st.items.map((item) =>
       pillRow(item.label,
-        el("div", { style: "display:flex;gap:10px;align-items:baseline;flex-wrap:wrap" },
-          el("span", { class: "mono", style: "font-size:11.5px;overflow-wrap:anywhere" }, item.path),
+        el("div", { class: "row" },
+          el("span", { class: "mono" }, item.path),
           item.survives
             ? el("span", { class: "pill ok", title: `on the ${item.mount_point} mount` },
                 el("i", { class: "dot" }), "survives")
@@ -1656,11 +1689,11 @@
 
     const warning = st.home_mounted
       ? el("div", { class: "banner ok", style: "margin-bottom:10px" },
-          el("span", { class: "ico" }, "✓"),
+          el("span", { class: "ico" }, icon("check")),
           el("div", {}, el("b", {}, "This home directory is a mounted volume."),
             " Everything below survives ", el("code", {}, "docker rm"), ", a rebuild and a new image pull."))
       : el("div", { class: "banner warn", style: "margin-bottom:10px" },
-          el("span", { class: "ico" }, "⚠"),
+          el("span", { class: "ico" }, icon("warning")),
           el("div", {}, el("b", {}, "This home directory is not a mounted volume."),
             " Credentials, keys and the repo registry live in the container's writable layer, so they are lost when the container is replaced. Mount one: ",
             el("code", {}, "-v arena-home:/home/arena")));
@@ -1752,14 +1785,14 @@
       steps.push(el("div", { class: "hint", style: "line-height:1.7" },
         "In Chrome or Edge: open the browser menu and choose ",
         el("b", {}, "Install arena-cleanup"), " (or the install icon in the address bar). Safari on macOS: ",
-        el("b", {}, "File → Add to Dock"), "."));
+        el("b", {}, "File, Add to Dock"), "."));
     }
 
     // Installing needs a secure context. Plain http:// on a LAN address is not
     // one, and the failure is silent, so say it here rather than in a console.
     if (state.env && state.env.secure === false) {
       steps.push(el("div", { class: "banner warn", style: "margin-top:10px" },
-        el("span", { class: "ico" }, "⚠"),
+        el("span", { class: "ico" }, icon("warning")),
         el("div", {}, el("b", {}, "This origin is not a secure context."),
           " Browsers only install apps from ", el("code", {}, "localhost"), " or HTTPS, so installing will be refused here. ",
           "Open the app at ", el("code", {}, "http://localhost:8080"), " on the same machine, put it behind a reverse proxy with a certificate, ",
@@ -1811,7 +1844,7 @@
     // the warning the whole panel exists for
     if (active && s.github.checked && !active.on_github) {
       nodes.push(el("div", { class: "banner warn" },
-        el("span", { class: "ico" }, "⚠"),
+        el("span", { class: "ico" }, icon("warning")),
         el("div", {},
           el("b", {}, "This key is not assigned to your GitHub account."),
           " Commits will show as “Unverified” until you add the public key at ",
@@ -1859,15 +1892,19 @@
       } catch (err) {
         toast(err.message);
       } finally {
-        createBtn.disabled = false;
+        createBtn.disabled = !s.gpg;
         createBtn.textContent = "Create key";
       }
     } }, "Create key");
+    if (!s.gpg) {
+      createBtn.disabled = true;
+      createBtn.title = "gpg is not installed";
+    }
 
     nodes.push(el("div", { class: "card" },
       el("div", { class: "card-head" }, el("h2", {}, s.keys.length ? "Create another key" : "Create a key"), el("span", { class: "hint" }, "ed25519, no passphrase, generated inside the container")),
       el("div", { class: "card-body", style: "display:grid;gap:10px" },
-        el("div", { style: "display:grid;gap:10px;grid-template-columns:1fr 1fr" }, name, email),
+        el("div", { class: "sign-fields" }, name, email),
         createBtn,
         el("div", { class: "hint" }, "The private key stays in /home/arena/.gnupg inside this container's volume. Export it if you also want to sign on your laptop."),
       )));

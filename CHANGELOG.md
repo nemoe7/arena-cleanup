@@ -13,11 +13,14 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - GitHub workflows: CI (lint, format, Markdown, suite), the pull request contract, and an advisory container scan.
 - Image publishing: a green CI run on `main` pushes `ghcr.io/nemoe7/arena-cleanup:latest` for amd64 and arm64, the only tag.
 - `scripts/demo.py`: a throwaway fixture served by the UI for demos and the QA tools. It holds three repositories, a stub `gh`, an identity, and a GPG key.
+- `docs/design.md`: the design record with the type ramp, spacing scale, breakpoints, and accepted decisions.
 
 ### Changed
 
 - Comments, docstrings, and docs follow the nemoizer rules. Sentences stay at 20 words or fewer, paragraphs at four sentences or fewer.
 - `/api/access` storage rows name their origin under `source` instead of `kind`. <!-- nonemo: P001 -->
+- UI type sizes come from one ramp per width class, held in `--fs-*` tokens. Inline SVG icons replace the text glyphs.
+- At 360 px the signing fields, commit metadata, and access labels stack. Create key is disabled while gpg is missing.
 
 ## [0.1.0] - 2026-10-22
 
