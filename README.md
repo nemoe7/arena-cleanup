@@ -804,7 +804,7 @@ It found four bugs while being written:
 Formatting contracts:
 
 - `.editorconfig`: `indent_size = 2` for everything
-- `pyproject.toml`: Ruff, `indent-width = 2`, `ignore = ["BLE001", "S110"]`
+- `pyproject.toml`: Ruff, `indent-width = 2`, `ignore = ["BLE001", "S110"]`, `E501` at 120 columns, `.agents/` excluded
 - `.markdownlint-cli2.jsonc`: every `*.md` outside `.agents/`, `ARENA.md`, and `LICENSE.md`; defaults, `MD013` off, `MD060` on, `MD024` siblings only
 
 ```console

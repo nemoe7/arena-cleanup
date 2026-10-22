@@ -663,7 +663,8 @@ def walk_job(w: Walk, args: argparse.Namespace) -> None:
     # reproduce the condition a long run creates
     page.eval_on_selector(
       "#log",
-      "e => { e.style.flex = 'none'; e.style.height = '120px'; e.style.maxHeight = '120px'; e.style.overflow = 'auto'; }",
+      "e => { e.style.flex = 'none'; e.style.height = '120px';"
+      " e.style.maxHeight = '120px'; e.style.overflow = 'auto'; }",
     )
     page.eval_on_selector(
       "#log", "e => { e.scrollTop = 0; e.dispatchEvent(new Event('scroll')); }"
