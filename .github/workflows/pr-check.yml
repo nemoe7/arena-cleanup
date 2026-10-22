@@ -1,0 +1,44 @@
+name: PR check
+
+on:
+  pull_request:
+    branches: [main]
+    # The body and the title change without a new commit, so both events matter.
+    types: [opened, edited, reopened, synchronize]
+
+concurrency:
+  group: pr-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: Commit, title, and body contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # The contract script imports the standard library alone: no sync, no uv.
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Check the commits, the title, and the body
+        env:
+          # The values reach the script through the environment, never through the script text.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_BODY_FILE: ${{ runner.temp }}/pr-body.md
+        run: |
+          printf '%s' "$PR_BODY" > "$PR_BODY_FILE"
+          python scripts/check_pr.py \
+            --range "$PR_BASE..$PR_HEAD" \
+            --pr-title "$PR_TITLE" \
+            --body-file "$PR_BODY_FILE" \
+            --no-ste

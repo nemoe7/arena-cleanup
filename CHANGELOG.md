@@ -10,6 +10,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - uv-managed tool chain: `uv sync` installs Ruff, shfmt, and `git-filter-repo` from `uv.lock`.
+- GitHub workflows: CI (lint, format, Markdown, suite), the pull request contract, and an advisory container scan.
 
 ## [0.1.0] - 2026-10-22
 
