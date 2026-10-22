@@ -50,7 +50,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 ### Icons
 
-- Inline SVG on a 24 px grid at 1 em, stroked in the text color. Names: arrow-left, arrow-up, arrow-down, chevron-right, external, check, x, warning, dash, and dot. Source: the `ICONS` map in `index.html`. The repository icon is a 16 px grid.
+- Inline SVG on a 24 px grid at 1 em, stroked in the text color. Names: arrow-left, arrow-up, arrow-down, chevron-right, check, x, warning, dash, and dot. Source: the `ICONS` map in `index.html`. The repository icon is a 16 px grid.
 - No text glyphs stand in for icons.
 
 ### Layout

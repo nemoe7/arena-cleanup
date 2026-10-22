@@ -24,6 +24,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The test suite is pytest under `tests/`: the engine, web app, and compose checks keep the bash fixtures. `uv run pytest` runs it, in CI too.
 - The spacing audit is a Playwright test in `tests/e2e/`; a second CI job installs Chromium for it. The browser walk is `scripts/walk.py`, run by hand; it saves its screenshots where you point it.
 - The README is cut to the essentials: install, use, settings, and development. The four extra UI screenshots are gone; the dashboard one is fresh.
+- The checks pill in the arena row is the link on its own. The external-link icon beside it is gone.
 
 ### Removed
 

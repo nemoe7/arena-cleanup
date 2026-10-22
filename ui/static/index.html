@@ -258,11 +258,9 @@
   .arena-row { display: flex; align-items: center; gap: 8px; font-size: var(--fs-2); min-width: 0; flex-wrap: wrap; row-gap: 2px; }
   .arena-row .bname { font-family: var(--mono); font-size: var(--fs-1); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* the checks pill is the link: one control, no orphan "Pull request" label */
-  .arena-row .prlink { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 4px;
+  .arena-row .prlink { margin-left: auto; flex: none; display: inline-flex; align-items: center;
     text-decoration: none; border-radius: 999px; min-height: 24px; }
-  .arena-row .prlink .ext { color: var(--dim); font-size: var(--fs-1); line-height: 1; }
   .arena-row .prlink:hover .pill { border-color: var(--line-2); }
-  .arena-row .prlink:hover .ext, .arena-row .prlink:focus-visible .ext { color: var(--accent-hi); }
 
   /* what the selected task will do, in one sentence */
   .task-note { margin: 0; max-width: 132ch; color: var(--dim); font-size: var(--fs-2); line-height: 1.55; }
@@ -588,8 +586,8 @@
        16 field, 19 page title. Anything with its own desktop size is
        pinned here, after every other rule. */
     .pill, .pill.mono, .chip, .bname, .arena-row .bname, .hint, .card-head .hint,
-    .repo-path, .arena-row, .phase-sub, .commit .meta, .sign-key, .kv dt, .kv dd, .log-row, .ext,
-    .arena-row .prlink .ext, .env-dots, .run-foot .hint, .steps, .steps code, .steps kbd { font-size: 12px; }
+    .repo-path, .arena-row, .phase-sub, .commit .meta, .sign-key, .kv dt, .kv dd, .log-row,
+    .env-dots, .run-foot .hint, .steps, .steps code, .steps kbd { font-size: 12px; }
     .banner, .toast, .wrap h2, .card-head h2, .skip, .steps,
     .opt-label label, .opt-label span.lbl, .phase-name, .toggle { font-size: 13px; }
     .status, #statustext, .phase-ico, .commit .sig, .commit .sha, .toggle small { font-size: 12px; }
@@ -820,7 +818,6 @@
     "arrow-up": line("M12 19V5m-7 7 7-7 7 7"),
     "arrow-down": line("M12 5v14m-7-7 7 7 7-7"),
     "chevron-right": line("m9 6 6 6-6 6"),
-    external: line("M14 5h5v5M19 5l-9 9M18 13v6H5V6h6"),
     check: line("m5 12 5 5L20 7"),
     x: line("M6 6l12 12M18 6 6 18"),
     warning: line("M12 3 2 21h20L12 3zm0 7v5m0 3v.5"),
@@ -954,8 +951,7 @@
                   title: `Open pull request ${pr.number ? "#" + pr.number : ""} on GitHub`,
                   "aria-label": `Open pull request ${pr.number ? "#" + pr.number : ""} on GitHub`,
                   onclick: (e) => e.stopPropagation() },
-                  checksPill(pr, s.pr_checked, s.pr_reason),
-                  el("span", { class: "ext", "aria-hidden": "true" }, icon("external")))
+                  checksPill(pr, s.pr_checked, s.pr_reason))
               : checksPill(pr, s.pr_checked, s.pr_reason)));
         }
       }
