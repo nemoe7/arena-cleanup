@@ -210,6 +210,9 @@
   .addbar:focus-within { border-color: #3d4655; box-shadow: 0 0 0 3px var(--accent-soft); }
   .addbar .field { flex: 1; min-width: 0; height: 34px; border: 0; background: transparent; padding: 0; }
   .addbar .field:focus { box-shadow: none; }
+  /* the bar is the control: one ring on the bar, none on the borderless field */
+  .addbar .field:focus-visible { outline: none; }
+  .addbar:has(.field:focus-visible) { border-color: var(--accent-hi); }
   .field {
     width: 100%; height: 34px; background: var(--surface-2); border: 1px solid var(--line-2);
     border-radius: 8px; padding: 0 10px; color: var(--text); font-size: var(--fs-2); min-width: 0;
@@ -544,6 +547,7 @@
     .addbar { flex-direction: column; align-items: stretch; gap: 10px; padding: 0; border: 0; background: none; }
     .addbar:focus-within { box-shadow: none; }
     .addbar .field { border: 1px solid var(--line-2); background: var(--surface-2); border-radius: 8px; }
+    .addbar .field:focus-visible { outline: 2px solid var(--accent-hi); outline-offset: 1px; }
     /* a 34px field is a desktop control; on a phone this box is the first
        thing you touch, so give it and its button a real touch target */
     /* flex:1 becomes flex-basis:0 on the main (vertical) axis once the row
