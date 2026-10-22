@@ -514,7 +514,7 @@ def components_board(_: dict[str, bytes]) -> str:
     '<div class="col" style="width:320px"><input class="field" placeholder="Paste a repo URL…">'
     '<input class="field" value="https://github.com/acme/example.git">'
     '<input class="field" value="disabled" disabled>'
-    '<select class="field"><option>current (main)</option></select></div>'
+    '<select class="field"><option>main (default)</option></select></div>'
   )
   toggles = (
     '<div class="toggles">'
