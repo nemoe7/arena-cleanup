@@ -123,3 +123,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-22: inline SVG icons, no icon font and no text glyphs. Later that day the hand-drawn paths gave way to Lucide glyphs, as the house clause asks.
 - Accepted 2026-10-22: the even spacing scale with 1 px borders stays. The 8 px house scale is not adopted, because the dense rows need 6 and 10 px steps.
 - Accepted 2026-10-22: three breakpoints, 1180, 980, and 720 px.
+- Accepted 2026-10-22: a shallow history. The dashboard is the root entry and a sub-view is at most one entry deep. One Back leaves a sub-view, the next one leaves the page.

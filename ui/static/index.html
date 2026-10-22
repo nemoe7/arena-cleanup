@@ -877,11 +877,7 @@
     // actually came from instead of guessing from whatever was open last
     state.view = view;
     document.title = titleFor(view);
-    const want = hashFor(view);
-    if (location.hash !== want) {
-      state.selfNav = want;
-      location.hash = want;
-    }
+    navigate(hashFor(view));
     window.scrollTo(0, 0);
     // keyboard and screen-reader users land on the new screen, not back at
     // the top of the document
@@ -890,6 +886,23 @@
     // by the Enter key that got you here, which a focused button can
     const heading = panel.querySelector("h1, h2");
     if (heading) heading.focus({ preventScroll: true });
+  }
+
+  // The history stays shallow: the dashboard is the root entry and a sub-view
+  // is at most one entry deep. One Back leaves a sub-view, the next one leaves
+  // the page. Entries this page pushed carry a marker; a deep link has none.
+  function navigate(want) {
+    const here = location.hash || "#/";
+    if (here === want) return;
+    const pushed = Boolean(history.state && history.state.arena);
+    if (want === "#/") {
+      if (pushed) history.back();
+      else history.replaceState(null, "", want);
+    } else if (pushed) {
+      history.replaceState({ arena: 1 }, "", want);
+    } else {
+      history.pushState({ arena: 1 }, "", want);
+    }
   }
 
   // Translate a hash into a screen. Used on load and on Back/Forward.
@@ -1953,10 +1966,8 @@
   $("signing-back").onclick = goBack;
 
   window.addEventListener("hashchange", () => {
-    if (state.selfNav === location.hash) {
-      state.selfNav = null;
-      return;
-    }
+    // a pop this page asked for already shows its screen
+    if ((location.hash || "#/") === hashFor(state.view)) return;
     applyHash();
   });
 
