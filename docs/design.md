@@ -89,7 +89,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - The repository registry and settings live on the server under `ARENA_DATA`. The page keeps no state beyond the open view.
 - Defaults: divergence set to Ask, then stop; PR check timeout 15 minutes; dry run off.
-- Validation: the add bar accepts a `.git` URL or a path; the server answers errors as text the banner shows.
+- Validation: the add bar accepts a clone URL, a GitHub page address, or a path. The server answers errors as text the banner shows.
 - Retries: none automatic; Re-check and Reload buttons repeat a read.
 
 ## Evidence and handoff

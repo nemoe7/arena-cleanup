@@ -26,6 +26,22 @@ MIN_FONT_BYTES = 20_000
 MIN_LOG_LINES = 5
 MIN_ICONS = 3
 PNG_MAGIC = b"\x89PNG"
+CLONE_URL = "https://github.com/acme/shop-web.git"
+GITHUB_FORMS = (
+  "https://github.com/acme/shop-web",
+  "https://github.com/acme/shop-web/",
+  "https://github.com/acme/shop-web.git",
+  "https://github.com/acme/shop-web/tree/main/docs",
+  "https://www.github.com/acme/shop-web?tab=readme",
+  "github.com/acme/shop-web",
+  "  github.com/acme/shop-web\n",
+)
+OTHER_SOURCES = (
+  "git@github.com:acme/shop-web.git",
+  "https://gitlab.com/acme/shop-web",
+  "/srv/repos/shop-web",
+  "file:///tmp/bare.git",
+)
 STORAGE_ITEMS = range(6, 10)
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 CONTENT_JSON = {"Content-Type": "application/json"}
@@ -211,6 +227,17 @@ def test_add_by_path(ui: UI, world: World, ids: dict[str, str]) -> None:
   assert added["status"]["default"] == "main"
   assert added["managed"] is False
   assert len(json.loads((ui.data / "repos.json").read_text())) == 1
+
+
+def test_github_page_addresses_normalize_to_clone_urls() -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui.server import URL_RE, normalize_source
+
+  for pasted in GITHUB_FORMS:
+    assert normalize_source(pasted) == CLONE_URL, pasted
+    assert URL_RE.match(normalize_source(pasted)), pasted
+  for source in OTHER_SOURCES:
+    assert normalize_source(source) == source
 
 
 def test_add_by_clone_url(ui: UI, world: World, ids: dict[str, str]) -> None:

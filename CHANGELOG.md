@@ -23,3 +23,4 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The test suite as pytest under `tests/`: the engine, web app, and compose checks keep the bash fixtures. `uv run pytest` runs it, in CI too.
 - The spacing audit as a Playwright test in `tests/e2e/`, run by a second CI job. The browser walk `scripts/walk.py`, run by hand, saves its screenshots where you point it.
 - A minimal README: install, use, settings, and development.
+- An add bar that takes a GitHub page address: `github.com/owner/repo`, with or without `https://`, `.git`, or a page suffix.

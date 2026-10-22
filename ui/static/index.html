@@ -634,14 +634,14 @@
 
       <div class="addbar">
         <input class="field mono-field" id="add-source" spellcheck="false" autocomplete="off"
-               placeholder="Paste a .git URL…" aria-label="Repository URL">
+               placeholder="Paste a repository URL…" aria-label="Repository URL">
         <button class="btn primary" id="add-btn">Add repository</button>
       </div>
 
       <div class="grid" id="repo-grid"></div>
       <div class="empty-state" id="repo-empty" hidden>
         <strong>No repositories yet</strong>
-        <span>Paste a <code>.git</code> URL above to clone it into this instance.</span>
+        <span>Paste a repository URL above to clone it into this instance.</span>
       </div>
     </div>
   </div>
@@ -1026,8 +1026,8 @@
     const input = $("add-source");
     const source = input.value.trim();
     if (!source) return;
-    if (!/^(git@|ssh:|git:|https?:)/i.test(source)) {
-      toast("Use a git URL: https://host/owner/repo.git or git@host:owner/repo.git");
+    if (!/^(git@|ssh:|git:|https?:|(www\.)?github\.com\/)/i.test(source)) {
+      toast("Use a git URL: https://host/owner/repo.git, git@host:owner/repo.git, or github.com/owner/repo");
       input.focus();
       return;
     }
