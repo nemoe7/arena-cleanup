@@ -438,7 +438,6 @@ def test_health(ui: UI) -> None:
   assert health["version"] == project_version()
   assert isinstance(health["uptime"], float)
   assert health["repos"] == len(ui.get("/api/repos"))
-  assert ui.get("/api/health")["ok"] is True
   assert 'id="start"' in ui.text("/")
 
 

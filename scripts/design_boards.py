@@ -187,7 +187,7 @@ def phase(state: str, name: str, sub: str, time: str) -> str:
     f'<li class="phase" data-state="{state}"><div class="phase-head">'
     f'<span class="phase-ico">{icon(PHASE_ICON[state], cls)}</span><span class="phase-name">{name}</span>'
     f'<span class="phase-sub">{sub}</span><span class="phase-time">{time}</span>'
-    f'<span class="phase-caret">{icon("chevron-right")}</span></div></li>'
+    "</div></li>"
   )
 
 
@@ -442,7 +442,7 @@ def states_board(_: dict[str, bytes]) -> str:
     f"<tr><td>{status('', 'idle')}</td><td>before Start; the phase list is grey</td></tr>"
     f"<tr><td>{status('running', 'running')}</td><td>the LED pulses; Cancel is enabled</td></tr>"
     f"<tr><td>{status('ok', 'exit 0')}</td><td>every phase done; the log stays folded</td></tr>"
-    f"<tr><td>{status('fail', 'exit 1')}</td><td>the failing phase is red and unfolded</td></tr>"
+    f"<tr><td>{status('fail', 'exit 1')}</td><td>the failing phase is red; the log opens</td></tr>"
     f"<tr><td>{status('fail', 'cancelled')}</td><td>Cancel pressed; distinct from a crash</td></tr>"
     "</table>"
   )
@@ -471,7 +471,7 @@ def states_board(_: dict[str, bytes]) -> str:
     + frame("Run status", "The pill in the run card head.", run_states)
     + frame(
       "Phase rows",
-      "One row per phase; the glyph and its colour are the state. A row unfolds to its own lines.",
+      "One row per phase; the glyph and its colour are the state.",
       phases,
     )
     + frame(
@@ -652,8 +652,6 @@ def style_board(_: dict[str, bytes]) -> str:
         "circle-small",
         "loader-circle",
         "git-branch",
-        "key-round",
-        "shield-check",
         "settings",
       )
     )

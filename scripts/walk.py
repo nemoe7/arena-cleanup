@@ -334,17 +334,10 @@ def sidebar_and_branch_selector(w: Walker, demo: Demo) -> None:
 
 @step("desktop")
 def command_switch(w: Walker, demo: Demo) -> None:
-  for command in ("strip", "doctor", "run"):
+  for command in ("strip", "run"):
     button = f'#cmdswitch button[data-cmd="{command}"]'
     w.click(button, 400)
     assert w.page.get_attribute(button, "aria-pressed") == "true", command
-
-
-@step("desktop")
-def doctor_hides_irrelevant_options(w: Walker, demo: Demo) -> None:
-  w.click('#cmdswitch button[data-cmd="doctor"]', 400)
-  assert w.page.eval_on_selector("#options-card", "e => e.style.display === 'none'")
-  w.click('#cmdswitch button[data-cmd="run"]', 300)
 
 
 @step("desktop")

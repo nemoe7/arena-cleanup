@@ -48,7 +48,7 @@ def project_version() -> str:
 
 VERSION = project_version()
 
-COMMANDS = {"run", "strip", "doctor"}
+COMMANDS = {"run", "strip"}
 MAX_LINES = 4000
 STATUS_TTL = 8.0  # seconds a repo status is reused before asking git again
 STARTED = time.time()  # when this process came up, for /healthz
@@ -149,10 +149,6 @@ class Registry:
 
   def get(self, repo_id: str) -> dict[str, Any] | None:
     return next((r for r in self.all() if r["id"] == repo_id), None)
-
-  def find_path(self, path: str) -> dict[str, Any] | None:
-    real = os.path.realpath(path)
-    return next((r for r in self.all() if r["path"] == real), None)
 
   def add(self, entry: dict[str, Any]) -> dict[str, Any]:
     with self._lock:
@@ -585,7 +581,7 @@ def commits_report(repo: dict[str, Any], limit: int = 30) -> dict[str, Any]:
   }
 
 
-def signing_report(repo_path: str | None = None) -> dict[str, Any]:
+def signing_report() -> dict[str, Any]:
   keys = secret_keys()
   git_name = global_config("user.name")
   git_email = global_config("user.email")
@@ -1036,8 +1032,6 @@ def build_argv(body: dict[str, Any], repo: dict[str, Any]) -> list[str]:
       "timeout",
       "no_tags",
     }
-  elif action == "strip":
-    allowed |= {"check"}
   unknown = set(body) - allowed
   if unknown:
     raise BadRequest("unknown option(s): " + ", ".join(sorted(unknown)))
@@ -1087,8 +1081,6 @@ def build_argv(body: dict[str, Any], repo: dict[str, Any]) -> list[str]:
         raise BadRequest("timeout cannot be negative")
       argv += ["--check-timeout", str(minutes * 60)]
 
-  if action == "strip" and body.get("check"):
-    argv.append("--check")
   return argv
 
 
@@ -1199,7 +1191,6 @@ class Handler(BaseHTTPRequestHandler):
               "gpg": gpg_available(),
             },
             "data": str(self.reg.data),
-            "repos": len(self.reg.all()),
             "secure": is_secure_request(self),
           }
         )
@@ -1230,7 +1221,7 @@ class Handler(BaseHTTPRequestHandler):
         self._json(
           storage_report(self.reg.data, [r for r in self.reg.all() if r.get("managed")])
         )
-      elif path in ("/healthz", "/api/health"):
+      elif path == "/healthz":
         # Deliberately cheap. docker's HEALTHCHECK and a Tailscale monitor both
         # poll this on a short interval. It must not shell out to git.
         self._json(
@@ -1319,13 +1310,6 @@ class Handler(BaseHTTPRequestHandler):
         self._handle_signing(self._body())
       elif path == "/api/settings":
         self._handle_settings(self._body())
-      elif (
-        len(parts) == 3
-        and parts[0] == "api"
-        and parts[1] == "jobs"
-        and parts[2] == "cancel"
-      ):
-        raise BadRequest("use /api/jobs/<id>/cancel")
       elif (
         len(parts) == 4
         and parts[0] == "api"

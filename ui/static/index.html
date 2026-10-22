@@ -52,7 +52,6 @@
     --info: #5aa2f7;
     --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    --r: 10px;
     --pad: 20px;
     --fs-1: 12px;
     --fs-2: 13px;
@@ -381,11 +380,8 @@
   .phase:last-child { border-bottom: 0; }
   .phase-head {
     display: flex; align-items: center; gap: 10px; width: 100%;
-    padding: 8px 16px; background: none; border: 0; color: var(--text);
-    font-size: var(--fs-2); text-align: left; cursor: pointer;
+    padding: 8px 16px; color: var(--text); font-size: var(--fs-2); text-align: left;
   }
-  .phase-head:hover { background: var(--surface-2); }
-  .phase-head:focus-visible { outline-offset: -2px; }
   .phase-ico {
     width: 16px; height: 16px; flex: none; display: grid; place-items: center;
     color: var(--dim); font-size: var(--fs-1); line-height: 1;
@@ -404,10 +400,6 @@
     margin-left: auto; color: var(--dim); font: var(--fs-1) var(--mono); flex: none;
     font-variant-numeric: tabular-nums;
   }
-  .phase-caret { color: var(--dim); flex: none; transition: transform .12s; }
-  .phase-head[aria-expanded="true"] .phase-caret { transform: rotate(90deg); }
-  .phase-log { border-top: 1px solid var(--line); background: #0a0c0f; }
-  .phase-log .log-row { grid-template-columns: 68px 40px minmax(0, 1fr); }
   .run-foot {
     display: flex; align-items: center; gap: 8px; padding: 8px 16px;
     border-top: 1px solid var(--line);
@@ -536,7 +528,7 @@
     .pill { font-size: 12px; }
     .repo-name { font-size: 15px; }
     .hint, .opt-label .desc, .phase-sub, .run-foot .hint, .commit .meta { font-size: 12px; }
-    .phase-head { padding: 10px 12px; font-size: 13px; min-height: 44px; }
+    .phase-head { padding: 10px 12px; font-size: 13px; }
     .task-note { font-size: 12px; }
     .commit { font-size: 13px; grid-template-columns: 68px minmax(0, 1fr); row-gap: 4px; }
     .commit .meta { grid-column: 1 / -1; white-space: normal; flex-wrap: wrap; }
@@ -672,7 +664,6 @@
           <div class="segmented" id="cmdswitch" role="group" aria-label="Command">
             <button data-cmd="run" aria-pressed="true" title="Rewrite the arena branch, sign every commit, push the default branch, then delete the local arena branch."><span class="seg-long">Clean &amp; publish</span><span class="seg-short">Publish</span></button>
             <button data-cmd="strip" aria-pressed="false" title="Rewrite and sign the arena branch locally. Nothing leaves this container."><span class="seg-long">Rewrite locally</span><span class="seg-short">Rewrite</span></button>
-            <button data-cmd="doctor" aria-pressed="false" title="Read git, gh, the identity and the signing key. Nothing is written."><span class="seg-long">Check setup</span><span class="seg-short">Check</span></button>
           </div>
         </div>
 
@@ -813,7 +804,6 @@
     branch: "",
     job: null,
     es: null,
-    autoscroll: true,
     phases: [],
     phase: null,
     signing: null,
@@ -836,9 +826,6 @@
     "circle-small": svg('<circle cx="12" cy="12" r="6"/>'),
     "loader-circle": svg(paths("M21 12a9 9 0 1 1-6.219-8.56")),
     "git-branch": svg(paths("M15 6a9 9 0 0 0-9 9V3") + '<circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>'),
-    "key-round": svg(paths("M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z")
-      + '<circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>'),
-    "shield-check": svg(paths("M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z", "m9 12 2 2 4-4")),
   };
   function icon(name, cls = "ico-svg") {
     const box = el("span", { class: cls, "aria-hidden": "true" });
@@ -917,11 +904,6 @@
   async function applyHash() {
     const hash = location.hash || "#/";
     if (hash === "#/settings") return openSettings();
-    // the old per-setting pages are cards on the one settings page now
-    if (hash === "#/access" || hash === "#/signing") {
-      history.replaceState(history.state, "", "#/settings");
-      return openSettings(hash === "#/access" ? "access-body" : "signing-body");
-    }
     const match = hash.match(/^#\/repo\/([^/]+)$/);
     if (match && state.repos.some((r) => r.id === match[1])) return openRepo(match[1]);
     state.repo = null;
@@ -1219,7 +1201,7 @@
 
   function payload() {
     const body = { action: state.command, paths: state.paths, dry_run: state.opts.dry_run };
-    if (state.command !== "doctor") body.keep_empty = state.opts.keep_empty;
+    body.keep_empty = state.opts.keep_empty;
     if (state.command === "run") {
       body.branch = state.branch || "";
       body.divergence = state.divergence;
@@ -1238,7 +1220,7 @@
     if (body.dry_run) parts.push("--dry-run");
     if (state.command === "run" && state.branch) parts.push("--branch", state.branch);
     for (const p of state.paths) parts.push("--path", p);
-    if (state.command !== "doctor" && body.keep_empty) parts.push("--keep-empty");
+    if (body.keep_empty) parts.push("--keep-empty");
     if (state.command === "run") {
       if (body.skip_pr_check) parts.push("--skip-pr-check");
       if (body.keep_branch) parts.push("--keep-branch");
@@ -1250,11 +1232,10 @@
     return parts.join(" ");
   }
 
-  const VERB = { run: "Clean & publish", strip: "Rewrite locally", doctor: "Check setup" };
+  const VERB = { run: "Clean & publish", strip: "Rewrite locally" };
   const NOTE = {
     run: "Rewrites the arena branch, signs every commit, pushes the default branch, moves the tags and deletes the local arena branch. Pull request checks have to pass first.",
     strip: "Rewrites and signs the arena branch inside this container. No push, no pull request check, no change to origin.",
-    doctor: "Reads git, gh, the commit identity and the signing key, then prints what is missing. Nothing is written.",
   };
 
   function renderCommand() {
@@ -1262,13 +1243,11 @@
     $("opt-branch").style.display = isRun ? "" : "none";
     $("opt-div").style.display = isRun ? "" : "none";
     $("opt-timeout").style.display = isRun ? "" : "none";
-    $("opt-paths").style.display = state.command === "doctor" ? "none" : "";
     for (const node of document.querySelectorAll("#toggles .toggle")) {
       const key = node.dataset.opt;
       node.style.display =
         isRun || (state.command === "strip" && ["dry_run", "keep_empty"].includes(key)) ? "" : "none";
     }
-    $("options-card").style.display = state.command === "doctor" ? "none" : "";
     for (const node of document.querySelectorAll('.toggle[data-only="run"]')) {
       node.hidden = state.command !== "run";
     }
@@ -1316,16 +1295,11 @@
     state.phase = "prepare";
     $("phases").replaceChildren(...state.phases.map((p) =>
       el("li", { class: "phase", "data-phase": p.id, "data-state": "idle" },
-        el("button", {
-          class: "phase-head", "aria-expanded": "false", "aria-controls": "plog-" + p.id,
-          onclick: () => togglePhase(p.id),
-        },
+        el("div", { class: "phase-head" },
           el("span", { class: "phase-ico", "aria-hidden": "true" }, icon("circle-small", "ico-svg idle")),
           el("span", { class: "phase-name" }, p.name),
           el("span", { class: "phase-sub" }, p.sub),
-          el("span", { class: "phase-time" }),
-          el("span", { class: "phase-caret", "aria-hidden": "true" }, icon("chevron-right"))),
-        el("div", { class: "phase-log", id: "plog-" + p.id, hidden: true }))));
+          el("span", { class: "phase-time" })))));
   }
 
   function phaseNode(id) {
@@ -1344,21 +1318,8 @@
     const done = p.state === "done" || p.state === "fail";
     node.querySelector(".phase-time").textContent =
       p.state === "run" ? "running" : done ? (secs < 0.1 ? "<0.1s" : secs.toFixed(1) + "s") : "";
-    node.querySelector(".phase-head").setAttribute(
+    node.setAttribute(
       "aria-label", `${p.name}: ${p.state === "idle" ? "not started" : p.state}${p.sub ? ", " + p.sub : ""}`);
-  }
-
-  function togglePhase(id) {
-    const head = phaseNode(id)?.querySelector(".phase-head");
-    const body = document.getElementById("plog-" + id);
-    if (!head || !body) return;
-    const open = head.getAttribute("aria-expanded") === "true";
-    head.setAttribute("aria-expanded", String(!open));
-    body.hidden = open;
-    if (!open) {
-      const rows = body.querySelectorAll(".log-row");
-      if (rows.length) rows[rows.length - 1].scrollIntoView({ block: "nearest" });
-    }
   }
 
   function markEarlierDone(id) {
@@ -1430,10 +1391,9 @@
       }
       if (phase.state === "idle") phase.state = "run";
       markEarlierDone(id);
-      document.getElementById("plog-" + id)?.append(node.cloneNode(true));
     }
     $("logmeta").textContent = `${lineCount()} lines`;
-    if (state.autoscroll && nearBottom && !$("logwrap").hidden) log.scrollTop = log.scrollHeight;
+    if (nearBottom && !$("logwrap").hidden) log.scrollTop = log.scrollHeight;
     $("jump").classList.toggle("show", !nearBottom && log.scrollHeight > log.clientHeight);
   }
 
@@ -2198,7 +2158,6 @@
   $("log").onscroll = () => {
     const log = $("log");
     const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 70;
-    state.autoscroll = nearBottom;
     $("jump").classList.toggle("show", !nearBottom && log.scrollHeight > log.clientHeight);
   };
   // the whole chip strip is the input's hit target, not just the 32px field
@@ -2208,7 +2167,6 @@
   $("jump").onclick = () => {
     const log = $("log");
     log.scrollTop = log.scrollHeight;
-    state.autoscroll = true;
     $("jump").classList.remove("show");
   };
 
