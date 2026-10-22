@@ -24,7 +24,7 @@ jobs:
   ci:
     name: "Lint, format, prose, and tests"
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -37,7 +37,7 @@ jobs:
           # The image runtime: Debian 13 ships Python 3.13.
           python-version: "3.13"
           enable-cache: true
-      - run: uv sync --locked
+      - run: uv sync --locked --group qa
       - run: uv run --no-sync ruff check engine.py ui/server.py scripts/*.py tests
       - run: uv run --no-sync ruff format --check engine.py ui/server.py scripts/*.py tests
       - run: uv run --no-sync shfmt -i 2 -d docker-entrypoint.sh
@@ -45,22 +45,18 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v24.2.0
         with:
           globs: "**/*.md"
-      # The suite needs git, gpg, and git-filter-repo; the runner has the first
-      # two, and `uv run` puts the third on PATH. Browser tests skip here.
+      # The browser download is the slow step; a warm cache leaves only the OS
+      # packages to install. The key follows the Playwright pin in uv.lock.
+      - name: Cache Chromium
+        id: chromium
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: chromium-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+      - if: steps.chromium.outputs.cache-hit != 'true'
+        run: uv run --no-sync playwright install --with-deps chromium
+      - if: steps.chromium.outputs.cache-hit == 'true'
+        run: uv run --no-sync playwright install-deps chromium
+      # The suite needs git, gpg, git-filter-repo, and Chromium. The runner has
+      # the first two; `uv run` puts the third on PATH; the steps above the last.
       - run: uv run --no-sync pytest
-  e2e:
-    name: "Spacing audit"
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7.0.1
-        with:
-          persist-credentials: false
-      - uses: astral-sh/setup-uv@v10.3.1
-        with:
-          version: "0.13.4"
-          python-version: "3.13"
-          enable-cache: true
-      - run: uv sync --locked --group qa
-      - run: uv run --no-sync playwright install --with-deps chromium
-      - run: uv run --no-sync pytest tests/e2e

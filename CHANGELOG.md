@@ -21,7 +21,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - UI type sizes from one ramp per width class, held in `--fs-*` tokens. Icons are Lucide glyphs inlined as SVG, with the ISC licence beside the page.
 - A 360 px layout: the signing fields, commit metadata, and access labels stack. Create key is disabled while gpg is missing.
 - The test suite as pytest under `tests/`: the engine, web app, and compose checks keep the bash fixtures. `uv run pytest` runs it, in CI too.
-- The spacing audit as a Playwright test in `tests/e2e/`, run by a second CI job. The browser walk `scripts/walk.py`, run by hand, saves its screenshots where you point it.
+- The spacing audit as a Playwright test in `tests/e2e/`, run by the CI job with a cached Chromium. The browser walk `scripts/walk.py`, run by hand, saves its screenshots where you point it.
 - A minimal README: install, use, settings, and development.
 - An add bar that takes a GitHub page address: `github.com/owner/repo`, with or without `https://`, `.git`, or a page suffix.
 - Cards and the repository title show the name only. The Storage row `URL clones` links each clone to its page on the remote.
