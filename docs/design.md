@@ -21,7 +21,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ## Journeys and information architecture
 
 - Entry: the dashboard at `/`. The header holds the brand, the tool dots, and two icon buttons (GitHub access, Commit signing).
-- Dashboard to repository: a card, its Open button, or Enter on a focused card. Back: the All repos button.
+- Dashboard to repository: a click on the card or Enter on a focused card. The name underlines on hover. Back: the All repos button.
 - Access and signing open from the header; Back returns to the previous view.
 - Recovery: a failed run keeps its log open, and a failed load shows a banner with the error text. The service worker caches the shell only, never server state.
 
