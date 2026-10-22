@@ -329,14 +329,6 @@ def sidebar_and_branch_selector(w: Walker, demo: Demo) -> None:
 
 
 @step("desktop")
-def command_switch(w: Walker, demo: Demo) -> None:
-  for command in ("strip", "run"):
-    button = f'#cmdswitch button[data-cmd="{command}"]'
-    w.click(button, 400)
-    assert w.page.get_attribute(button, "aria-pressed") == "true", command
-
-
-@step("desktop")
 def option_toggle_updates_the_argv(w: Walker, demo: Demo) -> None:
   toggle = '.toggle[data-opt="dry_run"]'
   w.click(toggle, 200)

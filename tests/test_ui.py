@@ -319,7 +319,8 @@ def test_the_argv_whitelist(ui: UI, ids: dict[str, str]) -> None:
   assert ui.status("POST", jobs, {"action": "rm -rf /"}) == 400
   assert ui.status("POST", jobs, {"action": "run", "nope": 1}) == 400
   assert ui.status("POST", jobs, {"action": "run", "branch": "--upload-pack=x"}) == 400
-  assert ui.status("POST", jobs, {"action": "strip", "paths": ["-x"]}) == 400
+  assert ui.status("POST", jobs, {"action": "run", "paths": ["-x"]}) == 400
+  assert ui.status("POST", jobs, {"action": "strip"}) == 400, "strip is CLI only"
   assert ui.status("POST", jobs, {"action": "run", "timeout": -5}) == 400
   assert ui.status("POST", "/api/repos/deadbeef1234/jobs", {"action": "run"}) == 404
   assert ui.status("POST", "/api/jobs/deadbeef1234/cancel") == 404
@@ -529,5 +530,5 @@ def test_the_commit_list_and_the_page_shell(ui: UI, ids: dict[str, str]) -> None
   assert 'id="task-note"' in page
   assert 'id="start-mobile"' in page
   assert not re.search(
-    r'cmdpreview|id="cmdline"|id="emptystate"|oneclick-mobile', page
-  ), "the removed command strip"
+    r'cmdpreview|id="cmdline"|id="emptystate"|oneclick-mobile|cmdswitch|data-cmd=', page
+  ), "the removed command strip and switch"

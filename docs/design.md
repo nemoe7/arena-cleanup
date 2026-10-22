@@ -28,7 +28,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ## Screens and states
 
 - Dashboard: add bar, repository cards. Empty: a hint with the add command. Error: a banner above the cards. A card shows the branch, `N uncommitted` only when the clone is dirty, and the drift.
-- Repository: options card, run card with the phase list and log, commits card. Log rows show the clock of the browser. Remove on a card arms on the first click and deletes the URL clone on the second. States: idle, running, done, failed, cancelled. The sidebar ends with Reset to origin, a two-click button that checks out the default branch and resets it hard.
+- Repository: options card, run card with the phase list and log, commits card. The page runs the full flow only; `strip` is a CLI command. Log rows show the clock of the browser. Remove on a card arms on the first click and deletes the URL clone on the second. States: idle, running, done, failed, cancelled. The sidebar ends with Reset to origin, a two-click button that checks out the default branch and resets it hard.
 - Settings: Identity (name, email, Save), GitHub sign-in and credential helper, signing cards, Claimed commits (two chip lists, Save). Below: About. Signing cards: gpg banner when gpg is missing, key list, create card, GitHub key steps. Disabled: Create key while gpg is missing. Error: the banner names the failed check. Each card loads on its own.
 - Offline: the service worker serves the shell; data requests fail with the normal error banner.
 - Loading and permission states: not run as separate checks.
@@ -124,3 +124,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-22: two breakpoints, 980 and 720 px; 1180 px is the content width, not a breakpoint. Four option columns were dropped, because the divergence control overflowed between 981 and 1179 px.
 - Accepted 2026-10-22: in a narrow cell a segmented control wraps whole buttons onto a second row, never words.
 - Accepted 2026-10-22: a shallow history. The dashboard is the root entry and a sub-view is at most one entry deep. One Back leaves a sub-view, the next one leaves the page.
+- Accepted 2026-10-22: no command switch on the repository page. A local rewrite without a push is a terminal task, so `strip` lives in the CLI alone.

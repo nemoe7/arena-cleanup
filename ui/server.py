@@ -60,7 +60,7 @@ def project_version() -> str:
 
 VERSION = project_version()
 
-COMMANDS = {"run", "strip"}
+COMMANDS = {"run"}
 MAX_LINES = 4000
 STATUS_TTL = 8.0  # seconds a repo status is reused before asking git again
 STARTED = time.time()  # when this process came up, for /healthz
@@ -918,65 +918,65 @@ def build_argv(body: dict[str, Any], repo: dict[str, Any]) -> list[str]:
     raise BadRequest(f"unknown action {action!r}")
 
   argv = [sys.executable, str(TOOL), action]
-  allowed = {"action", "paths", "dry_run", "keep_empty", "one_click"}
-  if action == "run":
-    allowed |= {
-      "branch",
-      "divergence",
-      "force",
-      "skip_pr_check",
-      "keep_branch",
-      "timeout",
-      "no_tags",
-    }
+  allowed = {
+    "action",
+    "paths",
+    "dry_run",
+    "keep_empty",
+    "one_click",
+    "branch",
+    "divergence",
+    "force",
+    "skip_pr_check",
+    "keep_branch",
+    "timeout",
+    "no_tags",
+  }
   unknown = set(body) - allowed
   if unknown:
     raise BadRequest("unknown option(s): " + ", ".join(sorted(unknown)))
 
   if body.get("dry_run"):
     argv.append("--dry-run")
+  for path in body.get("paths") or []:
+    path = str(path).strip()
+    if not path:
+      continue
+    if "\0" in path or path.startswith("-"):
+      raise BadRequest(f"invalid path {path!r}")
+    argv += ["--path", path]
+  if body.get("keep_empty"):
+    argv.append("--keep-empty")
 
-  if action in {"run", "strip"}:
-    for path in body.get("paths") or []:
-      path = str(path).strip()
-      if not path:
-        continue
-      if "\0" in path or path.startswith("-"):
-        raise BadRequest(f"invalid path {path!r}")
-      argv += ["--path", path]
-    if body.get("keep_empty"):
-      argv.append("--keep-empty")
-
-  if action == "run":
-    branch = str(body.get("branch") or "").strip()
-    if branch:
-      if branch.startswith("-") or "\0" in branch:
-        raise BadRequest(f"invalid branch {branch!r}")
-      argv += ["--branch", branch]
-    # One click never guesses what to do with diverged history. The engine
-    # refuses without a terminal, and the UI then offers the two choices.
-    divergence = body.get("divergence") or "ask"
-    if divergence not in {"ask", "remote", "local"}:
-      raise BadRequest(f"invalid divergence {divergence!r}")
-    if divergence != "ask":
-      argv += ["--on-divergence", divergence]
-    if body.get("force"):
-      argv.append("--force")
-    if body.get("skip_pr_check"):
-      argv.append("--skip-pr-check")
-    if body.get("keep_branch"):
-      argv.append("--keep-branch")
-    if body.get("no_tags"):
-      argv.append("--no-tags")
-    timeout = body.get("timeout")
-    if timeout not in (None, ""):
-      try:
-        minutes = int(timeout)
-      except (TypeError, ValueError) as exc:
-        raise BadRequest("timeout must be a whole number of minutes") from exc
-      if minutes < 0:
-        raise BadRequest("timeout cannot be negative")
-      argv += ["--check-timeout", str(minutes * 60)]
+  branch = str(body.get("branch") or "").strip()
+  if branch:
+    if branch.startswith("-") or "\0" in branch:
+      raise BadRequest(f"invalid branch {branch!r}")
+    argv += ["--branch", branch]
+  # One click never guesses what to do with diverged history. The engine
+  # refuses without a terminal, and the UI then offers the two choices.
+  divergence = body.get("divergence") or "ask"
+  if divergence not in {"ask", "remote", "local"}:
+    raise BadRequest(f"invalid divergence {divergence!r}")
+  if divergence != "ask":
+    argv += ["--on-divergence", divergence]
+  if body.get("force"):
+    argv.append("--force")
+  if body.get("skip_pr_check"):
+    argv.append("--skip-pr-check")
+  if body.get("keep_branch"):
+    argv.append("--keep-branch")
+  if body.get("no_tags"):
+    argv.append("--no-tags")
+  timeout = body.get("timeout")
+  if timeout not in (None, ""):
+    try:
+      minutes = int(timeout)
+    except (TypeError, ValueError) as exc:
+      raise BadRequest("timeout must be a whole number of minutes") from exc
+    if minutes < 0:
+      raise BadRequest("timeout cannot be negative")
+    argv += ["--check-timeout", str(minutes * 60)]
 
   return argv
 
