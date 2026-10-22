@@ -4,7 +4,8 @@ Build a throwaway demo of the UI and serve it.
 
 The fixture holds:
 
-- three local repositories with an arena branch each
+- five local repositories: an arena branch each, one with two, and one whose
+  default branch moved on after the arena branch was pushed
 - a stub `gh` that answers from files
 - a git identity that matches the engine's constants
 - a throwaway GPG key when `gpg` is installed
@@ -26,6 +27,7 @@ The stub gh reads the demo root's gh/ directory:
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 import os
 import shutil
@@ -35,6 +37,7 @@ import sys
 import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any
 
 HERE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(HERE))
@@ -49,36 +52,84 @@ SUCCESS = {"status": "COMPLETED", "conclusion": "SUCCESS"}
 FAILURE = {"status": "COMPLETED", "conclusion": "FAILURE"}
 PENDING = {"status": "IN_PROGRESS", "conclusion": ""}
 
-# name, arena branch, open PR (None = no PR)
+# name, arena branches with their open PR (None = no PR), whether main moved
+# on after the session
 REPOS = [
   (
     "shop-web",
-    "arena/session-3",
-    {
-      "number": 142,
-      "title": "feat: checkout page",
-      "statusCheckRollup": [
-        {"name": "lint", **SUCCESS},
-        {"name": "test", **SUCCESS},
-        {"name": "build", **SUCCESS},
-        {"name": "e2e", **SUCCESS},
-      ],
-    },
+    [
+      (
+        "arena/session-3",
+        {
+          "number": 142,
+          "title": "feat: checkout page",
+          "statusCheckRollup": [
+            {"name": "lint", **SUCCESS},
+            {"name": "test", **SUCCESS},
+            {"name": "build", **SUCCESS},
+            {"name": "e2e", **SUCCESS},
+          ],
+        },
+      )
+    ],
+    False,
   ),
   (
     "billing-api",
-    "arena/session-1",
-    {
-      "number": 88,
-      "title": "fix: proration rounding",
-      "statusCheckRollup": [
-        {"name": "lint", **SUCCESS},
-        {"name": "test", **FAILURE},
-        {"name": "build", **PENDING},
-      ],
-    },
+    [
+      (
+        "arena/session-1",
+        {
+          "number": 88,
+          "title": "fix: proration rounding",
+          "statusCheckRollup": [
+            {"name": "lint", **SUCCESS},
+            {"name": "test", **FAILURE},
+            {"name": "build", **PENDING},
+          ],
+        },
+      )
+    ],
+    False,
   ),
-  ("docs-site", "arena/session-2", None),
+  ("docs-site", [("arena/session-2", None)], False),
+  # main gained commits after the session: the publish guard stops the run
+  (
+    "infra-tools",
+    [
+      (
+        "arena/session-4",
+        {
+          "number": 57,
+          "title": "chore: pin the base image",
+          "statusCheckRollup": [
+            {"name": "lint", **SUCCESS},
+            {"name": "test", **SUCCESS},
+          ],
+        },
+      )
+    ],
+    True,
+  ),
+  # two sessions left their branches: a run needs a branch choice
+  (
+    "data-pipeline",
+    [
+      (
+        "arena/session-5",
+        {
+          "number": 203,
+          "title": "feat: incremental loads",
+          "statusCheckRollup": [
+            {"name": "lint", **SUCCESS},
+            {"name": "test", **PENDING},
+          ],
+        },
+      ),
+      ("arena/session-6", None),
+    ],
+    False,
+  ),
 ]
 
 OTHER = ("other-dev", "other@example.com")
@@ -116,6 +167,19 @@ BRANCH_HISTORY = [
   ("test: checkout form\n\ngenerated cases", "tests.py", AGENT),
   ("style: format the module", "app.py", BOT),
   ("docs: checkout notes", "docs.md", ME),
+]
+# a second, shorter session on the same default branch
+SECOND_HISTORY = [
+  ("feat: retry policy\n\nagent notes", "retry.py", AGENT),
+  ("fix: batch size off by one", "retry.py", OTHER),
+  ("test: retry policy\n\ngenerated cases", "tests.py", BOT),
+]
+SESSIONS = [BRANCH_HISTORY, SECOND_HISTORY]
+# what main gains after the session, when the repository asks for it. The
+# clone does not pull them, so the card shows the drift too.
+MAIN_LATER = [
+  ("fix: quoting in the deploy script", "deploy.sh", OTHER),
+  ("docs: release notes", "README.md", ME),
 ]
 
 GH_STUB = '''#!/usr/bin/env python3
@@ -288,8 +352,14 @@ def make_key(gnupghome: Path) -> str:
   return ""
 
 
-def make_repo(root: Path, name: str, branch: str, env: dict[str, str]) -> Path:
-  """A bare origin plus a clone on main, with one arena branch of mixed authorship."""
+def make_repo(
+  root: Path,
+  name: str,
+  branches: list[tuple[str, Any]],
+  later: bool,
+  env: dict[str, str],
+) -> Path:
+  """A bare origin plus a clone on main, with arena branches of mixed authorship."""
   origin = root / "origins" / f"{name}.git"
   work = root / "repos" / name
   origin.parent.mkdir(parents=True, exist_ok=True)
@@ -298,11 +368,13 @@ def make_repo(root: Path, name: str, branch: str, env: dict[str, str]) -> Path:
   run("git", "clone", "--quiet", str(origin), str(work), env=env)
   (work / "README.md").write_text(f"# {name}\n")
 
-  def commit(message: str, file: str, who: tuple[str, str], day: int) -> None:
+  days = itertools.count()
+
+  def commit(message: str, file: str, who: tuple[str, str]) -> None:
     with (work / file).open("a") as fh:
       fh.write(message.splitlines()[0] + "\n")
     run("git", "add", file, cwd=work, env=env)
-    date = (FIRST_COMMIT + timedelta(days=day)).isoformat()
+    date = (FIRST_COMMIT + timedelta(days=next(days))).isoformat()
     run(
       "git",
       "commit",
@@ -314,14 +386,22 @@ def make_repo(root: Path, name: str, branch: str, env: dict[str, str]) -> Path:
       env=git_env(env, who[0], who[1], date),
     )
 
-  for day, entry in enumerate(MAIN_HISTORY):
-    commit(*entry, day)
+  for entry in MAIN_HISTORY:
+    commit(*entry)
   run("git", "push", "--quiet", "-u", "origin", "main", cwd=work, env=env)
-  run("git", "checkout", "--quiet", "-b", branch, cwd=work, env=env)
-  for day, entry in enumerate(BRANCH_HISTORY, len(MAIN_HISTORY)):
-    commit(*entry, day)
-  run("git", "push", "--quiet", "-u", "origin", branch, cwd=work, env=env)
-  run("git", "checkout", "--quiet", "main", cwd=work, env=env)
+  for (branch, _pr), history in zip(branches, SESSIONS, strict=False):
+    run("git", "checkout", "--quiet", "-b", branch, cwd=work, env=env)
+    for entry in history:
+      commit(*entry)
+    run("git", "push", "--quiet", "-u", "origin", branch, cwd=work, env=env)
+    run("git", "checkout", "--quiet", "main", cwd=work, env=env)
+  if later:
+    for entry in MAIN_LATER:
+      commit(*entry)
+    run("git", "push", "--quiet", "origin", "main", cwd=work, env=env)
+    run(
+      "git", "reset", "--quiet", "--hard", f"HEAD~{len(MAIN_LATER)}", cwd=work, env=env
+    )
   return work
 
 
@@ -339,7 +419,12 @@ def build(root: Path) -> dict[str, str]:
   (gh_state / "signed-in").write_text("")
   (gh_state / "prs.json").write_text(
     json.dumps(
-      [{"repo": name, "branch": branch, **pr} for name, branch, pr in REPOS if pr],
+      [
+        {"repo": name, "branch": branch, **pr}
+        for name, branches, _later in REPOS
+        for branch, pr in branches
+        if pr
+      ],
       indent=2,
     )
     + "\n"
@@ -361,8 +446,8 @@ def build(root: Path) -> dict[str, str]:
     env.pop("GNUPGHOME", None)
 
   registry = Registry(root / "data")
-  for name, branch, _pr in REPOS:
-    work = make_repo(root, name, branch, env)
+  for name, branches, later in REPOS:
+    work = make_repo(root, name, branches, later, env)
     entry, err = register_path(str(work), registry)
     if not entry:
       raise SystemExit(f"demo: could not register {work}: {err}")

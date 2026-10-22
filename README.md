@@ -148,10 +148,13 @@ a throwaway GPG key. Path and signing tests skip when `git-filter-repo` or
 `gpg` is missing.
 
 `uv run scripts/demo.py --port 8080` serves the UI on a throwaway fixture. It
-holds three repositories with a short history each, an identity, and a key.
+holds five repositories with a short history each, an identity, and a key.
 Its stub `gh` answers from files under the demo root's `gh/` directory.
 `--no-serve`
 builds it and prints the environment.
+
+One default branch moved on after its session, and one repository keeps two
+arena branches.
 
 Browser checks need Playwright: `uv sync --group qa`, then `uv run playwright
 install chromium`, or a Chromium of your own.
