@@ -5,6 +5,16 @@ description = "Web app that cleans an Arena agent branch, rewrites its history, 
 requires-python = ">=3.11"
 dependencies = []
 
+[dependency-groups]
+dev = [
+  "git-filter-repo>=2.47",
+  "ruff==0.16.6",
+  "shfmt-py>=4.2",
+]
+qa = [
+  "playwright>=1.50",
+]
+
 [tool.ruff]
 indent-width = 2
 required-version = "0.16.6"
