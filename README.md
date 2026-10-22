@@ -75,12 +75,17 @@ python3 ui/server.py --repo /path/to/repo
 
 1. Paste a clone URL, a GitHub page address, or a local path into the add box
    and press **Add repo**.
-2. The key icon opens **Access**: `gh` sign-in (`GH_TOKEN`, `gh auth login`,
-   or a pasted token), its scopes, and **Set up git credentials** for HTTPS
-   clones. The token needs `repo`; SSH URLs need a mounted key instead.
-3. The shield icon opens **Signing**: the active GPG key, whether GitHub has
-   it, and **Create key** when there is none. Add the public key at GitHub →
-   Settings → GPG keys with a verified e-mail, then **Re-check**.
+2. The gear icon opens **Settings**, one page for every per-machine setting:
+   - **Identity**: the `git config` name and e-mail every claimed commit gets.
+   - **GitHub**: `gh` sign-in (`GH_TOKEN`, `gh auth login`, or a pasted
+     token), its scopes, and **Set up git credentials** for HTTPS clones. The
+     token needs `repo`; SSH URLs need a mounted key instead.
+   - **Signing**: the active GPG key, whether GitHub has it, and **Create
+     key** when there is none. Add the public key at GitHub → Settings → GPG
+     keys with a verified e-mail, then **Re-check**.
+   - **Claimed commits**: the e-mails and names whose commits a run rewrites
+     onto the identity. Empty lists fall back to the built-in rules.
+3. Install, storage, and About sit below the settings.
 4. **Clean & publish** runs the pipeline and streams the log. A click on the
    card shows the repo view first: target branch, paths to remove, the
    divergence policy, the check timeout, and the options (dry run, skip the
@@ -114,9 +119,10 @@ stacks into one column, and the primary actions stick to the bottom.
 | `ARENA_HOST`, `ARENA_PORT` | bind address (default `0.0.0.0:8080`)                      |
 | `TS_AUTHKEY`               | joins the Tailscale sidecar once; a volume keeps the node  |
 
-The claim rules live in the global git config: `arena.claim-email` and
-`arena.claim-name`, both multi-valued (`git config --global --add`). While a
-key is unset, the matching constant at the top of `engine.py` applies:
+The Settings page writes the identity and the claim rules into the global git
+config: `user.name`, `user.email`, `arena.claim-email`, and `arena.claim-name`.
+The claim keys are multi-valued (`git config --global --add`). While a claim key
+is unset, the matching constant at the top of `engine.py` applies:
 `CLAIM_EMAILS` or `CLAIM_NAMES`. `ARENA_PREFIX` and `SIGN_COMMITS` stay
 constants.
 

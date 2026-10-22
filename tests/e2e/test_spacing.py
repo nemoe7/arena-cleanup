@@ -37,8 +37,7 @@ PROPS = (
 VIEWS = {
   "dashboard": None,
   "repo": ".repo-card",
-  "signing": "#signing-btn",
-  "access": "#access-btn",
+  "settings": "#settings-btn",
 }
 
 COLLECT = """

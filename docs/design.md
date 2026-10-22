@@ -5,7 +5,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ## Purpose and status
 
 - Goal: clean an arena branch (rewrite, sign, publish) from a browser, on a phone or a desktop.
-- Scope: the dashboard, the repository view, the GitHub access view, and the commit signing view.
+- Scope: the dashboard, the repository view, and the settings view.
 - Constraints: one HTML file, no build step, and a dark theme only. Fonts and icons ship with the page, so nothing loads from the network.
 - Acceptance checks: the pytest suite in `tests/`, screenshots at 1280 and 360 px, and the nemo-ui-ux measure reports.
 - Design status: accepted for the four views; the audit findings of 2026-10-22 are fixed.
@@ -13,24 +13,23 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ## Users, tasks, and language
 
 - User group: one developer who owns the repositories and the GitHub account. No research beyond that use.
-- Primary tasks: add a repository, run a cleanup, read the log, fix GitHub access, and set up signing.
+- Primary tasks: add a repository, run a cleanup, read the log, and keep the settings right. Settings: GitHub access, signing, identity, and the claim rules.
 - Repository: a clone the server registered. Identifier: the server-minted `id`; the card shows `name` only. The Storage card links each URL clone to its remote page.
 - Arena branch: a branch under the `arena/` prefix with its pull request and check count.
 - Run: one engine execution with five phases: Prepare, PR checks, Rewrite and sign, Publish, Finish.
 
 ## Journeys and information architecture
 
-- Entry: the dashboard at `/`. The header holds the brand, the tool dots, and two icon buttons (GitHub access, Commit signing).
+- Entry: the dashboard at `/`. The header holds the brand, the tool dots, and one icon button (Settings).
 - Dashboard to repository: a click on the card or Enter on a focused card. The name underlines on hover. Back: the All repos button.
-- Access and signing open from the header; Back returns to the previous view.
+- Settings opens from the header; Back returns to the previous view. The old `#/access` and `#/signing` links land on the matching cards.
 - Recovery: a failed run keeps its log open, and a failed load shows a banner with the error text. The service worker caches the shell only, never server state.
 
 ## Screens and states
 
 - Dashboard: add bar, repository cards. Empty: a hint with the add command. Error: a banner above the cards. A card shows the branch, `N uncommitted` only when the clone is dirty, and the drift.
 - Repository: options card, run card with the phase list and log, commits card. States: idle, running, done, failed, cancelled. The sidebar ends with Reset to origin, a two-click button that checks out the default branch and resets it hard.
-- Access: GitHub sign-in, credential helper, install hint, storage rows, tools, About. Error: the banner names the failed check.
-- Signing: gpg banner when gpg is missing, key list, create card, GitHub key steps. Disabled: Create key while gpg is missing.
+- Settings: Identity (name, email, Save), GitHub sign-in and credential helper, signing cards, Claimed commits (two chip lists, Save). Below: install, storage, and About. Signing cards: gpg banner when gpg is missing, key list, create card, GitHub key steps. Disabled: Create key while gpg is missing. Error: the banner names the failed check. Each card loads on its own.
 - Offline: the service worker serves the shell; data requests fail with the normal error banner.
 - Loading and permission states: not run as separate checks.
 
@@ -103,11 +102,11 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 ### Boards
 
-![Lay of the land: the four views and the moves between them](design/flow.png)
+![Lay of the land: the three views and the moves between them](design/flow.png)
 
 ![Repository view: deep-dive wireframe and key actions](design/wireframe-repo.png)
 
-![Example views: default, signed out, after a run](design/views.png)
+![Example views: default, signed out, after a run, settings](design/views.png)
 
 ![Component states: run status, phase rows, arena row pills](design/states.png)
 

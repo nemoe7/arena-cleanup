@@ -240,7 +240,6 @@ def flow_board(_: dict[str, bytes]) -> str:
     + block("arena-cleanup", width="110px")
     + '<div class="grow"></div>'
     + block(height=22, width="22px")
-    + block(height=22, width="22px")
     + "</div>"
   )
   dashboard = (
@@ -270,26 +269,17 @@ def flow_board(_: dict[str, bytes]) -> str:
     + block("commits", height=24, width="300px")
     + "</div></div></div>"
   )
-  access = (
+  settings = (
     '<div class="scr">'
     + '<div class="bar">'
     + block(icon("arrow-left") + "&nbsp;Back", width="70px")
-    + block("GitHub access", width="100px")
+    + block("Settings", width="100px")
     + "</div>"
-    + block("signed in as @you · scopes", height=34)
-    + block("git credentials", height=24)
-    + block("install · storage · tools", height=24)
-    + "</div>"
-  )
-  signing = (
-    '<div class="scr">'
-    + '<div class="bar">'
-    + block(icon("arrow-left") + "&nbsp;Back", width="70px")
-    + block("Commit signing", width="100px")
-    + "</div>"
-    + block("key assigned to your account", height=34)
-    + block("keys in this container", height=40)
-    + block("create key · name · e-mail", height=24)
+    + block("identity · name · e-mail", height=24)
+    + block("GitHub access · signed in as @you", height=24)
+    + block("commit signing · keys · create", height=24)
+    + block("claimed commits · emails · names", height=24)
+    + block("install · storage · about", height=24)
     + "</div>"
   )
 
@@ -309,15 +299,17 @@ def flow_board(_: dict[str, bytes]) -> str:
     )
     + '</div><div class="row" style="margin-top:24px;align-items:center">'
     + '<div class="col" style="width:420px"></div>'
-    + arrow("key icon")
-    + frame("Access", "gh sign-in, git credentials, install, storage.", access)
-    + arrow("shield icon")
-    + frame("Signing", "The active key, GitHub's view of it, key creation.", signing)
+    + arrow("gear icon, from either view")
+    + frame(
+      "Settings",
+      "Identity, GitHub access, signing, and the claim rules; then install, storage, about.",
+      settings,
+    )
     + "</div></div>"
   )
   return board(
     "Lay of the land",
-    "The four views and how a person moves between them. Blocks stand for regions, "
+    "The three views and how a person moves between them. Blocks stand for regions, "
     "the accent block for the primary action of the view.",
     body,
   )
@@ -429,6 +421,11 @@ def views_board(shots: dict[str, bytes]) -> str:
       "Five phases with their results and times; the raw log unfolded.",
       img(shots, "after-run", 460),
     )
+    + frame(
+      "Settings",
+      "Identity, GitHub access, signing, and the claim rules, then the informing cards.",
+      img(shots, "settings", 460),
+    )
     + "</div>"
   )
   return board(
@@ -499,7 +496,7 @@ def components_board(_: dict[str, bytes]) -> str:
     '<tr><td>ghost</td><td><button class="btn ghost">Re-check</button></td>'
     '<td><button class="btn ghost" disabled>Re-check</button></td></tr>'
     f'<tr><td>back</td><td><button class="btn ghost back">{icon("arrow-left")}All repos</button></td><td></td></tr>'
-    f'<tr><td>icon</td><td><button class="icon-btn" aria-label="Commit signing">{icon("shield-check")}</button></td>'
+    f'<tr><td>icon</td><td><button class="icon-btn" aria-label="Settings">{icon("settings")}</button></td>'
     "<td></td></tr>"
     '<tr><td></td><td class="mono">default</td><td class="mono">disabled</td></tr></table>'
   )
@@ -657,6 +654,7 @@ def style_board(_: dict[str, bytes]) -> str:
         "git-branch",
         "key-round",
         "shield-check",
+        "settings",
       )
     )
     + '</div><p class="cap">Lucide glyphs inlined in index.html, drawn at 1 em in the text colour.</p>'
@@ -830,6 +828,8 @@ def capture_views(walker: Walker, demo: Demo) -> dict[str, bytes]:
   walker.open_log()
   walker.page.wait_for_timeout(400)
   shots["after-run"] = walker.page.screenshot(full_page=True)
+  walker.click("#settings-btn", 1500)
+  shots["settings"] = walker.page.screenshot(full_page=True)
   return shots
 
 

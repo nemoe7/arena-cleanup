@@ -17,7 +17,7 @@ from typing import Any
 
 import pytest
 
-from .conftest import ROOT, World, project_version
+from .conftest import ME_EMAIL, ROOT, World, project_version
 
 SERVER = ROOT / "ui" / "server.py"
 STARTUP_SECONDS = 15
@@ -222,7 +222,7 @@ def test_env_and_page(ui: UI) -> None:
   assert code == 200
   assert headers["content-type"] == "font/woff2"
   assert len(font) > MIN_FONT_BYTES
-  assert 'id="view-signing"' in page
+  assert 'id="view-settings"' in page
   assert 'id="view-dashboard"' in page
 
 
@@ -336,6 +336,52 @@ def test_signing_panel(ui: UI) -> None:
   assert (sign["format"] or "openpgp") == "openpgp"
   assert ui.status("POST", "/api/signing", {"action": "nope"}) == 400
   assert ui.status("POST", "/api/signing", {"action": "use"}) == 400
+
+
+def test_settings_page(ui: UI, world: World) -> None:
+  before = ui.get("/api/settings")
+  assert before["identity"] == {"name": "nemoe7", "email": ME_EMAIL}
+  assert before["claims"]["emails"] == [] and before["claims"]["names"] == []
+  assert ME_EMAIL in before["claims"]["defaults"]["emails"]
+  assert "arena" in before["claims"]["defaults"]["names"]
+
+  saved = ui.post(
+    "/api/settings",
+    {
+      "action": "claims",
+      "emails": [" a@x.io ", "a@x.io", ""],
+      "names": ["bot one", "arena"],
+    },
+  )
+  assert saved["claims"]["emails"] == ["a@x.io"]
+  assert saved["claims"]["names"] == ["bot one", "arena"]
+  assert world.git(
+    "config", "--global", "--get-all", "arena.claim-name"
+  ).splitlines() == [
+    "bot one",
+    "arena",
+  ]
+  cleared = ui.post("/api/settings", {"action": "claims", "emails": [], "names": []})
+  assert cleared["claims"] == {**saved["claims"], "emails": [], "names": []}
+
+  renamed = ui.post(
+    "/api/settings", {"action": "identity", "name": "Some One", "email": "some@one.io"}
+  )
+  assert renamed["identity"] == {"name": "Some One", "email": "some@one.io"}
+  assert world.git("config", "--global", "user.email") == "some@one.io"
+  ui.post("/api/settings", {"action": "identity", "name": "nemoe7", "email": ME_EMAIL})
+
+  assert ui.status("POST", "/api/settings", {"action": "identity", "name": "x"}) == 400
+  assert (
+    ui.status(
+      "POST", "/api/settings", {"action": "identity", "name": "x", "email": "no"}
+    )
+    == 400
+  )
+  assert (
+    ui.status("POST", "/api/settings", {"action": "claims", "emails": "a@x.io"}) == 400
+  )
+  assert ui.status("POST", "/api/settings", {"action": "nope"}) == 400
 
 
 @needs_gpg

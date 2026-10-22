@@ -195,7 +195,7 @@
   main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
   .view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
   .view:focus { outline: none; }
-  #view-dashboard, #view-signing { overflow-y: auto; scrollbar-gutter: stable; }
+  #view-dashboard, #view-settings { overflow-y: auto; scrollbar-gutter: stable; }
   .wrap { width: min(1180px, 100%); margin: 0 auto; padding: 24px var(--pad) 40px; }
 
   /* ----------------------------------------------------------- dashboard */
@@ -461,6 +461,21 @@
   .sign-row .v .mono { font-family: var(--mono); font-size: var(--fs-1); overflow-wrap: anywhere; }
   .sign-row .v .row { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
   .sign-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  /* a list of values typed one at a time: Enter or a comma adds, Backspace on an empty field pops */
+  .chip-edit {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 34px; padding: 4px 6px;
+    background: var(--surface-2); border: 1px solid var(--line-2); border-radius: 8px; cursor: text;
+  }
+  .chip-edit:focus-within { border-color: #3d4655; box-shadow: 0 0 0 3px var(--accent-soft); }
+  .chip-edit input { flex: 1; min-width: 140px; height: 24px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: var(--fs-2); padding: 0 4px; }
+  .chip-edit input:focus { outline: none; }
+  .chip-edit .pill { padding-right: 4px; }
+  .chip-edit .pill button { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: transparent; color: var(--dim); cursor: pointer; padding: 0; }
+  .chip-edit .pill button:hover { color: var(--text); background: var(--surface-3); }
+  .chip-edit .pill button svg { width: 12px; height: 12px; }
+  .claim-label { font-size: var(--fs-1); color: var(--muted); margin-top: 2px; }
+  /* a deep link scrolls a card group under the sticky header, not behind it */
+  #settings-body > .stack { scroll-margin-top: 72px; }
   .sign-key { font: var(--fs-1) var(--mono); color: var(--muted); overflow-wrap: anywhere; flex: 1; min-width: 220px; }
   .sign-key b { color: var(--text); font-weight: 600; }
   .banner {
@@ -619,11 +634,8 @@
     </a>
     <div class="grow"></div>
     <div class="env-dots" id="env"></div>
-    <button class="icon-btn" id="access-btn" title="GitHub access" aria-label="GitHub access">
-      <span class="ico-svg" data-icon="key-round" aria-hidden="true"></span>
-    </button>
-    <button class="icon-btn" id="signing-btn" title="Commit signing" aria-label="Commit signing">
-      <span class="ico-svg" data-icon="shield-check" aria-hidden="true"></span>
+    <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings">
+      <span class="ico-svg" data-icon="settings" aria-hidden="true"></span>
     </button>
   </header>
 
@@ -754,25 +766,22 @@
     </div>
   </div>
 
-  <!-- =============================================================== access -->
-  <div class="view" id="view-access" hidden>
+  <!-- ============================================================= settings -->
+  <!-- One page for every per-machine setting: identity, GitHub access, signing, claim
+       rules. The cards that only inform (install, storage, about) sit below them. -->
+  <div class="view" id="view-settings" hidden>
     <div class="wrap" style="max-width:760px">
       <div class="detail-head" style="margin-bottom:16px">
-        <button class="btn ghost back" id="access-back"><span class="ico-svg" data-icon="arrow-left" aria-hidden="true"></span>Back</button>
-        <h1 class="page-title" tabindex="-1">GitHub access</h1>
+        <button class="btn ghost back" id="settings-back"><span class="ico-svg" data-icon="arrow-left" aria-hidden="true"></span>Back</button>
+        <h1 class="page-title" tabindex="-1">Settings</h1>
       </div>
-      <div id="access-body" class="stack"></div>
-    </div>
-  </div>
-
-  <!-- ============================================================== signing -->
-  <div class="view" id="view-signing" hidden>
-    <div class="wrap" style="max-width:760px">
-      <div class="detail-head" style="margin-bottom:16px">
-        <button class="btn ghost back" id="signing-back"><span class="ico-svg" data-icon="arrow-left" aria-hidden="true"></span>Back</button>
-        <h1 class="page-title" tabindex="-1">Commit signing</h1>
+      <div id="settings-body" class="stack">
+        <div id="identity-body" class="stack"></div>
+        <div id="access-body" class="stack"></div>
+        <div id="signing-body" class="stack"></div>
+        <div id="claims-body" class="stack"></div>
+        <div id="info-body" class="stack"></div>
       </div>
-      <div id="signing-body" class="stack"></div>
     </div>
   </div>
   </main>
@@ -820,6 +829,7 @@
   const paths = (...ds) => ds.map((d) => `<path d="${d}"/>`).join("");
   const ICONS = {
     "arrow-left": svg(paths("m12 19-7-7 7-7", "M19 12H5")),
+    settings: svg(paths("M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915") + '<circle cx="12" cy="12" r="3"/>'),
     "arrow-up": svg(paths("m5 12 7-7 7 7", "M12 19V5")),
     "arrow-down": svg(paths("M12 5v14", "m19 12-7 7-7-7")),
     "chevron-right": svg(paths("m9 18 6-6-6-6")),
@@ -863,16 +873,16 @@
   // screen they expect, and a repo view can be bookmarked or sent to someone.
   function hashFor(view) {
     if (view === "repo") return "#/repo/" + (state.repo?.id || "");
-    return { dashboard: "#/", access: "#/access", signing: "#/signing" }[view] || "#/";
+    return { dashboard: "#/", settings: "#/settings" }[view] || "#/";
   }
 
   function titleFor(view) {
     if (view === "repo" && state.repo) return `${state.repo.name}, arena-cleanup`;
-    return { access: "GitHub access, arena-cleanup", signing: "Commit signing, arena-cleanup" }[view] || "arena-cleanup";
+    return view === "settings" ? "Settings, arena-cleanup" : "arena-cleanup";
   }
 
   function show(view) {
-    for (const name of ["dashboard", "repo", "signing", "access"]) {
+    for (const name of ["dashboard", "repo", "settings"]) {
       $("view-" + name).hidden = name !== view;
     }
     // remember where we are, so a sub-view can send you back to the place you
@@ -910,8 +920,12 @@
   // Translate a hash into a screen. Used on load and on Back/Forward.
   async function applyHash() {
     const hash = location.hash || "#/";
-    if (hash === "#/access") return openAccess();
-    if (hash === "#/signing") return openSigning();
+    if (hash === "#/settings") return openSettings();
+    // the old per-setting pages are cards on the one settings page now
+    if (hash === "#/access" || hash === "#/signing") {
+      history.replaceState(history.state, "", "#/settings");
+      return openSettings(hash === "#/access" ? "access-body" : "signing-body");
+    }
     const match = hash.match(/^#\/repo\/([^/]+)$/);
     if (match && state.repos.some((r) => r.id === match[1])) return openRepo(match[1]);
     state.repo = null;
@@ -1586,7 +1600,7 @@
           el("b", {}, "GitHub is not connected."),
           " PR checks cannot be read, private clones will fail, and pushes over HTTPS have no credentials.",
           el("div", { style: "margin-top:8px" },
-            el("button", { class: "btn primary", onclick: openAccess }, "Connect GitHub")))));
+            el("button", { class: "btn primary", onclick: () => openSettings("access-body") }, "Connect GitHub")))));
       return;
     }
     box.hidden = true;
@@ -1601,11 +1615,111 @@
     renderAuthBanner();
   }
 
-  function openAccess() {
+  // Every card loads on its own, so a slow gh answer never hides the rest.
+  function openSettings(focus) {
     state.returnTo = state.view === "repo" ? "repo" : "dashboard";
-    show("access");
+    show("settings");
     renderAccess();
     refreshAuth().then(renderAccess);
+    loadSigning();
+    renderInfo();
+    renderSettings().then(() => {
+      if (focus) $(focus).scrollIntoView({ block: "start" });
+    });
+  }
+
+  async function renderSettings() {
+    try {
+      state.settings = await api("/api/settings");
+    } catch (err) {
+      $("identity-body").replaceChildren(el("div", { class: "banner err" }, err.message));
+      return;
+    }
+    renderIdentity();
+    renderClaims();
+  }
+
+  function renderIdentity() {
+    const id = state.settings.identity;
+    const name = el("input", { class: "field", id: "id-name", placeholder: "Your name", autocomplete: "name", value: id.name || "" });
+    const email = el("input", { class: "field", id: "id-email", placeholder: "you@example.com", autocomplete: "email", value: id.email || "" });
+    const save = el("button", { class: "btn primary", id: "id-save", onclick: async () => {
+      save.disabled = true;
+      try {
+        state.settings = await post("/api/settings", { action: "identity", name: name.value, email: email.value });
+        toast("identity saved");
+        renderIdentity();
+        renderClaims();
+      } catch (err) {
+        toast(err.message);
+        save.disabled = false;
+      }
+    } }, "Save");
+    $("identity-body").replaceChildren(el("div", { class: "card", id: "card-identity" },
+      el("div", { class: "card-head" }, el("h2", {}, "Identity"), el("span", { class: "hint" }, "git config user.name, user.email")),
+      el("div", { class: "card-body", style: "display:grid;gap:10px" },
+        el("div", { class: "hint" }, "Every commit a run claims gets this author and committer."),
+        el("div", { class: "sign-fields" }, name, email),
+        el("div", {}, save))));
+  }
+
+  // A list of values as pills with one text field: Enter or a comma adds the
+  // typed value, Backspace on an empty field removes the last pill.
+  function chipEditor(id, values, placeholder) {
+    const items = [...values];
+    const box = el("div", { class: "chip-edit", id });
+    const input = el("input", { placeholder, "aria-label": placeholder, autocomplete: "off", spellcheck: "false" });
+    const draw = () => box.replaceChildren(...items.map((v, i) =>
+      el("span", { class: "pill mono" }, v,
+        el("button", { type: "button", "aria-label": `Remove ${v}`, onclick: () => { items.splice(i, 1); draw(); } }, icon("x")))),
+      input);
+    const add = () => {
+      const v = input.value.trim().replace(/,+$/, "").trim();
+      if (v && !items.includes(v)) items.push(v);
+      input.value = "";
+      draw();
+    };
+    input.onkeydown = (event) => {
+      if (event.key === "Enter" || event.key === ",") {
+        event.preventDefault();
+        add();
+        input.focus();
+      } else if (event.key === "Backspace" && !input.value && items.length) {
+        items.pop();
+        draw();
+        input.focus();
+      }
+    };
+    input.onblur = () => { if (input.value.trim()) add(); };
+    box.onclick = (event) => { if (event.target === box) input.focus(); };
+    draw();
+    return { box, values: () => items.slice() };
+  }
+
+  function renderClaims() {
+    const c = state.settings.claims;
+    const emails = chipEditor("claim-emails", c.emails, "add an email");
+    const names = chipEditor("claim-names", c.names, "add a name");
+    const save = el("button", { class: "btn primary", id: "claims-save", onclick: async () => {
+      save.disabled = true;
+      try {
+        state.settings = await post("/api/settings", { action: "claims", emails: emails.values(), names: names.values() });
+        toast("claim rules saved");
+        renderClaims();
+      } catch (err) {
+        toast(err.message);
+        save.disabled = false;
+      }
+    } }, "Save");
+    $("claims-body").replaceChildren(el("div", { class: "card", id: "card-claims" },
+      el("div", { class: "card-head" }, el("h2", {}, "Claimed commits"), el("span", { class: "hint" }, "git config arena.claim-email, arena.claim-name")),
+      el("div", { class: "card-body", style: "display:grid;gap:10px" },
+        el("div", { class: "hint" }, "A run rewrites every commit by one of these emails or names onto the identity above. The configured email is always claimed."),
+        el("div", { class: "claim-label" }, "Emails"), emails.box,
+        el("div", { class: "claim-label" }, "Names"), names.box,
+        el("div", { class: "hint" }, "An empty list falls back to the built-in rule: ",
+          el("code", {}, c.defaults.emails.join(", ")), " and ", el("code", {}, c.defaults.names.join(", ")), "."),
+        el("div", {}, save))));
   }
 
   async function renderAccess() {
@@ -1695,23 +1809,17 @@
           "Repos cloned with a ", el("code", {}, "git@github.com:"), " URL use SSH instead and ignore the credential helper. To use your own SSH key, mount it: ",
           el("code", {}, "-v ~/.ssh:/home/arena/.ssh:ro")))));
 
-    // -- install ----------------------------------------------------------
-    nodes.push(installCard());
+    body.replaceChildren(...nodes);
+  }
 
-    // -- what survives a rebuild -----------------------------------------
-    nodes.push(storageCard());
-
-    // -- about ------------------------------------------------------------
-    nodes.push(el("div", { class: "card" },
+  // The cards that only inform: install, what survives a rebuild, about.
+  function renderInfo() {
+    $("info-body").replaceChildren(installCard(), storageCard(), el("div", { class: "card" },
       el("div", { class: "card-head" }, el("h2", {}, "About")),
       el("div", { class: "card-body" },
         pillRow("ui", el("span", { class: "mono" }, state.env ? `v${state.env.version}, engine ${state.env.tool}` : "?")),
         pillRow("machine", el("span", { class: "mono" }, state.env ? `${state.env.arch}, python ${state.env.python}` : "?")),
-        pillRow("data", el("span", { class: "mono" }, state.env ? state.env.data : "?")),
-        pillRow("identity", el("span", { class: "mono" },
-          g.name ? `${g.name} <${g.email}>` : "not set, see Commit signing")))));
-
-    body.replaceChildren(...nodes);
+        pillRow("data", el("span", { class: "mono" }, state.env ? state.env.data : "?")))));
   }
 
   function cloneLinks(repos) {
@@ -1867,9 +1975,7 @@
           "repo state never is, so every dashboard load still asks this server.")));
   }
 
-  async function openSigning() {
-    state.returnTo = state.view === "repo" ? "repo" : "dashboard";
-    show("signing");
+  async function loadSigning() {
     $("signing-body").replaceChildren(el("div", { class: "hint" }, "loading…"));
     try {
       state.signing = await api("/api/signing");
@@ -1926,7 +2032,7 @@
             ? el("span", { class: "pill ok" }, "active")
             : el("button", { class: "btn", onclick: async () => {
                 await post("/api/signing", { action: "use", fingerprint: k.fingerprint });
-                await openSigning();
+                await loadSigning();
               } }, "Use"),
           el("button", { class: "btn ghost", onclick: async () => {
             const out = await post("/api/signing", { action: "public_key", fingerprint: k.fingerprint });
@@ -1945,7 +2051,7 @@
       try {
         await post("/api/signing", { action: "create", name: name.value, email: email.value });
         toast("key created");
-        await openSigning();
+        await loadSigning();
       } catch (err) {
         toast(err.message);
       } finally {
@@ -1977,7 +2083,7 @@
           "Add the key, then come back here and press <b>Re-check</b>.",
         ]),
         el("div", { style: "margin-top:12px;display:flex;gap:8px;flex-wrap:wrap" },
-          el("button", { class: "btn", onclick: async () => { await openSigning(); toast("re-checked"); } }, "Re-check"),
+          el("button", { class: "btn", onclick: async () => { await loadSigning(); toast("re-checked"); } }, "Re-check"),
           el("a", { class: "btn ghost", href: "https://github.com/settings/keys", target: "_blank", rel: "noopener" }, "Open GitHub keys")))));
 
     body.replaceChildren(...nodes);
@@ -1991,10 +2097,8 @@
     show("dashboard");
     loadRepos();
   };
-  $("signing-btn").onclick = openSigning;
-  $("access-btn").onclick = openAccess;
-  $("access-back").onclick = goBack;
-  $("signing-back").onclick = goBack;
+  $("settings-btn").onclick = () => openSettings();
+  $("settings-back").onclick = goBack;
 
   window.addEventListener("hashchange", () => {
     // a pop this page asked for already shows its screen
@@ -2154,12 +2258,12 @@
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     state.installPrompt = event;
-    if (!$("view-access").hidden) renderAccess();
+    if (!$("view-settings").hidden) renderInfo();
   });
   window.addEventListener("appinstalled", () => {
     state.installPrompt = null;
     toast("installed");
-    if (!$("view-access").hidden) renderAccess();
+    if (!$("view-settings").hidden) renderInfo();
   });
 
   if ("serviceWorker" in navigator) {

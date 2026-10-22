@@ -26,8 +26,8 @@ def test_a_sub_view_is_one_entry_deep(desktop: Walker) -> None:
   assert pushed(desktop)
 
   # a sub-view opened from a sub-view replaces the entry
-  desktop.click("#signing-btn", 800)
-  assert desktop.visible("#view-signing")
+  desktop.click("#settings-btn", 800)
+  assert desktop.visible("#view-settings")
   assert length(desktop) == root + 1
   assert pushed(desktop)
 

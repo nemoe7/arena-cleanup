@@ -266,29 +266,29 @@ def keyboard_enter_on_a_card(w: Walker, demo: Demo) -> None:
 
 @step("desktop")
 def github_access_panel(w: Walker, demo: Demo) -> None:
-  w.click("#access-btn", 1000)
-  assert w.visible("#view-access")
+  w.click("#settings-btn", 1000)
+  assert w.visible("#view-settings")
   login = demo.api("/api/auth")["gh"]["login"]
   assert f"@{login}" in w.text("#access-body .banner.ok")
-  body = w.text("#access-body")
-  assert "repo" in body  # token scopes
+  assert "repo" in w.text("#access-body")  # token scopes
+  body = w.text("#settings-body")
   assert ".config/gh/hosts.yml" in body  # the storage card lists the token file
   assert ".gitconfig" in body  # and git's config
-  assert w.count("#access-body .install-row") == 1
+  assert w.count("#info-body .install-row") == 1
 
 
 @step("desktop")
 def recheck_button_keeps_the_answer(w: Walker, demo: Demo) -> None:
   w.click("text=Re-check", 1200)
   assert w.count("#access-body .banner.ok") >= 1
-  w.click("#access-back")
+  w.click("#settings-back")
   assert w.visible("#view-dashboard")
 
 
 @step("desktop")
 def signing_panel(w: Walker, demo: Demo) -> None:
-  w.click("#signing-btn", 1000)
-  assert w.visible("#view-signing")
+  w.click("#settings-btn", 1000)
+  assert w.visible("#view-settings")
   assert w.visible("#gpg-name")
   assert w.visible("#gpg-email")
   assert w.visible("#signing-body .btn.primary")
@@ -314,7 +314,7 @@ def signing_panel_lists_the_demo_key(w: Walker, demo: Demo) -> None:
 
 @step("desktop")
 def back_from_signing(w: Walker, demo: Demo) -> None:
-  w.click("#signing-back")
+  w.click("#settings-back")
   assert w.visible("#view-dashboard")
 
 
@@ -514,7 +514,7 @@ def signed_out_banner_and_honest_pills(w: Walker, demo: Demo) -> None:
 @step("desktop")
 def connect_github_opens_access_with_a_token_field(w: Walker, demo: Demo) -> None:
   w.click("#auth-banner button", 1000)
-  assert w.visible("#view-access")
+  assert w.visible("#view-settings")
   assert w.visible("#token-input")
 
 
@@ -534,7 +534,7 @@ def sign_in_with_a_token(w: Walker, demo: Demo) -> None:
 
 @step("desktop")
 def checks_come_back_after_signing_in(w: Walker, demo: Demo) -> None:
-  w.click("#access-back", 400)
+  w.click("#settings-back", 400)
   demo.wait_until_checked(True)
   w.goto(2200)
   pills = w.page.eval_on_selector_all(

@@ -36,6 +36,9 @@ UI_DIR = Path(__file__).resolve().parent
 TOOL = UI_DIR.parent / "engine.py"
 STATIC = UI_DIR / "static"
 
+sys.path.insert(0, str(UI_DIR.parent))
+import engine  # the constants are the settings page's fallbacks
+
 
 def project_version() -> str:
   """The version from pyproject.toml, the one place it is set."""
@@ -498,6 +501,54 @@ def github_gpg_keys() -> tuple[list[str], str]:
 
 def global_config(key: str) -> str:
   return git("config", "--global", key)
+
+
+def global_config_all(key: str) -> list[str]:
+  """Every value of a multi-valued global key, in order; empty when unset."""
+  text = git("config", "--global", "--get-all", key)
+  return [line.strip() for line in text.splitlines() if line.strip()]
+
+
+def set_global_config_all(key: str, values: list[str]) -> None:
+  rc, _, err = run_cmd(["git", "config", "--global", "--unset-all", key])
+  if rc not in (0, 5):  # 5: the key was not set
+    raise BadRequest(err or f"could not clear {key}")
+  for value in values:
+    rc, _, err = run_cmd(["git", "config", "--global", "--add", key, value])
+    if rc != 0:
+      raise BadRequest(err or f"could not set {key}")
+
+
+def settings_report() -> dict[str, Any]:
+  """The identity and the claim rules a run will use, plus the built-in fallbacks."""
+  return {
+    "identity": {
+      "name": global_config("user.name"),
+      "email": global_config("user.email"),
+    },
+    "claims": {
+      "emails": global_config_all("arena.claim-email"),
+      "names": global_config_all("arena.claim-name"),
+      "defaults": {
+        "emails": engine.CLAIM_EMAILS.split(),
+        "names": engine.CLAIM_NAMES.split(),
+      },
+    },
+  }
+
+
+def clean_values(raw: Any, what: str) -> list[str]:
+  if not isinstance(raw, list) or not all(isinstance(v, str) for v in raw):
+    raise BadRequest(f"{what} must be a list of strings")
+  values: list[str] = []
+  for value in (v.strip() for v in raw):
+    if not value:
+      continue
+    if "\n" in value or "\r" in value:
+      raise BadRequest(f"{what} cannot span lines")
+    if value not in values:
+      values.append(value)
+  return values
 
 
 def commits_report(repo: dict[str, Any], limit: int = 30) -> dict[str, Any]:
@@ -1194,6 +1245,8 @@ class Handler(BaseHTTPRequestHandler):
         )
       elif path == "/api/signing":
         self._json(signing_report())
+      elif path == "/api/settings":
+        self._json(settings_report())
       elif len(parts) == 3 and parts[0] == "api" and parts[1] == "jobs":
         job = JOBS.get(parts[2])
         if not job:
@@ -1266,6 +1319,8 @@ class Handler(BaseHTTPRequestHandler):
         self._handle_auth(self._body())
       elif path == "/api/signing":
         self._handle_signing(self._body())
+      elif path == "/api/settings":
+        self._handle_settings(self._body())
       elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "signing":
         self._handle_signing(self._body(), self._repo(parts[2]))
       elif (
@@ -1323,6 +1378,30 @@ class Handler(BaseHTTPRequestHandler):
         self._json(auth_report(force=True))
     else:
       raise BadRequest("unknown auth action")
+
+  def _handle_settings(self, body: dict[str, Any]) -> None:
+    action = body.get("action")
+    if action == "identity":
+      name = str(body.get("name") or "").strip()
+      email = str(body.get("email") or "").strip()
+      if not name or not email:
+        raise BadRequest("name and email are required")
+      if "@" not in email or any(c.isspace() for c in email):
+        raise BadRequest("that is not an email address")
+      for key, value in (("user.name", name), ("user.email", email)):
+        rc, _, err = run_cmd(["git", "config", "--global", key, value])
+        if rc != 0:
+          raise BadRequest(err or f"could not set {key}")
+    elif action == "claims":
+      set_global_config_all(
+        "arena.claim-email", clean_values(body.get("emails"), "emails")
+      )
+      set_global_config_all(
+        "arena.claim-name", clean_values(body.get("names"), "names")
+      )
+    else:
+      raise BadRequest("unknown action")
+    self._json(settings_report())
 
   def _handle_signing(
     self, body: dict[str, Any], repo: dict[str, Any] | None = None
