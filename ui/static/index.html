@@ -276,7 +276,6 @@
   .row-btn .ahead { display: inline-flex; align-items: center; gap: 2px; }
 
   /* what the selected task will do, in one sentence */
-  .task-note { margin: 0; max-width: 132ch; color: var(--dim); font-size: var(--fs-2); line-height: 1.55; }
   .card-actions { display: flex; gap: 8px; align-items: center; }
   .card-actions .btn { height: 30px; font-size: var(--fs-2); padding: 0 12px; }
 
@@ -338,9 +337,20 @@
   .options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
   .opt { padding: 8px 2px; border-bottom: 1px solid var(--line); min-width: 0; }
   .opt[hidden] { display: none; }
+  /* the settings page labels its token field with a label and a short note */
   .opt-label { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
-  .opt-label label, .opt-label span.lbl { font-weight: 560; font-size: var(--fs-2); }
   .opt-label .desc { color: var(--dim); font-size: var(--fs-1); }
+  /* one row per option: label, control, and a trailing action or readout */
+  .opt.row { display: grid; grid-template-columns: 128px minmax(0, 1fr) auto; align-items: center; gap: 8px 12px; }
+  .opt.row > label { font-weight: 560; font-size: var(--fs-2); white-space: nowrap; }
+  .opt.row .tree { grid-column: 1 / -1; }
+  .slider { width: 100%; margin: 0; accent-color: var(--accent); }
+  .readout { font: var(--fs-1) var(--mono); color: var(--muted); min-width: 6ch; text-align: right; }
+  .checks { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 10px 2px; }
+  .check { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: var(--fs-2); cursor: pointer; }
+  .check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+  .check:has(input:checked) { color: var(--text); }
+  .check.danger:has(input:checked) { color: var(--warn); }
 
   /* the whole options card folds from its head; closed, the head carries the
      branch pill and a one-line summary of what differs from the defaults */
@@ -375,19 +385,6 @@
   .tree-select:hover, .tree-select[aria-pressed="true"] { color: var(--accent-hi); }
   .tree-empty { padding: 4px 8px; color: var(--dim); }
 
-  .toggles { display: flex; flex-wrap: wrap; gap: 6px; }
-  .toggle {
-    display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line-2);
-    background: var(--surface-2); color: var(--muted); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: var(--fs-2);
-  }
-  .toggle:hover { border-color: #313842; color: var(--text); }
-  .toggle .sw { width: 26px; height: 15px; border-radius: 999px; background: #23272e; position: relative; transition: background .15s; flex: none; }
-  .toggle .sw::after { content: ""; position: absolute; inset: 2px auto 2px 2px; width: 11px; border-radius: 50%; background: #7d848d; transition: transform .15s, background .15s; }
-  .toggle[aria-pressed="true"] { color: var(--text); border-color: #38414f; background: var(--surface-3); }
-  .toggle[aria-pressed="true"] .sw { background: var(--accent-soft); }
-  .toggle[aria-pressed="true"] .sw::after { transform: translateX(11px); background: var(--accent-hi); }
-  .toggle.danger[aria-pressed="true"] .sw::after { background: var(--warn); }
-  .toggle small { color: var(--dim); font-size: var(--fs-1); }
 
 
   .console { display: flex; flex-direction: column; position: relative; }
@@ -547,7 +544,6 @@
     .repo-name { font-size: 15px; }
     .hint, .opt-label .desc, .phase-sub, .run-foot .hint, .commit .meta { font-size: 12px; }
     .phase-head { padding: 10px 12px; font-size: 13px; }
-    .task-note { font-size: 12px; }
     .commit { font-size: 13px; }
     .sign-fields { grid-template-columns: 1fr; }
     .sign-row .k { flex-basis: 100%; min-width: 0; }
@@ -599,7 +595,10 @@
     .arena-row .prlink { min-height: 44px; }
     .btn, .btn.back { min-height: 44px; }
     .field, select.field { height: 44px; }
-    .toggle { min-height: 44px; }
+    .check { min-height: 44px; }
+    .check input { width: 20px; height: 20px; }
+    .opt.row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; }
+    .opt.row > label { grid-column: 1 / -1; }
     .tabbar .btn { height: 46px; font-size: 15px; }
     .chip-x { padding: 4px 4px 4px 10px; }
     .chip-x button { padding: 4px 6px; }
@@ -615,8 +614,8 @@
     .arena-row, .phase-sub, .commit .meta, .sign-key, .kv dt, .kv dd, .log-row,
     .env-dots, .run-foot .hint, .steps, .steps code, .steps kbd { font-size: 12px; }
     .banner, .toast, .wrap h2, .card-head h2, .skip, .steps,
-    .opt-label label, .opt-label span.lbl, .phase-name, .toggle { font-size: 13px; }
-    .status, #statustext, .phase-ico, .commit .sig, .commit .sha, .toggle small { font-size: 12px; }
+    .opt.row > label, .phase-name, .check { font-size: 13px; }
+    .status, #statustext, .phase-ico, .commit .sig, .commit .sha { font-size: 12px; }
     .brand .name, .repo-card .btn, .card-actions .btn, .run-foot .btn { font-size: 14px; }
     .wrap h1, .hero h1, .wrap h1.page-title { font-size: 19px; }
   }
@@ -686,8 +685,6 @@
           <h1 id="repo-title">…</h1>
         </div>
 
-        <p class="task-note" id="task-note">Rewrites the arena branch, signs every commit, pushes the default branch, moves the tags, and deletes the local arena branch. Pull request checks have to pass first.</p>
-
         <section class="card" id="options-card">
           <button type="button" class="card-head fold-head" id="options-fold" aria-expanded="true" aria-controls="options">
             <span class="fold-title">Options</span>
@@ -697,42 +694,33 @@
             <span class="caret"><span class="ico-svg" data-icon="chevron-right" aria-hidden="true"></span></span>
           </button>
           <div class="card-body options" id="options">
-            <div class="opt" id="opt-branch">
-              <div class="opt-label"><label for="branch">Target branch</label><span class="desc">the default runs via the arena branch; a named branch is cleaned in place</span></div>
-              <select class="field mono-field" id="branch"></select>
+            <div class="opt row" id="opt-branch">
+              <label for="branch">Target branch</label>
+              <select class="field mono-field" id="branch" title="The default branch runs via the arena branch; a named branch is cleaned in place."></select>
             </div>
-            <div class="opt" id="opt-arena" hidden>
-              <div class="opt-label"><label for="arena">Arena branch</label><span class="desc">the session this run cleans; newest activity first</span></div>
-              <select class="field mono-field" id="arena"></select>
+            <div class="opt row" id="opt-arena" hidden>
+              <label for="arena">Arena branch</label>
+              <select class="field mono-field" id="arena" title="The session this run cleans; newest activity first."></select>
             </div>
-            <div class="opt" id="opt-paths">
-              <div class="opt-label"><label for="pathin">Remove paths</label><span class="desc">git filter-repo, every ref</span>
-                <button type="button" class="link-btn" id="browse" aria-expanded="false" aria-controls="tree">Browse</button></div>
-              <div class="chips" id="chips">
+            <div class="opt row" id="opt-paths">
+              <label for="pathin">Remove paths</label>
+              <div class="chips" id="chips" title="git filter-repo removes each path from every ref.">
                 <input id="pathin" placeholder="add a file or folder…" spellcheck="false" autocomplete="off" aria-label="Add a path to remove">
               </div>
+              <button type="button" class="link-btn" id="browse" aria-expanded="false" aria-controls="tree">Browse</button>
               <div class="tree" id="tree" role="tree" aria-label="Files at HEAD" hidden></div>
             </div>
-            <div class="opt" id="opt-timeout">
-              <div class="opt-label"><label for="timeout">PR check timeout</label><span class="desc">minutes, 0 = don’t wait</span></div>
-              <input class="field mono-field" id="timeout" type="number" min="0" max="240" value="15">
+            <div class="opt row" id="opt-timeout">
+              <label for="timeout">PR check timeout</label>
+              <input class="slider" id="timeout" type="range" min="0" max="9" step="1" value="3" title="How long the run waits for the pull request checks; 0 does not wait.">
+              <output class="readout" id="timeout-out" for="timeout">15 min</output>
             </div>
-            <div class="opt" style="grid-column:1/-1">
-              <div class="opt-label"><span class="lbl">Switches</span></div>
-              <div class="toggles" id="toggles">
-                <button class="toggle" data-opt="dry_run" aria-pressed="false"
-                  title="Prints every step it would take and writes nothing."><span class="sw"></span>Dry run <small>writes nothing</small></button>
-                <button class="toggle" data-opt="skip_pr_check" aria-pressed="false"
-                  title="Publishes even when the pull request still has running or failing checks."><span class="sw"></span>Ignore PR checks <small>publish anyway</small></button>
-                <button class="toggle" data-opt="keep_empty" aria-pressed="false"
-                  title="Keeps commits that would be empty once the removed paths are gone."><span class="sw"></span>Keep emptied commits <small>do not drop them</small></button>
-                <button class="toggle" data-opt="no_tags" aria-pressed="false"
-                  title="Leaves tags pointing at the old commits instead of moving them to the rewrite."><span class="sw"></span>Leave tags alone <small>they stay on old commits</small></button>
-                <button class="toggle" data-opt="keep_branch" aria-pressed="false"
-                  title="Keeps the local arena branch after publishing instead of deleting it."><span class="sw"></span>Keep arena branch <small>do not delete it</small></button>
-                <button class="toggle danger" data-opt="force" aria-pressed="false"
-                  title="Pushes even when the push would drop commits that are on the default branch."><span class="sw"></span>Force the push <small>may drop commits</small></button>
-              </div>
+            <div class="opt checks" id="checks" style="grid-column:1/-1">
+              <label class="check" title="Prints every step it would take and writes nothing."><input type="checkbox" data-opt="dry_run">Dry Run</label>
+              <label class="check" title="Publishes even when the pull request still has running or failing checks."><input type="checkbox" data-opt="skip_pr_check">Ignore PR Checks</label>
+              <label class="check" title="Keeps commits that would be empty once the removed paths are gone."><input type="checkbox" data-opt="keep_empty">Keep Empty Commits</label>
+              <label class="check" title="Moves the tags to the rewritten commits; unchecked, they stay on the old ones."><input type="checkbox" data-opt="update_tags" checked>Update Tags</label>
+              <label class="check danger" title="Pushes even when the push would drop commits that are on the default branch."><input type="checkbox" data-opt="force">Force Push</label>
             </div>
           </div>
         </section>
@@ -808,7 +796,7 @@
   const state = {
     repos: [],
     repo: null,
-    opts: { dry_run: false, skip_pr_check: false, keep_empty: false, no_tags: false, keep_branch: false, force: false },
+    opts: { dry_run: false, skip_pr_check: false, keep_empty: false, no_tags: false, force: false },
     paths: [],
     branch: "",
     arena: "",
@@ -1268,10 +1256,16 @@
       arena: state.arena || "",
       force: state.opts.force,
       skip_pr_check: state.opts.skip_pr_check,
-      keep_branch: state.opts.keep_branch,
       no_tags: state.opts.no_tags,
-      timeout: $("timeout").value,
+      timeout: String(timeoutMinutes()),
     };
+  }
+
+  // The slider snaps to these stops; its value is the index.
+  const TIMEOUT_STOPS = [0, 5, 10, 15, 20, 30, 45, 60, 90, 120];
+  const DEFAULT_TIMEOUT = 15;
+  function timeoutMinutes() {
+    return TIMEOUT_STOPS[Number($("timeout").value)] ?? DEFAULT_TIMEOUT;
   }
 
   function commandLine() {
@@ -1283,16 +1277,15 @@
     for (const p of state.paths) parts.push("--path", p);
     if (body.keep_empty) parts.push("--keep-empty");
     if (body.skip_pr_check) parts.push("--skip-pr-check");
-    if (body.keep_branch) parts.push("--keep-branch");
     if (body.no_tags) parts.push("--no-tags");
     if (body.force) parts.push("--force");
-    parts.push("--check-timeout", String(Number($("timeout").value || 15) * 60));
+    parts.push("--check-timeout", String(timeoutMinutes() * 60));
     return parts.join(" ");
   }
 
   const SUMMARY_WORDS = [
-    ["dry_run", "dry run"], ["skip_pr_check", "ignore PR checks"], ["keep_empty", "keep emptied"],
-    ["no_tags", "leave tags"], ["keep_branch", "keep arena branch"], ["force", "force"],
+    ["dry_run", "dry run"], ["skip_pr_check", "ignore PR checks"], ["keep_empty", "keep empty"],
+    ["no_tags", "tags stay"], ["force", "force push"],
   ];
 
   function optionsSummary() {
@@ -1301,8 +1294,8 @@
     if (state.arena) bits.push(state.arena);
     if (state.paths.length) bits.push(`${state.paths.length} path${state.paths.length === 1 ? "" : "s"}`);
     for (const [key, word] of SUMMARY_WORDS) if (body[key]) bits.push(word);
-    const minutes = Number($("timeout").value || 15);
-    if (minutes !== 15) bits.push(`${minutes} min`);
+    const minutes = timeoutMinutes();
+    if (minutes !== DEFAULT_TIMEOUT) bits.push(`${minutes} min`);
     return bits.length ? bits.join(" · ") : "defaults";
   }
 
@@ -2005,12 +1998,12 @@
     applyHash();
   });
 
-  $("toggles").onclick = (ev) => {
-    const btn = ev.target.closest(".toggle");
-    if (!btn) return;
-    const key = btn.dataset.opt;
-    state.opts[key] = !state.opts[key];
-    btn.setAttribute("aria-pressed", String(state.opts[key]));
+  $("checks").onchange = (ev) => {
+    const box = ev.target.closest("input[data-opt]");
+    if (!box) return;
+    // Update Tags is the positive form of the engine's --no-tags.
+    if (box.dataset.opt === "update_tags") state.opts.no_tags = !box.checked;
+    else state.opts[box.dataset.opt] = box.checked;
     renderCommand();
   };
 
@@ -2040,7 +2033,10 @@
       renderCommand();
     }
   };
-  $("timeout").oninput = renderCommand;
+  $("timeout").oninput = () => {
+    $("timeout-out").value = `${timeoutMinutes()} min`;
+    renderCommand();
+  };
 
   $("start").onclick = () => startJob(payload());
   $("start-mobile").onclick = () => startJob(payload());

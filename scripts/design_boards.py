@@ -172,13 +172,10 @@ def card(title: str, body: str, hint: str = "") -> str:
   )
 
 
-def toggle(label: str, note: str, on: bool, danger: bool = False) -> str:
-  cls = "toggle danger" if danger else "toggle"
-  pressed = "true" if on else "false"
-  return (
-    f'<button class="{cls}" aria-pressed="{pressed}">'
-    f'<span class="sw"></span>{label} <small>{note}</small></button>'
-  )
+def check(label: str, on: bool, danger: bool = False) -> str:
+  cls = "check danger" if danger else "check"
+  checked = " checked" if on else ""
+  return f'<label class="{cls}"><input type="checkbox"{checked}>{label}</label>'
 
 
 def phase(state: str, name: str, sub: str, time: str) -> str:
@@ -315,21 +312,20 @@ def flow_board(_: dict[str, bytes]) -> str:
 def wireframe_board(_: dict[str, bytes]) -> str:
   options = (
     block("Options ▾ — main (default) · defaults", height=28)
-    + block("Target branch — main (default)", height=28)
-    + block("Arena branch — newest first, with two or more", height=28)
-    + block("Remove paths — one chip per path · Browse", height=28)
+    + block("Target branch | main (default)", height=28)
+    + block("Arena branch | newest first, with two or more", height=28)
+    + block("Remove paths | one chip per path | Browse", height=28)
     + block("HEAD tree — folders first, a click adds the chip", height=28)
-    + block("PR check timeout — 15 minutes", height=28)
+    + block("PR check timeout | slider, 0 to 120 min | 15 min", height=28)
     + '<div class="bar" style="flex-wrap:wrap">'
     + "".join(
       block(t, height=24, width="auto")
       for t in (
-        "Dry run",
-        "Ignore PR checks",
-        "Keep emptied commits",
-        "Leave tags alone",
-        "Keep arena branch",
-        "Force the push",
+        "☐ Dry Run",
+        "☐ Ignore PR Checks",
+        "☐ Keep Empty Commits",
+        "☑ Update Tags",
+        "☐ Force Push",
       )
     )
     + "</div>"
@@ -369,7 +365,6 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     + block(icon("arrow-left") + "&nbsp;All repos", width="100px")
     + block("shop-web", width="90px")
     + "</div>"
-    + block("task sentence: what the run does", soft=True, height=28)
     + '<div class="bar" style="align-items:flex-start">'
     + f'<div class="scr" style="width:220px">{sidebar}</div>'
     + '<div class="col" style="gap:8px;flex:1">'
@@ -520,11 +515,11 @@ def components_board(_: dict[str, bytes]) -> str:
     '<input class="field" value="disabled" disabled>'
     '<select class="field"><option>main (default)</option></select></div>'
   )
-  toggles = (
-    '<div class="toggles">'
-    + toggle("Dry run", "writes nothing", False)
-    + toggle("Dry run", "writes nothing", True)
-    + toggle("Force the push", "may drop commits", True, danger=True)
+  checks = (
+    '<div class="checks">'
+    + check("Dry Run", False)
+    + check("Dry Run", True)
+    + check("Force Push", True, danger=True)
     + "</div>"
   )
   banners = (
@@ -567,7 +562,7 @@ def components_board(_: dict[str, bytes]) -> str:
     )
     + '</div><div class="row" style="margin-top:24px">'
     + frame(
-      "Toggles", "Off, on, and the warn colour for a destructive option.", toggles
+      "Checkboxes", "Off, on, and the warn colour for a destructive option.", checks
     )
     + frame("Banners", "A bold lead, one sentence of action; ok, warn, err.", banners)
     + frame(
@@ -818,7 +813,7 @@ def capture_views(walker: Walker, demo: Demo) -> dict[str, bytes]:
   demo.wait_until_checked(True)
   walker.goto(2000)
   walker.click(".repo-card", 800)
-  walker.click('.toggle[data-opt="dry_run"]', 0)
+  walker.click('input[data-opt="dry_run"]', 0)
   walker.click("#start", 0)
   walker.wait_status("exit")
   walker.open_log()

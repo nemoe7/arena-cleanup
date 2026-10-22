@@ -570,7 +570,10 @@ def test_the_commit_list_and_the_page_shell(ui: UI, ids: dict[str, str]) -> None
   assert 'id="logwrap" hidden' in page, "the log does not start collapsed"
   assert 'id="phases"' in page
   assert 'class="brand" href="#/"' in page
-  assert 'id="task-note"' in page
+  assert 'id="task-note"' not in page, "the task note went with the hint texts"
+  assert 'id="timeout" type="range"' in page and 'id="timeout-out"' in page
+  assert 'data-opt="update_tags" checked' in page
+  assert 'data-opt="keep_branch"' not in page, "no local arena branch survives a run"
   assert 'id="start-mobile"' in page
   assert not re.search(
     r'cmdpreview|id="cmdline"|id="emptystate"|oneclick-mobile|cmdswitch|data-cmd=', page

@@ -361,13 +361,20 @@ def sidebar_and_branch_selector(w: Walker, demo: Demo) -> None:
 
 
 @step("desktop")
-def option_toggle_updates_the_argv(w: Walker, demo: Demo) -> None:
-  toggle = '.toggle[data-opt="dry_run"]'
-  w.click(toggle, 200)
-  assert w.page.get_attribute(toggle, "aria-pressed") == "true"
+def option_checkbox_updates_the_argv(w: Walker, demo: Demo) -> None:
+  box = 'input[data-opt="dry_run"]'
+  w.click(box, 200)
+  assert w.page.is_checked(box)
   assert "--dry-run" in w.start_argv()
-  w.click(toggle, 200)
+  w.click(box, 200)
   assert "--dry-run" not in w.start_argv()
+  tags = 'input[data-opt="update_tags"]'
+  assert w.page.is_checked(tags), "tags move by default"
+  w.click(tags, 200)
+  assert "--no-tags" in w.start_argv()
+  w.click(tags, 200)
+  assert "--no-tags" not in w.start_argv()
+  assert w.count("#options .desc") == 0 and w.count("#task-note") == 0, "no hint texts"
 
 
 @step("desktop")
@@ -422,18 +429,28 @@ def tree_selector_adds_a_folder_chip(w: Walker, demo: Demo) -> None:
 
 
 @step("desktop")
-def timeout_input_drives_check_timeout(w: Walker, demo: Demo) -> None:
-  w.page.fill("#timeout", "5")
+def timeout_slider_snaps_and_shows_the_number(w: Walker, demo: Demo) -> None:
+  assert w.text("#timeout-out") == "15 min"
+  assert f"--check-timeout {15 * MINUTES_TO_SECONDS}" in w.start_argv()
+  w.page.fill("#timeout", "0")
   w.page.dispatch_event("#timeout", "input")
-  w.page.wait_for_timeout(250)
-  assert f"--check-timeout {5 * MINUTES_TO_SECONDS}" in w.start_argv()
-  w.page.fill("#timeout", "15")
+  w.page.wait_for_timeout(200)
+  assert w.text("#timeout-out") == "0 min"
+  assert "--check-timeout 0" in w.start_argv()
+  w.page.fill("#timeout", "9")
   w.page.dispatch_event("#timeout", "input")
+  w.page.wait_for_timeout(200)
+  assert w.text("#timeout-out") == "120 min"
+  assert f"--check-timeout {120 * MINUTES_TO_SECONDS}" in w.start_argv()
+  w.page.fill("#timeout", "3")
+  w.page.dispatch_event("#timeout", "input")
+  w.page.wait_for_timeout(200)
+  assert f"--check-timeout {15 * MINUTES_TO_SECONDS}" in w.start_argv()
 
 
 @step("desktop")
 def start_a_dry_run_and_watch_it_finish(w: Walker, demo: Demo) -> None:
-  w.click('.toggle[data-opt="dry_run"]', 0)
+  w.click('input[data-opt="dry_run"]', 0)
   w.click("#start", 0)
   status = w.wait_status("exit")
   assert "exit 0" in status
@@ -455,9 +472,9 @@ def cancel_a_run_in_flight(w: Walker, demo: Demo) -> None:
   # only place Cancel meets a live process.
   demo.slow_checks(True)
   try:
-    toggle = '.toggle[data-opt="dry_run"]'
-    if w.page.get_attribute(toggle, "aria-pressed") == "true":
-      w.click(toggle, 150)
+    box = 'input[data-opt="dry_run"]'
+    if w.page.is_checked(box):
+      w.click(box, 150)
     w.click("#start", 0)
     w.open_log()
     w.page.wait_for_function(
@@ -479,7 +496,7 @@ def cancel_a_run_in_flight(w: Walker, demo: Demo) -> None:
 def copy_the_log(w: Walker, demo: Demo) -> None:
   w.click("#back")
   w.click(".repo-card >> nth=0", 800)
-  w.click('.toggle[data-opt="dry_run"]', 0)
+  w.click('input[data-opt="dry_run"]', 0)
   w.click("#start", 0)
   w.wait_status("exit")
   w.open_log()

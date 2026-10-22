@@ -30,7 +30,7 @@ def abroad(browser: Any, demo: Demo) -> Iterator[Walker]:
 def test_log_rows_show_the_browser_clock(abroad: Walker, demo: Demo) -> None:
   abroad.goto(1200)
   abroad.click(".repo-card", 800)
-  abroad.click('.toggle[data-opt="dry_run"]', 0)
+  abroad.click('input[data-opt="dry_run"]', 0)
   with abroad.page.expect_request(lambda r: "/api/jobs/" in r.url) as hit:
     abroad.click("#start", 0)
   job = hit.value.url.split("/api/jobs/")[1].split("/")[0]

@@ -28,7 +28,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ## Screens and states
 
 - Dashboard: add bar, repository cards. Empty: a hint with the add command. Error: a banner above the cards. A card shows the branch. Each arena row carries `↑ N`, the commits that branch holds beyond `origin/<default>`, with a tooltip. The Remove X sits top right as a bare glyph. A red frame comes on hover, on press, and while armed.
-- Repository: a 320 px sidebar, options card, run card with the phase list and log. The options card folds from its head; closed, the head shows the branch pill and what differs from the defaults. Target branch lists the default branch first and never an `arena/*` branch. Arena branch appears with two or more arena branches, newest tip first. The chosen one goes to the run as `--arena`. The sidebar holds the repo facts and the arena rows on top. The commit list fills the rest and scrolls on its own. Each row shows hash, subject, author, and date; Reload sits in its label. The arena rows show the PR state and are not controls. The page runs the full flow only; `strip` is a CLI command. Browse under Remove paths opens the HEAD tree of the clone, one level per request. A click on a row or its plus adds the chip. Log rows show the clock of the browser. Remove on a card arms on the first click and deletes the URL clone on the second. States: idle, running, done, failed, cancelled. A managed clone goes back to origin before every run. The server fetches, checks out the default branch, resets hard, and drops local `arena/*` copies.
+- Repository: a 320 px sidebar, options card, run card with the phase list and log. The options card folds from its head; closed, the head shows the branch pill and what differs from the defaults. Each option is one row: label, control, and a trailing action or readout; no hint texts. Dry Run, Ignore PR Checks, Keep Empty Commits, Update Tags (checked by default), and Force Push are checkboxes. PR check timeout is a slider with the number beside it. It snaps to 0, 5, 10, 15, 20, 30, 45, 60, 90, or 120 minutes. Target branch lists the default branch first and never an `arena/*` branch. Arena branch appears with two or more arena branches, newest tip first. The chosen one goes to the run as `--arena`. The sidebar holds the repo facts and the arena rows on top. The commit list fills the rest and scrolls on its own. Each row shows hash, subject, author, and date; Reload sits in its label. The arena rows show the PR state and are not controls. The page runs the full flow only; `strip` is a CLI command. Browse under Remove paths opens the HEAD tree of the clone, one level per request. A click on a row or its plus adds the chip. Log rows show the clock of the browser. Remove on a card arms on the first click and deletes the URL clone on the second. States: idle, running, done, failed, cancelled. A managed clone goes back to origin before every run. The server fetches, checks out the default branch, resets hard, and drops local `arena/*` copies.
 - Settings: Identity (name, email, Save), GitHub sign-in and credential helper, signing cards, Claimed commits (two chip lists, Save). Below: About. Signing cards: gpg banner when gpg is missing, key list, create card, GitHub key steps. Disabled: Create key while gpg is missing. Error: the banner names the failed check. Each card loads on its own.
 - Offline: the service worker serves the shell; data requests fail with the normal error banner.
 - Loading and permission states: not run as separate checks.
@@ -69,7 +69,8 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - `btn`: 34 px high, 12 px side padding, 8 px radius, and 44 px high on a phone. Variants: `primary`, `ghost`, and `icon-btn`.
 - `pill`: dot and word, 999 px radius, `ok`, `warn`, `mono` variants.
-- `commit`: grid `68px minmax(0, 1fr) auto` with the subject truncated by an ellipsis. On a phone the metadata moves to a second row, so the subject stays readable.
+- `commit`: grid `auto minmax(0, 1fr)`, the subject truncated by an ellipsis, the metadata on a second row.
+- `opt.row`: grid `128px minmax(0, 1fr) auto`; the label, the control, and Browse or the slider readout. `check`: a label with a native checkbox, `danger` colours a checked destructive option.
 - `sign-row`: label column of 120 px and a value column; on a phone the label takes a full row.
 - `sign-fields`: name and e-mail side by side; one column on a phone.
 - `banner`: `err`, `warn`, `ok` variants with an icon and one sentence of action.
@@ -112,7 +113,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 ![Component states: run status, phase rows, arena row pills](design/states.png)
 
-![Global components: buttons, pills, fields, toggles, banners, cards](design/components.png)
+![Global components: buttons, pills, fields, checkboxes, banners, cards](design/components.png)
 
 ![Style guide: type ramp, colour roles, surfaces, radius, spacing, icons](design/style.png)
 
@@ -130,6 +131,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-22: the whole options card folds, not the Target branch row alone. The select names the default branch first, keeps the empty value, and lists no `arena/*` branch; the server refuses one too.
 - Accepted 2026-10-22: with two or more arena branches the page selects one, newest tip first, in the options card. The engine gained `--arena NAME` for it and keeps the full flow. The page never passes `-b arena/*`.
 - Accepted 2026-10-22: the sidebar grows to 320 px. The commit list sits below the repo facts and the arena rows. The HEAD block goes. The hash leads each commit row. Below 980 px the sidebar stacks under the run card instead of hiding. The commit list then grows with the page: one scroll per screen.
+- Accepted 2026-10-22: the options card loses its hint texts and the task note above it. Each option is one row. The switches become checkboxes with Title Case labels; Update Tags is the positive form of `--no-tags`. Keep arena branch goes. The reset before every run drops local copies, so a kept branch never reaches the next run. The timeout is a slider with ten stops and a readout.
 - Accepted 2026-10-22: a managed clone holds nothing of its own. The server resets it to origin before every run and drops local `arena/*` copies. The page loses the Reset button, the dirty chip, and On divergence; `--on-divergence` stays a CLI flag.
 - Accepted 2026-10-22: the card and the sidebar show how far each arena branch is ahead of the default branch. The clone's own drift stays out of sight. Nobody commits in the container, and the engine handles that divergence itself.
 - Accepted 2026-10-22: the primary button reads Clean & Push. The phase list keeps Publish for the push, tags, and cleanup step.
