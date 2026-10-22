@@ -276,7 +276,8 @@
   .row-btn .ahead { display: inline-flex; align-items: center; gap: 2px; }
 
   /* what the selected task will do, in one sentence */
-  .card-actions { display: flex; gap: 8px; align-items: center; }
+  /* pinned to the card bottom, so the buttons line up across a grid row */
+  .card-actions { display: flex; gap: 8px; align-items: center; margin-top: auto; }
   .card-actions .btn { height: 30px; font-size: var(--fs-2); padding: 0 12px; }
 
   .empty-state {
@@ -600,6 +601,10 @@
     .opt.row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; }
     .slider { height: 44px; }
     .row-btn.select { min-height: 44px; }
+    .link-btn { min-height: 44px; }
+    .fold-head { min-height: 44px; }
+    /* a grid instead of a ragged wrap: one column at 360 px, more on wider phones */
+    .checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 12px; }
     .opt.row > label { grid-column: 1 / -1; }
     .tabbar .btn { height: 46px; font-size: 15px; }
     .chip-x { padding: 4px 4px 4px 10px; }
