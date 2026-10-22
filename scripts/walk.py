@@ -271,10 +271,6 @@ def github_access_panel(w: Walker, demo: Demo) -> None:
   login = demo.api("/api/auth")["gh"]["login"]
   assert f"@{login}" in w.text("#access-body .banner.ok")
   assert "repo" in w.text("#access-body")  # token scopes
-  body = w.text("#settings-body")
-  assert ".config/gh/hosts.yml" in body  # the storage card lists the token file
-  assert ".gitconfig" in body  # and git's config
-  assert w.count("#info-body .install-row") == 1
 
 
 @step("desktop")

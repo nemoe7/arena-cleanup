@@ -83,7 +83,7 @@ python3 ui/server.py
      keys with a verified e-mail, then **Re-check**.
    - **Claimed commits**: the e-mails and names whose commits a run rewrites
      onto the identity. Empty lists fall back to the built-in rules.
-3. Install, storage, and About sit below the settings.
+3. About sits below the settings.
 4. **Clean & publish** runs the pipeline and streams the log. A click on the
    card shows the repo view first: target branch, paths to remove, the
    divergence policy, the check timeout, and the options (dry run, skip the

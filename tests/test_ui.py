@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import shutil
 import socket
@@ -36,22 +35,12 @@ GITHUB_FORMS = (
   "github.com/acme/shop-web",
   "  github.com/acme/shop-web\n",
 )
-WEB_PAGES = {
-  "https://github.com/acme/shop-web.git": "https://github.com/acme/shop-web",
-  "https://github.com/acme/shop-web": "https://github.com/acme/shop-web",
-  "git@github.com:acme/shop-web.git": "https://github.com/acme/shop-web",
-  "ssh://git@gitlab.com/acme/shop-web.git": "https://gitlab.com/acme/shop-web",
-  "https://gitlab.com/group/sub/shop-web.git/": "https://gitlab.com/group/sub/shop-web",
-  "file:///tmp/bare.git": "",
-  "/srv/repos/shop-web": "",
-}
 OTHER_SOURCES = (
   "git@github.com:acme/shop-web.git",
   "https://gitlab.com/acme/shop-web",
   "/srv/repos/shop-web",
   "file:///tmp/bare.git",
 )
-STORAGE_ITEMS = range(6, 10)
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 CONTENT_JSON = {"Content-Type": "application/json"}
 CREATED_OR_OK = {200, 201}
@@ -249,14 +238,6 @@ def test_github_page_addresses_normalize_to_clone_urls() -> None:
     assert normalize_source(source) == source
 
 
-def test_clone_urls_map_to_their_web_pages() -> None:
-  sys.path.insert(0, str(ROOT))
-  from ui.server import web_url
-
-  for source, page in WEB_PAGES.items():
-    assert web_url(source) == page, source
-
-
 def test_add_by_clone_url(ui: UI, world: World, ids: dict[str, str]) -> None:
   bare = world.root / "work.git"
   world.git("clone", "-q", "--bare", str(world.work), str(bare), cwd=world.root)
@@ -441,31 +422,6 @@ def test_health(ui: UI) -> None:
   assert 'id="start"' in ui.text("/")
 
 
-def test_storage_report(ui: UI) -> None:
-  storage = ui.get("/api/storage")
-  items = storage["items"]
-  assert len(items) in STORAGE_ITEMS
-  assert all("survives" in i and "mount_point" in i for i in items)
-  assert any(i["label"] == "GitHub token" for i in items)
-  assert any(i["label"] == "git config" for i in items)
-  clones = next(i for i in items if i["label"] == "URL clones")
-  managed = [r["name"] for r in ui.get("/api/repos") if r.get("managed")]
-  assert [r["name"] for r in clones["repos"]] == managed
-  assert all(set(r) == {"name", "url"} for r in clones["repos"])
-  assert storage["tools"]["git-filter-repo"] is True
-  assert "home_mounted" in storage
-  # existence alone must never be reported as survival
-  assert all((not i["survives"]) or bool(i["mount_point"]) for i in items)
-  # independent oracle: walk each item up to its nearest mount point
-  nearest = []
-  for item in items:
-    path = os.path.realpath(item["path"])
-    while not os.path.ismount(path):
-      path = os.path.dirname(path)
-    nearest.append(path)
-  assert any(i["mount_point"] for i in items) == any(p != "/" for p in nearest)
-
-
 def test_a_cancelled_job_is_marked_cancelled() -> None:
   # Cancel must be distinguishable from a crash. Drive the Job object directly
   # so the test cannot race a real run.
@@ -510,9 +466,6 @@ def test_pwa_assets(ui: UI) -> None:
   assert 'url.pathname.startsWith("/api/")' in worker, "the worker caches API responses"
   assert "apple-mobile-web-app-capable" in page
   assert "serviceWorker.register" in page
-  assert "beforeinstallprompt" in page
-  assert "Add to Home Screen" in page
-  assert "secure" in ui.get("/api/env")
 
 
 def test_the_icon_licence_ships_beside_the_page(ui: UI) -> None:

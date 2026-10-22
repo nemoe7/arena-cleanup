@@ -279,7 +279,7 @@ def flow_board(_: dict[str, bytes]) -> str:
     + block("GitHub access · signed in as @you", height=24)
     + block("commit signing · keys · create", height=24)
     + block("claimed commits · emails · names", height=24)
-    + block("install · storage · about", height=24)
+    + block("about", height=24)
     + "</div>"
   )
 
@@ -302,7 +302,7 @@ def flow_board(_: dict[str, bytes]) -> str:
     + arrow("gear icon, from either view")
     + frame(
       "Settings",
-      "Identity, GitHub access, signing, and the claim rules; then install, storage, about.",
+      "Identity, GitHub access, signing, and the claim rules; then About.",
       settings,
     )
     + "</div></div>"

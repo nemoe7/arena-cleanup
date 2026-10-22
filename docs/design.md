@@ -14,7 +14,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - User group: one developer who owns the repositories and the GitHub account. No research beyond that use.
 - Primary tasks: add a repository, run a cleanup, read the log, and keep the settings right. Settings: GitHub access, signing, identity, and the claim rules.
-- Repository: a clone the server registered. Identifier: the server-minted `id`; the card shows `name` only. The Storage card links each URL clone to its remote page.
+- Repository: a clone the server registered. Identifier: the server-minted `id`; the card shows `name` only.
 - Arena branch: a branch under the `arena/` prefix with its pull request and check count.
 - Run: one engine execution with five phases: Prepare, PR checks, Rewrite and sign, Publish, Finish.
 
@@ -29,7 +29,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - Dashboard: add bar, repository cards. Empty: a hint with the add command. Error: a banner above the cards. A card shows the branch, `N uncommitted` only when the clone is dirty, and the drift.
 - Repository: options card, run card with the phase list and log, commits card. Log rows show the clock of the browser. Remove on a card arms on the first click and deletes the URL clone on the second. States: idle, running, done, failed, cancelled. The sidebar ends with Reset to origin, a two-click button that checks out the default branch and resets it hard.
-- Settings: Identity (name, email, Save), GitHub sign-in and credential helper, signing cards, Claimed commits (two chip lists, Save). Below: install, storage, and About. Signing cards: gpg banner when gpg is missing, key list, create card, GitHub key steps. Disabled: Create key while gpg is missing. Error: the banner names the failed check. Each card loads on its own.
+- Settings: Identity (name, email, Save), GitHub sign-in and credential helper, signing cards, Claimed commits (two chip lists, Save). Below: About. Signing cards: gpg banner when gpg is missing, key list, create card, GitHub key steps. Disabled: Create key while gpg is missing. Error: the banner names the failed check. Each card loads on its own.
 - Offline: the service worker serves the shell; data requests fail with the normal error banner.
 - Loading and permission states: not run as separate checks.
 

@@ -18,13 +18,4 @@ if [ -d "${HOME:-/home/arena}/.gnupg" ]; then
   chmod 700 "${HOME:-/home/arena}/.gnupg" 2>/dev/null || true
 fi
 
-# The one mistake that costs a re-login: running without the HOME volume. Say so
-# at start-up, in the docker logs, where it will actually be read.
-home="${HOME:-/home/arena}"
-if ! grep -qs " ${home} " /proc/self/mountinfo; then
-  echo "arena-cleanup: warning: $home is not a mount point." >&2
-  echo "arena-cleanup: credentials and repos here are lost on the next docker rm." >&2
-  echo "arena-cleanup: mount a volume, e.g. -v arena-home:$home" >&2
-fi
-
 exec python3 /app/ui/server.py "$@"

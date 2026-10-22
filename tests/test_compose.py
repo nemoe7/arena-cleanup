@@ -11,6 +11,7 @@ COMPOSE = (ROOT / "docker-compose.yml").read_text()
 ENV_EXAMPLE = (ROOT / ".env.example").read_text()
 GITIGNORE = (ROOT / ".gitignore").read_text().splitlines()
 DOCKERIGNORE = (ROOT / ".dockerignore").read_text().splitlines()
+DOCKERFILE = (ROOT / "Dockerfile").read_text()
 REQUIRED_ENV = ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "TS_AUTHKEY")
 APP_ALIAS = "arena-app"
 NODE_NAME = "arena-cleanup"
@@ -34,6 +35,16 @@ def test_the_app_mounts_only_its_home_volume() -> None:
   app = COMPOSE.split("  arena-cleanup-tailscale:")[0]
   mounts = re.findall(r"^\s+- (.+):(/.+)$", app, re.MULTILINE)
   assert mounts == [("arena-home", "/home/arena")]
+
+
+def test_the_registry_lives_on_the_home_volume() -> None:
+  # repos.json and the clones sit under ARENA_DATA. Inside the named volume
+  # they survive `up --build`; only `down -v` drops them.
+  data_dir = re.search(r"^\s*ARENA_DATA=(\S+)", DOCKERFILE, re.MULTILINE).group(1)
+  app = COMPOSE.split("  arena-cleanup-tailscale:")[0]
+  volume, target = re.findall(r"^\s+- (.+):(/.+)$", app, re.MULTILINE)[0]
+  assert data_dir.startswith(target + "/")
+  assert re.search(rf"^volumes:\n(?:  .*\n)*  {volume}:", COMPOSE, re.MULTILINE)
 
 
 def test_env_files_stay_local() -> None:

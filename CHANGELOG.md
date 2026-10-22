@@ -24,14 +24,14 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The spacing audit as a Playwright test in `tests/e2e/`, run by the CI job with a cached Chromium. The browser walk `scripts/walk.py`, run by hand, saves its screenshots where you point it.
 - A minimal README: install, use, settings, and development.
 - An add bar that takes a GitHub page address: `github.com/owner/repo`, with or without `https://`, `.git`, or a page suffix.
-- Cards and the repository title show the name only. The Storage row `URL clones` links each clone to its page on the remote.
+- Cards and the repository title show the name only.
 - Design boards in `docs/design/`, rendered by `scripts/design_boards.py` and embedded in `docs/design.md`.
 - The repository card meta drops the tag count; it shows the branch, the tree state, and the drift.
 - A shallow history: one Back leaves a sub-view, the next one leaves the page.
 - The card shows `N uncommitted` only when the clone is dirty.
 - The app copy says repo and repos.
 - The claim rules come from the global git config keys `arena.claim-email` and `arena.claim-name`; the constants are the fallback. The container seeds the identity only while git config is empty.
-- One Settings page behind the gear icon: Identity, GitHub access, Commit signing, and Claimed commits, then the informing cards.
+- One Settings page behind the gear icon: Identity, GitHub access, Commit signing, and Claimed commits, then About.
 - The options card keeps two columns above 980 px; four columns overflowed between 981 and 1179 px. The divergence control wraps whole buttons, not words.
 - Log rows show the clock of the browser. The engine stamps each line in the server zone.
 - Remove on a card deletes its URL clone from the volume; a path repo is only forgotten.

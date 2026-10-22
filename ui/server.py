@@ -184,18 +184,6 @@ def normalize_source(source: str) -> str:
   return f"https://github.com/{owner}/{name.removesuffix('.git')}.git"
 
 
-def web_url(source: str) -> str:
-  """The page a clone URL came from, or "" for a path or a file:// clone."""
-  match = re.match(
-    r"^(?:https?://|ssh://(?:[^@/]+@)?|(?:[^@/]+@))([^/:]+)[/:](.+?)(?:\.git)?/?$",
-    source.strip(),
-  )
-  if not match:
-    return ""
-  host, path = match.groups()
-  return f"https://{host}/{path}"
-
-
 def repo_name(source: str) -> str:
   tail = source.rstrip("/").rsplit("/", 1)[-1].rsplit(":", 1)[-1]
   tail = tail.removesuffix(".git")
@@ -737,21 +725,6 @@ def new_job(argv: list[str], repo: dict[str, Any]) -> Job:
   return job
 
 
-def is_secure_request(handler: BaseHTTPRequestHandler) -> bool:
-  """
-  Is this origin a secure context?
-
-  Service workers only register on localhost or over HTTPS. Plain-HTTP access
-  from a phone on the LAN is neither. That is the case the PWA needs to
-  explain instead of failing silently.
-  """
-  forwarded = (handler.headers.get("X-Forwarded-Proto") or "").split(",")[0].strip()
-  if forwarded.lower() == "https":
-    return True
-  host = (handler.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]").lower()
-  return host in {"localhost", "127.0.0.1", "::1", ""}
-
-
 # --------------------------------------------------------------------------- #
 # Access - gh authentication, git credentials, and how git reaches GitHub
 # --------------------------------------------------------------------------- #
@@ -837,94 +810,6 @@ def _ssh_keys() -> list[str]:
     if path.is_file():
       out.append(key)
   return out
-
-
-def mount_point_for(path: Path) -> str:
-  """The most specific mount point containing `path` ("" when none below /)."""
-  try:
-    target = path.resolve()
-  except OSError:
-    target = path
-  best = ""
-  try:
-    with open("/proc/self/mountinfo", encoding="utf-8") as fh:
-      for line in fh:
-        fields = line.split()
-        if len(fields) < 5:
-          continue
-        point = fields[4].replace("\\040", " ")
-        if (target == Path(point) or Path(point) in target.parents) and len(
-          point
-        ) > len(best):
-          best = point
-  except OSError:
-    return ""
-  return best if best != "/" else ""
-
-
-def storage_report(
-  data_dir: Path, clones: list[dict[str, Any]] | None = None
-) -> dict[str, Any]:
-  """
-  What survives `docker rm`, a rebuild, or a fresh image pull - and what does not.
-
-  The distinction that bites people: credentials live in $HOME, while the
-  tools live in the image. $HOME is a volume only with -v. Forget the volume and
-  everything looks fine until the next build. Then the container is
-  unauthenticated and the registry is empty.
-  """
-  home = Path(os.environ.get("HOME") or Path.home())
-  mounted = mount_point_for(home)
-
-  def item(label: str, path: Path, source: str, note: str) -> dict[str, Any]:
-    inside = path == home or home in path.parents or path in home.parents
-    # a file that exists is not the same as a file that survives. Only a path
-    # under a mount point outlives the container
-    mount = mount_point_for(path if path.exists() else path.parent)
-    return {
-      "label": label,
-      "path": str(path),
-      "source": source,  # volume | image | env
-      "exists": path.exists(),
-      "inside_home": inside,
-      "mount_point": mount,
-      "survives": bool(mount),
-      "note": note,
-    }
-
-  items = [
-    item(
-      "GitHub token",
-      home / ".config/gh/hosts.yml",
-      "volume",
-      "written by gh auth login",
-    ),
-    item("git config", home / ".gitconfig", "volume", "identity, signing key, helper"),
-    item("GPG keys", home / ".gnupg", "volume", "the key the signing panel creates"),
-    item("repo registry", data_dir / "repos.json", "volume", "remembered repos"),
-    {
-      **item("URL clones", data_dir / "repos", "volume", "repos cloned from a URL"),
-      "repos": [
-        {"name": r["name"], "url": web_url(r.get("source", ""))} for r in clones or []
-      ],
-    },
-    item("ssh keys", home / ".ssh", "volume", "only if you mount or generate them"),
-  ]
-
-  return {
-    "home": str(home),
-    "home_mounted": bool(mounted),
-    "mount_point": mounted,
-    "data_dir": str(data_dir),
-    "items": items,
-    "env_token": bool(os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")),
-    "tools": {
-      "git": bool(shutil.which("git")),
-      "gh": bool(shutil.which("gh")),
-      "git-filter-repo": bool(shutil.which("git-filter-repo")),
-      "gpg": gpg_available(),
-    },
-  }
 
 
 def auth_report(force: bool = False) -> dict[str, Any]:
@@ -1191,7 +1076,6 @@ class Handler(BaseHTTPRequestHandler):
               "gpg": gpg_available(),
             },
             "data": str(self.reg.data),
-            "secure": is_secure_request(self),
           }
         )
       elif path == "/api/repos":
@@ -1217,10 +1101,6 @@ class Handler(BaseHTTPRequestHandler):
         self._json(commits_report(repo, limit))
       elif path == "/api/auth":
         self._json(auth_report())
-      elif path == "/api/storage":
-        self._json(
-          storage_report(self.reg.data, [r for r in self.reg.all() if r.get("managed")])
-        )
       elif path == "/healthz":
         # Deliberately cheap. docker's HEALTHCHECK and a Tailscale monitor both
         # poll this on a short interval. It must not shell out to git.

@@ -500,7 +500,6 @@
     .topbar { padding-top: env(safe-area-inset-top); }
     body { overscroll-behavior-y: contain; }
   }
-  .install-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
   .toast {
     position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(10px);
@@ -755,7 +754,7 @@
 
   <!-- ============================================================= settings -->
   <!-- One page for every per-machine setting: identity, GitHub access, signing, claim
-       rules. The cards that only inform (install, storage, about) sit below them. -->
+       rules. About sits below them. -->
   <div class="view" id="view-settings" hidden>
     <div class="wrap" style="max-width:760px">
       <div class="detail-head" style="margin-bottom:16px">
@@ -1574,7 +1573,6 @@
   async function refreshAuth() {
     try {
       state.auth = await api("/api/auth");
-      state.storage = await api("/api/storage");
     } catch { /* the dashboard still works without it */ }
     renderAuthBanner();
   }
@@ -1776,69 +1774,13 @@
     body.replaceChildren(...nodes);
   }
 
-  // The cards that only inform: install, what survives a rebuild, about.
   function renderInfo() {
-    $("info-body").replaceChildren(installCard(), storageCard(), el("div", { class: "card" },
+    $("info-body").replaceChildren(el("div", { class: "card" },
       el("div", { class: "card-head" }, el("h2", {}, "About")),
       el("div", { class: "card-body" },
         pillRow("ui", el("span", { class: "mono" }, state.env ? `v${state.env.version}, engine ${state.env.tool}` : "?")),
         pillRow("machine", el("span", { class: "mono" }, state.env ? `${state.env.arch}, python ${state.env.python}` : "?")),
         pillRow("data", el("span", { class: "mono" }, state.env ? state.env.data : "?")))));
-  }
-
-  function cloneLinks(repos) {
-    if (!repos.length) return el("span", { class: "mono", style: "color:var(--dim)" }, "none yet");
-    const nodes = [];
-    repos.forEach((r, i) => {
-      if (i) nodes.push(", ");
-      nodes.push(r.url
-        ? el("a", { class: "mono", href: r.url, target: "_blank", rel: "noopener", title: r.url }, r.name)
-        : el("span", { class: "mono" }, r.name));
-    });
-    return el("span", {}, ...nodes);
-  }
-
-  function storageCard() {
-    const st = state.storage;
-    if (!st) return el("div", {});
-    const rows = st.items.map((item) =>
-      pillRow(item.label,
-        el("div", { class: "row" },
-          item.repos ? cloneLinks(item.repos) : el("span", { class: "mono" }, item.path),
-          item.survives
-            ? el("span", { class: "pill ok", title: `on the ${item.mount_point} mount` },
-                el("i", { class: "dot" }), "survives")
-            : item.exists
-              ? el("span", { class: "pill warn", title: "in the container's writable layer" }, "lost on rebuild")
-              : el("span", { class: "pill" }, "not yet"))));
-
-    const tools = Object.entries(st.tools).map(([name, ok]) =>
-      el("span", { class: "pill " + (ok ? "ok" : "err"), title: ok ? "installed in the image" : "missing from the image" },
-        el("i", { class: "dot" }), name));
-
-    const warning = st.home_mounted
-      ? el("div", { class: "banner ok", style: "margin-bottom:10px" },
-          el("span", { class: "ico" }, icon("check")),
-          el("div", {}, el("b", {}, "This home directory is a mounted volume."),
-            " Everything below survives ", el("code", {}, "docker rm"), ", a rebuild and a new image pull."))
-      : el("div", { class: "banner warn", style: "margin-bottom:10px" },
-          el("span", { class: "ico" }, icon("triangle-alert")),
-          el("div", {}, el("b", {}, "This home directory is not a mounted volume."),
-            " Credentials, keys and the repo registry live in the container's writable layer, so they are lost when the container is replaced. Mount one: ",
-            el("code", {}, "-v arena-home:/home/arena")));
-
-    return el("div", { class: "card" },
-      el("div", { class: "card-head" }, el("h2", {}, "What survives a rebuild"),
-        el("div", { class: "grow" }),
-        el("span", { class: "hint" }, st.home_mounted ? "volume" : "container layer")),
-      el("div", { class: "card-body" },
-        warning,
-        ...rows,
-        el("div", { style: "margin-top:12px;display:flex;gap:6px;flex-wrap:wrap" }, ...tools),
-        el("div", { class: "hint", style: "margin-top:10px" },
-          "The tools above come from the image, not the volume, so a rebuild reinstalls them and ",
-          el("code", {}, "git-filter-repo"), " never needs setting up twice. ",
-          st.env_token ? "GH_TOKEN is set in the environment and is re-supplied by whatever starts the container." : "")));
   }
 
   async function submitToken() {
@@ -1873,70 +1815,6 @@
     } catch (err) {
       toast(err.message);
     }
-  }
-
-  // ---------------------------------------------------------------- pwa
-  function isStandalone() {
-    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-  }
-
-  function isIos() {
-    return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  }
-
-  function installCard() {
-    if (isStandalone()) {
-      return el("div", { class: "card" },
-        el("div", { class: "card-head" }, el("h2", {}, "This device")),
-        el("div", { class: "card-body" },
-          pillRow("mode", el("span", { class: "pill ok" }, el("i", { class: "dot" }), "installed app"))));
-    }
-
-    const steps = [];
-    if (state.installPrompt) {
-      steps.push(el("button", {
-        class: "btn primary",
-        onclick: async () => {
-          const prompt = state.installPrompt;
-          state.installPrompt = null;
-          prompt.prompt();
-          const choice = await prompt.userChoice.catch(() => ({ outcome: "dismissed" }));
-          if (choice.outcome !== "accepted") toast("install dismissed");
-          renderAccess();
-        },
-      }, "Install app"));
-    } else if (isIos()) {
-      steps.push(el("div", { class: "hint", style: "line-height:1.7" },
-        "In Safari: tap the ", el("b", {}, "Share"), " button, scroll down, then ",
-        el("b", {}, "Add to Home Screen"), ". It opens full screen from then on, dark status bar and all."));
-    } else {
-      steps.push(el("div", { class: "hint", style: "line-height:1.7" },
-        "In Chrome or Edge: open the browser menu and choose ",
-        el("b", {}, "Install arena-cleanup"), " (or the install icon in the address bar). Safari on macOS: ",
-        el("b", {}, "File, Add to Dock"), "."));
-    }
-
-    // Installing needs a secure context. Plain http:// on a LAN address is not
-    // one, and the failure is silent, so say it here rather than in a console.
-    if (state.env && state.env.secure === false) {
-      steps.push(el("div", { class: "banner warn", style: "margin-top:10px" },
-        el("span", { class: "ico" }, icon("triangle-alert")),
-        el("div", {}, el("b", {}, "This origin is not a secure context."),
-          " Browsers only install apps from ", el("code", {}, "localhost"), " or HTTPS, so installing will be refused here. ",
-          "Open the app at ", el("code", {}, "http://localhost:8080"), " on the same machine, put it behind a reverse proxy with a certificate, ",
-          "or reach it over Tailscale. All three give a secure origin.")));
-    }
-
-    return el("div", { class: "card" },
-      el("div", { class: "card-head" }, el("h2", {}, "Install on this device"),
-        el("div", { class: "grow" }),
-        el("span", { class: "hint" }, "PWA")),
-      el("div", { class: "card-body" },
-        el("div", { class: "install-row" }, ...steps),
-        el("div", { class: "hint", style: "margin-top:10px" },
-          "It installs as an app icon and opens without browser chrome. The shell is cached; ",
-          "repo state never is, so every dashboard load still asks this server.")));
   }
 
   async function loadSigning() {
@@ -2216,17 +2094,6 @@
   }
   window.addEventListener("online", () => loadRepos());
   window.addEventListener("offline", () => loadRepos());
-
-  window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    state.installPrompt = event;
-    if (!$("view-settings").hidden) renderInfo();
-  });
-  window.addEventListener("appinstalled", () => {
-    state.installPrompt = null;
-    toast("installed");
-    if (!$("view-settings").hidden) renderInfo();
-  });
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
