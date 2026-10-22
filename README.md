@@ -94,9 +94,8 @@ flags, and `arena-cleanup doctor` checks the setup.
 3. About sits below the settings.
 4. **Clean & Push** runs the pipeline and streams the log. A click on the
    card shows the repo view first: target branch, paths to remove, the
-   divergence policy, the check timeout, and the options (dry run, skip the
-   PR gate, keep empty commits, leave tags alone, keep the branch, force the
-   push).
+   check timeout, and the options (dry run, skip the PR gate, keep empty
+   commits, leave tags alone, keep the branch, force the push).
 
 Signed out, every card reads **checks unavailable** instead of **no PR**. The
 run writes a backup bundle before each rewrite stage, and **Cancel** stops a

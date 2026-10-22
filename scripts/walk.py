@@ -348,6 +348,9 @@ def sidebar_and_branch_selector(w: Walker, demo: Demo) -> None:
   assert w.count("#sidebar button[data-branch]") == 0, "arena rows are not targets"
   assert w.count("#sidebar .row-btn .ahead") == 1
   assert "HEAD" not in sidebar, "the HEAD block is gone"
+  assert w.count("#reset-btn") == 0 and w.count("#divergence") == 0, (
+    "origin wins before every run"
+  )
   assert w.count("#sidebar .commit") >= 1, "the commits live in the sidebar"
   assert (
     w.page.eval_on_selector("#sidebar", "e => e.getBoundingClientRect().width") == 320
@@ -365,14 +368,6 @@ def option_toggle_updates_the_argv(w: Walker, demo: Demo) -> None:
   assert "--dry-run" in w.start_argv()
   w.click(toggle, 200)
   assert "--dry-run" not in w.start_argv()
-
-
-@step("desktop")
-def divergence_segmented_control(w: Walker, demo: Demo) -> None:
-  w.click('#divergence button[data-v="remote"]', 200)
-  assert "--on-divergence remote" in w.start_argv()
-  w.click('#divergence button[data-v="ask"]', 200)
-  assert "--on-divergence" not in w.start_argv()
 
 
 @step("desktop")

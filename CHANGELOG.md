@@ -29,16 +29,16 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The repository card meta drops the tag count; it shows the branch and the tree state.
 - Arena rows on the card and in the sidebar show `↑ N` with a tooltip. N counts the commits beyond the default branch.
 - `run -a/--arena NAME` answers the arena branch menu without a prompt. The page shows that select, newest tip first, when a repository has two or more arena branches. The card button uses the newest.
-- The repository sidebar is 320 px wide. It lists the commits below the repo facts, Reset, and the arena rows. The HEAD block is gone. Below 980 px it stacks under the run card.
+- The repository sidebar is 320 px wide. It lists the commits below the repo facts and the arena rows. The HEAD block is gone. Below 980 px it stacks under the run card.
 - A shallow history: one Back leaves a sub-view, the next one leaves the page.
-- The card shows `N uncommitted` only when the clone is dirty.
+- A managed clone resets to origin before every run. The server fetches, checks out the default branch, resets hard, and drops local `arena/*` copies. The page has no Reset button, dirty chip, or On divergence control; `--on-divergence` stays a CLI flag.
 - The app copy says repo and repos.
 - The claim rules come from the global git config keys `arena.claim-email` and `arena.claim-name`; the constants are the fallback. The container seeds the identity only while git config is empty.
 - One Settings page behind the gear icon: Identity, GitHub access, Commit signing, and Claimed commits, then About.
-- The options card keeps two columns above 980 px; four columns overflowed between 981 and 1179 px. The divergence control wraps whole buttons, not words.
+- The options card keeps two columns above 980 px; four columns overflowed between 981 and 1179 px.
 - Log rows show the clock of the browser. The engine stamps each line in the server zone.
 - Remove on a card deletes its URL clone from the volume; a path repo is only forgotten.
-- Reset to origin in the repository sidebar: fetch, check out the default branch, and reset it hard. Untracked files stay.
+- `POST /api/repos/<id>/reset`: fetch, check out the default branch, and reset it hard. Untracked files stay.
 - The repository page runs the full flow only. The Rewrite locally switch is gone, and `strip` stays a CLI command.
 - The card Remove X sits top right as a bare glyph. A red frame comes on hover, on press, and while armed.
 - The primary button reads Clean & Push on the card, the run card, and the phone bar.

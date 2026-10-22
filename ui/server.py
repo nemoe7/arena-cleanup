@@ -371,6 +371,17 @@ def reset_to_origin(repo: dict[str, Any]) -> str:
   return f"origin/{default}"
 
 
+def prepare_managed_clone(repo: dict[str, Any]) -> str:
+  """A managed clone holds nothing of its own: before a run, origin wins and local arena copies go."""
+  target = reset_to_origin(repo)
+  cwd = repo["path"]
+  for name in git(
+    "for-each-ref", "--format=%(refname:short)", "refs/heads/arena/", cwd=cwd
+  ).splitlines():
+    run_cmd(["git", "branch", "-D", "-q", name], cwd=cwd)
+  return target
+
+
 def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
   cwd = repo["path"]
   if not os.path.isdir(cwd):
@@ -1255,6 +1266,8 @@ class Handler(BaseHTTPRequestHandler):
         repo = self._repo(parts[2])
         body = self._body()
         argv = build_argv(body, repo)
+        if repo.get("managed"):
+          prepare_managed_clone(repo)
         job = new_job(argv, repo)
         STATUS.drop(repo["id"])
         self._json({"id": job.id, "argv": argv[2:]}, 201)

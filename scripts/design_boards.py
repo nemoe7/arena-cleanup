@@ -319,9 +319,6 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     + block("Arena branch — newest first, with two or more", height=28)
     + block("Remove paths — one chip per path · Browse", height=28)
     + block("HEAD tree — folders first, a click adds the chip", height=28)
-    + block(
-      "On divergence — Ask, then stop · Follow origin · Overwrite origin", height=28
-    )
     + block("PR check timeout — 15 minutes", height=28)
     + '<div class="bar" style="flex-wrap:wrap">'
     + "".join(
@@ -361,11 +358,10 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     + "</div>"
   )
   sidebar = (
-    block("Repo — branch · default · changes · remote", height=24)
-    + block("Reset to origin/main", height=24)
-    + block("Arena branches — ↑ N · PR state", height=24)
-    + block("Commits — 1 of 1 on main · Reload", height=24)
-    + block("6f5a842  chore: init · other-dev · Jan 1", height=24)
+    block("Repo — branch · default", height=24)
+    + block("Arena branches — ↑ N · PR", height=24)
+    + block("Commits — 1 of 1 · Reload", height=24)
+    + block("6f5a842  chore: init", height=24)
   )
   screen = (
     '<div class="scr wide" style="width:560px">'
@@ -375,7 +371,7 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     + "</div>"
     + block("task sentence: what the run does", soft=True, height=28)
     + '<div class="bar" style="align-items:flex-start">'
-    + f'<div class="scr" style="width:200px">{sidebar}</div>'
+    + f'<div class="scr" style="width:220px">{sidebar}</div>'
     + '<div class="col" style="gap:8px;flex:1">'
     + f'<div class="scr" style="width:auto">{options}</div>'
     + f'<div class="scr" style="width:auto">{run}</div>'
@@ -703,9 +699,7 @@ def do_dont_board(_: dict[str, bytes]) -> str:
     ahead = f"{icon('arrow-up')}23"
     return "".join(
       f'<span class="pill {cls}" style="margin-right:{g}px">{t}</span>'
-      for g, cls, t in zip(
-        gaps, ("mono", "warn", "mono ahead"), ("main", "3 uncommitted", ahead)
-      )
+      for g, cls, t in zip(gaps, ("mono", "", "mono ahead"), ("main", "#203", ahead))
     )
 
   spacing_do = f'<div class="off" style="gap:0">{meta_pills((6, 6, 0))}</div>'

@@ -269,6 +269,37 @@ def test_add_by_clone_url(ui: UI, world: World, ids: dict[str, str]) -> None:
   assert ui.status("GET", "/api/repos/deadbeef1234") == 404
 
 
+def test_a_run_resets_a_managed_clone(
+  ui: UI, world: World, ids: dict[str, str]
+) -> None:
+  path = Path(ids["clone_path"])
+
+  def git(*args: str) -> str:
+    return world.git("-c", "commit.gpgsign=false", *args, cwd=path)
+
+  # local work: a stale arena copy with a commit, and a dirty tree
+  git("checkout", "-q", "-b", "arena/stale-copy")
+  (path / "junk.txt").write_text("stale\n")
+  git("add", "junk.txt")
+  git(
+    "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q", "-m", "stale"
+  )
+  tracked = git("ls-files").splitlines()[0]
+  (path / tracked).write_text("dirty\n")
+  assert git("status", "--porcelain") != ""
+
+  job = ui.post(
+    f"/api/repos/{ids['clone']}/jobs",
+    {"action": "run", "dry_run": True, "arena": "arena/ui-test"},
+  )
+  assert ui.wait_for_job(job["id"])["status"] == "done"
+  assert git("rev-parse", "--abbrev-ref", "HEAD") == "main"
+  assert git("rev-parse", "HEAD") == git("rev-parse", "origin/main")
+  assert git("status", "--porcelain") == "", "origin wins over local changes"
+  assert git("branch", "--list", "arena/*") == "", "local arena copies are gone"
+  assert "arena/ui-test" in ui.get(f"/api/repos/{ids['clone']}")["status"]["arena"]
+
+
 def test_one_click_dry_run_job(ui: UI, world: World, ids: dict[str, str]) -> None:
   before = world.rev()
   job = ui.post(
