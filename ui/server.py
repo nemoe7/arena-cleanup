@@ -462,7 +462,7 @@ def gpg_available() -> bool:
 
 
 def secret_keys() -> list[dict[str, Any]]:
-  """Secret keys with fingerprint, uid and capability flags."""
+  """Secret keys with fingerprint, uid, and capability flags."""
   if not gpg_available():
     return []
   rc, out, _ = run_cmd(["gpg", "--with-colons", "--list-secret-keys"], timeout=20)

@@ -18,7 +18,7 @@
 <title>arena-cleanup</title>
 <style>
   /* Spacing scale: 1 (optical nudge) then every even step - 2 4 6 8 10 12 16
-     20 24 32 40. Every padding, margin and gap in this file lands on it;
+     20 24 32 40. Every padding, margin, and gap in this file lands on it;
      tools/measure.py fails the build when one drifts off. */
   @font-face {
     font-family: "Inter";
@@ -540,7 +540,7 @@
   @media (max-width: 720px) {
     :root { --pad: 14px; }
     /* one scale on a phone: 15 body, 13 controls, 12 metadata. Before this the
-       page mixed 11.5, 12, 12.5, 13 and 14 in the same view */
+       page mixed 11.5, 12, 12.5, 13, and 14 in the same view */
     body { font-size: 15px; }
     .btn { font-size: 14px; }
     .pill { font-size: 12px; }
@@ -686,7 +686,7 @@
           <h1 id="repo-title">…</h1>
         </div>
 
-        <p class="task-note" id="task-note">Rewrites the arena branch, signs every commit, pushes the default branch, moves the tags and deletes the local arena branch. Pull request checks have to pass first.</p>
+        <p class="task-note" id="task-note">Rewrites the arena branch, signs every commit, pushes the default branch, moves the tags, and deletes the local arena branch. Pull request checks have to pass first.</p>
 
         <section class="card" id="options-card">
           <button type="button" class="card-head fold-head" id="options-fold" aria-expanded="true" aria-controls="options">
@@ -865,7 +865,7 @@
     api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
 
   // ------------------------------------------------------------------ views
-  // The address bar is the state: refresh, Back and Forward all land on the
+  // The address bar is the state: refresh, Back, and Forward all land on the
   // screen they expect, and a repo view can be bookmarked or sent to someone.
   function hashFor(view) {
     if (view === "repo") return "#/repo/" + (state.repo?.id || "");
@@ -1777,7 +1777,7 @@
       ghNodes.push(el("div", { class: "banner warn" },
         el("span", { class: "ico" }, icon("triangle-alert")),
         el("div", {}, el("b", {}, "Not signed in to GitHub."),
-          " Private clones, PR checks and HTTPS pushes will fail until gh has a token.")));
+          " Private clones, PR checks, and HTTPS pushes will fail until gh has a token.")));
       const input = el("input", { class: "field mono-field", type: "password", id: "token-input",
         placeholder: "ghp_… or github_pat_…", autocomplete: "off", spellcheck: "false",
         onkeydown: (e) => { if (e.key === "Enter") submitToken(); } });

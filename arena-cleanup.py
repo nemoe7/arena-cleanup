@@ -2410,10 +2410,10 @@ EPILOG = """\
 commands:
   run      full flow: cleanup -> PR gate -> rewrite -> push   (default)
   strip    rewrite/sign local history only (the old strip-history)
-  doctor   check tools, repo, identity and signing setup
+  doctor   check tools, repo, identity, and signing setup
 
 examples:
-  arena-cleanup                     clean up, rewrite and publish (arena/* flow)
+  arena-cleanup                     clean up, rewrite, and publish (arena/* flow)
   arena-cleanup -n                  say what a run would do, change nothing
   arena-cleanup -b main             clean main itself, in place
   arena-cleanup -d                  publish, then drop the arena branch on origin too
