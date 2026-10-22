@@ -29,6 +29,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The repository card meta drops the tag count; it shows the branch and the tree state.
 - Arena rows on the card and in the sidebar show `↑ N` with a tooltip. N counts the commits beyond the default branch.
 - `run -a/--arena NAME` answers the arena branch menu without a prompt. The page shows that select, newest tip first, when a repository has two or more arena branches. The card button uses the newest.
+- The repository sidebar is 320 px wide. It lists the commits below the repo facts, Reset, and the arena rows. The HEAD block is gone. Below 980 px it stacks under the run card.
 - A shallow history: one Back leaves a sub-view, the next one leaves the page.
 - The card shows `N uncommitted` only when the clone is dirty.
 - The app copy says repo and repos.

@@ -289,12 +289,19 @@
   .empty-state code { font-family: var(--mono); font-size: var(--fs-1); color: var(--muted); }
 
   /* ----------------------------------------------------------- repo view */
-  .detail { display: grid; grid-template-columns: 264px minmax(0, 1fr); flex: 1; min-height: 0; }
+  .detail { display: grid; grid-template-columns: 320px minmax(0, 1fr); flex: 1; min-height: 0; }
+  /* Sticky beside the scrolling page: the facts stay put, the commit list scrolls inside. */
   .sidebar {
     border-right: 1px solid var(--line); background: var(--surface);
     padding: 16px 12px; overflow: auto; scrollbar-gutter: stable; display: flex; flex-direction: column; gap: 20px;
+    position: sticky; top: 56px; height: calc(100vh - 56px); align-self: start;
   }
+  .side-top { display: flex; flex-direction: column; gap: 20px; flex: 0 0 auto; }
   .side-group { display: flex; flex-direction: column; gap: 4px; }
+  /* The commit list takes the rest of the column and scrolls on its own. */
+  .side-commits { flex: 1 1 auto; min-height: 0; }
+  .side-commits .commits { flex: 1 1 auto; min-height: 120px; overflow: auto; scrollbar-gutter: stable; }
+  .side-label .btn { height: auto; padding: 2px 6px; font-size: var(--fs-1); font-weight: 600; }
   .side-label {
     font-size: var(--fs-1); font-weight: 600; letter-spacing: 0;
     color: var(--muted); padding: 0 6px 4px; display: flex; justify-content: space-between;
@@ -449,15 +456,15 @@
 
   .commits { display: flex; flex-direction: column; }
   .commit {
-    display: grid; grid-template-columns: 68px minmax(0, 1fr) auto; gap: 12px;
-    align-items: center; padding: 8px 16px; border-top: 1px solid var(--line); font-size: var(--fs-2);
+    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 8px;
+    align-items: center; padding: 8px 6px; border-top: 1px solid var(--line); font-size: var(--fs-2);
   }
   .commit:first-child { border-top: 0; }
   .commit .sha { font: var(--fs-1) var(--mono); color: var(--dim); }
   .commit .subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .commit .meta {
-    display: flex; align-items: center; gap: 8px; color: var(--dim);
-    font-size: var(--fs-1); white-space: nowrap;
+    grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; color: var(--dim);
+    font-size: var(--fs-1); white-space: nowrap; flex-wrap: wrap;
   }
   .commit .sig { color: var(--ok); font-size: var(--fs-1); }
   .commit .sig.none { color: var(--dim); }
@@ -530,8 +537,10 @@
 
   @media (max-width: 980px) {
     :root { --pad: 16px; }
-    .detail { grid-template-columns: 1fr; }
-    .sidebar { display: none; }
+    /* One column: the run first, then the sidebar with the facts and the commits. */
+    .detail { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: start; }
+    .sidebar { order: 2; position: static; height: auto; overflow: visible; border-right: 0; border-top: 1px solid var(--line); }
+    .side-commits .commits { max-height: 360px; }
     .options { grid-template-columns: 1fr; }
     .grid { grid-template-columns: 1fr; }
   }
@@ -546,8 +555,7 @@
     .hint, .opt-label .desc, .phase-sub, .run-foot .hint, .commit .meta { font-size: 12px; }
     .phase-head { padding: 10px 12px; font-size: 13px; }
     .task-note { font-size: 12px; }
-    .commit { font-size: 13px; grid-template-columns: 68px minmax(0, 1fr); row-gap: 4px; }
-    .commit .meta { grid-column: 1 / -1; white-space: normal; flex-wrap: wrap; }
+    .commit { font-size: 13px; }
     .sign-fields { grid-template-columns: 1fr; }
     .sign-row .k { flex-basis: 100%; min-width: 0; }
     .run-foot { flex-wrap: wrap; }
@@ -576,7 +584,8 @@
     .addbar .field { flex: 0 0 auto; height: 48px; padding: 0 12px; }
     .addbar .btn { height: 48px; font-size: 15px; }
     #start { display: none; }  /* the tab bar carries the run controls on a phone */
-    .main-col { padding: 12px 12px 88px; }
+    .main-col { padding: 12px; }
+    .sidebar { padding-bottom: 88px; }
     .wrap { padding: 16px var(--pad) 88px; }
     .detail-head h1 { font-size: 15px; }
     .card-head { flex-wrap: wrap; height: auto; padding: 10px 12px; gap: 6px; }
@@ -669,7 +678,16 @@
   <!-- ============================================================ repo view -->
   <div class="view" id="view-repo" hidden>
     <div class="detail">
-      <aside class="sidebar" id="sidebar"></aside>
+      <aside class="sidebar" id="sidebar">
+        <div class="side-top" id="side-top"></div>
+        <section class="side-group side-commits" id="commits-card">
+          <div class="side-label">
+            <span>Commits <span class="hint" id="commits-hint"></span></span>
+            <button class="btn ghost" id="commits-refresh">Reload</button>
+          </div>
+          <div class="commits" id="commits"></div>
+        </section>
+      </aside>
       <div class="main-col">
         <div class="detail-head">
           <button class="btn ghost back" id="back"><span class="ico-svg" data-icon="arrow-left" aria-hidden="true"></span>All repos</button>
@@ -753,16 +771,6 @@
             <div class="log" id="log" role="log" aria-live="polite" aria-relevant="additions"></div>
             <button class="jump" id="jump"><span class="ico-svg" data-icon="arrow-down" aria-hidden="true"></span>latest</button>
           </div>
-        </section>
-
-        <section class="card" id="commits-card">
-          <div class="card-head">
-            <h2>Commits</h2>
-            <span class="hint" id="commits-hint"></span>
-            <div class="grow"></div>
-            <button class="btn ghost" id="commits-refresh">Reload</button>
-          </div>
-          <div class="commits" id="commits"></div>
         </section>
       </div>
     </div>
@@ -1128,7 +1136,7 @@
 
   function renderSidebar() {
     const s = state.repo?.status || {};
-    const side = $("sidebar");
+    const side = $("side-top");
     const kv = el("dl", { class: "kv" });
     const add = (k, v, mono) => { kv.append(el("dt", {}, k), el("dd", { class: mono ? "mono" : "" }, v ?? "…")); };
     add("branch", s.branch, false);
@@ -1146,10 +1154,6 @@
                aheadPill((s.ahead || {})[b], s.default, "meta ahead"),
                el("span", { class: "meta" }, metaFor((s.pr || {})[b], s.pr_checked)))))
         : [el("div", { class: "row-btn", style: "cursor:default;color:var(--dim)" }, el("span", { class: "txt" }, "none on origin"))]));
-
-    const head = el("div", { class: "side-group" },
-      el("div", { class: "side-label" }, "HEAD"),
-      el("div", { style: "padding:0 6px;color:var(--muted);font:var(--fs-1)/1.5 var(--mono);overflow-wrap:anywhere" }, s.head || "unknown"));
 
     // Two clicks, like the card's Remove: the first arms, the second resets.
     const target = `origin/${s.default || "?"}`;
@@ -1182,7 +1186,7 @@
 
     side.replaceChildren(
       el("div", { class: "side-group" }, el("div", { class: "side-label" }, "Repo"), kv, reset),
-      branches, head);
+      branches);
   }
 
   function renderBranchSelect() {
@@ -1614,7 +1618,7 @@
         ? `${data.shown} of ${data.total} on ${data.branch}`
         : `nothing on ${data.branch}`;
       if (!data.commits.length) {
-        box.replaceChildren(el("div", { class: "hint", style: "padding:16px" }, "This branch has no commits yet."));
+        box.replaceChildren(el("div", { class: "hint", style: "padding:8px 6px" }, "This branch has no commits yet."));
         return;
       }
       box.replaceChildren(...data.commits.map((c) =>
@@ -1628,7 +1632,7 @@
             el("span", {}, when(c.date))))));
     } catch (err) {
       $("commits-hint").textContent = "";
-      box.replaceChildren(el("div", { class: "hint", style: "padding:16px" }, err.message));
+      box.replaceChildren(el("div", { class: "hint", style: "padding:8px 6px" }, err.message));
     }
   }
 

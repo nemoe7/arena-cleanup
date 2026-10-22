@@ -347,6 +347,11 @@ def sidebar_and_branch_selector(w: Walker, demo: Demo) -> None:
   assert "arena/session-3" in sidebar
   assert w.count("#sidebar button[data-branch]") == 0, "arena rows are not targets"
   assert w.count("#sidebar .row-btn .ahead") == 1
+  assert "HEAD" not in sidebar, "the HEAD block is gone"
+  assert w.count("#sidebar .commit") >= 1, "the commits live in the sidebar"
+  assert (
+    w.page.eval_on_selector("#sidebar", "e => e.getBoundingClientRect().width") == 320
+  )
   assert w.page.input_value("#branch") == ""
   options = [o.text_content() for o in w.page.locator("#branch option").all()]
   assert options == ["main (default)"]
@@ -607,6 +612,16 @@ def phone_loads(w: Walker, demo: Demo) -> None:
 def phone_tab_bar_in_the_repo_view(w: Walker, demo: Demo) -> None:
   w.click(".repo-card", 700)
   assert w.visible("#tabbar")
+
+
+@step("phone")
+def phone_stacks_the_sidebar_below_the_run(w: Walker, demo: Demo) -> None:
+  top = "e => e.getBoundingClientRect().top"
+  assert w.visible("#sidebar")
+  assert w.page.eval_on_selector("#sidebar", top) > w.page.eval_on_selector(
+    "#console-card", top
+  )
+  assert w.count("#sidebar .commit") >= 1
 
 
 @step("phone")

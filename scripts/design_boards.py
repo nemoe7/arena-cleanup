@@ -260,11 +260,10 @@ def flow_board(_: dict[str, bytes]) -> str:
     + block("shop-web", width="80px")
     + "</div>"
     + '<div class="bar" style="align-items:flex-start">'
-    + block("branches", height=150, width="90px")
+    + block("facts · arena branches · commits", height=150, width="110px")
     + '<div class="col" style="gap:8px;flex:1">'
     + block("options card", height=60, width="300px")
     + block("run card: 5 phases, log", hi=True, height=56, width="300px")
-    + block("commits", height=24, width="300px")
     + "</div></div></div>"
   )
   settings = (
@@ -361,8 +360,12 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     + block("Copy log", width="70px")
     + "</div>"
   )
-  commits = block("Commits — 1 of 1 on main · Reload", height=24) + block(
-    "6f5a842  chore: init  other-dev  Jan 1", height=24
+  sidebar = (
+    block("Repo — branch · default · changes · remote", height=24)
+    + block("Reset to origin/main", height=24)
+    + block("Arena branches — ↑ N · PR state", height=24)
+    + block("Commits — 1 of 1 on main · Reload", height=24)
+    + block("6f5a842  chore: init · other-dev · Jan 1", height=24)
   )
   screen = (
     '<div class="scr wide" style="width:560px">'
@@ -371,9 +374,12 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     + block("shop-web", width="90px")
     + "</div>"
     + block("task sentence: what the run does", soft=True, height=28)
+    + '<div class="bar" style="align-items:flex-start">'
+    + f'<div class="scr" style="width:200px">{sidebar}</div>'
+    + '<div class="col" style="gap:8px;flex:1">'
     + f'<div class="scr" style="width:auto">{options}</div>'
     + f'<div class="scr" style="width:auto">{run}</div>'
-    + f'<div class="scr" style="width:auto">{commits}</div></div>'
+    + "</div></div></div>"
   )
   actions = (
     '<table class="sheet"><tr><td class="mono">Clean &amp; Push</td>'
@@ -382,14 +388,15 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     '<tr><td class="mono">Show log</td><td>unfolds the raw lines under the phase list</td></tr>'
     '<tr><td class="mono">Copy log</td><td>puts the whole log on the clipboard</td></tr>'
     '<tr><td class="mono">Ctrl + Enter</td><td>starts the run from anywhere</td></tr>'
+    '<tr><td class="mono">980 px</td><td>the sidebar stacks below the run card</td></tr>'
     '<tr><td class="mono">720 px</td><td>primary actions stick to the bottom; one column</td></tr></table>'
   )
   body = (
     '<div class="wf"><div class="row">'
     + frame(
       "Repository view",
-      "Deep dive: the one view where a run happens. Three cards in one column; the run "
-      "card is the story, the raw log is one click away.",
+      "Deep dive: the one view where a run happens. The sidebar holds the facts and the "
+      "commits; the run card is the story, the raw log is one click away.",
       screen,
     )
     + frame("Key actions", "What the view promises.", actions)
