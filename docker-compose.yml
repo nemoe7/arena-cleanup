@@ -1,22 +1,21 @@
 # cp .env.example .env   (name, email, Tailscale auth key)
 # docker compose up -d
 #
-# docker compose reads .env from this directory on its own, so the variables
-# below are substituted from that file; nothing needs exporting in your shell.
+# docker compose reads .env from this directory on its own and substitutes the
+# variables below from that file. Nothing needs exporting in your shell.
 # `docker compose config` prints the result without starting anything.
 #
 # The app is UI-only: paste a repo URL in the dashboard and it is cloned into
-# the arena-home volume. REPO_PATH is optional - set it to also work on a
-# checkout that already exists on this machine (it appears as /repo).
+# the arena-home volume. REPO_PATH is optional. Set it to also work on a
+# checkout that already exists on this machine; it appears as /repo.
 #
 # TLS: `tailscale serve` gives it a real HTTPS name on your tailnet. That is
-# what makes it installable as a PWA from a phone - a PWA needs a secure
+# what makes it installable as a PWA from a phone. A PWA needs a secure
 # origin, and plain http:// over the LAN is not one.
 #
 # Neither container declares an ACL tag. Everything runs as the tailnet's
-# default owner identity and inherits whatever policy that identity already
-# has; if you want tags later, set them in the Tailscale admin console, not
-# here.
+# default owner identity and inherits the policy that identity already has.
+# If you want tags later, set them in the Tailscale admin console, not here.
 
 services:
   arena-cleanup:
@@ -55,10 +54,10 @@ services:
       start_period: 10s
     networks:
       tailnet:
-        # The sidecar's hostname is `arena-cleanup`, which is what gives the
-        # node its MagicDNS name - and which also makes `arena-cleanup` resolve
-        # to the sidecar itself inside that container. The proxy therefore
-        # dials this alias instead, a name that can only mean the app.
+        # The sidecar's hostname is `arena-cleanup`, which gives the node its
+        # MagicDNS name. Inside that container, `arena-cleanup` therefore
+        # resolves to the sidecar itself. The proxy dials this alias instead,
+        # a name that can only mean the app.
         aliases:
           - arena-app
 
@@ -68,7 +67,7 @@ services:
     hostname: arena-cleanup
     environment:
       TS_AUTHKEY: ${TS_AUTHKEY:?set TS_AUTHKEY to a tailscale auth key}
-      # keep the node and its key in the volume, so a rebuild rejoins as the
+      # keep the node and its key in the volume. A rebuild then rejoins as the
       # same machine instead of littering the tailnet with duplicates
       TS_STATE_DIR: /var/lib/tailscale
       TS_USERSPACE: "false"
@@ -91,7 +90,7 @@ services:
     restart: unless-stopped
     healthcheck:
       # `tailscale status --json` exits non-zero until the node is logged in and
-      # running, so this is a real readiness check and not a liveness poke
+      # running. This is a real readiness check, not a liveness poke
       test: ["CMD", "tailscale", "status", "--json"]
       interval: 30s
       timeout: 10s

@@ -17,8 +17,8 @@ local server:
 
     python3 tools/measure.py --url http://localhost:8080 --out /tmp/measure
 
-With --against, it compares the current run to a saved JSON report, which is how
-you prove a spacing change actually moved the thing you meant to move.
+With --against, it compares the current run to a saved JSON report. That is how
+you prove a spacing change moved the thing you meant to move.
 """
 
 from __future__ import annotations
@@ -36,8 +36,8 @@ except ImportError:  # pragma: no cover - the tool is optional
   raise SystemExit(2)
 
 # The scale the stylesheet is built on: every even step, plus a single 1px
-# allowance for optical nudges (a tiny chip border, an icon sitting on a
-# baseline). Anything else is a value nobody chose on purpose.
+# allowance for optical nudges. Examples: a tiny chip border, an icon sitting
+# on a baseline. Anything else is a value nobody chose on purpose.
 GRID = 2
 MICRO = {1}
 
@@ -136,7 +136,7 @@ def analyse(elements: list[dict[str, Any]]) -> dict[str, Any]:
   families: dict[tuple[str, str], Counter[float]] = defaultdict(Counter)
   for element in elements:
     # the whole class list is the component: `pill ok` and `banner ok` are two
-    # different things that share a state name, and comparing them to each other
+    # different things that share a state name. Comparing them to each other
     # produces noise, not a spacing decision
     family = ".".join(element["cls"].split()) or element["tag"] or "?"
     for prop, raw in element["style"].items():

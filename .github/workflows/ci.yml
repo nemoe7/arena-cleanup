@@ -3,8 +3,8 @@ name: CI
 on:
   push:
     branches: [main]
-    # Steering syncs carry no shipped code, so their pushes skip CI and never
-    # cancel a code run through the concurrency group below.
+    # Steering syncs carry no shipped code. Their pushes skip CI and never
+    # cancel a code run in the concurrency group below.
     paths-ignore: &steering
       - ".agents/**"
       - "ARENA.md"

@@ -4,14 +4,15 @@
 set -eu
 
 # A repo bind-mounted from the host usually belongs to another uid, which git
-# now refuses ("dubious ownership"). The mount is the point of the container,
-# so trust it explicitly rather than asking every user to chown their work tree.
+# now refuses ("dubious ownership"). The mount is the point of the container.
+# Trust it explicitly rather than asking every user to chown their work tree.
 if ! git config --global --get-all safe.directory 2>/dev/null | grep -qx '\*'; then
   git config --global --add safe.directory '*'
 fi
 
-# Identity has to live in git config (the engine reads it back), so seed it from
-# the environment once; afterwards `git config --global` in the container wins.
+# Identity has to live in git config, because the engine reads it back. Seed it
+# from the environment once; afterwards `git config --global` in the container
+# wins.
 if [ -n "${GIT_AUTHOR_NAME:-}" ]; then
   git config --global user.name "$GIT_AUTHOR_NAME"
 fi

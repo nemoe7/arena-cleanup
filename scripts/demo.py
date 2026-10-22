@@ -2,21 +2,25 @@
 """
 Build a throwaway demo of the UI and serve it.
 
-The fixture is three local repositories with an arena branch each, a stub `gh`
-that answers from files, a git identity that matches the engine's constants,
-and a throwaway GPG key when `gpg` is installed. Nothing touches the host's
-git, gh, or gpg state: the server runs with HOME, GIT_CONFIG_GLOBAL, and
-GNUPGHOME inside the demo root.
+The fixture holds:
+
+- three local repositories with an arena branch each
+- a stub `gh` that answers from files
+- a git identity that matches the engine's constants
+- a throwaway GPG key when `gpg` is installed
+
+Nothing touches the host's git, gh, or gpg state. The server runs with HOME,
+GIT_CONFIG_GLOBAL, and GNUPGHOME inside the demo root.
 
   python3 scripts/demo.py --port 8080
   python3 scripts/demo.py --root /tmp/demo --no-serve   # build only, print env
 
 The stub gh reads the demo root's gh/ directory:
 
-  gh/signed-in   present = `gh auth status` succeeds; `gh auth login` creates it
-  gh/slow        present = every branch has a PR whose check never finishes
-  gh/prs.json    the open PR and check rollup for each arena branch
-  gh/gpg-keys    key ids `gh api user/gpg_keys` reports
+  gh/signed-in   present = `gh auth status` succeeds; `gh auth login` creates it.
+  gh/slow        present = every branch has a PR whose check never finishes.
+  gh/prs.json    the open PR and check rollup for each arena branch.
+  gh/gpg-keys    key ids `gh api user/gpg_keys` reports.
 """
 
 from __future__ import annotations

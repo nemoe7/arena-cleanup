@@ -1341,8 +1341,8 @@
     $("jump").classList.toggle("show", !nearBottom && log.scrollHeight > log.clientHeight);
   }
 
-  function setStatus(kind, text) {
-    $("status").className = "status" + (kind ? " " + kind : "");
+  function setStatus(level, text) {
+    $("status").className = "status" + (level ? " " + level : "");
     $("statustext").textContent = text;
   }
 
@@ -1803,7 +1803,7 @@
     if (s.keys.length && s.signingkey && active) {
       nodes.push(el("div", { class: "banner ok" }, "Signing is on: commits are signed with " + active.uid));
     } else if (s.keys.length) {
-      nodes.push(el("div", { class: "banner warn" }, "A key exists but git is not configured to use it. Pick one below."));
+      nodes.push(el("div", { class: "banner warn" }, "A key exists but git is not configured to use it. Select one below."));
     } else if (s.gpg) {
       nodes.push(el("div", { class: "banner warn" }, "No GPG key in this container yet. Create one below. The key is generated inside the container and never leaves it."));
     }

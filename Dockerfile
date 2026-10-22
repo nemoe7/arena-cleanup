@@ -4,10 +4,11 @@
 #
 #   docker buildx build --platform linux/amd64,linux/arm64 -t arena-cleanup .
 #
-# Runtime needs: git (2.36+ for --force-with-lease=<ref>:<expect>), gh for PR
-# checks and for reading the GPG keys on your account, git-filter-repo for path
-# removal, and gnupg for commit signing. All four are installed here, so the
-# image is the whole environment - nothing has to exist on the host.
+# Runtime needs four tools. git 2.36+ supports --force-with-lease=<ref>:<expect>.
+# gh reads PR checks and the GPG keys on your account.
+#
+# git-filter-repo removes paths. gnupg signs commits. All four are installed
+# here, so the image is the whole environment. Nothing has to exist on the host.
 
 FROM debian:13-slim AS base
 
@@ -47,8 +48,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
 
-# A normal user with a home directory: gh, git and gpg all want one, and
-# rewriting history as root makes every object root-owned on the host.
+# A normal user with a home directory: gh, git, and gpg all want one.
+# Rewriting history as root makes every object root-owned on the host.
 RUN useradd --create-home --uid 1000 --shell /bin/bash arena
 
 WORKDIR /app
@@ -78,7 +79,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
 
 # One entry point: the web UI. Open http://localhost:8080 after `docker run`.
 #
-# No VOLUME for /repo: a bind mount is a host decision, and declaring one here
-# would create an empty anonymous volume the first time someone forgets it.
+# No VOLUME for /repo: a bind mount is a host decision. A VOLUME line would
+# create an empty anonymous volume the first time someone forgets the mount.
 ENTRYPOINT ["/usr/local/bin/arena-docker-entrypoint"]
 CMD []
