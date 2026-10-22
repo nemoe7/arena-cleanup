@@ -1,10 +1,10 @@
-<!-- nonemo: N001; nonemo: N002; nonemo: N003 -->
+<!-- nonemo: NMO001; nonemo: NMO002; nonemo: STE001 -->
 # Nemoizer rules
 
 | ID | Avoid | Use |
 | --- | --- | --- |
-| `P001` | `transmit`, `kind` | send, type |
-| `P004` | `pick` | select (advisory) |
+| `NMO001` | `transmit`, `kind` | send, type |
+| `NMO002` | `pick`, `repository` | select, repo (advisory) |
 
 ## Rotations
 
@@ -12,7 +12,7 @@ Each row matches the stem, so `picked`, `picking`, and `picks` all rotate to `se
 
 A word that shares the stem but stands on its own, like `pickle`, carries a marker instead of a narrower pattern.
 
-A row replaces its word as plain text, in lower, capital, and upper case. One stem word takes its own plain word: `picker` becomes `selector`, and `pickers` becomes `selectors`.
+A row replaces its word as plain text, in lower, capital, and upper case. Stem exceptions use their own plain words: `picker` and `pickers` become `selector` and `selectors`, and `repositories` becomes `repos`.
 
 ## Exclusions
 
@@ -24,21 +24,26 @@ A row replaces its word as plain text, in lower, capital, and upper case. One st
 - Print every nonemo marker with its path, line, rule ID, scope, and text when `nemoizer collect` or `--ignores` is used.
 
 ```python
-value = "kind"  # nonemo: N003
+value = "kind"  # nonemo: NMO001
 ```
 
 ```markdown
-<!-- nonemo: N002 -->
+<!-- nonemo: NMO002 -->
 ```
 
 ## Prose measurements
 
-| ID | Measurement | Cap |
+| ID | Metric | Cap |
 | --- | --- | --- |
-| `P002` | Words per covered sentence | Instruction or unclassified: 20; explicit description: 25 |
-| `P003` | Sentences per covered paragraph | General: 4; stricter project override |
+| `STE001` | Semicolons per covered prose line | 0 |
+| `STE002` | Words per covered sentence | Instruction or unclassified: 20; explicit description: 25 |
+| `STE003` | Passive-voice constructions per covered sentence | 0 (advisory) |
+| `STE004` | Phrasal verbs per covered sentence | 0 (advisory) |
+| `STE005` | Ellipsis (omitted subject, verb, or article) per covered sentence | 0 (advisory) |
+| `NMP001` | Sentences per covered paragraph | General: 4; stricter project override |
+| `NMO003` | Missing serial comma in a three-item list | 0 (advisory) |
 
-Default scans run rotations and length checks. `--context description` selects 25 words; other contexts use 20.
+Default scans run rotations, `STE001` semicolon checks, `STE002` sentence checks, `STE003` advisory passive-voice checks, `STE004` advisory phrasal-verb checks, `STE005` advisory ellipsis checks, and `NMP001` paragraph checks. `--context description` selects 25 words; other contexts use 20.
 
 `nemoizer prose --context instruction --paragraph-cap 4 <paths>` retains the JSON-only measurement interface. Paths are required.
 
@@ -54,10 +59,10 @@ Existing exclusions apply at the reported source line, or at file scope. Unknown
 
 | ID | Candidate |
 | --- | --- |
-| `T001` | Direct prose-literal comparison or membership check against a named output channel |
-| `T002` | Literal equality-style assertion against a known measurement name |
+| `NMT001` | Direct prose-literal comparison or membership check against a named output channel |
+| `NMT002` | Literal equality-style assertion against a known measurement name |
 
-Default scans apply T001 and T002 to discovered tests and recognized helpers. Discovery reads pytest.ini, test names, and test declarations.
+Default scans apply `NMT001` and `NMT002` to discovered tests and recognized helpers. Discovery reads pytest.ini, test names, and test declarations.
 
 `--test-helper <path>` includes another helper and can repeat. Imports alone do not classify production files as tests.
 
@@ -73,8 +78,6 @@ Assertion diagnostic messages and quoted fixture inputs are not expected-output 
 
 Existing rule-specific exclusions and the collector apply. Exit status is 1 for candidates, 2 for parser errors or invalid arguments, and 0 otherwise. Not-checked coverage is not proof of a complete review.
 
-## Legacy IDs
+## Reserved groups
 
-N001, N002, and N003 remain word-specific exclusions for transmit, pick, and kind. P001 suppresses the whole rotation group.
-
-N004 and N005 alias P002 and P003. N006 and N007 alias T001 and T002. The collector retains the original marker text and scope.
+`HMN` (`HMN000`) is reserved for human-prose rules. Legacy `P`, `T`, and `N` rule IDs are not supported.

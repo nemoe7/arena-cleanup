@@ -1,6 +1,5 @@
-# nonemo: N001
-# nonemo: N002
-# nonemo: N003
+# nonemo: NMO001
+# nonemo: NMO002
 """Check prose and test candidates, rotate words, and collect exclusions."""
 
 import argparse
@@ -19,28 +18,45 @@ from prose import COMMENT_SUFFIXES, SPECIAL_CODE_NAMES, prose_spans
 
 # (name, avoided pattern, plain word).
 # A stem word that takes its own plain word.
-EXCEPTIONS = {"picker": "selector", "pickers": "selectors"}
+EXCEPTIONS = {
+  "picker": "selector",
+  "pickers": "selectors",
+  "repositories": "repos",
+}
 ROTATIONS = (
   ("pick", r"(?<![A-Za-z0-9])pick\w*(?![A-Za-z0-9])", "select"),
   ("transmit", r"(?<![A-Za-z0-9])transmit\w*(?![A-Za-z0-9])", "send"),
   ("kind", r"(?<![A-Za-z0-9])kinds?(?![A-Za-z0-9])", "type"),
+  ("repository", r"(?<![A-Za-z0-9])repositor(?:y|ies)(?![A-Za-z0-9])", "repo"),
 )
-LEGACY_ROTATIONS = {"transmit": "N001", "pick": "N002", "kind": "N003"}
-RULE_IDS = {"transmit": "P001", "pick": "P004", "kind": "P001"}
-ADVISORY_RULE_IDS = {"P004"}
+RULE_IDS = {
+  "transmit": "NMO001",
+  "pick": "NMO002",
+  "kind": "NMO001",
+  "repository": "NMO002",
+}
+ADVISORY_RULE_IDS = {"NMO002", "NMO003", "STE003", "STE004", "STE005"}
 SENTENCE_CAPS = {"instruction": 20, "description": 25}
 PARAGRAPH_CAP = 4
-PROSE_RULE_IDS = {"sentence": "P002", "paragraph": "P003"}
-TEST_RULE_IDS = {"output_text": "T001", "measurement": "T002"}
-LEGACY_RULES = {"N004": "P002", "N005": "P003", "N006": "T001", "N007": "T002"}
+PROSE_RULE_IDS = {
+  "semicolon": "STE001",
+  "sentence": "STE002",
+  "passive": "STE003",
+  "phrasal": "STE004",
+  "ellipsis": "STE005",
+  "paragraph": "NMP001",
+  "serial_comma": "NMO003",
+}
+TEST_RULE_IDS = {"output_text": "NMT001", "measurement": "NMT002"}
+RESERVED_RULE_IDS = {"HMN000"}
 KNOWN_RULE_IDS = {
   *RULE_IDS.values(),
   *PROSE_RULE_IDS.values(),
   *TEST_RULE_IDS.values(),
-  *LEGACY_ROTATIONS.values(),
-  *LEGACY_RULES,
+  *RESERVED_RULE_IDS,
 }
 MARKER = re.compile(r"\bnonemo:[ \t]*(.*?)(?=-->|\*/|;|\s|$|\bnonemo:)")
+MARKER_SPAN = re.compile(r"\bnonemo:[ \t]*.*?(?=-->|\*/|;|\s|$|\bnonemo:)[ \t]*;?")
 # The rotation table names the avoided words, so its own rows never flag.
 TABLE_ROW = re.compile(r"^\|\s*`[^`]+`\s*\|")
 SKIP_DIRS = {
@@ -130,13 +146,8 @@ def exclusions(path, lines):
 
 
 def suppressed(code, ids, name=None):
-  """Keep legacy rotation exclusions word-specific."""
-  return (
-    code in ids
-    or (code in ADVISORY_RULE_IDS and "P001" in ids)
-    or (name is not None and LEGACY_ROTATIONS[name] in ids)
-    or any(old in ids and canonical == code for old, canonical in LEGACY_RULES.items())
-  )
+  """Return whether the active marker set suppresses a rule ID."""
+  return code in ids
 
 
 def plain(word, name, use):
@@ -154,11 +165,7 @@ def plain(word, name, use):
 def rotate(line, suppressed=frozenset()):
   """Swap each matched word for its plain word, and take the exception words first."""
   for name, pattern, use in ROTATIONS:
-    if (
-      RULE_IDS[name] in suppressed
-      or LEGACY_ROTATIONS[name] in suppressed
-      or "P001" in suppressed
-    ):
+    if RULE_IDS[name] in suppressed:
       continue
     line = re.sub(
       pattern,
@@ -338,12 +345,250 @@ def prose_counts(text):
   return sentences, paragraphs
 
 
+PASSIVE_VOICE_RE = re.compile(
+  r"\b(?:am|is|are|was|were|be|been|being)\s+"
+  r"(?:(?:not|never|always|only|also|still|often|already)\s+)?"
+  r"([a-z]{3,}ed|written|taken|given|made|done|kept|held|found|chosen|"
+  r"known|shown|seen|built|sent|run|broken|spoken|stolen|hidden|driven|drawn|"
+  r"forgiven|forgotten|frozen|grown|thrown|worn|torn)\b",
+  re.IGNORECASE,
+)
+PASSIVE_STATE_ADJECTIVES = {
+  "able",
+  "alleged",
+  "armed",
+  "ashamed",
+  "complicated",
+  "concerned",
+  "crowded",
+  "disabled",
+  "enabled",
+  "expected",
+  "experienced",
+  "fixed",
+  "interested",
+  "isolated",
+  "limited",
+  "locked",
+  "mixed",
+  "needed",
+  "pleased",
+  "prepared",
+  "related",
+  "required",
+  "reserved",
+  "restricted",
+  "satisfied",
+  "scoped",
+  "shared",
+  "signed",
+  "sorted",
+  "staged",
+  "structured",
+  "supported",
+  "supposed",
+  "tired",
+  "tracked",
+  "trusted",
+  "typed",
+  "unchanged",
+  "unexpected",
+  "unmodified",
+  "unsupported",
+  "unused",
+}
+
+
+def blank_inline_comments(line):
+  """Replace inline HTML comments on one line with spaces to preserve columns."""
+  out = []
+  cursor = 0
+  while True:
+    start = line.find("<!--", cursor)
+    if start < 0:
+      out.append(line[cursor:])
+      return "".join(out)
+    out.append(line[cursor:start])
+    end = line.find("-->", start + 4)
+    if end < 0:
+      out.append(" " * (len(line) - start))
+      return "".join(out)
+    out.append(" " * (end + 3 - start))
+    cursor = end + 3
+
+
+def prose_passives(text):
+  """Find passive-voice constructions on prose lines outside code fences and code spans."""
+  passives = []
+  fence = None
+  for index, line in enumerate(text.splitlines()):
+    number = index + 1
+    marker = re.match(r"^\s*(`{3,}|~{3,})", line)
+    if marker:
+      if fence is None:
+        fence = marker[1]
+      elif (
+        marker[1][0] == fence[0]
+        and len(marker[1]) >= len(fence)
+        and not line[marker.end() :].strip()
+      ):
+        fence = None
+      continue
+    if fence is not None or TABLE_ROW.match(line.strip()):
+      continue
+    clean = re.sub(r"(`+)(.*?)\1", lambda match: " " * len(match[0]), line)
+    clean = blank_inline_comments(clean)
+    matches = [
+      match
+      for match in PASSIVE_VOICE_RE.finditer(clean)
+      if match.group(1).lower() not in PASSIVE_STATE_ADJECTIVES
+      or re.match(r"\s+by\b", clean[match.end() :], re.IGNORECASE)
+    ]
+    if matches:
+      passives.append((number, matches[0].start() + 1, len(matches)))
+  return passives
+
+
+PHRASAL_VERB_RE = re.compile(
+  r"\b(?:carry\s+out|set\s+up|tear\s+down|spin\s+up|hand\s+over|fill\s+out|"
+  r"find\s+out|figure\s+out|point\s+out|turn\s+on|turn\s+off|look\s+up|"
+  r"back\s+up|clean\s+up|plug\s+in|bail\s+out|opt\s+in|opt\s+out|roll\s+back|"
+  r"wire\s+up|hook\s+up|boot\s+up|shut\s+down)\b",
+  re.IGNORECASE,
+)
+ELLIPSIS_RE = re.compile(
+  r",\s+(?:and|or)\s+(?:is|are|was|were|has|have|had)\b|"
+  r"\b(?:the|a|an)\s+[a-z]{3,}\s+is\s+[a-z]{3,}ed\s+and\s+[a-z]{3,}ed\b",
+  re.IGNORECASE,
+)
+SERIAL_COMMA_RE = re.compile(
+  r"\b([A-Za-z0-9_`'-]+(?:\s+[A-Za-z0-9_`'-]+){0,2}),\s+"
+  r"([A-Za-z0-9_`'-]+(?:\s+[A-Za-z0-9_`'-]+){0,2})\s+(?:and|or)\s+"
+  r"([A-Za-z0-9_`'-]+(?:\s+[A-Za-z0-9_`'-]+){0,2})(?=[.!?:;)]|\s|$)"
+)
+CLAUSE_OPENERS = {
+  "when",
+  "if",
+  "after",
+  "before",
+  "while",
+  "because",
+  "since",
+  "unless",
+  "where",
+  "once",
+  "in",
+  "on",
+  "for",
+  "from",
+  "with",
+  "without",
+  "by",
+  "at",
+  "to",
+  "under",
+  "during",
+}
+
+
+def prose_line_matches(text, matcher):
+  """Collect `(line, column, count)` on prose lines outside fences, code spans, and comments."""
+  rows = []
+  fence = None
+  for index, line in enumerate(text.splitlines()):
+    number = index + 1
+    marker = re.match(r"^\s*(`{3,}|~{3,})", line)
+    if marker:
+      if fence is None:
+        fence = marker[1]
+      elif (
+        marker[1][0] == fence[0]
+        and len(marker[1]) >= len(fence)
+        and not line[marker.end() :].strip()
+      ):
+        fence = None
+      continue
+    if fence is not None or TABLE_ROW.match(line.strip()):
+      continue
+    clean = re.sub(r"(`+)(.*?)\1", lambda match: " " * len(match[0]), line)
+    clean = blank_inline_comments(clean)
+    hits = matcher(clean)
+    if hits:
+      rows.append((number, hits[0].start() + 1, len(hits)))
+  return rows
+
+
+def prose_phrasal_verbs(text):
+  return prose_line_matches(text, lambda clean: list(PHRASAL_VERB_RE.finditer(clean)))
+
+
+def prose_ellipsis(text):
+  return prose_line_matches(text, lambda clean: list(ELLIPSIS_RE.finditer(clean)))
+
+
+def prose_serial_commas(text):
+  return prose_line_matches(
+    text,
+    lambda clean: [
+      match
+      for match in SERIAL_COMMA_RE.finditer(clean)
+      if match.group(1).split()[0].lower() not in CLAUSE_OPENERS
+    ],
+  )
+
+
+def prose_semicolons(text):
+  """Find semicolons on prose lines outside code fences, code spans, and comments."""
+  semicolons = []
+  fence = None
+  for index, line in enumerate(text.splitlines()):
+    number = index + 1
+    marker = re.match(r"^\s*(`{3,}|~{3,})", line)
+    if marker:
+      if fence is None:
+        fence = marker[1]
+      elif (
+        marker[1][0] == fence[0]
+        and len(marker[1]) >= len(fence)
+        and not line[marker.end() :].strip()
+      ):
+        fence = None
+      continue
+    if fence is not None or TABLE_ROW.match(line.strip()):
+      continue
+    clean = re.sub(r"(`+)(.*?)\1", lambda match: " " * len(match[0]), line)
+    clean = blank_inline_comments(clean)
+    clean = re.sub(
+      r"&(?:#\d+|#x[0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]*);",
+      lambda match: " " * len(match[0]),
+      clean,
+    )
+    if ";" in clean:
+      semicolons.append((number, clean.index(";") + 1, clean.count(";")))
+  return semicolons
+
+
 def prose_review(path, text, context, paragraph_cap):
   """Return unsuppressed measurable candidates for one explicit text scope."""
   lines = text.splitlines()
   file_ids, line_ids, _ = exclusions(path, lines)
   findings = []
   sentences, paragraphs = prose_counts(text)
+  code = PROSE_RULE_IDS["semicolon"]
+  if not suppressed(code, file_ids):
+    for number, column, count in prose_semicolons(text):
+      if not suppressed(code, line_ids[number - 1]):
+        findings.append(
+          {
+            "rule": code,
+            "path": str(path),
+            "line": number,
+            "column": column,
+            "count": count,
+            "cap": 0,
+            "status": "review",
+          }
+        )
   cap = SENTENCE_CAPS.get(context, SENTENCE_CAPS["instruction"])
   code = PROSE_RULE_IDS["sentence"]
   if not suppressed(code, file_ids):
@@ -360,6 +605,27 @@ def prose_review(path, text, context, paragraph_cap):
             "status": "review",
           }
         )
+  for key, detector in (
+    ("passive", prose_passives),
+    ("phrasal", prose_phrasal_verbs),
+    ("ellipsis", prose_ellipsis),
+    ("serial_comma", prose_serial_commas),
+  ):
+    code = PROSE_RULE_IDS[key]
+    if not suppressed(code, file_ids):
+      for number, column, count in detector(text):
+        if not suppressed(code, line_ids[number - 1]):
+          findings.append(
+            {
+              "rule": code,
+              "path": str(path),
+              "line": number,
+              "column": column,
+              "count": count,
+              "cap": 0,
+              "status": "advisory",
+            }
+          )
   code = PROSE_RULE_IDS["paragraph"]
   if not suppressed(code, file_ids):
     for number, count in paragraphs:
@@ -391,7 +657,10 @@ def source_prose(path, text, context, paragraph_cap):
   findings = []
   for value, first, last in spans:
     for row in prose_review(
-      path, MARKER.sub(lambda match: " " * len(match[0]), value), context, paragraph_cap
+      path,
+      MARKER_SPAN.sub(lambda match: " " * len(match[0]), value),
+      context,
+      paragraph_cap,
     ):
       if len(value.splitlines()) > last - first + 1:
         row["line"] = first
@@ -467,6 +736,7 @@ MEASUREMENTS = {
   "timeout",
   "duration",
   "elapsed",
+  "measure",
   "token_count",
   "byte_count",
   "size_bytes",
@@ -507,6 +777,12 @@ function pair(left, right, node, operator) {
     }
   }
 }
+function checkIncludes(expr, node) {
+  if (expr?.type === 'CallExpression' && expr.callee?.type === 'MemberExpression' &&
+    expr.callee.property?.name === 'includes') {
+    pair(expr.callee.object, expr.arguments[0], node, 'membership');
+  }
+}
 function visit(node) {
   if (!node || typeof node !== 'object') return;
   if (node.type === 'ImportDeclaration' && node.source.value === 'node:test') testScope = true;
@@ -518,10 +794,14 @@ function visit(node) {
     if (['assert.equal','assert.strictEqual','assert.deepEqual',
       'assert.deepStrictEqual','assert.notEqual','assert.notStrictEqual'].includes(name)) {
       pair(node.arguments[0], node.arguments[1], node, 'equality');
+      checkIncludes(node.arguments[0], node);
+      checkIncludes(node.arguments[1], node);
     } else if (name === 'assert' || name === 'assert.ok') {
       const expression = node.arguments[0];
       if (expression?.type === 'BinaryExpression' && ['==','===','!=','!=='].includes(expression.operator)) {
         pair(expression.left, expression.right, node, 'equality');
+      } else {
+        checkIncludes(expression, node);
       }
     }
   }
@@ -602,7 +882,9 @@ def python_pairs(text):
 
 
 def output_channel(name):
-  return name.split(".")[-1] in CHANNELS
+  return not name.startswith("len(") and any(
+    part.split("(")[0] in CHANNELS for part in name.split(".")
+  )
 
 
 def category(pair):
@@ -621,7 +903,7 @@ def category(pair):
     and value > 0
     and pair["operator"] == "equality"
     and (
-      actual.split(".")[-1].lower() in MEASUREMENTS
+      actual.split("(")[0].split(".")[-1].lower() in MEASUREMENTS
       or actual.startswith("px(")
       or actual.startswith("len(")
       and any(word in CHANNELS for word in re.findall(r"\w+", actual))
@@ -844,6 +1126,7 @@ def main(argv=None):
       continue
     findings.extend(
       f"{row['path']}:{row['line']}: {row['rule']} {row['count']} -> {row['cap']}"
+      + (" (advisory)" if row["rule"] in ADVISORY_RULE_IDS else "")
       for row in rows
     )
   result = review_tests(tests)

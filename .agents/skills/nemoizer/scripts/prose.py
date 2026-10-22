@@ -14,6 +14,7 @@ USERSCRIPT_HEADER_END = "==/UserScript=="
 METADATA_PROSE_KEYS = {"name", "description"}
 COMMENT_SUFFIXES = {
   ".bat",
+  ".cmd",
   ".cjs",
   ".css",
   ".html",
@@ -247,7 +248,7 @@ def span_comments(
     return html_comments(source)
   if path.suffix in HASH_SUFFIXES or path.name in SPECIAL_CODE_NAMES:
     return hash_comments(source, path.suffix, skip_shebang)
-  if path.suffix == ".bat":
+  if path.suffix in {".bat", ".cmd"}:
     return batch_comments(source)
   return None
 

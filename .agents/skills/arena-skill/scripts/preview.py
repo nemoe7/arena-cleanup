@@ -68,6 +68,8 @@ CHOICE=re.compile('^\\s*[-*]\\s+\\(([ xX]?)\\)\\s+(\\S.*?)\\s*$')
 CHECKBOX=re.compile('^\\s*[-*]\\s+\\[([ xX]?)\\]\\s+(\\S.*?)\\s*$')
 BLANK=re.compile('^(?:(.*?)[\\s:])?_{3,}\\s*$')
 ANCHOR=re.compile('\\s*\\{#([a-zA-Z0-9_-]{1,80})\\}\\s*$')
+COMMENT_ANCHOR=re.compile('<!--\\s*(?:id\\s*[:=]\\s*|#)([a-zA-Z0-9_-]{1,80})\\s*-->',re.IGNORECASE)
+MD_COMMENT_OR_CODE=re.compile('(`+)[\\s\\S]*?(?<!`)\\1(?!`)|<!--[\\s\\S]*?-->')
 BLOCK_START=re.compile('^ {0,3}(?:#{1,6}(?:\\s|$)|>|[-*+](?:\\s|$)|\\d+[.)](?:\\s|$)|(?:[-*_]\\s*){3,}$|`{3,}|~{3,})')
 TASK_REMINDER='{remaining} tasks left.'
 def fill_reminder(tail,remaining):
@@ -608,11 +610,34 @@ def formatted_selection(field,item,mapping):
 		if mapping is None:return('custom',item['label']),f"{item['label']}: {text}"
 		wrapper=mapping.get('custom_answer');return('custom',item['label']),expand_submission_template(wrapper,{'custom':text})if wrapper is not None else text
 	raise ValueError(f"{field['id']}: invalid selection or blank custom answer")
+def strip_md_comments(text):return MD_COMMENT_OR_CODE.sub(lambda match:match.group(0)if match.group(1)else'',text)
+def find_comment_anchor(text):
+	found=None
+	for match in MD_COMMENT_OR_CODE.finditer(text):
+		if match.group(1):continue
+		anchor_match=COMMENT_ANCHOR.fullmatch(match.group(0).strip())
+		if anchor_match:found=anchor_match.group(1)
+	return found
+def strip_fenced_md_comments(markdown,keep_anchors=False):
+	lines=markdown.splitlines(keepends=True);out,chunk,fence=[],[],None
+	def flush():
+		if not chunk:return
+		segment=''.join(chunk);out.append(MD_COMMENT_OR_CODE.sub(lambda match:match.group(0)if match.group(1)or keep_anchors and COMMENT_ANCHOR.fullmatch(match.group(0).strip())else'',segment));chunk.clear()
+	for line in lines:
+		if fence is not None:
+			out.append(line)
+			if line.strip().startswith(fence):fence=None
+			continue
+		opening=FENCE.match(line)
+		if opening:flush();fence=opening.group(1);out.append(line);continue
+		chunk.append(line)
+	flush();return''.join(out)
 def option_continuation(line):
-	if not line.strip()or BLOCK_START.match(line):return False
-	return not BLANK.match(line)and not ANCHOR.match(line)
+	cleaned=strip_md_comments(line)
+	if not cleaned.strip()or BLOCK_START.match(cleaned):return False
+	return not BLANK.match(cleaned)and not ANCHOR.match(cleaned)
 def parse_fields(markdown):
-	lines=markdown.splitlines();blocks,chunk,questions,used=[],[],[],set();fence,prompt,anchor,index,position=None,'',None,0,0
+	lines=strip_fenced_md_comments(markdown,keep_anchors=True).splitlines();blocks,chunk,questions,used=[],[],[],set();fence,prompt,anchor,index,position=None,'',None,0,0
 	while position<len(lines):
 		line=lines[position]
 		if fence is not None:
@@ -621,33 +646,35 @@ def parse_fields(markdown):
 			position+=1;continue
 		opening=FENCE.match(line)
 		if opening:fence=opening.group(1);chunk.append(line);position+=1;continue
-		type='choice'if CHOICE.match(line)else'checkbox'if CHECKBOX.match(line)else None;blank=None if type else BLANK.match(line)
+		comment_anchor=find_comment_anchor(line);cleaned=strip_md_comments(line)
+		if not cleaned.strip()and line.strip():
+			if comment_anchor:anchor=comment_anchor
+			position+=1;continue
+		type='choice'if CHOICE.match(cleaned)else'checkbox'if CHECKBOX.match(cleaned)else None;blank=None if type else BLANK.match(cleaned)
 		if not type and not blank:
-			chunk.append(line)
-			if line.strip():
-				prompt,anchor=prompt_text(ANCHOR.sub('',line)),None;found=ANCHOR.search(line)
-				if found:anchor=found.group(1);chunk[-1]=ANCHOR.sub('',line)
+			chunk.append(cleaned)
+			if cleaned.strip():
+				prompt=prompt_text(ANCHOR.sub('',cleaned));found=ANCHOR.search(cleaned);anchor=found.group(1)if found else comment_anchor
+				if found or comment_anchor:chunk[-1]=ANCHOR.sub('',cleaned).rstrip()
 			position+=1;continue
 		index+=1
 		if type:
 			pattern=CHOICE if type=='choice'else CHECKBOX;options,default=[],[]
 			while position<len(lines):
-				item=pattern.match(lines[position])
+				item=pattern.match(strip_md_comments(lines[position]))
 				if not item:break
 				preselected=item.group(1).lower()=='x';options.append(item.group(2))
 				if preselected:default.append(item.group(2))
 				position+=1
 				while position<len(lines)and option_continuation(lines[position]):
-					options[-1]=f"{options[-1]} {lines[position].strip()}"
+					options[-1]=f"{options[-1]} {strip_md_comments(lines[position]).strip()}"
 					if preselected:default[-1]=options[-1]
 					position+=1
 			if len(set(options))!=len(options):raise ValueError(f"Field '{prompt or index}' repeats an option; make each unique")
 			question={'type':type,'options':options,'default':default}
 		else:
 			label=(blank.group(1)or'').strip();question={'type':'text','default':[]}
-			if label:
-				prompt,anchor=prompt_text(ANCHOR.sub('',label)),None;found=ANCHOR.search(label)
-				if found:anchor=found.group(1)
+			if label:prompt=prompt_text(ANCHOR.sub('',label));found=ANCHOR.search(label);anchor=found.group(1)if found else comment_anchor
 			position+=1
 		question['prompt']=prompt or f"Field {index}";question['id']=anchor if anchor and anchor not in used else slug(question['prompt'],used);used.add(question['id']);anchor=None;blocks.append(('markdown','\n'.join(chunk)));blocks.append(('field',question));chunk=[];questions.append(question)
 	blocks.append(('markdown','\n'.join(chunk)))
@@ -656,13 +683,18 @@ def parse_fields(markdown):
 		for question in questions:
 			if question['type']!='text'and not any(custom_label(option)is not None for option in question['options']):question['options'].append('Something else...: ___')
 	return blocks,questions
+def render_inline(markdown):
+	markdown=strip_md_comments(markdown)
+	try:from markdown_it import MarkdownIt
+	except ImportError:return html.escape(markdown)
+	parser=MarkdownIt('commonmark',{'html':False}).enable(['strikethrough']);highlight_markdown(parser);parser.add_render_rule('link_open',open_link);return parser.renderInline(markdown)
 def field_html(question):
 	prompt=html.escape(question['prompt'],quote=True);name=html.escape(question['id'],quote=True);body=f'<div class="question" data-field="{name}"';body+=f' data-type="{question["type"]}">';body+=f'<small class="question-id">Question ID: <code>{name}</code></small>'
 	if question['type']=='text':return f'{body}<textarea class="answer-text" rows="2" placeholder="Answer" aria-label="{prompt}"></textarea></div>'
 	control='radio'if question['type']=='choice'else'checkbox';group=f'<div class="options" role="group" aria-label="{prompt}">'
 	for option in question['options']:
 		value=html.escape(option,quote=True);recommended=option in question['default'];checked=' checked'if recommended else'';label=custom_label(option)
-		if label is None:display=f"* {option}"if recommended else option;group+=f'<label class="option"><input type="{control}" name="{name}" value="{value}"{checked}> {html.escape(display)}</label>';continue
+		if label is None:prefix='* 'if recommended else'';group+=f'<label class="option"><input type="{control}" name="{name}" value="{value}"{checked}> <span>{prefix}{render_inline(option)}</span></label>';continue
 		named=html.escape(label,quote=True);group+=f'<label class="option"><input type="{control}" name="{name}" value="{value}"{checked} data-label="{named}" aria-label="{named}"><textarea class="custom-text" rows="1" data-custom="{named}" placeholder="Something else..." aria-label="{named}, your own answer"></textarea></label>'
 	return f"{body}{group}</div></div>"
 TASK_STATUSES='upcoming','finished'
@@ -958,14 +990,16 @@ def read_set_paths(root=None):
 		dirnames[:]=sorted(name for name in dirnames if name not in WORKSPACE_SKIP)
 		if'AGENTS.md'in filenames:agents.append(Path(dirpath)/'AGENTS.md')
 	skill=root/'.agents'/'skills'/'arena-skill'/'SKILL.md';return[path for path in[root/'ARENA.md',*sorted(agents),skill]if path.is_file()]
-INERT_COMMANDS='cd','mkdir','export','set','unset','true',':','source','.','trap','shopt','umask'
+INERT_COMMANDS='cd','mkdir','[','test','export','set','unset','true',':','source','.','trap','shopt','umask'
 def unquote_commands(line):
 	kept=[];quote='';index=0;text=str(line or'').replace('\r','\n')
 	while index<len(text):
 		char=text[index]
 		if quote:
 			if char=='\\'and quote=='"':index+=2;continue
-			if quote=='"'and(text.startswith('$(',index)or char=='`'):kept.append(' $(')
+			if quote=='"':
+				if text.startswith('$(',index):kept.append(' $(')
+				elif char=='`':kept.append(' `')
 			if char==quote:quote=''
 			index+=1;continue
 		if char in("'",'"'):quote=char;index+=1;continue
@@ -1008,13 +1042,18 @@ def egress_warning(line):
 	if not hosts:return None
 	names=', '.join(hosts);return f"arena-preview gate: {names} sits outside this sandbox's egress allowlist. The TLS handshake fails with SSL_ERROR_SYSCALL, which reads as a transient fault and never clears on a retry. Read it through the fetch_page tool instead."
 def first_blocking_piece(line):
-	for piece in command_pieces(line):
+	for piece in command_pieces(agent_line(line)):
 		tokens,index=piece_tokens(piece)
 		if index>=len(tokens):continue
-		head=tokens[index].rsplit('/',1)[-1]
+		head=tokens[index].rsplit('/',1)[-1].strip('"\'')
 		if head in INERT_COMMANDS:continue
+		if head.startswith('python')and index+1<len(tokens)and tokens[index+1].rsplit('/',1)[-1].strip('"\'')in('arena-preview','preview.py'):index+=1;head=tokens[index].rsplit('/',1)[-1].strip('"\'')
+		rest=tokens[index+1:]
 		if head in('arena-preview','preview.py'):
-			rest=tokens[index+1:]
+			if any(token.startswith('$(')for token in rest):return piece
+			if rest[:1]not in(['task'],['report'])and any('`'in token for token in rest):return piece
+			continue
+		if'--help'in rest or'-h'in rest:
 			if any(token.startswith('$(')or'`'in token for token in rest):return piece
 			continue
 		return piece
@@ -1029,7 +1068,7 @@ def piece_tokens(piece,keywords=False):
 	while index<len(tokens)and'='in tokens[index]and not tokens[index].startswith('-'):index+=1
 	if keywords:
 		while index<len(tokens)and tokens[index].strip('"\'')in SHELL_KEYWORDS:index+=1
-	if index<len(tokens)and tokens[index]=='bash':
+	if index<len(tokens)and tokens[index].rsplit('/',1)[-1].strip('"\'')in SHELL_BASENAMES:
 		index+=1
 		while index<len(tokens)and tokens[index].startswith('-'):index+=1
 	return tokens,index
@@ -1415,7 +1454,8 @@ def long_run_name(line):
 				index+=1
 		if index>=len(tokens):continue
 		head=tokens[index].lstrip('({"\'').rsplit('/',1)[-1]
-		if head in INERT_COMMANDS or head=='bash':continue
+		if head in INERT_COMMANDS or head in SHELL_BASENAMES:continue
+		if any(flag in tokens[index+1:]for flag in('--help','-h','--version','-V')):continue
 		if head in LONG_RUN_HEADS:return LONG_RUN_HEADS[head]
 		runner=long_run_words(tokens,index,head)
 		if runner:return runner
@@ -1604,17 +1644,22 @@ def autosave_record(record):
 	if record.get('type')!='userscript-autosave'or type(record.get('version'))is not int or record['version']!=1:raise ValueError('Unsupported autosave history version')
 	if not isinstance(record.get('save_id'),str):raise TypeError('Autosave save ID must be a UUID string')
 	if set(record)-{'type','version','save_id','scope','digest','core','stamp','confirmed_at','receipts'}:raise ValueError('Unsupported autosave history fields')
-	uuid.UUID(record['save_id']);autosave_scope_key(record['scope']);core=autosave_core(record['core'])
-	if autosave_digest(core)!=record.get('digest'):raise ValueError('Autosave history digest does not match')
+	uuid.UUID(record['save_id']);autosave_scope_key(record['scope']);core=autosave_core(record['core']);digest=autosave_digest(core);raw_digest=record.get('digest')
+	if raw_digest not in(digest,autosave_digest(record['core'])):raise ValueError('Autosave history digest does not match')
 	if record.get('stamp')is not None and import_stamp(record['stamp'])is None:raise ValueError('Autosave history stamp is invalid')
 	if import_stamp(record.get('confirmed_at'))is None:raise ValueError('Autosave history needs a confirmation time')
 	receipts=record.get('receipts',{})
 	if not isinstance(receipts,dict):raise TypeError('Autosave receipts must be an object')
-	for(save_id,digest)in receipts.items():
+	for(save_id,item_digest)in receipts.items():
 		uuid.UUID(save_id)
-		if not isinstance(digest,str)or not re.fullmatch('[0-9a-f]{64}',digest):raise ValueError('Invalid autosave receipt digest')
-	if record['save_id']in receipts and receipts[record['save_id']]!=record['digest']:raise ValueError('Autosave receipt conflicts with its saved state')
-	return{**record,'core':core}
+		if not isinstance(item_digest,str)or not re.fullmatch('[0-9a-f]{64}',item_digest):raise ValueError('Invalid autosave receipt digest')
+	receipts=dict(receipts)
+	if record['save_id']in receipts:
+		if receipts[record['save_id']]not in(raw_digest,digest):raise ValueError('Autosave receipt conflicts with its saved state')
+		receipts[record['save_id']]=digest
+	out={**record,'core':core,'digest':digest}
+	if'receipts'in record:out['receipts']=receipts
+	return out
 def questionnaire_command(state_dir,answers):
 	import questionnaire
 	if answers is None:print(questionnaire.INSTRUCTIONS);print(json.dumps(questionnaire.SPEC,indent=2,ensure_ascii=False));print(json.dumps(questionnaire.template(),indent=2));return 0
@@ -1665,7 +1710,7 @@ def hold_out(markdown,pattern,build,slug):
 		held.append(built);return f" preview{slug}{len(held)-1}x "
 	return re.sub(pattern,hold,markdown),held
 def put_back(rendered,held,slug):return re.sub(f"preview{slug}(\\d+)x",lambda match:held[int(match.group(1))],rendered)
-def render_report_block(markdown):tagged,held=hold_out(markdown,'(?:\\s*(?:</?(?:ul|ol|li)>)\\s*){2,}',lambda match:match.group(0).strip().lower(),'listtag');out=put_back(render(tagged),held,'listtag');out=re.sub('<p>(<(?:ul|ol)>)','\\1',out);out=re.sub('(</(?:ul|ol)>)</p>','\\1',out);return out
+def render_report_block(markdown):markdown=strip_fenced_md_comments(markdown);tagged,held=hold_out(markdown,'(?:\\s*(?:</?(?:ul|ol|li)>)\\s*){2,}',lambda match:match.group(0).strip().lower(),'listtag');out=put_back(render(tagged),held,'listtag');out=re.sub('<p>(<(?:ul|ol)>)','\\1',out);out=re.sub('(</(?:ul|ol)>)</p>','\\1',out);return out
 def render_report(markdown):
 	blocks,questions=parse_fields(markdown);parts=[]
 	for(type,item)in blocks:
@@ -1987,7 +2032,7 @@ class Store:
 	def userscript_history(self,shared=None):
 		with self.transaction(shared,autosave=False)as db:row=db.execute('SELECT value FROM meta WHERE key = ?',(AUTOSAVE_HISTORY,)).fetchone();return json.loads(row[0])if row else[]
 	def userscript_scope(self):root=self.path.parent.parent;return{'repo':root.name,'branch':workspace_branch(root)or''}
-	def userscript_snapshot(self):core,counts=self.state_lines(self.state()['notes'],self.tasks()or{});core,stamp=autosave_core_and_stamp(core);scope=self.userscript_scope();history=self.userscript_history();stamps=self.newest_stamps();rows=[row for row in history if row['scope']==scope and row.get('stamp')];return{'save_id':str(uuid.uuid4()),'scope':scope,'core':core,'digest':autosave_digest(core),'history':rows,'lastsave':rows[-1]['stamp']if rows else None,'beforelastsave':rows[-2]['stamp']if len(rows)>1 else None,'text':state_ndjson(core+history),'counts':counts,'stamp':stamp,'stamps':stamps}
+	def userscript_snapshot(self):core,counts=self.state_lines(self.state()['notes'],self.tasks()or{});core,stamp=autosave_core_and_stamp(core);scope=self.userscript_scope();history=self.userscript_history();stamps=self.newest_stamps();rows=[row for row in history if row['scope']==scope and row.get('stamp')];return{'save_id':str(uuid.uuid4()),'scope':scope,'core':core,'digest':autosave_digest(core),'history':rows,'lastsave':rows[-1]['stamp']if rows else None,'beforelastsave':rows[-2]['stamp']if len(rows)>1 else None,'text':state_ndjson(core+rows),'counts':counts,'stamp':stamp,'stamps':stamps}
 	def confirm_userscript_save(self,payload):
 		save_id,scope=payload.get('save_id'),payload.get('scope')
 		if not isinstance(save_id,str):raise TypeError('Autosave save ID must be a UUID string')
@@ -2208,7 +2253,10 @@ class Store:
 			raise
 		self.autosave();return fetch_row(result,self.path.parent)
 	def import_state(self,text,replace_tasks=False):
-		records=parse_state_import(text);history=[autosave_record(row)for row in records if row.get('type')=='userscript-autosave'];records=[row for row in records if row.get('type')!='userscript-autosave'];groups={};imported_receipts={}
+		records=parse_state_import(text);raw_history=[row for row in records if row.get('type')=='userscript-autosave'];history=[autosave_record(row)for row in raw_history];refreshed={raw_row['save_id']:(raw_row['digest'],row['digest'])for(raw_row,row)in zip(raw_history,history)if raw_row.get('digest')!=row['digest']}
+		for row in history:
+			if'receipts'in row:row['receipts']={save_id:refreshed[save_id][1]if save_id in refreshed and digest==refreshed[save_id][0]else digest for(save_id,digest)in row['receipts'].items()}
+		records=[row for row in records if row.get('type')!='userscript-autosave'];groups={};imported_receipts={}
 		for row in history:
 			key=autosave_scope_key(row['scope']);groups.setdefault(key,[]).append(row);receipts=imported_receipts.setdefault(key,{})
 			for(save_id,digest)in{**row.get('receipts',{}),row['save_id']:row['digest']}.items():
@@ -3151,11 +3199,27 @@ def _outline_html(rel_path,text):
 						if closed_entry is not None and end_line>closed_entry['end_line']:closed_entry['end_line']=end_line
 					del stack[index:];break
 	parser=OutlineHTMLParser(convert_charrefs=True);parser.feed(text);parser.close();return entries
-def outline_file(path,repo_root=None,max_entries=OUTLINE_MAX_ENTRIES):
+JS_OUTLINE_SCRIPT='\nconst fs = require("node:fs");\nconst acornPath = process.argv[1];\nconst suffix = process.argv[2];\nconst source = fs.readFileSync(0, "utf8");\nconst acorn = require(acornPath);\n\nfunction parseSource(text, ext) {\n  const modes = ext === ".cjs" ? ["script", "module"] : ext === ".mjs" ? ["module"] : ["module", "script"];\n  let firstErr = null;\n  for (const sourceType of modes) {\n    try {\n      return acorn.parse(text, {\n        ecmaVersion: "latest",\n        sourceType,\n        locations: true,\n        allowHashBang: true,\n      });\n    } catch (err) {\n      if (!firstErr) firstErr = err;\n    }\n  }\n  throw firstErr;\n}\n\nlet tree;\ntry {\n  tree = parseSource(source, suffix);\n} catch (err) {\n  const line = (err && err.loc && err.loc.line) || 1;\n  const col = err && err.loc && typeof err.loc.column === "number" ? err.loc.column + 1 : 1;\n  const msg = String((err && err.message) || "SyntaxError").replace(/\\s*\\(\\d+:\\d+\\)\\s*$/, "");\n  console.log(JSON.stringify({ error: { line, column: col, message: msg } }));\n  process.exit(0);\n}\n\nfunction sliceNode(node) {\n  if (!node || typeof node.start !== "number" || typeof node.end !== "number") return "";\n  return source.slice(node.start, node.end).replace(/\\s+/g, " ").trim();\n}\n\nfunction formatParams(params) {\n  return (params || []).map(param => sliceNode(param)).join(", ");\n}\n\nfunction propLabel(key, computed) {\n  if (!key) return "<anonymous>";\n  if (computed) return `[${sliceNode(key)}]`;\n  if (key.type === "Identifier") return key.name;\n  if (key.type === "PrivateIdentifier") return `#${key.name}`;\n  if (key.type === "Literal") return String(key.value);\n  return sliceNode(key);\n}\n\nconst entries = [];\n\nfunction addEntry(type, name, stack, signature, node, defNode) {\n  const qual = [...stack, name].join(".");\n  const spanNode = node || defNode;\n  const dNode = defNode || spanNode;\n  entries.push({\n    type,\n    name,\n    qualified_name: qual,\n    signature,\n    line: spanNode.loc.start.line,\n    def_line: dNode.loc.start.line,\n    end_line: spanNode.loc.end.line,\n  });\n  return [...stack, name];\n}\n\nfunction walkClass(classNode, className, stack, outerNode, exportPrefix) {\n  const superText = classNode.superClass ? ` extends ${sliceNode(classNode.superClass)}` : "";\n  const prefix = exportPrefix ? `${exportPrefix} ` : "";\n  const classStack = addEntry(\n    "class",\n    className,\n    stack,\n    `${prefix}class ${className}${superText}`,\n    outerNode || classNode,\n    classNode\n  );\n  const body = (classNode.body && classNode.body.body) || [];\n  for (const member of body) {\n    if (!member) continue;\n    if (member.type === "MethodDefinition") {\n      const mName = propLabel(member.key, member.computed);\n      const fn = member.value;\n      const isAsync = Boolean(fn && fn.async);\n      const isGen = Boolean(fn && fn.generator);\n      const parts = [];\n      const memberRole = member["k" + "ind"];\n      if (member.static) parts.push("static");\n      if (memberRole === "get" || memberRole === "set") parts.push(memberRole);\n      if (isAsync) parts.push("async");\n      const star = isGen ? "*" : "";\n      const prefixStr = parts.length ? `${parts.join(" ")} ` : "";\n      const sig = `${prefixStr}${star}${mName}(${formatParams(fn && fn.params)})`;\n      const methodStack = addEntry(\n        isAsync ? "async_method" : "method",\n        mName,\n        classStack,\n        sig,\n        member,\n        member\n      );\n      if (fn && fn.body) walkStatements(fn.body.body || [], methodStack, false);\n    } else if (member.type === "PropertyDefinition" && member.value) {\n      const pName = propLabel(member.key, member.computed);\n      if (\n        member.value.type === "ArrowFunctionExpression" ||\n        member.value.type === "FunctionExpression"\n      ) {\n        const fn = member.value;\n        const isAsync = Boolean(fn.async);\n        const parts = [];\n        if (member.static) parts.push("static");\n        if (isAsync) parts.push("async");\n        const prefixStr = parts.length ? `${parts.join(" ")} ` : "";\n        const sig = `${prefixStr}${pName}(${formatParams(fn.params)})`;\n        const methodStack = addEntry(\n          isAsync ? "async_method" : "method",\n          pName,\n          classStack,\n          sig,\n          member,\n          member\n        );\n        if (fn.body && fn.body.type === "BlockStatement") {\n          walkStatements(fn.body.body || [], methodStack, false);\n        }\n      }\n    }\n  }\n}\n\nfunction walkFunction(fnNode, fnName, stack, outerNode, exportPrefix) {\n  const isAsync = Boolean(fnNode.async);\n  const isGen = Boolean(fnNode.generator);\n  const prefix = exportPrefix ? `${exportPrefix} ` : "";\n  const asyncStr = isAsync ? "async " : "";\n  const fnKeyword = fnNode.type === "ArrowFunctionExpression" ? "" : `function${isGen ? "*" : ""} `;\n  const arrowSuffix = fnNode.type === "ArrowFunctionExpression" ? " =>" : "";\n  const sig = `${prefix}${asyncStr}${fnKeyword}${fnName}(${formatParams(fnNode.params)})${arrowSuffix}`;\n  const fnStack = addEntry(\n    isAsync ? "async_function" : "function",\n    fnName,\n    stack,\n    sig,\n    outerNode || fnNode,\n    fnNode\n  );\n  if (fnNode.body && fnNode.body.type === "BlockStatement") {\n    walkStatements(fnNode.body.body || [], fnStack, false);\n  }\n}\n\nfunction walkVariableDeclaration(decl, stack, topLevel, outerNode, exportPrefix) {\n  const declType = decl["k" + "ind"] || "var";\n  const prefix = exportPrefix ? `${exportPrefix} ` : "";\n  for (const declarator of decl.declarations || []) {\n    if (!declarator || !declarator.id || declarator.id.type !== "Identifier") continue;\n    const name = declarator.id.name;\n    const init = declarator.init;\n    const spanNode = (decl.declarations.length === 1 && outerNode) || declarator;\n    if (init && (init.type === "ArrowFunctionExpression" || init.type === "FunctionExpression")) {\n      const isAsync = Boolean(init.async);\n      const isGen = Boolean(init.generator);\n      const asyncStr = isAsync ? "async " : "";\n      const rhs =\n        init.type === "ArrowFunctionExpression"\n          ? `${asyncStr}(${formatParams(init.params)}) =>`\n          : `${asyncStr}function${isGen ? "*" : ""}(${formatParams(init.params)})`;\n      const fnStack = addEntry(\n        isAsync ? "async_function" : "function",\n        name,\n        stack,\n        `${prefix}${declType} ${name} = ${rhs}`,\n        spanNode,\n        declarator\n      );\n      if (init.body && init.body.type === "BlockStatement") {\n        walkStatements(init.body.body || [], fnStack, false);\n      }\n    } else if (init && init.type === "ClassExpression") {\n      walkClass(init, name, stack, spanNode, `${prefix}${declType}`);\n    } else if (topLevel) {\n      addEntry("binding", name, stack, `${prefix}${declType} ${name}`, spanNode, declarator);\n    }\n  }\n}\n\nfunction walkStatements(statements, stack, topLevel) {\n  for (const stmt of statements || []) {\n    if (!stmt) continue;\n    if (stmt.type === "FunctionDeclaration" && stmt.id) {\n      walkFunction(stmt, stmt.id.name, stack, stmt, "");\n    } else if (stmt.type === "ClassDeclaration" && stmt.id) {\n      walkClass(stmt, stmt.id.name, stack, stmt, "");\n    } else if (stmt.type === "VariableDeclaration") {\n      walkVariableDeclaration(stmt, stack, topLevel, stmt, "");\n    } else if (stmt.type === "ExportNamedDeclaration") {\n      if (stmt.declaration) {\n        const d = stmt.declaration;\n        if (d.type === "FunctionDeclaration" && d.id) {\n          walkFunction(d, d.id.name, stack, stmt, "export");\n        } else if (d.type === "ClassDeclaration" && d.id) {\n          walkClass(d, d.id.name, stack, stmt, "export");\n        } else if (d.type === "VariableDeclaration") {\n          walkVariableDeclaration(d, stack, topLevel, stmt, "export");\n        }\n      }\n    } else if (stmt.type === "ExportDefaultDeclaration") {\n      const d = stmt.declaration;\n      if (d && (d.type === "FunctionDeclaration" || d.type === "FunctionExpression")) {\n        const name = (d.id && d.id.name) || "default";\n        walkFunction(d, name, stack, stmt, "export default");\n      } else if (d && (d.type === "ClassDeclaration" || d.type === "ClassExpression")) {\n        const name = (d.id && d.id.name) || "default";\n        walkClass(d, name, stack, stmt, "export default");\n      }\n    }\n  }\n}\n\nwalkStatements(tree.body || [], [], true);\nconsole.log(JSON.stringify({ entries }));\n'
+def _outline_javascript(rel_path,text,suffix,repo_root=None,parser_dir=None,which=shutil.which,runner=subprocess.run):
+	status=discover_portable_parsers(parser_dir);acorn_entry=status['acorn']
+	if acorn_entry is None and parser_dir is None:
+		for candidate in(_outline_repo_root(repo_root),Path.cwd().resolve(),*Path(__file__).resolve().parents):
+			acorn_entry,_=_check_parser_package(candidate,'acorn',PARSER_PACKAGES['acorn'])
+			if acorn_entry is not None:break
+	node_bin=which('node')
+	if not node_bin or not acorn_entry:raise ValueError(f"{rel_path}: JavaScript outline unavailable: {status['message']}")
+	completed=runner([node_bin,'-e',JS_OUTLINE_SCRIPT,acorn_entry,suffix],input=text,capture_output=True,text=True,check=False,timeout=15)
+	if completed.returncode!=0:detail=(completed.stderr or completed.stdout or'acorn runner failed').strip();raise ValueError(f"{rel_path}: JavaScript outline failed: {detail}")
+	try:payload=json.loads(completed.stdout)
+	except json.JSONDecodeError as error:raise ValueError(f"{rel_path}: invalid JavaScript outline payload: {error}")from None
+	if'error'in payload:err=payload['error'];raise ValueError(f"{rel_path}:{err['line']}:{err['column']}: JavaScript syntax error: {err['message']}")
+	return payload['entries']
+def outline_file(path,repo_root=None,max_entries=OUTLINE_MAX_ENTRIES,parser_dir=None):
 	if type(max_entries)is not int or not 1<=max_entries<=OUTLINE_MAX_ENTRIES:raise ValueError(f"--max-entries must be an integer from 1 to {OUTLINE_MAX_ENTRIES}")
 	rel_path,resolved,text=_resolve_outline_source(path,repo_root=repo_root);suffix=resolved.suffix.lower()
 	if suffix=='.py':language='python';all_entries=_outline_python(rel_path,text)
 	elif suffix in{'.html','.htm'}:language='html';all_entries=_outline_html(rel_path,text)
+	elif suffix in{'.js','.mjs','.cjs'}:language='javascript';all_entries=_outline_javascript(rel_path,text,suffix,repo_root=repo_root,parser_dir=parser_dir)
 	else:raise ValueError(f"{rel_path}: unsupported outline file type ({suffix or'no extension'})")
 	entries=all_entries[:max_entries];total=len(all_entries);return{'path':rel_path,'language':language,'entries':entries,'total':total,'omitted':max(0,total-len(entries))}
 def format_outline(result,as_json=False):
@@ -3233,11 +3297,38 @@ def bare_script_invocation(line):
 			while words and words[0].startswith('-')and words[0]not in('-c','-m'):words.pop(0)
 		if words and words[0].endswith(('/scripts/arena-preview','/scripts/preview.py')):return True
 	return False
+def sleep_command(line):
+	lexer=shlex.shlex(agent_line(line or''),posix=False,punctuation_chars=';&|\n');lexer.whitespace=' \t\r';lexer.whitespace_split=True
+	try:tokens=list(lexer)
+	except ValueError:return False
+	piece=[]
+	for token in[*tokens,';']:
+		if token not in(';','&&','||','|','|&','&','\n'):piece.append(token);continue
+		try:words=[''.join(shlex.split(word))for word in piece]
+		except ValueError:return False
+		piece=[]
+		while words and(re.fullmatch('[A-Za-z_]\\w*=.*',words[0])or words[0]in SHELL_KEYWORDS):words.pop(0)
+		while words and words[0].rsplit('/',1)[-1]in PR_CHECK_WRAPPERS:
+			wrapper=words.pop(0).rsplit('/',1)[-1]
+			if wrapper=='command'and words and re.fullmatch('-[pVv]*[Vv][pVv]*',words[0]):words=[];break
+			while words and(words[0].startswith('-')or'='in words[0]or words[0].isdigit()):words.pop(0)
+		if not words:continue
+		head=words[0].rsplit('/',1)[-1]
+		if head in SHELL_BASENAMES:
+			for(index,word)in enumerate(words[1:-1],1):
+				if word.startswith('-')and'c'in word:
+					if sleep_command(words[index+1]):return True
+					break
+		if head=='sleep':return True
+	return False
 def pre_command(state_dir,line,command,root,done='',shell=''):
 	initial=done.split();steps=list(initial);finished=set(steps);routed=os.environ.get('ARENA_PREVIEW_ROUTE')=='1'
 	if not routed and state_file(state_dir).is_file():
-		group_store=Store(state_dir,create=False);group=str(os.getpgid(0))
-		if group_store.meta_value(CALL_GROUP_META)!=group:group_store.set_meta(CALL_GROUP_META,group);group_store.set_meta(CALL_STARTED_META,now())
+		group_store=Store(state_dir,create=False)
+		if sleep_command(command):
+			group=str(os.getpgid(0))
+			if group_store.meta_value(CALL_GROUP_META)!=group:group_store.set_meta(CALL_GROUP_META,group);group_store.set_meta(CALL_STARTED_META,now())
+		elif group_store.meta_value(CALL_GROUP_META):group_store.set_meta(CALL_GROUP_META,'')
 	def report(warning):print(warning,file=sys.stderr,flush=True)
 	def mark(step):
 		if step not in finished:finished.add(step);steps.append(step)
@@ -3285,7 +3376,7 @@ def pre_command(state_dir,line,command,root,done='',shell=''):
 		if commit_store is not None:
 			found=commit_id_report(staged_session_id_hits(commit_store,str(Path.cwd())))
 			if found:report(found);return finish(130)
-	if any(word in command for word in('preview','profile','bashrc','arena-state','git commit'))or command.startswith(('gh','sleep','true',':','test','git status','git diff','git add'))or any(word in command for word in('arena-workspace','ss -ltn','netstat -ltn')):return finish(0)
+	if any(word in command for word in('preview','profile','bashrc','arena-state','git commit','--help'))or command.startswith(('mkdir','[','gh','sleep','true',':','test','git status','git diff','git add'))or any(word in command for word in('arena-workspace','ss -ltn','netstat -ltn')):return finish(0)
 	if'git push'in command:
 		warning=worktree_warning(state_dir,'push')
 		if warning:report(warning);return finish(130)

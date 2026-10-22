@@ -13,6 +13,7 @@ compatibility: Python 3.10+, with Node.js and Acorn for JavaScript checks.
 | `transmit` | send |
 | `pick` | select |
 | `kind` | type |
+| `repository` | repo |
 
 Read references/rules.md for lint IDs and meanings.
 
@@ -23,7 +24,7 @@ python3 skills/nemoizer/scripts/nemoize.py --ignores .
 python skills/nemoizer/scripts/nemoizer collect .
 ```
 
-Print each finding as `path:line: ID word -> use`; exit 1 only for non-advisory findings. Mark P004 findings as advisory. Vendored and generated
+Print each finding as `path:line: ID word -> use`; exit 1 only for non-advisory findings. Vendored and generated
 trees are skipped, and `--ignore` adds a directory or file.
 
 `--format` rewrites the tree and prints each changed line as it was and as it
@@ -42,7 +43,7 @@ Do not rewrite exclusion markers or the rotation table; apply only unsuppressed 
 - With `nemoizer collect` or `--ignores`, print every nonemo marker: path, line, rule ID, scope, and text.
 
 
-Run rotations and sentence/paragraph-length checks by default.
+Run rotations (`NMO`), semicolon/sentence/advisory passive-voice, phrasal-verb, and ellipsis checks (`STE`), paragraph checks (`NMP`), and test reviews (`NMT`) by default.
 Limit sentences to 20 words for unclassified prose, 25 for explicit description scope.
 
 ## Prose review
@@ -55,7 +56,7 @@ Limit sentences to 20 words for unclassified prose, 25 for explicit description 
 - Remove a closer only when it repeats earlier content and adds no fact, consequence, or required action.
 - Replace aphorisms or importance claims with their supported concrete claims.
 - Remove objections only if they answer no real claim and carry no independent information.
-- Keep list items that add distinct facts, and merge only redundant items.
+- Avoid forced triads (three-item lists, three parallel examples, or three short facts plus a lesson): keep three items only if each adds a distinct fact, and merge or cut redundant ones.
 - Vary repeated sentence openings only when repetition is unintended and every claim survives.
 - Replace prose dashes unless the requested writing sample uses them, preserving each clause relation.
 - Remove redundant qualifiers only if confidence, scope, and every safety or legal condition survive.
@@ -74,6 +75,7 @@ Limit sentences to 20 words for unclassified prose, 25 for explicit description 
 - Limit instructions to 20 words and descriptions to 25 unless preserving meaning requires more.
 - Rewrite noun clusters over three words when the technical term and its meaning survive.
 - Keep one topic per paragraph within four sentences or the stricter project limit.
+- Use the serial (Oxford) comma in lists of three or more items.
 - List three or more steps or conditions, preserving their order and grouping.
 - Define uncommon technical terms when needed, and use them consistently.
 - Prefer simple tenses unless compound forms carry confidence or current relevance that must survive.
