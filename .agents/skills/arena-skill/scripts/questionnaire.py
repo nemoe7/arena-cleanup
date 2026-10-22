@@ -44,11 +44,12 @@ def loads(text):
 		confidence=row['confidence']
 		if type(confidence)not in(int,float)or not 0<=confidence<=1:raise ValueError(f"{question['id']}.confidence must be a number from 0 to 1")
 		if not known and confidence!=0:raise ValueError(f"{question['id']}.confidence must be zero when all values are unknown")
-		normalized.append({'id':question['id'],'answer':clean,'confidence':confidence})
+		normalized.append({'id':question['id'],'answer':clean,'confidence':confidence,'known':known})
 	return normalized
 def grade(text):
 	results=[]
 	for(index,row)in enumerate(loads(text)):
+		if not row['known']:results.append({'id':row['id'],'correct':None,'confidence':row['confidence']});continue
 		answer=dict(row['answer']);role=answer.pop('role')if index==1 else None;canonical=json.dumps(answer,sort_keys=True,separators=(',',':'),ensure_ascii=False);prefix=hashlib.sha256((canonical+'\x00').encode());correct=False
 		if index==1:
 			role=role or''

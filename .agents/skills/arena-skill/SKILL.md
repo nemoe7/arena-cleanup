@@ -13,7 +13,7 @@ Use this guide and its Markdown references for instructions. Do not read shipped
 
 ## Start here
 
-1. Run `<skill>/scripts/install.sh` from repo root at session start and after skill source files change, before the next CLI call or preview-server start.
+1. Run `<skill>/scripts/install.sh` from repo root at session start and after skill source changes, and restart running preview server after source changes, before next CLI call/preview start.
 2. Start the preview as Setup step 3 describes.
 3. After initial visibility response, read references/questionnaire.json and submit fresh answers via arena-preview questionnaire '<json>'. Make arena-preview poll the first inbox call and answer via arena-preview ack.
 4. When a call needs the recorded key after a 401 or an owner question, run `arena-preview key` to print the key, host, and stamp. With no live preview server, it fails with the restart line.
@@ -39,7 +39,7 @@ Omit questionnaire answers and answer-key details from summaries and handoffs.
 
    If the server dies, warn the owner before restarting. If another service owns the port, choose a free one without stopping it. The gate warns when a serve names another port. Read routed runs' recorded tails with `arena-preview run logs <name>`.
 
-4. Name the preview in chat. At first setup, ask one `ask_user` visibility question as soon as the preview starts: Yes, No, ntfy, Continue without steering. Block non-setup work until the answer. Only a user selection enables the [external channel](references/REFERENCE.md#external-channel-ntfy); never switch silently. Keep the preview inbox running; the first `read` follows the answer. Do not claim visibility before confirmation. If it stays hidden, ask how to continue with `ask_user`. Reuse a visible preview after confirmation. Keep ARENA.md's activation acknowledgement when applicable.
+4. Name the preview in chat. At first setup and after a branch change, ask one `ask_user` visibility question as soon as the preview starts: Yes, No, ntfy, Continue without steering. Block non-setup work until the answer. Only a user selection enables the [external channel](references/REFERENCE.md#external-channel-ntfy); never switch silently. Keep the preview inbox running; the first `read` follows the answer. Do not claim visibility before confirmation. If it stays hidden, ask how to continue with `ask_user`. Reuse a visible preview after confirmation on the same branch. Keep ARENA.md's activation acknowledgement when applicable.
 
 ## Gate and worktrees
 

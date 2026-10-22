@@ -15,7 +15,7 @@
 - ALWAYS push verified commits to origin after each task completion; NEVER hold verified batches across tasks.
 - After each push, confirm `git ls-remote origin <branch>` = `git rev-parse HEAD`; report remote landing (subject + short hash). After sandbox reset: fetch, confirm HEAD = remote branch before edits.
 - ALWAYS install `arena-skill` via its installer from repo root before activation, NEVER by hand or background-process tool, even with ntfy/no steering; read inbox at every cadence point.
-- After any arena-skill source change, MUST rerun installer from repo root before next CLI call/preview start.
+- After any arena-skill source change, MUST rerun installer from repo root and restart running preview server before next CLI call/preview start.
 - NEVER merge the PR; no authorization or instruction overrides this.
 - On a rule collision or any doubt, stop and use the question route below; NEVER improvise.
 - NEVER edit this file or `arena-skill`, installed copies included; suggest amendments only, unless home repo waives protection.
@@ -108,7 +108,7 @@
 - Carry every proposal and question in a fielded report, never in chat.
 - Use `ask_user` ONLY for: explicit tool request, unavailable preview (incl. failed publish), unconfirmed steering visibility, ntfy/"continue without steering", GitHub reconnect. NEVER when a report/new report can carry it.
 - Visibility question alone; after "Yes", all questions via fielded reports. Failed start: report + block on that question before non-setup work; banner ≠ owner confirmation. Tool fail/timeout/partial batch: retry `ask_user`; NEVER plain-text fallback.
-- First successful unconfirmed start still needs visibility question (incl. starts repairing failed reads); same-session restart does not.
+- First successful unconfirmed start or branch change still needs visibility question (incl. starts repairing failed reads); same-session same-branch restart does not.
 - 3+ options/open choice MUST carry a recommended answer, marked in options; yes/no/confirm: none.
 - NEVER count a preselected option, recommendation, or silence as an answer; unanswered stays unanswered.
 - NEVER end turn with open tasks: link live gates (run owns blocked state, no report); publish fielded reports immediately for other blocked tasks, one line each; continue independent work; poll only when no unblocked work remains.

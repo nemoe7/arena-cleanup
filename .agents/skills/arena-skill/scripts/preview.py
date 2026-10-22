@@ -1580,12 +1580,14 @@ AUTOSAVE_RECEIPTS='userscript-autosave-receipts'
 def autosave_core_and_stamp(records):
 	if not isinstance(records,list)or not all(isinstance(row,dict)for row in records):raise TypeError('Autosave core must be an array of records')
 	if any(row.get('type')=='userscript-autosave'for row in records):raise ValueError('Autosave core cannot contain history')
+	sources={row.get('id'):row.get('source')for row in records if'markdown'in row and isinstance(row.get('id'),str)}
 	with tempfile.TemporaryDirectory()as directory:
 		checked=Store(directory,create=True)
 		if records:checked.import_state(json.dumps(records))
 		core,_=checked.state_lines(checked.state()['notes'],checked.tasks()or{});stamp=checked.newest_stamp()
 	order=dict.fromkeys(TASK_STATUSES,0)
 	for row in core:
+		if'markdown'in row and row.get('id')in sources:row['source']=sources[row['id']]
 		status=row.get('status')
 		if status in order and'title'in row and'markdown'not in row:order[status]+=1;row['order']=order[status]
 	return core,stamp
