@@ -29,3 +29,4 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The repository card meta drops the tag count; it shows the branch, the tree state, and the drift.
 - A shallow history: one Back leaves a sub-view, the next one leaves the page.
 - The card shows `N uncommitted` only when the clone is dirty.
+- Reset to origin in the repository sidebar: fetch, check out the default branch, and reset it hard. Untracked files stay.

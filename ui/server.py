@@ -338,6 +338,41 @@ def pr_checks(branch: str, cwd: str) -> dict[str, Any] | None:
   }
 
 
+def default_branch(cwd: str) -> str:
+  head = git("symbolic-ref", "refs/remotes/origin/HEAD", cwd=cwd)
+  if head.startswith("refs/remotes/origin/"):
+    return head[len("refs/remotes/origin/") :]
+  for line in git("ls-remote", "--symref", "origin", "HEAD", cwd=cwd).splitlines():
+    if line.startswith("ref:") and "/heads/" in line:
+      return line.split("refs/heads/", 1)[1].split()[0]
+  for candidate in ("main", "master"):
+    if git("rev-parse", "--verify", "-q", f"origin/{candidate}", cwd=cwd):
+      return candidate
+  return ""
+
+
+def reset_to_origin(repo: dict[str, Any]) -> str:
+  """Put the clone back on the default branch at origin's tip; untracked files stay."""
+  cwd = repo["path"]
+  for job in JOBS.values():
+    if job.repo["id"] == repo["id"] and job.exit is None:
+      raise BadRequest("a run is in progress; cancel it first")
+  default = default_branch(cwd)
+  if not default:
+    raise BadRequest("origin has no default branch")
+  run_cmd(["git", "rebase", "--abort"], cwd=cwd)
+  steps = (
+    ["git", "fetch", "--prune", "origin"],
+    ["git", "checkout", "-q", "--force", default],
+    ["git", "reset", "--hard", "-q", f"origin/{default}"],
+  )
+  for argv in steps:
+    rc, _, err = run_cmd(argv, cwd=cwd, timeout=120)
+    if rc != 0:
+      raise BadRequest(err or f"{' '.join(argv[1:3])} failed")
+  return f"origin/{default}"
+
+
 def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
   cwd = repo["path"]
   if not os.path.isdir(cwd):
@@ -350,20 +385,7 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
   dirty = [
     ln for ln in git("status", "--porcelain", cwd=cwd).splitlines() if ln.strip()
   ]
-  default = ""
-  head = git("symbolic-ref", "refs/remotes/origin/HEAD", cwd=cwd)
-  if head.startswith("refs/remotes/origin/"):
-    default = head[len("refs/remotes/origin/") :]
-  if not default:
-    for line in git("ls-remote", "--symref", "origin", "HEAD", cwd=cwd).splitlines():
-      if line.startswith("ref:") and "/heads/" in line:
-        default = line.split("refs/heads/", 1)[1].split()[0]
-        break
-  if not default:
-    for candidate in ("main", "master"):
-      if git("rev-parse", "--verify", "-q", f"origin/{candidate}", cwd=cwd):
-        default = candidate
-        break
+  default = default_branch(cwd)
 
   arena = [
     b[len("origin/") :]
@@ -1214,6 +1236,11 @@ class Handler(BaseHTTPRequestHandler):
           self._error(err or "could not add that repository", 400)
         else:
           self._json({**entry, "status": STATUS.get(entry)}, 201)
+      elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "reset":
+        repo = self._repo(parts[2])
+        target = reset_to_origin(repo)
+        STATUS.drop(repo["id"])
+        self._json({"reset": target, "status": STATUS.get(repo)})
       elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "remove":
         repo = self.reg.remove(parts[2])
         if not repo:

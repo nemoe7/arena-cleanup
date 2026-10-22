@@ -301,6 +301,22 @@ def test_one_click_dry_run_job(ui: UI, world: World, ids: dict[str, str]) -> Non
   assert "data: " in ui.event_stream(f"/api/jobs/{job['id']}/events")
 
 
+def test_reset_to_origin(ui: UI, world: World, ids: dict[str, str]) -> None:
+  world.git("checkout", "-q", "main")
+  world.commit("someone", "someone@example.com", "2024-02-01T10:00:00+08:00", "wip")
+  (world.work / "scratch.txt").write_text("untracked\n")
+  assert world.rev() != world.rev("origin/main")
+
+  out = ui.post(f"/api/repos/{ids['repo']}/reset", {})
+  assert out["reset"] == "origin/main"
+  assert out["status"]["branch"] == "main"
+  assert out["status"]["ahead"] == 0
+  assert world.rev() == world.rev("origin/main")
+  assert (world.work / "scratch.txt").exists(), "a hard reset must keep untracked files"
+  (world.work / "scratch.txt").unlink()
+  assert ui.status("POST", "/api/repos/nope/reset", {}) == 404
+
+
 def test_the_argv_whitelist(ui: UI, ids: dict[str, str]) -> None:
   jobs = f"/api/repos/{ids['repo']}/jobs"
   assert ui.status("POST", jobs, {"action": "rm -rf /"}) == 400

@@ -28,7 +28,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ## Screens and states
 
 - Dashboard: add bar, repository cards. Empty: a hint with the add command. Error: a banner above the cards. A card shows the branch, `N uncommitted` only when the clone is dirty, and the drift.
-- Repository: options card, run card with the phase list and log, commits card. States: idle, running, done, failed, cancelled.
+- Repository: options card, run card with the phase list and log, commits card. States: idle, running, done, failed, cancelled. The sidebar ends with Reset to origin, a two-click button that checks out the default branch and resets it hard.
 - Access: GitHub sign-in, credential helper, install hint, storage rows, tools, About. Error: the banner names the failed check.
 - Signing: gpg banner when gpg is missing, key list, create card, GitHub key steps. Disabled: Create key while gpg is missing.
 - Offline: the service worker serves the shell; data requests fail with the normal error banner.

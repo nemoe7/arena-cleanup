@@ -147,7 +147,7 @@
   .env-dots span.on i { background: var(--ok); }
 
   .rm { color: var(--dim); }
-  .rm.armed { color: var(--err); border-color: rgba(240, 87, 79, .5); background: rgba(240, 87, 79, .1); }
+  .side-btn { margin: 6px 6px 0; justify-content: center; }
   .icon-btn {
     display: inline-grid; place-items: center; width: 32px; height: 32px; font-size: 16px;
     border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface-2);
@@ -177,6 +177,8 @@
   .btn.ghost { background: transparent; border-color: var(--line-2); color: var(--text); }
   .btn.ghost:hover { background: var(--surface-2); border-color: #313842; }
   .btn.ghost:disabled { color: var(--dim); border-color: var(--line); }
+  /* an armed destructive button, after the hover rule so it keeps its colour under the pointer */
+  .btn.ghost.armed, .btn.ghost.armed:hover { color: var(--err); border-color: rgba(240, 87, 79, .5); background: rgba(240, 87, 79, .1); }
   .btn.danger { color: #ff9a94; }
   .btn.danger:hover { background: rgba(240, 87, 79, .1); border-color: rgba(240, 87, 79, .35); }
   .btn.back { padding: 0 10px; }
@@ -1126,8 +1128,37 @@
       el("div", { class: "side-label" }, "HEAD"),
       el("div", { style: "padding:0 6px;color:var(--muted);font:var(--fs-1)/1.5 var(--mono);overflow-wrap:anywhere" }, s.head || "unknown"));
 
+    // Two clicks, like the card's Remove: the first arms, the second resets.
+    const target = `origin/${s.default || "?"}`;
+    let timer = 0;
+    const disarm = () => { reset.classList.remove("armed"); reset.textContent = `Reset to ${target}`; };
+    const reset = el("button", {
+      class: "btn ghost side-btn", id: "reset-btn",
+      title: "Check out the default branch and reset it hard to origin. Untracked files stay.",
+      onclick: async () => {
+        if (!reset.classList.contains("armed")) {
+          reset.classList.add("armed");
+          reset.textContent = "Discard local changes?";
+          timer = setTimeout(disarm, 4000);
+          return;
+        }
+        clearTimeout(timer);
+        reset.disabled = true;
+        try {
+          const out = await post(`/api/repos/${state.repo.id}/reset`, {});
+          toast(`reset to ${out.reset}`);
+          await refreshStatus();
+          loadCommits();
+        } catch (err) {
+          toast(err.message);
+          reset.disabled = false;
+          disarm();
+        }
+      },
+    }, `Reset to ${target}`);
+
     side.replaceChildren(
-      el("div", { class: "side-group" }, el("div", { class: "side-label" }, "Repository"), kv),
+      el("div", { class: "side-group" }, el("div", { class: "side-label" }, "Repository"), kv, reset),
       branches, head);
   }
 
