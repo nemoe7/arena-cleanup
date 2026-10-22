@@ -54,11 +54,11 @@ RUN useradd --create-home --uid 1000 --shell /bin/bash arena
 
 WORKDIR /app
 COPY pyproject.toml /app/pyproject.toml
-COPY engine.py /app/engine.py
+COPY arena-cleanup.py /app/arena-cleanup.py
 COPY ui /app/ui
 
 COPY docker-entrypoint.sh /usr/local/bin/arena-docker-entrypoint
-RUN chmod +x /app/engine.py /usr/local/bin/arena-docker-entrypoint
+RUN chmod +x /app/arena-cleanup.py /usr/local/bin/arena-docker-entrypoint
 
 ENV ARENA_HOST=0.0.0.0 \
     ARENA_PORT=8080 \

@@ -10,7 +10,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Web app, rewrite engine, Docker image, and test suite from the off-GitHub project.
-- One version source: `pyproject.toml`, read by the engine and the UI.
+- The CLI is one standard-library file, `arena-cleanup.py`, with the Windows launcher `arena-cleanup.cmd`. It runs on a PC with Python 3.11, `git`, and `gh`; the image runs the same file. It carries its own version, `pyproject.toml` carries the web app's, and a test keeps the two equal.
 - uv-managed tool chain: `uv sync` installs Ruff, shfmt, pytest, and `git-filter-repo` from `uv.lock`.
 - GitHub workflows: CI (lint, format, Markdown, suite), the pull request contract, and an advisory container scan.
 - Image publishing: a green CI run on `main` pushes `ghcr.io/nemoe7/arena-cleanup:latest` for amd64 and arm64, the only tag.

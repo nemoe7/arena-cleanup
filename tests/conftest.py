@@ -22,7 +22,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-ENGINE = ROOT / "engine.py"
+ENGINE = ROOT / "arena-cleanup.py"
 ME_EMAIL = "60245796+nemoe7@users.noreply.github.com"
 SEED_COMMITS = 5
 LOG_LINE = re.compile(

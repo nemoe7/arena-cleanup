@@ -69,6 +69,14 @@ python3 ui/server.py
 | `--port` | `8080`                                          | port                               |
 | `-v`     | off                                             | log every HTTP request             |
 
+### The CLI alone
+
+`arena-cleanup.py` is the whole tool in one standard-library file. Copy it and
+`arena-cleanup.cmd` somewhere on `PATH`, then run `arena-cleanup` inside a
+clone. It needs Python 3.11+, `git`, and a signed-in `gh`; `--path` needs
+`git-filter-repo`, and signing needs `gpg`. `arena-cleanup -h` lists the
+flags, and `arena-cleanup doctor` checks the setup.
+
 ## Use
 
 1. Paste a clone URL, a GitHub page address, or a local path into the add box
@@ -119,7 +127,7 @@ stacks into one column, and the primary actions stick to the bottom.
 The Settings page writes the identity and the claim rules into the global git
 config: `user.name`, `user.email`, `arena.claim-email`, and `arena.claim-name`.
 The claim keys are multi-valued (`git config --global --add`). While a claim key
-is unset, the matching constant at the top of `engine.py` applies:
+is unset, the matching constant at the top of `arena-cleanup.py` applies:
 `CLAIM_EMAILS` or `CLAIM_NAMES`. `ARENA_PREFIX` and `SIGN_COMMITS` stay
 constants.
 
@@ -136,9 +144,9 @@ against a whitelist before it becomes an argv; there is no shell.
 
 ```console
 uv sync
-uv run pytest                      # engine, web app, and compose tests
-uv run ruff format engine.py ui/server.py scripts/*.py tests
-uv run ruff check --fix engine.py ui/server.py scripts/*.py tests
+uv run pytest                      # CLI, web app, and compose tests
+uv run ruff format arena-cleanup.py ui/server.py scripts/*.py tests
+uv run ruff check --fix arena-cleanup.py ui/server.py scripts/*.py tests
 uv run shfmt -i 2 -w docker-entrypoint.sh
 markdownlint-cli2
 ```

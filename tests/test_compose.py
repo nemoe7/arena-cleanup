@@ -47,6 +47,16 @@ def test_the_registry_lives_on_the_home_volume() -> None:
   assert re.search(rf"^volumes:\n(?:  .*\n)*  {volume}:", COMPOSE, re.MULTILINE)
 
 
+def test_the_image_takes_the_cli_and_leaves_the_launcher() -> None:
+  # the build context is an allow list. The CLI is in it, the Windows
+  # launcher is not, and nothing opens the door for it.
+  assert DOCKERIGNORE.index("*") < DOCKERIGNORE.index("!arena-cleanup.py")
+  assert not any(
+    line.startswith(("!arena-cleanup.cmd", "!*.cmd")) for line in DOCKERIGNORE
+  )
+  assert "COPY arena-cleanup.py /app/arena-cleanup.py" in DOCKERFILE
+
+
 def test_env_files_stay_local() -> None:
   assert ".env" in GITIGNORE
   assert any(line.startswith(".env.*") for line in GITIGNORE)

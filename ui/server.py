@@ -5,7 +5,7 @@ arena-ui - the web front end for arena-cleanup.
 Serves a dashboard of remembered repositories and runs the CLI against them.
 Every button press becomes an argv, never a shell string. The process output
 streams straight back to the browser. Nothing about the rewrite logic lives
-here: engine.py stays the only thing that touches git.
+here: arena-cleanup.py stays the only thing that touches git.
 
     python3 ui/server.py [--data DIR] [--port 8080]
 
@@ -15,6 +15,7 @@ Environment: ARENA_DATA, ARENA_PORT, ARENA_HOST.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 import re
@@ -30,14 +31,25 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 UI_DIR = Path(__file__).resolve().parent
-TOOL = UI_DIR.parent / "engine.py"
+TOOL = UI_DIR.parent / "arena-cleanup.py"
 STATIC = UI_DIR / "static"
 
-sys.path.insert(0, str(UI_DIR.parent))
-import engine  # the constants are the settings page's fallbacks
+
+def load_tool() -> ModuleType:
+  """The CLI as a module: its constants are the settings page's fallbacks."""
+  spec = importlib.util.spec_from_file_location("arena_cleanup", TOOL)
+  if spec is None or spec.loader is None:
+    raise ImportError(f"cannot load {TOOL}")
+  module = importlib.util.module_from_spec(spec)
+  spec.loader.exec_module(module)
+  return module
+
+
+engine = load_tool()
 
 
 def project_version() -> str:

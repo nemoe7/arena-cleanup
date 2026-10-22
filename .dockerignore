@@ -1,9 +1,9 @@
 # Keep the build context to what the image actually needs: the version file,
-# the engine, the UI and the entrypoint. Tests, docs, screenshots, caches and
-# git metadata would only slow the build down.
+# the CLI, the UI and the entrypoint. Tests, docs, screenshots, caches, git
+# metadata, and the Windows launcher arena-cleanup.cmd stay out.
 *
 !pyproject.toml
-!engine.py
+!arena-cleanup.py
 !ui/
 !ui/**
 !docker-entrypoint.sh

@@ -1,0 +1,30 @@
+@echo off
+:: arena-cleanup - Windows launcher. nonemo:P002
+:: Put this file next to arena-cleanup.py, both somewhere on PATH, then run
+:: arena-cleanup. Every argument passes straight through, and the exit code is
+:: the script's: 0 ok, 1 error, 7 strip --check found work to do.
+setlocal
+
+set "SCRIPT=%~dp0arena-cleanup.py"
+if not exist "%SCRIPT%" (
+  echo [ERROR] arena-cleanup.py not found next to %~nx0 1>&2
+  echo         expected: %SCRIPT% 1>&2
+  exit /b 1
+)
+
+:: The py launcher first: it selects the right Python when several exist.
+:: Then python.exe on PATH.
+set "PY="
+where py >nul 2>&1 && set "PY=py -3"
+if not defined PY (
+  where python >nul 2>&1 && set "PY=python"
+)
+if not defined PY (
+  echo [ERROR] Python 3 was not found on PATH. 1>&2
+  echo         Install it from https://www.python.org/downloads/ 1>&2
+  echo         ^(tick "Add python.exe to PATH" in the installer^) 1>&2
+  exit /b 1
+)
+
+%PY% "%SCRIPT%" %*
+exit /b %ERRORLEVEL%

@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """
-Arena branch cleanup + history rewrite engine.
+arena-cleanup - Arena branch cleanup + history rewrite in one file.
 
-This is the machinery behind the web UI, not a user-facing command. The UI
-spawns it as a subprocess. Each run then gets its own process, its own stream,
-and a cancel button:
+One file, standard library only. It runs from a terminal inside any clone.
+The web UI spawns the same file as a subprocess, one process per run:
 
-    engine.py run     full flow: cleanup -> PR gate -> rewrite -> push.
-    engine.py strip   just the history rewrite.
-    engine.py doctor  verify environment / config.
+    arena-cleanup run     full flow: cleanup -> PR gate -> rewrite -> push.
+    arena-cleanup strip   just the history rewrite.
+    arena-cleanup doctor  verify environment / config.
 
-The argument surface below is the contract between ui/server.py and this file.
-ui/server.py::build_argv is the only thing that should ever construct it.
+On a PC: copy this file and arena-cleanup.cmd somewhere on PATH. It needs
+Python 3.11 or newer, git, and a signed-in gh. --path needs git-filter-repo,
+signing needs gpg.
+
+The argument surface below is also the contract with ui/server.py.
+ui/server.py::build_argv is the only code that constructs it.
 
 Flags: -n dry run, -v verbose, -b/--branch, -d/--delete-branch,
 -k/--skip-pr-check, -t/--check-timeout, -i/--check-interval, -c/--check (strip),
@@ -35,19 +38,12 @@ import subprocess
 import sys
 import tempfile
 import time
-import tomllib
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from pathlib import Path
 
-
-def project_version() -> str:
-  """The version from pyproject.toml, the one place it is set."""
-  with (Path(__file__).resolve().parent / "pyproject.toml").open("rb") as fh:
-    return tomllib.load(fh)["project"]["version"]
-
-
-__version__ = project_version()
+# the one version of this file. pyproject.toml carries the same number for the
+# web app, and tests/test_cli.py keeps the two equal.
+__version__ = "0.1.0"
 PROG = "arena-cleanup"
 
 # =============================================================================

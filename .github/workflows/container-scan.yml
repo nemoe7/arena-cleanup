@@ -7,7 +7,7 @@ on:
       - ".dockerignore"
       - "docker-entrypoint.sh"
       - "docker-compose.yml"
-      - "engine.py"
+      - "arena-cleanup.py"
       - "pyproject.toml"
       - "ui/**"
       - ".github/workflows/container-scan.yml"

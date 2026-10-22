@@ -86,9 +86,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          # The engine reads its version from pyproject.toml, so an image that lost
-          # either file fails here.
-          docker run --rm --entrypoint python3 "${IMAGE}@${DIGEST}" /app/engine.py -V
+          # The CLI prints its own version; an image that lost the file fails here.
+          docker run --rm --entrypoint python3 "${IMAGE}@${DIGEST}" /app/arena-cleanup.py -V
       - name: Export the digest
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
