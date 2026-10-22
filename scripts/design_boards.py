@@ -408,7 +408,7 @@ def views_board(shots: dict[str, bytes]) -> str:
     '<div class="row">'
     + frame(
       "Default view",
-      "Three remembered repositories, the add bar focused, the tool dots green.",
+      "Five remembered repositories, the add bar focused, the tool dots green.",
       img(shots, "dashboard", 460),
     )
     + frame(
