@@ -321,11 +321,10 @@ def sidebar_and_branch_selector(w: Walker, demo: Demo) -> None:
   sidebar = w.text("#sidebar")
   assert "Repo" in sidebar
   assert "arena/session-3" in sidebar
-  w.click('#sidebar [data-branch="arena/session-3"]', 300)
-  assert w.page.input_value("#branch") == "arena/session-3"
-  w.page.select_option("#branch", "")
-  w.page.wait_for_timeout(300)
+  assert w.count("#sidebar button[data-branch]") == 0, "arena rows are not targets"
   assert w.page.input_value("#branch") == ""
+  options = [o.text_content() for o in w.page.locator("#branch option").all()]
+  assert options == ["main (default)"]
 
 
 @step("desktop")

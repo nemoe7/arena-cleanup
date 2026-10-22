@@ -987,6 +987,10 @@ def build_argv(body: dict[str, Any], repo: dict[str, Any]) -> list[str]:
   if branch:
     if branch.startswith("-") or "\0" in branch:
       raise BadRequest(f"invalid branch {branch!r}")
+    # The page cleans a long-lived branch in place or lets the run find the
+    # arena branch itself. It never aims -b at arena/*; the CLI still can.
+    if branch.startswith(engine.ARENA_PREFIX):
+      raise BadRequest(f"the page does not target {engine.ARENA_PREFIX}* branches")
     argv += ["--branch", branch]
   # One click never guesses what to do with diverged history. The engine
   # refuses without a terminal, and the UI then offers the two choices.

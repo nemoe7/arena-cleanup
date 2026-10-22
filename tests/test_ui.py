@@ -321,6 +321,8 @@ def test_the_argv_whitelist(ui: UI, ids: dict[str, str]) -> None:
   assert ui.status("POST", jobs, {"action": "run", "branch": "--upload-pack=x"}) == 400
   assert ui.status("POST", jobs, {"action": "run", "paths": ["-x"]}) == 400
   assert ui.status("POST", jobs, {"action": "strip"}) == 400, "strip is CLI only"
+  arena = {"action": "run", "branch": "arena/session-1", "dry_run": True}
+  assert ui.status("POST", jobs, arena) == 400, "the page never targets arena/*"
   assert ui.status("POST", jobs, {"action": "run", "timeout": -5}) == 400
   assert ui.status("POST", "/api/repos/deadbeef1234/jobs", {"action": "run"}) == 404
   assert ui.status("POST", "/api/jobs/deadbeef1234/cancel") == 404

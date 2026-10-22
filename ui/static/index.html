@@ -304,8 +304,9 @@
   }
   .row-btn:hover { background: var(--surface-2); color: var(--text); }
   .row-btn .txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: var(--fs-1); }
-  .row-btn.sel { background: var(--surface-2); color: var(--text); }
-  .row-btn.sel .dot { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  /* the arena rows inform; a run finds its branch itself */
+  .row-btn.static { cursor: default; }
+  .row-btn.static:hover { background: none; color: inherit; }
   .row-btn .meta { flex: none; color: var(--dim); font: var(--fs-1) var(--mono); }
 
   .main-col { padding: 20px 24px 32px; display: flex; flex-direction: column; gap: 16px; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
@@ -680,7 +681,7 @@
           </button>
           <div class="card-body options" id="options">
             <div class="opt" id="opt-branch">
-              <div class="opt-label"><label for="branch">Target branch</label><span class="desc">clean it directly, no PR</span></div>
+              <div class="opt-label"><label for="branch">Target branch</label><span class="desc">the default runs via the arena branch; a named branch is cleaned in place</span></div>
               <select class="field mono-field" id="branch"></select>
             </div>
             <div class="opt" id="opt-paths">
@@ -1117,11 +1118,8 @@
     const branches = el("div", { class: "side-group" },
       el("div", { class: "side-label" }, "Arena branches", el("span", {}, String((s.arena || []).length))),
       ...((s.arena && s.arena.length)
-        ? s.arena.map((b) => el("button", {
-            class: "row-btn" + (state.branch === b ? " sel" : ""),
-            "data-branch": b,
-            onclick: () => { state.branch = state.branch === b ? "" : b; $("branch").value = state.branch; renderSidebar(); renderBranchSelect(); renderCommand(); },
-          }, el("i", { class: "dot", style: `background:${dotFor((s.pr || {})[b])}` }),
+        ? s.arena.map((b) => el("div", { class: "row-btn static", "data-branch": b },
+             el("i", { class: "dot", style: `background:${dotFor((s.pr || {})[b])}` }),
              el("span", { class: "txt" }, b),
              el("span", { class: "meta" }, metaFor((s.pr || {})[b], s.pr_checked))))
         : [el("div", { class: "row-btn", style: "cursor:default;color:var(--dim)" }, el("span", { class: "txt" }, "none on origin"))]));
@@ -1166,13 +1164,13 @@
 
   function renderBranchSelect() {
     const s = state.repo?.status || {};
-    const seen = new Set();
-    const options = [el("option", { value: "" }, `current (${s.branch || "?"})`)];
-    for (const b of [s.branch, s.default, ...(s.arena || [])]) {
-      if (!b || b === "?" || seen.has(b)) continue;
-      seen.add(b);
-      options.push(el("option", { value: b }, b));
-    }
+    const main = s.default || s.branch || "?";
+    const onDefault = !s.branch || s.branch === main;
+    // The default branch leads: a run on it finds the arena branch itself, so
+    // the value stays empty. A clone parked on another branch keeps that
+    // branch as "current" and offers the default branch cleaned in place.
+    const options = [el("option", { value: onDefault ? "" : main }, `${main} (default)`)];
+    if (!onDefault) options.push(el("option", { value: "" }, `current (${s.branch})`));
     $("branch").replaceChildren(...options);
     $("branch").value = state.branch;
   }
