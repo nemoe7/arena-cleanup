@@ -1387,14 +1387,22 @@
     return state.phases.reduce((n, p) => n + p.lines, 0);
   }
 
+  function clock(stamp) {
+    // the engine stamps a line in the server zone; the row shows the browser's
+    const d = new Date(stamp);
+    if (Number.isNaN(d.getTime())) return stamp.slice(11, 19);
+    return [d.getHours(), d.getMinutes(), d.getSeconds()]
+      .map((n) => String(n).padStart(2, "0")).join(":");
+  }
+
   function classify(text) {
-    const match = /^\d{4}-\d\d-\d\dT\S+\s+(INFO|OK|WARN|ERROR|DEBUG)\s+(.*)$/.exec(text);
+    const match = /^(\d{4}-\d\d-\d\dT\S+)\s+(INFO|OK|WARN|ERROR|DEBUG)\s+(.*)$/.exec(text);
     if (match) {
-      const level = match[1].toLowerCase();
+      const level = match[2].toLowerCase();
       return el("div", { class: "log-row " + (level === "debug" ? "info" : level) },
-        el("span", { class: "t" }, text.slice(11, 19)),
-        el("span", { class: "lv" }, match[1]),
-        el("span", { class: "msg" }, match[2]));
+        el("span", { class: "t" }, clock(match[1])),
+        el("span", { class: "lv" }, match[2]),
+        el("span", { class: "msg" }, match[3]));
     }
     if (/^\s{2,}\S/.test(text)) {
       return el("div", { class: "log-row cont" },

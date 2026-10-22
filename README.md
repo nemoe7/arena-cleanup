@@ -156,7 +156,7 @@ Browser checks need Playwright: `uv sync --group qa`, then `uv run playwright
 install chromium`, or a Chromium of your own.
 
 ```console
-uv run pytest tests/e2e                           # spacing and type audit
+uv run pytest tests/e2e                           # spacing audit, history depth, log clock
 uv run scripts/walk.py --out /tmp/walk            # press every control, one screenshot per step
 ```
 
