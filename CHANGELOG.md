@@ -18,7 +18,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `docs/design.md`: the design record with the type ramp, spacing scale, breakpoints, and accepted decisions.
 - Prose rules for comments, docstrings, and docs: sentences of 20 words or fewer, paragraphs of four sentences or fewer.
 - `/api/access` storage rows that name their origin under `source`.
-- UI type sizes from one ramp per width class, held in `--fs-*` tokens, and inline SVG icons.
+- UI type sizes from one ramp per width class, held in `--fs-*` tokens. Icons are Lucide glyphs inlined as SVG, with the ISC licence beside the page.
 - A 360 px layout: the signing fields, commit metadata, and access labels stack. Create key is disabled while gpg is missing.
 - The test suite as pytest under `tests/`: the engine, web app, and compose checks keep the bash fixtures. `uv run pytest` runs it, in CI too.
 - The spacing audit as a Playwright test in `tests/e2e/`, run by a second CI job. The browser walk `scripts/walk.py`, run by hand, saves its screenshots where you point it.
