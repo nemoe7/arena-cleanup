@@ -60,6 +60,19 @@ repository in its data directory.
 The image carries everything the app shells out to (`git`, `gh`,
 `git-filter-repo` and `gnupg`), so the host needs none of them.
 
+A green CI run on `main` publishes `ghcr.io/nemoe7/arena-cleanup:latest` for
+amd64 and arm64 (`.github/workflows/docker.yml`). That is the only tag, and it
+moves. The package is private, so pulling it needs a login with a token that
+carries `read:packages`:
+
+```console
+echo "$GITHUB_TOKEN" | docker login ghcr.io -u nemoe7 --password-stdin
+docker pull ghcr.io/nemoe7/arena-cleanup:latest
+docker tag ghcr.io/nemoe7/arena-cleanup:latest arena-cleanup   # the name used below
+```
+
+Or build it yourself:
+
 ```console
 git clone <this repo> && cd arena-cleanup
 
@@ -759,11 +772,14 @@ markdownlint README.md CHANGELOG.md
 The two QA tools need Playwright: `uv sync --group qa`, then
 `uv run playwright install chromium`.
 
-Three workflows run on GitHub. `ci.yml` runs the four formatting checks and
+Four workflows run on GitHub. `ci.yml` runs the four formatting checks and
 the suite on every push to `main` and every pull request. `pr-check.yml` holds pull
 requests to Conventional Commit subjects and a Summary, Changes, Validation
 body (`scripts/check_pr.py`). `container-scan.yml` builds the image and prints
 a Trivy report when an image input changes; it never fails the build.
+`docker.yml` builds the image on a native runner per architecture after a
+green CI run on `main`, puts both digests under `latest`, and deletes the
+untagged versions the move leaves behind.
 
 ### Layout
 
@@ -782,7 +798,7 @@ a Trivy report when an image input changes; it never fails the build.
 | `Dockerfile`                  | Debian slim + git, gh, git-filter-repo, gnupg            |
 | `pyproject.toml`              | the version, the dependency groups, the Ruff settings    |
 | `uv.lock`                     | the pinned tool chain `uv sync` installs                 |
-| `.github/workflows/`          | CI, the pull request contract, and the container scan    |
+| `.github/workflows/`          | CI, the PR contract, the container scan, the image push  |
 | `scripts/check_pr.py`         | the commit, title, and body contract `pr-check.yml` runs |
 
 The front end is a single page with four views (dashboard, repo, signing,
