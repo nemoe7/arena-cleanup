@@ -70,7 +70,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - `btn`: 34 px high, 12 px side padding, 8 px radius, and 44 px high on a phone. Variants: `primary`, `ghost`, and `icon-btn`.
 - `pill`: dot and word, 999 px radius, `ok`, `warn`, `mono` variants.
 - `commit`: grid `auto minmax(0, 1fr)`, the subject truncated by an ellipsis, the metadata on a second row.
-- `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`. The selected row carries a 2 px accent bar and the text colour.
+- `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`. The selected row carries a 2 px accent bar and the text colour. The name reads `Pull from <branch>`. Rows and the timeout slider are 44 px high on a phone.
 - `opt.row`: grid `128px minmax(0, 1fr) auto`; the label, the control, and Browse or the slider readout. `check`: a label with a native checkbox, `danger` colours a checked destructive option.
 - `sign-row`: label column of 120 px and a value column; on a phone the label takes a full row.
 - `sign-fields`: name and e-mail side by side; one column on a phone.

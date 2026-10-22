@@ -598,6 +598,8 @@
     .check { min-height: 44px; }
     .check input { width: 20px; height: 20px; }
     .opt.row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; }
+    .slider { height: 44px; }
+    .row-btn.select { min-height: 44px; }
     .opt.row > label { grid-column: 1 / -1; }
     .tabbar .btn { height: 46px; font-size: 15px; }
     .chip-x { padding: 4px 4px 4px 10px; }
@@ -1118,7 +1120,8 @@
       el("div", { class: "side-label" }, "Arena branches", el("span", {}, String((s.arena || []).length))),
       ...((s.arena && s.arena.length)
         ? s.arena.map((b) => el("button", { type: "button", class: "row-btn select", "data-branch": b,
-             "aria-pressed": String(selectedArena(s) === b), title: "Pull from this arena branch",
+             "aria-pressed": String(selectedArena(s) === b), "aria-label": `Pull from ${b}`,
+             title: "Pull from this arena branch",
              onclick: () => selectArena(b) },
              el("i", { class: "dot", style: `background:${dotFor((s.pr || {})[b])}` }),
              el("span", { class: "txt" }, b),
