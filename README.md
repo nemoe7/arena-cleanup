@@ -697,10 +697,32 @@ cancellation being distinguishable from a crash, and input validation.
 The path and app sections skip cleanly when `git-filter-repo` is missing; the
 summary says `SKIPPED: n section(s)` so a green run cannot hide it.
 
+### The demo
+
+`scripts/demo.py` builds a throwaway fixture and serves the UI on it: three
+local repositories with an arena branch each (`shop-web`, `billing-api`,
+`docs-site`), a stub `gh` that answers from files, the git identity the engine
+claims commits as, and a throwaway GPG key when `gpg` is installed. The server
+runs with `HOME`, `GIT_CONFIG_GLOBAL`, and `GNUPGHOME` inside the demo root, so
+the host's git, gh, and gpg state stays untouched.
+
+```console
+uv run scripts/demo.py --port 8080
+# build only, print the environment, keep the directory
+uv run scripts/demo.py --root /tmp/demo --no-serve
+```
+
+It prints the demo root and the `gh` flag file. The stub `gh` reads that
+root's `gh/` directory: `signed-in` present means `gh auth status` succeeds
+(`gh auth login` creates it), `slow` present gives every branch a PR whose
+check never finishes, `prs.json` holds each branch's PR and check rollup, and
+`gpg-keys` lists the key ids `gh api user/gpg_keys` reports. A temporary root
+is removed when the server stops.
+
 ### The two QA tools
 
 Both are local-only: they drive a real Chromium against a URL you give them and
-write their results to disk. Neither talks to a service.
+write their results to disk. Neither talks to a service. Point them at the demo.
 
 **`tools/measure.py`** walks the four views and dumps the computed padding,
 margin and gap of every element, then reports what is off the stylesheet's
@@ -732,11 +754,11 @@ python3 tools/walk.py --driver cli --url http://localhost:8080 --out /tmp/walk-c
 ```
 
 The walk flips signed-in state through `--gh-flag <file>`: it writes or removes
-that marker and then re-checks `/api/auth`, which is what the demo fixture's `gh`
-stub reads. The same fixture also supplies the signing key and the git identity,
-so start that server with `GNUPGHOME` and `GIT_CONFIG_GLOBAL` pointing at it;
-otherwise the app sees the host's `gh` and no key, and about a dozen steps fail
-for reasons that have nothing to do with the UI.
+that marker and then re-checks `/api/auth`, which is what the demo's `gh` stub
+reads: pass the `gh flag` path `scripts/demo.py` prints. The same fixture
+supplies the signing key and the git identity; against a plain server the app
+sees the host's `gh` and no key, and about a dozen steps fail for reasons that
+have nothing to do with the UI.
 
 Both drivers share one `walk_view()`, so the two runs assert the same things and
 disagree only when the driver does. The `cli` driver shells out to
@@ -800,6 +822,7 @@ untagged versions the move leaves behind.
 | `uv.lock`                     | the pinned tool chain `uv sync` installs                 |
 | `.github/workflows/`          | CI, the PR contract, the container scan, the image push  |
 | `scripts/check_pr.py`         | the commit, title, and body contract `pr-check.yml` runs |
+| `scripts/demo.py`             | throwaway repos, stub `gh`, key, and identity, served    |
 
 The front end is a single page with four views (dashboard, repo, signing,
 access). It reaches the server through one `fetch` wrapper and follows a run over
