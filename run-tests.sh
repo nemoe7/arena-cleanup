@@ -1702,8 +1702,19 @@ check "healthz answers ok" "$(curl -fsS "$API/healthz" | q 'd["ok"]')" "True"
 storage="$(curl -fsS "$API/api/storage")"
 echo "$storage" | q 'all({"survives", "mount_point"} <= set(i) for i in d["items"])' |
   grep -q True && ok "every storage item reports mount status" || bad "storage shape"
-echo "$storage" | q 'any(i["mount_point"] for i in d["items"])' |
-  grep -q True && ok "a mount point is known for at least one item" || bad "no mount point"
+# Independent oracle: walk each item path up to its nearest mount point with
+# os.path.ismount. A host that keeps every item on / makes both sides say none.
+expect_mount="$(echo "$storage" | python3 -c '
+import json, os, sys
+items = json.load(sys.stdin)["items"]
+def nearest(path):
+  while not os.path.ismount(path):
+    path = os.path.dirname(path)
+  return path
+print(any(nearest(os.path.realpath(i["path"])) != "/" for i in items))
+')"
+check "a mount point is known exactly when an item sits below a mount" \
+  "$(echo "$storage" | q 'any(i["mount_point"] for i in d["items"])')" "$expect_mount"
 
 stop_ui
 git checkout -q main && git reset -q --hard origin/main
