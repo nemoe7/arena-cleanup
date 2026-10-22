@@ -4,16 +4,18 @@ Build a throwaway demo of the UI and serve it.
 
 The fixture holds:
 
-- five local repositories: an arena branch each, one with two, and one whose
-  default branch moved on after the arena branch was pushed
-- a stub `gh` that answers from files
+- five repositories, cloned by URL like a live install: an arena branch each,
+  one with two, and one whose default branch moved on after the session
 - origins that answer to `https://github.com/demo/<name>`, mapped onto the local
   bare repositories with `url.<path>.insteadOf`
-- a git identity that matches the engine's constants
+- a stub `gh` that answers from files, signed in as the configured identity
+- a git identity that matches the engine's constants, with the credential
+  helper `gh auth setup-git` would write
 - a throwaway GPG key when `gpg` is installed
 
 Nothing touches the host's git, gh, or gpg state. The server runs with HOME,
-GIT_CONFIG_GLOBAL, and GNUPGHOME inside the demo root.
+GIT_CONFIG_GLOBAL, and GNUPGHOME inside the demo root, and without the host's
+GH_TOKEN or GITHUB_TOKEN.
 
   python3 scripts/demo.py --port 8080
   python3 scripts/demo.py --root /tmp/demo --no-serve   # build only, print env
@@ -179,8 +181,7 @@ SECOND_HISTORY = [
   ("test: retry policy\n\ngenerated cases", "tests.py", BOT),
 ]
 SESSIONS = [BRANCH_HISTORY, SECOND_HISTORY]
-# what main gains after the session, when the repository asks for it. The
-# clone does not pull them, so the card shows the drift too.
+# what main gains after the session, when the repository asks for it
 MAIN_LATER = [
   ("fix: quoting in the deploy script", "deploy.sh", OTHER),
   ("docs: release notes", "README.md", ME),
@@ -193,7 +194,7 @@ import sys
 from pathlib import Path
 
 STATE = Path(%(state)r)
-LOGIN = "demo"
+LOGIN = %(login)r
 args = sys.argv[1:]
 
 
@@ -314,6 +315,8 @@ def write_gitconfig(path: Path, key_id: str) -> None:
     "  gpgsign = false",
     "[advice]",
     "  detachedHead = false",
+    '[credential "https://github.com"]',
+    "  helper = !gh auth git-credential",
   ]
   if key_id:
     lines += ["[gpg]", "  program = gpg"]
@@ -356,22 +359,22 @@ def make_key(gnupghome: Path) -> str:
   return ""
 
 
-def make_repo(
+def make_origin(
   root: Path,
   name: str,
   branches: list[tuple[str, Any]],
   later: bool,
   env: dict[str, str],
 ) -> Path:
-  """A bare origin plus a clone on main, with arena branches of mixed authorship."""
+  """A bare origin with arena branches of mixed authorship, seeded from a throwaway clone."""
   origin = root / "origins" / f"{name}.git"
-  work = root / "repos" / name
+  work = root / "seeds" / name
   origin.parent.mkdir(parents=True, exist_ok=True)
   work.parent.mkdir(parents=True, exist_ok=True)
   run("git", "init", "--bare", "--quiet", "-b", "main", str(origin), env=env)
   run("git", "clone", "--quiet", str(origin), str(work), env=env)
-  # the clone names a GitHub URL, as a live install does. git rewrites it to
-  # the bare repository for every fetch and push.
+  # every clone names the GitHub URL, as a live install does. git rewrites it
+  # to the bare repository for every fetch and push.
   page = f"{PAGE_BASE}/{name}"
   run("git", "remote", "set-url", "origin", page, cwd=work, env=env)
   run("git", "config", "--global", f"url.{origin}.insteadOf", page, env=env)
@@ -408,10 +411,20 @@ def make_repo(
     for entry in MAIN_LATER:
       commit(*entry)
     run("git", "push", "--quiet", "origin", "main", cwd=work, env=env)
-    run(
-      "git", "reset", "--quiet", "--hard", f"HEAD~{len(MAIN_LATER)}", cwd=work, env=env
-    )
-  return work
+  return origin
+
+
+def clone_repo(name: str, later: bool, registry: Registry, env: dict[str, str]) -> None:
+  """Clone by URL into the managed directory, the way the add bar does."""
+  page = f"{PAGE_BASE}/{name}"
+  target = registry.clones / name
+  run("git", "clone", "--quiet", page, str(target), env=env)
+  entry, err = register_path(str(target), registry, source=page, managed=True)
+  if not entry:
+    raise SystemExit(f"demo: could not register {target}: {err}")
+  if later:  # the clone has not pulled, so the card shows the drift too
+    behind = f"HEAD~{len(MAIN_LATER)}"
+    run("git", "reset", "--quiet", "--hard", behind, cwd=target, env=env)
 
 
 def build(root: Path) -> dict[str, str]:
@@ -439,7 +452,7 @@ def build(root: Path) -> dict[str, str]:
     + "\n"
   )
   stub = bin_dir / "gh"
-  stub.write_text(GH_STUB % {"state": str(gh_state)})
+  stub.write_text(GH_STUB % {"state": str(gh_state), "login": ME_NAME})
   stub.chmod(0o755)
 
   env = {
@@ -453,13 +466,14 @@ def build(root: Path) -> dict[str, str]:
     env["GNUPGHOME"] = str(root / "gnupg")
   else:
     env.pop("GNUPGHOME", None)
+  # a token of the host would show up in the GitHub card; the stub needs none
+  env.pop("GH_TOKEN", None)
+  env.pop("GITHUB_TOKEN", None)
 
   registry = Registry(root / "data")
   for name, branches, later in REPOS:
-    work = make_repo(root, name, branches, later, env)
-    entry, err = register_path(str(work), registry)
-    if not entry:
-      raise SystemExit(f"demo: could not register {work}: {err}")
+    make_origin(root, name, branches, later, env)
+    clone_repo(name, later, registry, env)
   return env
 
 

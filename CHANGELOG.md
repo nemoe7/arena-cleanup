@@ -14,7 +14,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - uv-managed tool chain: `uv sync` installs Ruff, shfmt, pytest, and `git-filter-repo` from `uv.lock`.
 - GitHub workflows: CI (lint, format, Markdown, suite), the pull request contract, and an advisory container scan.
 - Image publishing: a green CI run on `main` pushes `ghcr.io/nemoe7/arena-cleanup:latest` for amd64 and arm64, the only tag.
-- `scripts/demo.py`: a throwaway fixture served by the UI for demos and the QA tools. It holds five repositories, a stub `gh`, an identity, and a GPG key. Each repository has 14 commits on main and nine on the arena branch. In `infra-tools` main moved on by two commits after the session, and `data-pipeline` keeps two arena branches. The origins answer to `https://github.com/demo/<name>`, so the page shows live-looking remotes.
+- `scripts/demo.py`: a throwaway fixture served by the UI for demos and the QA tools. It holds five repositories, a stub `gh`, an identity, and a GPG key. Each repository has 14 commits on main and nine on the arena branch. In `infra-tools` main moved on by two commits after the session, and `data-pipeline` keeps two arena branches. The origins answer to `https://github.com/demo/<name>`, so the page shows live-looking remotes. The fixture clones them by URL under its data directory. The stub `gh` is signed in as the configured identity, the credential helper is set, and the host's tokens are gone.
 - `docs/design.md`: the design record with the type ramp, spacing scale, breakpoints, and accepted decisions.
 - Prose rules for comments, docstrings, and docs: sentences of 20 words or fewer, paragraphs of four sentences or fewer.
 - `/api/access` storage rows that name their origin under `source`.
