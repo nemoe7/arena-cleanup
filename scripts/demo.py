@@ -151,26 +151,26 @@ MAIN_HISTORY = [
   ("feat: project skeleton", "app.py", OTHER),
   ("docs: usage notes", "README.md", OTHER),
   ("feat: config loading", "config.py", ME),
-  ("test: config loading", "tests.py", ME),
+  ("test: config loading", "tests/test_config.py", ME),
   ("fix: empty config file", "config.py", OTHER),
   ("feat: command line entry", "cli.py", OTHER),
   ("refactor: split the modules", "app.py", ME),
-  ("ci: add the workflow", "ci.yml", OTHER),
+  ("ci: add the workflow", ".github/workflows/ci.yml", OTHER),
   ("fix: windows paths", "config.py", ME),
   ("feat: structured logging", "log.py", OTHER),
   ("docs: configuration reference", "README.md", OTHER),
   ("chore: bump the dependencies", "pyproject.toml", OTHER),
-  ("fix: flaky timing test", "tests.py", ME),
+  ("fix: flaky timing test", "tests/test_config.py", ME),
 ]
 # the arena branch: one session of mixed authorship, with bodies to trim
 BRANCH_HISTORY = [
   ("feat: external contribution\n\nbody the human wrote", "docs.md", OTHER),
   ("feat: agent work\n\nlong body that should be trimmed", "app.py", AGENT),
   ("fix: mine already fine", "app.py", ME),
-  ("chore: bot cleanup\n\nanother body to trim", "tests.py", BOT),
+  ("chore: bot cleanup\n\nanother body to trim", "tests/test_config.py", BOT),
   ("feat: checkout form\n\nscaffolded from the issue", "checkout.py", AGENT),
   ("fix: review feedback", "checkout.py", OTHER),
-  ("test: checkout form\n\ngenerated cases", "tests.py", AGENT),
+  ("test: checkout form\n\ngenerated cases", "tests/test_checkout.py", AGENT),
   ("style: format the module", "app.py", BOT),
   ("docs: checkout notes", "docs.md", ME),
 ]
@@ -178,7 +178,7 @@ BRANCH_HISTORY = [
 SECOND_HISTORY = [
   ("feat: retry policy\n\nagent notes", "retry.py", AGENT),
   ("fix: batch size off by one", "retry.py", OTHER),
-  ("test: retry policy\n\ngenerated cases", "tests.py", BOT),
+  ("test: retry policy\n\ngenerated cases", "tests/test_retry.py", BOT),
 ]
 SESSIONS = [BRANCH_HISTORY, SECOND_HISTORY]
 # what main gains after the session, when the repository asks for it
@@ -383,6 +383,7 @@ def make_origin(
   days = itertools.count()
 
   def commit(message: str, file: str, who: tuple[str, str]) -> None:
+    (work / file).parent.mkdir(parents=True, exist_ok=True)
     with (work / file).open("a") as fh:
       fh.write(message.splitlines()[0] + "\n")
     run("git", "add", file, cwd=work, env=env)

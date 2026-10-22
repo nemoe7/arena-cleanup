@@ -370,6 +370,21 @@ def keyboard_backspace_removes_a_chip(w: Walker, demo: Demo) -> None:
 
 
 @step("desktop")
+def tree_selector_adds_a_folder_chip(w: Walker, demo: Demo) -> None:
+  w.click("#browse", 500)
+  assert w.count("#tree .tree-row") > 0
+  w.click(".tree-row[aria-expanded] >> nth=0", 500)
+  assert w.count(".tree-kids .tree-row") > 0
+  w.click(".tree-row[aria-expanded] >> nth=0 >> .tree-select", 300)
+  assert w.count(".chip-x") == 1
+  assert w.count('.tree-select[aria-pressed="true"]') == 1
+  w.click(".chip-x button >> nth=0", 300)
+  assert w.count('.tree-select[aria-pressed="true"]') == 0
+  w.click("#browse", 300)
+  assert w.page.is_hidden("#tree")
+
+
+@step("desktop")
 def timeout_input_drives_check_timeout(w: Walker, demo: Demo) -> None:
   w.page.fill("#timeout", "5")
   w.page.dispatch_event("#timeout", "input")

@@ -532,3 +532,44 @@ def test_the_commit_list_and_the_page_shell(ui: UI, ids: dict[str, str]) -> None
   assert not re.search(
     r'cmdpreview|id="cmdline"|id="emptystate"|oneclick-mobile|cmdswitch|data-cmd=', page
   ), "the removed command strip and switch"
+
+
+TREE_FILES = {"docs/guide.md": "# guide\n", "notes.txt": "notes\n"}
+
+
+def test_the_tree_route_lists_one_level_of_head(
+  ui: UI, world: World, ids: dict[str, str]
+) -> None:
+  for rel, text in TREE_FILES.items():
+    target = world.work / rel
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(text)
+  world.git("add", "-A")
+  world.commit(
+    "other-dev", "other@example.com", "2024-01-06T10:00:00+08:00", "docs: a tree\n"
+  )
+  repo = ids["repo"]
+
+  root = ui.get(f"/api/repos/{repo}/tree")
+  assert root["path"] == ""
+  names = [e["name"] for e in root["entries"]]
+  assert names.index("docs") < names.index("notes.txt"), "directories sort first"
+  types = {e["name"]: e["type"] for e in root["entries"]}
+  assert types["docs"] == "dir"
+  assert types["notes.txt"] == "file"
+  sizes = {e["name"]: e["size"] for e in root["entries"]}
+  assert sizes["notes.txt"] == len(TREE_FILES["notes.txt"])
+
+  docs = ui.get(f"/api/repos/{repo}/tree?path=/docs/")
+  assert docs["path"] == "docs"
+  assert [(e["name"], e["type"]) for e in docs["entries"]] == [("guide.md", "file")]
+
+  assert ui.status("GET", f"/api/repos/{repo}/tree?path=..") == 400
+  assert ui.status("GET", f"/api/repos/{repo}/tree?path=docs/../..") == 400
+  assert ui.status("GET", f"/api/repos/{repo}/tree?path=nope") == 404
+  assert ui.status("GET", f"/api/repos/{repo}/tree?path=notes.txt") == 404
+  assert ui.status("GET", "/api/repos/deadbeef1234/tree") == 404
+
+  page = ui.text("/")
+  assert 'id="browse"' in page
+  assert 'id="tree" role="tree"' in page

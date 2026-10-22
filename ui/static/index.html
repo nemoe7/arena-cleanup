@@ -351,6 +351,20 @@
   .chip-x { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-2); background: var(--surface-3); border-radius: 6px; padding: 2px 4px 2px 8px; font: var(--fs-1) var(--mono); }
   .chip-x button { border: 0; background: none; color: var(--dim); cursor: pointer; padding: 0 3px; font-size: var(--fs-3); line-height: 1; }
   .chip-x button:hover { color: var(--err); }
+  .link-btn { margin-left: auto; border: 0; background: none; padding: 0; color: var(--muted); font: inherit; font-size: var(--fs-1); cursor: pointer; }
+  .link-btn:hover, .link-btn[aria-expanded="true"] { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+  /* the path tree: one level of the HEAD tree per request; a row click opens
+     a folder or selects a file, the trailing button selects either */
+  .tree { margin-top: 6px; padding: 4px; max-height: 260px; overflow: auto; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface-2); font: var(--fs-1) var(--mono); }
+  .tree-row { display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 4px 0 calc(4px + (var(--depth) - 1) * 16px); border-radius: 6px; cursor: pointer; color: var(--text); }
+  .tree-row:hover { background: var(--surface-3); }
+  .tree-caret { width: 14px; display: inline-flex; color: var(--dim); transition: transform .12s; }
+  .tree-row[aria-expanded="true"] .tree-caret { transform: rotate(90deg); }
+  .tree-ico { display: inline-flex; color: var(--muted); }
+  .tree-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tree-select { margin-left: auto; display: inline-flex; align-items: center; border: 0; background: none; padding: 2px 4px; border-radius: 6px; color: var(--dim); cursor: pointer; }
+  .tree-select:hover, .tree-select[aria-pressed="true"] { color: var(--accent-hi); }
+  .tree-empty { padding: 4px 8px; color: var(--dim); }
 
   .toggles { display: flex; flex-wrap: wrap; gap: 6px; }
   .toggle {
@@ -588,6 +602,8 @@
     .chip-x button { padding: 4px 6px; }
     .chips { min-height: 44px; }
     .chips input { height: 32px; }
+    .tree-row { min-height: 44px; }
+    .tree-select { min-width: 44px; min-height: 44px; justify-content: center; }
 
     /* one scale, enforced: 12 metadata, 13 note, 14 control, 15 body,
        16 field, 19 page title. Anything with its own desktop size is
@@ -671,10 +687,12 @@
               </div>
             </details>
             <div class="opt" id="opt-paths">
-              <div class="opt-label"><label for="pathin">Remove paths</label><span class="desc">git filter-repo, every ref</span></div>
+              <div class="opt-label"><label for="pathin">Remove paths</label><span class="desc">git filter-repo, every ref</span>
+                <button type="button" class="link-btn" id="browse" aria-expanded="false" aria-controls="tree">Browse</button></div>
               <div class="chips" id="chips">
                 <input id="pathin" placeholder="add a file or folder…" spellcheck="false" autocomplete="off" aria-label="Add a path to remove">
               </div>
+              <div class="tree" id="tree" role="tree" aria-label="Files at HEAD" hidden></div>
             </div>
             <div class="opt" id="opt-div">
               <div class="opt-label"><span class="lbl">On divergence</span><span class="desc">local vs origin</span></div>
@@ -810,6 +828,9 @@
     "arrow-up": svg(paths("m5 12 7-7 7 7", "M12 19V5")),
     "arrow-down": svg(paths("M12 5v14", "m19 12-7 7-7-7")),
     "chevron-right": svg(paths("m9 18 6-6-6-6")),
+    folder: svg(paths("M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z")),
+    file: svg(paths("M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z", "M14 2v5a1 1 0 0 0 1 1h5")),
+    plus: svg(paths("M5 12h14", "M12 5v14")),
     check: svg(paths("M20 6 9 17l-5-5")),
     x: svg(paths("M18 6 6 18", "m6 6 12 12")),
     "triangle-alert": svg(paths("m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3", "M12 9v4", "M12 17h.01")),
@@ -1059,6 +1080,7 @@
     state.repo = repo;
     state.branch = "";
     state.paths = [];
+    closeTree();
     $("repo-title").textContent = repo.name;
     renderSidebar();
     renderBranchSelect();
@@ -1188,6 +1210,64 @@
         } }, icon("x")));
       box.insertBefore(chip, $("pathin"));
     }
+    for (const btn of $("tree").querySelectorAll(".tree-select")) {
+      const on = state.paths.includes(btn.closest(".tree-row").dataset.path);
+      btn.setAttribute("aria-pressed", String(on));
+      btn.replaceChildren(icon(on ? "check" : "plus"));
+    }
+  }
+
+  // -- Path tree: the HEAD tree of the open repository, one level per request
+  function closeTree() {
+    $("tree").hidden = true;
+    $("tree").replaceChildren();
+    $("browse").setAttribute("aria-expanded", "false");
+  }
+
+  function togglePath(path) {
+    state.paths = state.paths.includes(path) ? state.paths.filter((x) => x !== path) : [...state.paths, path];
+    renderPaths();
+    renderCommand();
+  }
+
+  async function treeLevel(container, rel, depth) {
+    const query = rel ? `?path=${encodeURIComponent(rel)}` : "";
+    const data = await api(`/api/repos/${state.repo.id}/tree${query}`);
+    container.replaceChildren(...data.entries.map((entry) =>
+      treeRow(entry, rel ? `${rel}/${entry.name}` : entry.name, depth)));
+    if (!data.entries.length) container.append(el("div", { class: "tree-empty" }, "empty"));
+    renderPaths();
+  }
+
+  function treeRow(entry, path, depth) {
+    const dir = entry.type === "dir";
+    const row = el("div", { class: "tree-row", role: "treeitem", tabindex: "0", "aria-level": String(depth),
+        "data-path": path, style: `--depth:${depth}`,
+        onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); row.click(); } } },
+      el("span", { class: "tree-caret" }, dir ? icon("chevron-right") : ""),
+      el("span", { class: "tree-ico" }, icon(dir ? "folder" : "file")),
+      el("span", { class: "tree-name" }, entry.name),
+      el("button", { type: "button", class: "tree-select", "aria-label": `Remove ${path}`, "aria-pressed": "false",
+        onclick: (e) => { e.stopPropagation(); togglePath(path); } }, icon("plus")));
+    const node = el("div", { class: "tree-node" }, row);
+    if (!dir) {
+      row.onclick = () => togglePath(path);
+      return node;
+    }
+    let kids = null;
+    row.setAttribute("aria-expanded", "false");
+    row.onclick = async () => {
+      const open = row.getAttribute("aria-expanded") === "true";
+      row.setAttribute("aria-expanded", String(!open));
+      if (open) { kids.hidden = true; return; }
+      if (!kids) {
+        kids = el("div", { class: "tree-kids", role: "group" });
+        node.append(kids);
+        try { await treeLevel(kids, path, depth + 1); } catch (err) { toast(err.message); }
+      }
+      kids.hidden = false;
+    };
+    return node;
   }
 
   function payload() {
@@ -1938,6 +2018,15 @@
 
   $("branch").onchange = (ev) => { state.branch = ev.target.value; renderSidebar(); renderCommand(); };
 
+  $("browse").onclick = async () => {
+    const tree = $("tree");
+    const open = tree.hidden;
+    tree.hidden = !open;
+    $("browse").setAttribute("aria-expanded", String(open));
+    if (open && !tree.childElementCount) {
+      try { await treeLevel(tree, "", 1); } catch (err) { toast(err.message); closeTree(); }
+    }
+  };
   $("pathin").onkeydown = (ev) => {
     if (ev.key === "Enter" && ev.target.value.trim()) {
       ev.preventDefault();

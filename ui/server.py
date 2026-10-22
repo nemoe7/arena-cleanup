@@ -581,6 +581,41 @@ def commits_report(repo: dict[str, Any], limit: int = 30) -> dict[str, Any]:
   }
 
 
+def tree_report(repo: dict[str, Any], rel: str) -> dict[str, Any] | None:
+  """One level of the HEAD tree under `rel`, directories first.
+
+  The path tree reads the clone, not GitHub, so a path repository works
+  too. HEAD is the tree the owner sees; a path that only old commits carried
+  stays a typed chip. None means git knows no such directory.
+  """
+  parts = [part for part in rel.split("/") if part]
+  if any(part in (".", "..") for part in parts) or "\x00" in rel:
+    raise ValueError(rel)
+  rel = "/".join(parts)
+  rc, out, _ = run_cmd(["git", "ls-tree", "-z", "-l", f"HEAD:{rel}"], cwd=repo["path"])
+  if rc != 0:
+    return None
+  types = {"tree": "dir", "blob": "file", "commit": "submodule"}
+  entries = []
+  for record in out.split("\0"):
+    if "\t" not in record:
+      continue
+    meta, name = record.split("\t", 1)
+    fields = meta.split()
+    if len(fields) != 4:
+      continue
+    mode, obj_type, _sha, size = fields
+    entries.append(
+      {
+        "name": name,
+        "type": "link" if mode == "120000" else types.get(obj_type, obj_type),
+        "size": int(size) if size.isdigit() else 0,
+      }
+    )
+  entries.sort(key=lambda e: (e["type"] != "dir", e["name"].lower()))
+  return {"path": rel, "entries": entries}
+
+
 def signing_report() -> dict[str, Any]:
   keys = secret_keys()
   git_name = global_config("user.name")
@@ -1111,6 +1146,16 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError:
           limit = 30
         self._json(commits_report(repo, limit))
+      elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "tree":
+        repo = self._repo(parts[2])
+        query = urllib.parse.parse_qs(
+          self.path.split("?", 1)[1] if "?" in self.path else ""
+        )
+        tree = tree_report(repo, query.get("path", [""])[0])
+        if tree is None:
+          self._error("no such directory", 404)
+        else:
+          self._json(tree)
       elif path == "/api/auth":
         self._json(auth_report())
       elif path == "/healthz":
