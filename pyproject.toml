@@ -1,3 +1,10 @@
+[project]
+name = "arena-cleanup"
+version = "0.1.0"
+description = "Web app that cleans an Arena agent branch, rewrites its history, signs it, and publishes it"
+requires-python = ">=3.11"
+dependencies = []
+
 [tool.ruff]
 indent-width = 2
 required-version = "0.16.6"

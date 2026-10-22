@@ -23,6 +23,7 @@ import subprocess
 import sys
 import threading
 import time
+import tomllib
 import urllib.parse
 import uuid
 from collections import deque
@@ -34,7 +35,15 @@ from typing import Any
 UI_DIR = Path(__file__).resolve().parent
 TOOL = UI_DIR.parent / "engine.py"
 STATIC = UI_DIR / "static"
-VERSION = "3.0.0"
+
+
+def project_version() -> str:
+  """The version from pyproject.toml, the one place it is set."""
+  with (UI_DIR.parent / "pyproject.toml").open("rb") as fh:
+    return tomllib.load(fh)["project"]["version"]
+
+
+VERSION = project_version()
 
 COMMANDS = {"run", "strip", "doctor"}
 MAX_LINES = 4000

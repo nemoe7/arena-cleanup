@@ -601,7 +601,7 @@ the version, uptime and how many repos are registered.
 
 ```console
 $ curl -s localhost:8080/healthz
-{"ok": true, "version": "3.0.0", "uptime": 1842.6, "repos": 3}
+{"ok": true, "version": "0.1.0", "uptime": 1842.6, "repos": 3}
 ```
 
 `/api/health` is the same payload. `docker compose ps` shows both as `healthy`;
@@ -766,6 +766,7 @@ markdownlint README.md
 | `docker/tailscale-serve.json` | the `tailscale serve` config the sidecar mounts          |
 | `.env.example`                | the settings `docker compose` reads from `.env`          |
 | `Dockerfile`                  | Debian slim + git, gh, git-filter-repo, gnupg            |
+| `pyproject.toml`              | the version, under `[project]`, and the Ruff settings    |
 
 The front end is a single page with four views (dashboard, repo, signing,
 access). It reaches the server through one `fetch` wrapper and follows a run over
