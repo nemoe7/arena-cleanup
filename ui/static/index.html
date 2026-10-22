@@ -149,7 +149,7 @@
   .rm { color: var(--dim); }
   .rm.armed { color: var(--err); border-color: rgba(240, 87, 79, .5); background: rgba(240, 87, 79, .1); }
   .icon-btn {
-    display: inline-grid; place-items: center; width: 32px; height: 32px;
+    display: inline-grid; place-items: center; width: 32px; height: 32px; font-size: 16px;
     border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface-2);
     color: var(--muted); cursor: pointer;
   }
@@ -233,7 +233,7 @@
   .repo-card:active { transform: translateY(1px); }
   .repo-head { display: flex; align-items: flex-start; gap: 10px; }
   .repo-ico {
-    width: 30px; height: 30px; border-radius: 8px; flex: none;
+    width: 30px; height: 30px; border-radius: 8px; flex: none; font-size: 16px;
     display: grid; place-items: center; background: var(--surface-3);
     border: 1px solid var(--line-2); color: var(--muted);
   }
@@ -383,6 +383,7 @@
     color: var(--dim); font-size: var(--fs-1); line-height: 1;
   }
   .phase[data-state="run"] .phase-ico { color: var(--accent-hi); }
+  .phase[data-state="run"] .phase-ico svg { animation: spin .9s linear infinite; }
   .phase[data-state="done"] .phase-ico { color: var(--ok); }
   .phase[data-state="fail"] .phase-ico { color: var(--err); }
   .phase[data-state="skip"] .phase-ico { color: var(--dim); }
@@ -614,10 +615,10 @@
     <div class="grow"></div>
     <div class="env-dots" id="env"></div>
     <button class="icon-btn" id="access-btn" title="GitHub access" aria-label="GitHub access">
-      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="5.2" cy="8" r="2.6" stroke="currentColor" stroke-width="1.2"/><path d="M7.8 8H14M11.6 8v2.2M13.2 8v1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <span class="ico-svg" data-icon="key-round" aria-hidden="true"></span>
     </button>
     <button class="icon-btn" id="signing-btn" title="Commit signing" aria-label="Commit signing">
-      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1.8 3 3.8v4.1c0 3 2.1 5.6 5 6.3 2.9-.7 5-3.3 5-6.3V3.8L8 1.8Z" stroke="currentColor" stroke-width="1.2"/><path d="M5.8 7.8 7.3 9.3l3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <span class="ico-svg" data-icon="shield-check" aria-hidden="true"></span>
     </button>
   </header>
 
@@ -652,7 +653,7 @@
       <aside class="sidebar" id="sidebar"></aside>
       <div class="main-col">
         <div class="detail-head">
-          <button class="btn ghost back" id="back"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg>All repos</button>
+          <button class="btn ghost back" id="back"><span class="ico-svg" data-icon="arrow-left" aria-hidden="true"></span>All repos</button>
           <h1 id="repo-title">…</h1>
           <span class="sub" id="repo-sub"></span>
           <div class="grow"></div>
@@ -668,7 +669,7 @@
         <section class="card" id="options-card">
           <div class="card-body options" id="options">
             <details class="opt branch-opt" id="opt-branch" open>
-              <summary class="opt-sum"><span>Target branch</span><span class="pill mono" id="branch-now">current</span><span class="caret"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></summary>
+              <summary class="opt-sum"><span>Target branch</span><span class="pill mono" id="branch-now">current</span><span class="caret"><span class="ico-svg" data-icon="chevron-right" aria-hidden="true"></span></span></summary>
               <div class="opt-body">
                 <div class="opt-label"><label class="sr-only" for="branch">Target branch</label><span class="desc">clean it directly, no PR</span></div>
                 <select class="field mono-field" id="branch"></select>
@@ -728,7 +729,7 @@
           </div>
           <div class="logwrap" id="logwrap" hidden>
             <div class="log" id="log" role="log" aria-live="polite" aria-relevant="additions"></div>
-            <button class="jump" id="jump"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14m-7-7 7 7 7-7"/></svg>latest</button>
+            <button class="jump" id="jump"><span class="ico-svg" data-icon="arrow-down" aria-hidden="true"></span>latest</button>
           </div>
         </section>
 
@@ -753,7 +754,7 @@
   <div class="view" id="view-access" hidden>
     <div class="wrap" style="max-width:760px">
       <div class="detail-head" style="margin-bottom:16px">
-        <button class="btn ghost back" id="access-back"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg>Back</button>
+        <button class="btn ghost back" id="access-back"><span class="ico-svg" data-icon="arrow-left" aria-hidden="true"></span>Back</button>
         <h1 class="page-title" tabindex="-1">GitHub access</h1>
       </div>
       <div id="access-body" class="stack"></div>
@@ -764,7 +765,7 @@
   <div class="view" id="view-signing" hidden>
     <div class="wrap" style="max-width:760px">
       <div class="detail-head" style="margin-bottom:16px">
-        <button class="btn ghost back" id="signing-back"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg>Back</button>
+        <button class="btn ghost back" id="signing-back"><span class="ico-svg" data-icon="arrow-left" aria-hidden="true"></span>Back</button>
         <h1 class="page-title" tabindex="-1">Commit signing</h1>
       </div>
       <div id="signing-body" class="stack"></div>
@@ -809,27 +810,32 @@
     signing: null,
   };
 
+  // Lucide 1.61.0 glyphs, ISC licence in LICENSE-lucide.txt beside this file. One
+  // glyph per name on its 24 px grid, drawn at 1em in the text color.
+  const svg = (inner) => `<svg viewBox="0 0 24 24">${inner}</svg>`;
+  const paths = (...ds) => ds.map((d) => `<path d="${d}"/>`).join("");
   const ICONS = {
-    repo: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="5" cy="3.5" r="1.5" stroke="currentColor"/><circle cx="5" cy="12.5" r="1.5" stroke="currentColor"/><circle cx="11.5" cy="6" r="1.5" stroke="currentColor"/><path d="M5 5v6M11.5 7.6c0 1.9-1.9 2.3-3.9 2.8" stroke="currentColor"/></svg>',
+    "arrow-left": svg(paths("m12 19-7-7 7-7", "M19 12H5")),
+    "arrow-up": svg(paths("m5 12 7-7 7 7", "M12 19V5")),
+    "arrow-down": svg(paths("M12 5v14", "m19 12-7 7-7-7")),
+    "chevron-right": svg(paths("m9 18 6-6-6-6")),
+    check: svg(paths("M20 6 9 17l-5-5")),
+    x: svg(paths("M18 6 6 18", "m6 6 12 12")),
+    "triangle-alert": svg(paths("m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3", "M12 9v4", "M12 17h.01")),
+    minus: svg(paths("M5 12h14")),
+    "circle-small": svg('<circle cx="12" cy="12" r="6"/>'),
+    "loader-circle": svg(paths("M21 12a9 9 0 1 1-6.219-8.56")),
+    "git-branch": svg(paths("M15 6a9 9 0 0 0-9 9V3") + '<circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>'),
+    "key-round": svg(paths("M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z")
+      + '<circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>'),
+    "shield-check": svg(paths("M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z", "m9 12 2 2 4-4")),
   };
-  // Line icons on a 24 px grid: 1em, stroked in the text color, so no text glyph has to render.
-  const line = (d) => `<svg viewBox="0 0 24 24"><path d="${d}"/></svg>`;
-  Object.assign(ICONS, {
-    "arrow-left": line("M19 12H5m7-7-7 7 7 7"),
-    "arrow-up": line("M12 19V5m-7 7 7-7 7 7"),
-    "arrow-down": line("M12 5v14m-7-7 7 7 7-7"),
-    "chevron-right": line("m9 6 6 6-6 6"),
-    check: line("m5 12 5 5L20 7"),
-    x: line("M6 6l12 12M18 6 6 18"),
-    warning: line("M12 3 2 21h20L12 3zm0 7v5m0 3v.5"),
-    dash: line("M6 12h12"),
-    dot: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/></svg>',
-  });
-  function icon(name, cls = name === "repo" ? "repo-ico" : "ico-svg") {
+  function icon(name, cls = "ico-svg") {
     const box = el("span", { class: cls, "aria-hidden": "true" });
     box.innerHTML = ICONS[name] || "";
     return box;
   }
+  for (const slot of document.querySelectorAll("[data-icon]")) slot.innerHTML = ICONS[slot.dataset.icon] || "";
 
   const toast = (msg) => {
     const node = $("toast");
@@ -921,7 +927,7 @@
   function repoCard(repo) {
     const s = repo.status || {};
     const head = el("div", { class: "repo-head" },
-      icon("repo"),
+      el("span", { class: "repo-ico", "aria-hidden": "true" }, icon("git-branch")),
       el("div", { style: "min-width:0" },
         el("div", { class: "repo-name" }, repo.name),
         el("div", { class: "repo-path" }, s.ok ? s.path : repo.path)));
@@ -1014,7 +1020,7 @@
     box.hidden = !state.unreachable;
     if (state.unreachable) {
       box.replaceChildren(el("div", { class: "banner err", style: "margin-bottom:16px" },
-        el("span", { class: "ico" }, icon("warning")),
+        el("span", { class: "ico" }, icon("triangle-alert")),
         el("div", { style: "flex:1" },
           el("b", {}, "Cannot reach the server."),
           " Every button here changes a git repository, so nothing is cached. Check that the container is running, then ",
@@ -1262,7 +1268,7 @@
           class: "phase-head", "aria-expanded": "false", "aria-controls": "plog-" + p.id,
           onclick: () => togglePhase(p.id),
         },
-          el("span", { class: "phase-ico", "aria-hidden": "true" }, icon("dot", "ico-svg idle")),
+          el("span", { class: "phase-ico", "aria-hidden": "true" }, icon("circle-small", "ico-svg idle")),
           el("span", { class: "phase-name" }, p.name),
           el("span", { class: "phase-sub" }, p.sub),
           el("span", { class: "phase-time" }),
@@ -1279,7 +1285,8 @@
     if (!node) return;
     node.dataset.state = p.state;
     node.querySelector(".phase-ico").replaceChildren(
-      icon({ done: "check", fail: "x", run: "dot", skip: "dash" }[p.state] || "dot", p.state === "idle" ? "ico-svg idle" : "ico-svg"));
+      icon({ done: "check", fail: "x", run: "loader-circle", skip: "minus" }[p.state] || "circle-small",
+        p.state === "idle" ? "ico-svg idle" : "ico-svg"));
     node.querySelector(".phase-sub").textContent = p.sub;
     const secs = p.start && p.end ? p.end - p.start : 0;
     const done = p.state === "done" || p.state === "fail";
@@ -1525,14 +1532,14 @@
     const gh = a.gh || {};
     if (!gh.installed) {
       box.replaceChildren(el("div", { class: "banner err", style: "margin-bottom:14px" },
-        el("span", { class: "ico" }, icon("warning")),
+        el("span", { class: "ico" }, icon("triangle-alert")),
         el("div", {}, el("b", {}, "gh is not installed in this container."),
           " Pull requests cannot be read and private repositories cannot be cloned.")));
       return;
     }
     if (!gh.authenticated) {
       box.replaceChildren(el("div", { class: "banner warn", style: "margin-bottom:14px" },
-        el("span", { class: "ico" }, icon("warning")),
+        el("span", { class: "ico" }, icon("triangle-alert")),
         el("div", { style: "flex:1" },
           el("b", {}, "GitHub is not connected."),
           " PR checks cannot be read, private clones will fail, and pushes over HTTPS have no credentials.",
@@ -1593,7 +1600,7 @@
         g.credentials_for_gh ? null : el("button", { class: "btn ghost", onclick: setupGit }, "Set up git credentials")));
     } else {
       ghNodes.push(el("div", { class: "banner warn" },
-        el("span", { class: "ico" }, icon("warning")),
+        el("span", { class: "ico" }, icon("triangle-alert")),
         el("div", {}, el("b", {}, "Not signed in to GitHub."),
           " Private clones, PR checks and HTTPS pushes will fail until gh has a token.")));
       const input = el("input", { class: "field mono-field", type: "password", id: "token-input",
@@ -1630,7 +1637,7 @@
     ];
     const gitBanner = gh.authenticated && !g.credentials_for_gh
       ? el("div", { class: "banner warn", style: "margin-bottom:10px" },
-          el("span", { class: "ico" }, icon("warning")),
+          el("span", { class: "ico" }, icon("triangle-alert")),
           el("div", {}, el("b", {}, "git has no credential helper yet."),
             " Cloning and pushing over HTTPS will fail. One click fixes it, and applies to every repo here."))
       : null;
@@ -1689,7 +1696,7 @@
           el("div", {}, el("b", {}, "This home directory is a mounted volume."),
             " Everything below survives ", el("code", {}, "docker rm"), ", a rebuild and a new image pull."))
       : el("div", { class: "banner warn", style: "margin-bottom:10px" },
-          el("span", { class: "ico" }, icon("warning")),
+          el("span", { class: "ico" }, icon("triangle-alert")),
           el("div", {}, el("b", {}, "This home directory is not a mounted volume."),
             " Credentials, keys and the repo registry live in the container's writable layer, so they are lost when the container is replaced. Mount one: ",
             el("code", {}, "-v arena-home:/home/arena")));
@@ -1788,7 +1795,7 @@
     // one, and the failure is silent, so say it here rather than in a console.
     if (state.env && state.env.secure === false) {
       steps.push(el("div", { class: "banner warn", style: "margin-top:10px" },
-        el("span", { class: "ico" }, icon("warning")),
+        el("span", { class: "ico" }, icon("triangle-alert")),
         el("div", {}, el("b", {}, "This origin is not a secure context."),
           " Browsers only install apps from ", el("code", {}, "localhost"), " or HTTPS, so installing will be refused here. ",
           "Open the app at ", el("code", {}, "http://localhost:8080"), " on the same machine, put it behind a reverse proxy with a certificate, ",
@@ -1840,7 +1847,7 @@
     // the warning the whole panel exists for
     if (active && s.github.checked && !active.on_github) {
       nodes.push(el("div", { class: "banner warn" },
-        el("span", { class: "ico" }, icon("warning")),
+        el("span", { class: "ico" }, icon("triangle-alert")),
         el("div", {},
           el("b", {}, "This key is not assigned to your GitHub account."),
           " Commits will show as “Unverified” until you add the public key at ",

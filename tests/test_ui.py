@@ -433,6 +433,12 @@ def test_pwa_assets(ui: UI) -> None:
   assert "secure" in ui.get("/api/env")
 
 
+def test_the_icon_licence_ships_beside_the_page(ui: UI) -> None:
+  code, _, raw = ui.request("GET", "/LICENSE-lucide.txt")
+  assert code == 200
+  assert raw.startswith(b"ISC License")
+
+
 def test_repos_survive_a_restart_and_can_be_forgotten(
   ui: UI, ids: dict[str, str]
 ) -> None:

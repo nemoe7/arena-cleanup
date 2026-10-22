@@ -50,8 +50,10 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 ### Icons
 
-- Inline SVG on a 24 px grid at 1 em, stroked in the text color. Names: arrow-left, arrow-up, arrow-down, chevron-right, check, x, warning, dash, and dot. Source: the `ICONS` map in `index.html`. The repository icon is a 16 px grid.
-- No text glyphs stand in for icons.
+- Lucide 1.61.0, vendored one glyph at a time into the `ICONS` map in `index.html`. Each glyph keeps its 24 px grid, drawn at 1 em and stroked at 2 in the text color.
+- Names in use: arrow-left, arrow-up, arrow-down, chevron-right, check, x, triangle-alert, minus, circle-small, loader-circle, git-branch, key-round, and shield-check.
+- Static slots carry `data-icon="<name>"` and are filled at boot. The brand mark is the project logo, not a glyph.
+- No text glyphs stand in for icons. The licence sits beside the page in `ui/static/LICENSE-lucide.txt`.
 
 ### Layout
 
@@ -83,7 +85,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - Copy follows ASD-STE100: short sentences, one action per banner, no jargon beyond git and GitHub terms.
 - Locale: English only; dates use the browser locale.
-- Fonts: Inter and JetBrains Mono, SIL Open Font License 1.1, see `ui/static/fonts/LICENSE.txt`. Icons: drawn for this project, no third-party source.
+- Fonts: Inter and JetBrains Mono, SIL Open Font License 1.1, see `ui/static/fonts/LICENSE.txt`. Icons: Lucide, ISC, see `ui/static/LICENSE-lucide.txt`.
 
 ## Behavior and data
 
@@ -101,6 +103,6 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ## Decisions and history
 
 - Accepted 2026-10-22: one type ramp per width class, held in `--fs-*` tokens, instead of the nine ad hoc sizes.
-- Accepted 2026-10-22: inline SVG icons, no icon font and no text glyphs.
+- Accepted 2026-10-22: inline SVG icons, no icon font and no text glyphs. Later that day the hand-drawn paths gave way to Lucide glyphs, as the house clause asks.
 - Accepted 2026-10-22: the even spacing scale with 1 px borders stays. The 8 px house scale is not adopted, because the dense rows need 6 and 10 px steps.
 - Accepted 2026-10-22: three breakpoints, 1180, 980, and 720 px.
