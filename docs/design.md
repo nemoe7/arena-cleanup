@@ -58,7 +58,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - Spacing scale: 2, 4, 6, 8, 10, 12, 16, 20, 24, and 32 px, with 1 px for borders.
 - Page padding `--pad`: 20 px, 16 px at 980 px and below, 14 px at 720 px and below.
-- Breakpoints: 1180 px puts the options in two columns. 980 px hides the sidebar and keeps one column. 720 px switches to the phone ramp, 44 px targets, and stacked rows.
+- Breakpoints: the options sit in two columns at every width above 980 px. 980 px hides the sidebar and keeps one column. 720 px switches to the phone ramp, 44 px targets, and stacked rows.
 - Radius `--r` 10 px for cards, 8 px for buttons and fields, 999 px for pills.
 
 ### Theme and motion
@@ -121,5 +121,6 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-22: one type ramp per width class, held in `--fs-*` tokens, instead of the nine ad hoc sizes.
 - Accepted 2026-10-22: inline SVG icons, no icon font and no text glyphs. Later that day the hand-drawn paths gave way to Lucide glyphs, as the house clause asks.
 - Accepted 2026-10-22: the even spacing scale with 1 px borders stays. The 8 px house scale is not adopted, because the dense rows need 6 and 10 px steps.
-- Accepted 2026-10-22: three breakpoints, 1180, 980, and 720 px.
+- Accepted 2026-10-22: two breakpoints, 980 and 720 px; 1180 px is the content width, not a breakpoint. Four option columns were dropped, because the divergence control overflowed between 981 and 1179 px.
+- Accepted 2026-10-22: in a narrow cell a segmented control wraps whole buttons onto a second row, never words.
 - Accepted 2026-10-22: a shallow history. The dashboard is the root entry and a sub-view is at most one entry deep. One Back leaves a sub-view, the next one leaves the page.
