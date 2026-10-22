@@ -632,7 +632,7 @@
   <div class="view" id="view-dashboard">
     <div class="wrap">
       <div class="hero">
-        <h1 tabindex="-1">Repositories</h1>
+        <h1 tabindex="-1">Repos</h1>
       </div>
 
       <div id="offline-banner" hidden></div>
@@ -640,14 +640,14 @@
 
       <div class="addbar">
         <input class="field mono-field" id="add-source" spellcheck="false" autocomplete="off"
-               placeholder="Paste a repository URL…" aria-label="Repository URL">
-        <button class="btn primary" id="add-btn">Add repository</button>
+               placeholder="Paste a repo URL…" aria-label="Repo URL">
+        <button class="btn primary" id="add-btn">Add repo</button>
       </div>
 
       <div class="grid" id="repo-grid"></div>
       <div class="empty-state" id="repo-empty" hidden>
-        <strong>No repositories yet</strong>
-        <span>Paste a repository URL above to clone it into this instance.</span>
+        <strong>No repos yet</strong>
+        <span>Paste a repo URL above to clone it into this instance.</span>
       </div>
     </div>
   </div>
@@ -989,7 +989,7 @@
         let timer = 0;
         const disarm = () => { btn.classList.remove("armed"); btn.replaceChildren(icon("x")); btn.setAttribute("aria-label", `Remove ${repo.name}`); };
         const btn = el("button", {
-          class: "btn ghost rm", title: "Forget this repository", "aria-label": `Remove ${repo.name}`,
+          class: "btn ghost rm", title: "Forget this repo", "aria-label": `Remove ${repo.name}`,
           onclick: async (e) => {
             e.stopPropagation();
             if (!btn.classList.contains("armed")) {
@@ -1038,7 +1038,7 @@
         el("span", { class: "ico" }, icon("triangle-alert")),
         el("div", { style: "flex:1" },
           el("b", {}, "Cannot reach the server."),
-          " Every button here changes a git repository, so nothing is cached. Check that the container is running, then ",
+          " Every button here changes a git repo, so nothing is cached. Check that the container is running, then ",
           el("button", { class: "btn ghost", style: "padding:2px 8px;margin-left:4px", onclick: () => loadRepos() }, "retry"), ".")));
     }
   }
@@ -1065,7 +1065,7 @@
       toast(err.message);
     } finally {
       btn.disabled = false;
-      btn.textContent = "Add repository";
+      btn.textContent = "Add repo";
     }
   }
 
@@ -1158,7 +1158,7 @@
     }, `Reset to ${target}`);
 
     side.replaceChildren(
-      el("div", { class: "side-group" }, el("div", { class: "side-label" }, "Repository"), kv, reset),
+      el("div", { class: "side-group" }, el("div", { class: "side-label" }, "Repo"), kv, reset),
       branches, head);
   }
 
@@ -1576,7 +1576,7 @@
       box.replaceChildren(el("div", { class: "banner err", style: "margin-bottom:14px" },
         el("span", { class: "ico" }, icon("triangle-alert")),
         el("div", {}, el("b", {}, "gh is not installed in this container."),
-          " Pull requests cannot be read and private repositories cannot be cloned.")));
+          " Pull requests cannot be read and private repos cannot be cloned.")));
       return;
     }
     if (!gh.authenticated) {
@@ -1629,7 +1629,7 @@
         el("div", {}, el("b", {}, `Signed in as @${gh.login}`), ` on ${gh.host}`,
           gh.source === "environment" ? ". The token comes from the GH_TOKEN environment variable." : ".")));
       if (gh.scopes) {
-        const missing = !/\brepo\b/.test(gh.scopes) ? " · no repo scope, so private repositories and PR checks are invisible" : "";
+        const missing = !/\brepo\b/.test(gh.scopes) ? " · no repo scope, so private repos and PR checks are invisible" : "";
         ghNodes.push(pillRow("token scopes", el("span", { class: "mono", style: "color:var(--muted)" }, gh.scopes + missing)));
       }
       ghNodes.push(el("div", { style: "display:flex;gap:8px;margin-top:4px" },
@@ -1692,7 +1692,7 @@
         gitBanner || el("div", {}),
         ...gitRows,
         el("div", { class: "hint", style: "margin-top:10px" },
-          "Repositories cloned with a ", el("code", {}, "git@github.com:"), " URL use SSH instead and ignore the credential helper. To use your own SSH key, mount it: ",
+          "Repos cloned with a ", el("code", {}, "git@github.com:"), " URL use SSH instead and ignore the credential helper. To use your own SSH key, mount it: ",
           el("code", {}, "-v ~/.ssh:/home/arena/.ssh:ro")))));
 
     // -- install ----------------------------------------------------------
@@ -1864,7 +1864,7 @@
         el("div", { class: "install-row" }, ...steps),
         el("div", { class: "hint", style: "margin-top:10px" },
           "It installs as an app icon and opens without browser chrome. The shell is cached; ",
-          "repository state never is, so every dashboard load still asks this server.")));
+          "repo state never is, so every dashboard load still asks this server.")));
   }
 
   async function openSigning() {

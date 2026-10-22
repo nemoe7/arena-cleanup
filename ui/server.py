@@ -855,7 +855,7 @@ def storage_report(
     ),
     item("git config", home / ".gitconfig", "volume", "identity, signing key, helper"),
     item("GPG keys", home / ".gnupg", "volume", "the key the signing panel creates"),
-    item("repo registry", data_dir / "repos.json", "volume", "remembered repositories"),
+    item("repo registry", data_dir / "repos.json", "volume", "remembered repos"),
     {
       **item("URL clones", data_dir / "repos", "volume", "repos cloned from a URL"),
       "repos": [
@@ -1210,7 +1210,7 @@ class Handler(BaseHTTPRequestHandler):
       else:
         self._static(path)
     except KeyError:
-      self._error("no such repository", 404)
+      self._error("no such repo", 404)
     except ValueError:
       self._error("bad request", 400)
     except BrokenPipeError:
@@ -1227,13 +1227,13 @@ class Handler(BaseHTTPRequestHandler):
         body = self._body()
         source = normalize_source(str(body.get("source") or ""))
         if not source:
-          raise BadRequest("paste a repository URL or a path to a work tree")
+          raise BadRequest("paste a repo URL or a path to a work tree")
         if URL_RE.match(source):
           entry, err = clone_url(source, self.reg)
         else:
           entry, err = register_path(source, self.reg)
         if not entry:
-          self._error(err or "could not add that repository", 400)
+          self._error(err or "could not add that repo", 400)
         else:
           self._json({**entry, "status": STATUS.get(entry)}, 201)
       elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "reset":
@@ -1244,7 +1244,7 @@ class Handler(BaseHTTPRequestHandler):
       elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "remove":
         repo = self.reg.remove(parts[2])
         if not repo:
-          self._error("no such repository", 404)
+          self._error("no such repo", 404)
           return
         STATUS.drop(parts[2])
         body = self._body()
@@ -1291,7 +1291,7 @@ class Handler(BaseHTTPRequestHandler):
     except BadRequest as exc:
       self._error(str(exc), 400)
     except KeyError:
-      self._error("no such repository", 404)
+      self._error("no such repo", 404)
     except BrokenPipeError:
       pass
     except Exception as exc:

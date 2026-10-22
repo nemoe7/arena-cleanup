@@ -246,7 +246,7 @@ def flow_board(_: dict[str, bytes]) -> str:
   dashboard = (
     '<div class="scr wide">'
     + topbar
-    + block("Repositories", width="120px")
+    + block("Repos", width="90px")
     + '<div class="bar">'
     + block("paste a GitHub URL or a path", soft=True, width="300px")
     + block("Add", hi=True, width="60px")
@@ -518,7 +518,7 @@ def components_board(_: dict[str, bytes]) -> str:
     + f'<span class="chip-x">uploads/ <button aria-label="remove">{icon("x")}</button></span></div></div>'
   )
   fields = (
-    '<div class="col" style="width:320px"><input class="field" placeholder="Paste a repository URL…">'
+    '<div class="col" style="width:320px"><input class="field" placeholder="Paste a repo URL…">'
     '<input class="field" value="https://github.com/acme/example.git">'
     '<input class="field" value="disabled" disabled>'
     '<select class="field"><option>current (main)</option></select></div>'

@@ -233,7 +233,7 @@ def no_console_errors_on_load(w: Walker, demo: Demo) -> None:
 @step("desktop")
 def dashboard_renders(w: Walker, demo: Demo) -> None:
   assert w.count(".repo-card") == DEMO_REPOS
-  assert "Repositories" in w.text(".hero h1")
+  assert "Repos" in w.text(".hero h1")
   assert w.text("#ver").strip() == f"v{demo.api('/api/env')['version']}"
   assert w.count("#env span.on") >= MIN_TOOLS_READY
   assert w.page.get_attribute("#add-source", "placeholder")
@@ -323,7 +323,7 @@ def sidebar_and_branch_selector(w: Walker, demo: Demo) -> None:
   w.goto(1000)
   w.click(".repo-card", 800)
   sidebar = w.text("#sidebar")
-  assert "Repository" in sidebar
+  assert "Repo" in sidebar
   assert "arena/session-3" in sidebar
   w.click('#sidebar [data-branch="arena/session-3"]', 300)
   assert w.page.input_value("#branch") == "arena/session-3"

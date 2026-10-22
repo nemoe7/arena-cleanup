@@ -74,7 +74,7 @@ python3 ui/server.py --repo /path/to/repo
 ## Use
 
 1. Paste a clone URL, a GitHub page address, or a local path into the add box
-   and press **Add repository**.
+   and press **Add repo**.
 2. The key icon opens **Access**: `gh` sign-in (`GH_TOKEN`, `gh auth login`,
    or a pasted token), its scopes, and **Set up git credentials** for HTTPS
    clones. The token needs `repo`; SSH URLs need a mounted key instead.
