@@ -3,21 +3,21 @@
 Arena branch cleanup + history rewrite engine.
 
 This is the machinery behind the web UI, not a user-facing command. The UI
-spawns it as a subprocess so each run gets its own process, its own stream and
-a cancel button:
+spawns it as a subprocess. Each run then gets its own process, its own stream,
+and a cancel button:
 
-    engine.py run     full flow: cleanup -> PR gate -> rewrite -> push
-    engine.py strip   just the history rewrite
-    engine.py doctor  verify environment / config
+    engine.py run     full flow: cleanup -> PR gate -> rewrite -> push.
+    engine.py strip   just the history rewrite.
+    engine.py doctor  verify environment / config.
 
-The argument surface below is the contract between ui/server.py and this file;
+The argument surface below is the contract between ui/server.py and this file.
 ui/server.py::build_argv is the only thing that should ever construct it.
 
 Flags: -n dry run, -v verbose, -b/--branch, -d/--delete-branch,
 -k/--skip-pr-check, -t/--check-timeout, -i/--check-interval, -c/--check (strip),
 -p/--path, -E/--keep-empty (run, strip), -T/--no-tags (run).
-Everything else - identity, blacklist, signing, arena prefix - is a constant at
-the top of this file, because it is a per-machine setting, not a per-run choice.
+Everything else (identity, blacklist, signing, arena prefix) is a constant at
+the top of this file. Each is a per-machine setting, not a per-run choice.
 
 Exit codes: 0 ok / 1 error / 2 usage / 7 strip -c: rewrite needed
 """
@@ -264,8 +264,8 @@ def run(
 
   Quiet by default: stdout/stderr are captured and only shown if the command
   fails. With --verbose the same output is echoed afterwards, after the
-  command echo line - capture always happens, because plenty of callers parse
-  the output and a "stream live" mode that loses it broke every one of them.
+  command echo line. Capture always happens, because plenty of callers parse
+  the output. A "stream live" mode that loses it broke every one of them.
   """
   argv = [str(a) for a in argv]
   verbose = _log is not None and _log.verbose
@@ -304,8 +304,8 @@ def which(tool: str) -> str | None:
 
 class Settings:
   """
-  Everything the rewrite needs is a constant at the top of this file - there
-  are no flags for identity, blacklist or signing, by design: they are
+  Everything the rewrite needs is a constant at the top of this file. There
+  are no flags for identity, blacklist, or signing, by design. They are
   per-machine settings, not per-run choices. Flip SIGN_COMMITS there to stop
   signing commits.
   """
@@ -464,10 +464,10 @@ def ask_choice(
   default: str | None = None,
 ) -> str | None:
   """
-  Ask the user to pick one of `options` = [(key, description), ...].
+  Ask the user to select one of `options` = [(key, description), ...].
 
-  Returns the chosen key, or None when they cancel - including when there is
-  no terminal to ask on, where cancelling is the only safe answer.
+  Returns the chosen key, or None when they cancel. No terminal to ask on also
+  counts as a cancel, because that is the only safe answer.
   """
   if not _interactive():
     log.warning(
@@ -517,14 +517,14 @@ def confirm(log: Log, question: str, *, default: bool = False) -> bool:
     log.plain("  (please answer y or n)")
 
 
-def pick_arena_branch(log: Log) -> tuple[str, str]:
+def select_arena_branch(log: Log) -> tuple[str, str]:
   """
   Choose the arena branch to work on: (local name, remote-tracking ref).
 
   Several origin/arena/* branches usually means leftover sessions. Nothing is
-  guessed: they are listed, and the user picks. Without a terminal (and so
+  guessed: they are listed, and the user selects. Without a terminal (and so
   without an answer) the run stops rather than touching the wrong branch;
-  `-b <branch>` picks one non-interactively.
+  `-b <branch>` selects one non-interactively.
   """
   remotes = remote_arena_branches()
   if not remotes:
@@ -562,7 +562,7 @@ def ensure_branch(
   """
   Make sure `name` is the checked-out branch, creating a tracking branch when
   it only exists on origin. Returns the rev to work against: HEAD normally, or
-  a read-only ref in a dry run (which never touches the working tree).
+  a read-only ref in a dry run. A dry run never touches the working tree.
   """
   remote_ref = remote_ref or f"origin/{name}"
   if current_branch().lower() == name.lower():
@@ -646,17 +646,20 @@ def pull_latest(log: Log, cfg: Settings, default: str) -> bool:
   chose to cancel.
 
   Fast-forward only, on purpose: origin/arena/* keeps whatever the session
-  first pushed, so after a local rewrite the two have diverged, and a plain
-  `git pull` would paper over that with a merge commit that then ends up in
-  the history pushed to the default branch.
+  first pushed, so after a local rewrite the two have diverged. A plain
+  `git pull` would paper over that with a merge commit. That commit then ends
+  up in the history pushed to the default branch.
 
   Three outcomes when the branches have diverged:
-    * identical content, different commit ids -> the expected rewrite case;
-      local history wins, no question asked.
+
+    * identical content, different commit ids -> the expected rewrite case.
+      Local history wins, no question asked.
+
     * local simply ahead -> local wins, no question asked.
-    * genuinely different content *and* commits on both sides -> we cannot
-      guess which side matters, so we stop and ask whether to replace the
-      local branch with its remote copy. Cancelling aborts the whole run.
+
+    * different content *and* commits on both sides -> we cannot guess which
+      side matters. We stop and ask whether to replace the local branch with
+      its remote copy. Cancelling aborts the whole run.
   """
   if cfg.dry_run:
     log.info("would pull latest changes (fast-forward only)")
@@ -724,7 +727,7 @@ def pull_latest(log: Log, cfg: Settings, default: str) -> bool:
       log.info("keeping local history")
       return True
 
-  # either --on-divergence=remote, or the user picked it
+  # either --on-divergence=remote, or the user selected it
   log.warning(f"replacing local {current_branch()} with {upstream}")
   res = git("reset", "--hard", upstream, check=False)
   if res.rc != 0:
@@ -751,9 +754,9 @@ def force_push(
   Publish HEAD onto origin/<default>, refusing to clobber a ref that moved.
 
   The lease is spelled out (`--force-with-lease=refs/heads/<default>:<sha>`)
-  with the value we fetched at the start of the run, so the guard is pinned to
-  the one ref we actually overwrite, and nothing can move under us between the
-  fetch and the push.
+  with the value we fetched at the start of the run. The guard is thus pinned
+  to the one ref we overwrite. Nothing can move under us between the fetch and
+  the push.
   """
   remote_ref = f"refs/heads/{default}"
   expected = git("rev-parse", f"origin/{default}", check=False).text
@@ -804,9 +807,10 @@ def already_published(default: str, rev: str = "HEAD") -> bool:
   True when origin/<default> already contains HEAD, i.e. nothing to publish.
 
   History-based on purpose. The old batch used `git diff --quiet origin/main
-  HEAD`, which compares *trees*: it reports "already in sync" whenever the
-  content matches, even when HEAD's commits were never published - or were
-  just rewritten locally and now sit on new hashes that origin has never seen.
+  HEAD`, which compares *trees*. It reports "already in sync" whenever the
+  content matches, even when HEAD's commits were never published.
+
+  Commits rewritten locally sit on new hashes that origin has never seen.
   That silently skipped the push.
   """
   return (
@@ -911,10 +915,10 @@ def read_checks(pr: int) -> CheckSummary:
   """
   Read a PR's status rollup, collapsing repeats of the same check name.
 
-  GitHub keeps superseded runs in the rollup: when a workflow is re-run, the
+  GitHub keeps superseded runs in the rollup. When a workflow is re-run, the
   old attempt (often CANCELLED) can still be listed next to the new SUCCESS
   one. Taking the rollup literally then reports "cancelled" for a PR the web
-  UI shows as green - so per name, a pass wins over a stale cancelled/failed
+  UI shows as green. So per name, a pass wins over a stale cancelled/failed
   attempt, and whatever was ignored is named in the log.
   """
   res = gh("pr", "view", str(pr), "--json", "statusCheckRollup")
@@ -922,8 +926,8 @@ def read_checks(pr: int) -> CheckSummary:
     data = json.loads(res.text or "{}") or {}
   except ValueError:
     raise Fail(f"could not parse `gh pr view {pr}` output")
-  # gh prints an object here; a wrapper or a stray line can hand back a list,
-  # and an AttributeError from that is not a useful thing to show a user
+  # gh prints an object here; a wrapper or a stray line can hand back a list.
+  # An AttributeError from that is not a useful thing to show a user
   if not isinstance(data, dict):
     raise Fail(f"`gh pr view {pr}` printed a {type(data).__name__}, not a JSON object")
   rollup = data.get("statusCheckRollup") or []
@@ -1034,9 +1038,9 @@ def pr_gate(
   """
   The PR gate: no PR, or a failing check, stops the run.
 
-  Still-running checks are waited for rather than guessed at - a check that is
-  simply not finished yet is not a failure. `--check-timeout 0` turns waiting
-  off, and `--skip-pr-check` skips the gate entirely.
+  Still-running checks are waited for rather than guessed at. A check that is
+  not finished yet is not a failure. `--check-timeout 0` turns waiting off,
+  and `--skip-pr-check` skips the gate entirely.
   """
   if skip:
     log.warning("--skip-pr-check set; skipping PR validation entirely")
@@ -1101,10 +1105,10 @@ class PathStats:
 
   def __init__(self) -> None:
     self.paths: list[str] = []
-    self.commits = 0  # commits that touch any of the paths
-    self.files = 0  # distinct files ever tracked under them
-    self.rewritten = 0  # commits whose sha filter-repo changed
-    self.pruned: set[str] = set()  # commits dropped for becoming empty
+    self.commits = 0  # commits that touch any of the paths.
+    self.files = 0  # distinct files ever tracked under them.
+    self.rewritten = 0  # commits whose sha filter-repo changed.
+    self.pruned: set[str] = set()  # commits dropped for becoming empty.
 
 
 def _normalize_path(raw: str) -> str:
@@ -1147,9 +1151,9 @@ def _remotes_snapshot() -> dict[str, tuple[list[str], list[str]]]:
     parts = line.split()
     if len(parts) < 3:
       continue
-    name, url, kind = parts[0], parts[1], parts[2].strip("()")
+    name, url, direction = parts[0], parts[1], parts[2].strip("()")
     fetch, push = snap.get(name, ([], []))
-    (fetch if kind == "fetch" else push).append(url)
+    (fetch if direction == "fetch" else push).append(url)
     snap[name] = (fetch, push)
   return snap
 
@@ -1160,8 +1164,8 @@ def _remotes_restore(log: Log, snap: dict[str, tuple[list[str], list[str]]]) -> 
 
   It drops `origin` on purpose ("push back from a fresh clone"), because its
   normal use is a throwaway clone. This tool rewrites the working repo in
-  place, so every remote goes back exactly as it was - url, extra urls and
-  push url included.
+  place. Every remote therefore goes back as it was: url, extra urls, and push
+  url included.
   """
   present = set(git("remote", check=False).lines())
   for name, (fetch, push) in snap.items():
@@ -1200,12 +1204,12 @@ def filter_paths(log: Log, cfg: Settings, *, apply: bool) -> PathStats:
   """
   Remove files and directories from every commit with `git filter-repo`.
 
-  filter-repo rewrites all refs, not just the branch being cleaned, and that
-  is what "remove this from history" has to mean: content left on another
-  branch or tag is still fetchable. Tags are re-pointed by filter-repo itself
-  (annotated ones become new tag objects with the original tagger and message,
-  aimed at the new commits), so this stage only restores the remotes and
-  re-fetches, leaving `origin/<default>` resolvable for the push.
+  filter-repo rewrites all refs, not just the branch being cleaned. That is
+  what "remove this from history" has to mean: content left on another branch
+  or tag is still fetchable. filter-repo re-points tags itself; annotated ones
+  become new tag objects with the original tagger and message. This stage
+  therefore only restores the remotes and re-fetches, leaving
+  `origin/<default>` resolvable for the push.
 
   Commits that only touched the removed paths become empty and are dropped -
   unless -E/--keep-empty asks for them to stay. Messages are kept byte for
@@ -1282,10 +1286,10 @@ def write_backup(log: Log, label: str) -> str:
 class RewriteStats:
   def __init__(self) -> None:
     self.total = 0
-    self.rewritten = 0  # commits replaced (or that would be)
-    self.signed = 0  # of those, how many get a GPG signature
-    self.skipped = 0  # commits left byte-identical
-    self.tags = 0  # tags re-pointed at the rewritten commits
+    self.rewritten = 0  # commits replaced (or that would be).
+    self.signed = 0  # of those, how many get a GPG signature.
+    self.skipped = 0  # commits left byte-identical.
+    self.tags = 0  # tags re-pointed at the rewritten commits.
     self.seconds = 0.0
     self.old_tip = ""
     self.new_tip = ""
@@ -1389,19 +1393,19 @@ def rewrite_history(
   """
   Rebuild the current branch commit-by-commit.
 
-  Commits whose author email is one of ours, or whose author/committer name
-  is blacklisted, are "claimed":
-    * author + committer rewritten to the current git identity (dates kept)
-    * message trimmed to its subject line
-    * re-signed with -S (unless SIGN_COMMITS is False)
+  A commit is "claimed" when its author email is one of ours, or its
+  author/committer name is blacklisted. A claimed commit gets:
+    * author + committer rewritten to the current git identity (dates kept).
+    * message trimmed to its subject line.
+    * re-signed with -S (unless SIGN_COMMITS is False).
 
   Everything else is preserved verbatim, though it gets a new hash whenever
   one of its ancestors moved.
 
   apply=False is strictly read-only: nothing is created, nothing is signed,
   no ref moves. In that mode we only need to know *whether* a rewrite is
-  needed, and any commit after the first changed one also changes, so the
-  walk can answer without building a single object.
+  needed. Any commit after the first changed one also changes, so the walk
+  can answer without building a single object.
   """
   t0 = time.time()
   stats = RewriteStats()
@@ -1533,8 +1537,8 @@ def _tag_rows() -> list[tuple[str, str, str, str]]:
   """
   (refname, object sha, object type, peeled commit sha) for every tag.
 
-  Space separated on purpose: ref names cannot contain spaces, the other three
-  fields are hex or a single word - and unlike NUL separators this stays
+  Space separated on purpose. Ref names cannot contain spaces, and the other
+  three fields are hex or a single word. Unlike NUL separators this stays
   readable when -v echoes the command's output.
   """
   fmt = "%(refname) %(objectname) %(objecttype) %(*objectname)"
@@ -1552,15 +1556,15 @@ def _tag_rows() -> list[tuple[str, str, str, str]]:
 
 def local_tags() -> dict[str, str]:
   """refs/tags/x -> the sha that ref currently holds."""
-  return {ref: obj for ref, obj, _kind, _peeled in _tag_rows()}
+  return {ref: obj for ref, obj, _obj_type, _peeled in _tag_rows()}
 
 
 def tags_into(revs: Sequence[str]) -> int:
   """How many tags point at one of these commits (read-only estimate)."""
   targets = set(revs)
   count = 0
-  for _ref, obj, kind, peeled in _tag_rows():
-    commit = obj if kind == "commit" else peeled
+  for _ref, obj, obj_type, peeled in _tag_rows():
+    commit = obj if obj_type == "commit" else peeled
     if commit and commit in targets:
       count += 1
   return count
@@ -1579,26 +1583,27 @@ def retarget_tags(log: Log, mapping: dict[str, str]) -> int:
   """
   Keep tags on the commits they name after a rewrite.
 
-  A rewrite gives every commit a new sha, so a tag that is not moved ends up
-  naming a commit the branch no longer contains: `git checkout v1` still
-  works, and hands back exactly the history that was just cleaned - the
-  removed files included. Annotated tags cannot be edited in place, so they
-  are rebuilt as new tag objects carrying the original tagger line and
-  message. Every update-ref names the old value, so a tag that moved
-  underneath us aborts the run instead of being clobbered.
+  A rewrite gives every commit a new sha. A tag that is not moved then names
+  a commit the branch no longer contains. `git checkout v1` still works, and
+  hands back the history that was just cleaned, removed files included.
+
+  Annotated tags cannot be edited in place. They are rebuilt as new tag
+  objects carrying the original tagger line and message. Every update-ref
+  names the old value, so a tag that moved underneath us aborts the run
+  instead of being clobbered.
 
   Only tags whose target commit moved are touched; every other tag keeps its
   exact object, sha included.
   """
   moved = 0
-  for ref, obj, kind, peeled in _tag_rows():
-    if kind == "commit":
+  for ref, obj, obj_type, peeled in _tag_rows():
+    if obj_type == "commit":
       new = mapping.get(obj)
       if not new or new == obj:
         continue
       git("update-ref", ref, new, obj)
       shown = new
-    elif kind == "tag" and peeled:
+    elif obj_type == "tag" and peeled:
       new = mapping.get(peeled)
       if not new or new == peeled:
         continue
@@ -1631,14 +1636,15 @@ def sync_tags(log: Log, cfg: Settings, before: dict[str, str]) -> None:
   """
   Move origin's tags onto the rewritten commits.
 
-  Only tags the rewrite actually moved are considered, and only ones that
-  already exist on origin: a local-only tag stays local (publishing is a
-  decision this tool was not asked to make), and no tag is ever deleted. Each
-  existing tag is updated with a lease pinned to the value origin had a
-  moment ago, so a tag someone else moved mid-run fails the push instead of
+  Only tags the rewrite moved are considered, and only ones that already
+  exist on origin. A local-only tag stays local, because publishing is a
+  decision this tool was not asked to make. No tag is ever deleted.
+
+  Each existing tag is updated with a lease pinned to the value origin had a
+  moment ago. A tag someone else moved mid-run thus fails the push instead of
   being overwritten.
   """
-  rows = {ref: (obj, kind, peeled) for ref, obj, kind, peeled in _tag_rows()}
+  rows = {ref: (obj, obj_type, peeled) for ref, obj, obj_type, peeled in _tag_rows()}
   moved = [
     ref for ref, (obj, _k, _p) in rows.items() if before.get(ref) not in (None, obj)
   ]
@@ -1650,15 +1656,15 @@ def sync_tags(log: Log, cfg: Settings, before: dict[str, str]) -> None:
   local_only: list[str] = []
   unpublished: list[str] = []
   for ref in moved:
-    obj, kind, peeled = rows[ref]
+    obj, obj_type, peeled = rows[ref]
     if ref not in ahead:
       local_only.append(ref)  # never publish what was never there
       continue
     if ahead[ref] == obj:
       continue
-    target = obj if kind == "commit" else peeled
+    target = obj if obj_type == "commit" else peeled
     if not target or git("merge-base", "--is-ancestor", target, "HEAD", check=False).rc:
-      # filter-repo rewrote every ref, but this run publishes one branch: moving
+      # filter-repo rewrote every ref, but this run publishes one branch. Moving
       # this tag would leave origin with a tag pointing into history none of its
       # branches have. Leave it where it is and say so.
       unpublished.append(ref)
@@ -1775,8 +1781,8 @@ class Progress:
 
   On a terminal: one line, redrawn in place - no scrollback spam.
   Captured output: a line every 25%, so logs stay readable.
-  Either way it reports how many commits have actually been rewritten, which
-  is the number that matters; untouched commits are simply not mentioned.
+  Either way it reports how many commits have been rewritten, which is the
+  number that matters. Untouched commits are not mentioned.
   """
 
   def __init__(self, log: Log, verb: str, total: int) -> None:
@@ -1784,7 +1790,7 @@ class Progress:
     self.verb = verb
     self.total = max(total, 1)
     # in verbose mode git's own output streams to the terminal, so an
-    # in-place redraw would fight with it; fall back to plain lines
+    # in-place redraw would fight with it. Fall back to plain lines
     self.mode = "line" if (log.tty and not log.verbose) else "tiered"
     self.next_tier = 25
 
@@ -1878,9 +1884,9 @@ def leave_for_deletion(log: Log, name: str, default: str, dry_run: bool) -> None
   """
   Step off `name` before it is deleted.
 
-  git refuses to delete the branch you are standing on, so when we are on the
-  arena branch (that is: the run was started from inside it, or -b named it)
-  hop back to the default branch first.
+  git refuses to delete the branch you are standing on. When we are on the
+  arena branch, hop back to the default branch first. That happens when the
+  run was started from inside it, or when -b named it.
   """
   if dry_run or not name.startswith(ARENA_PREFIX):
     return
@@ -1932,11 +1938,13 @@ def guard_dirty_tree(
   """
   Refuse to move the working tree out from under uncommitted changes.
 
-  A dirty tree either makes the branch switch fail (git's own error, which the
-  log now shows in full) or, worse, lets it through and then gets thrown away
-  by the `git reset --hard` at the end of the run. Both are surprises; the
-  second one loses work. Cleaning the default branch in place is fine, because
-  nothing moves - that is what `will_switch` distinguishes.
+  A dirty tree either makes the branch switch fail or lets it through. In the
+  first case the log shows git's own error in full. In the second case the
+  `git reset --hard` at the end of the run throws the changes away. Both are
+  surprises; the second one loses work.
+
+  Cleaning the default branch in place is fine, because nothing moves. That is
+  what `will_switch` distinguishes.
   """
   if not dirty or dry_run:
     return
@@ -1973,13 +1981,13 @@ def at_risk_on_origin(
   """
   Commits on origin/<default> that a push of `rev` would drop.
 
-  Compared by hash first, then by (subject, author date): commits that exist on
-  origin under a rewritten hash are the same work and are not at risk, while a
-  genuinely new commit - a maintenance commit made straight on the default
-  branch, say - has no twin and would be replaced.
+  Compared by hash first, then by (subject, author date). Commits that exist
+  on origin under a rewritten hash are the same work and are not at risk. A
+  new commit, say a maintenance commit made straight on the default branch,
+  has no twin and would be replaced.
 
   `ignore` holds commits that were dropped on purpose because they only
-  touched the paths being removed; the push guard should not ask about those.
+  touched the paths being removed. The push guard should not ask about those.
   """
   candidates = git(
     "log",
@@ -2010,10 +2018,10 @@ def history_looks_published(default: str, rev: str) -> bool:
   Has this branch's work already reached origin/<default>, in some rewritten form?
 
   The cleanup preserves each commit's subject and author date, so a rewritten
-  commit is recognisable by that pair. If every commit `rev` has and origin
-  does not has such a twin on origin, the branch has been published - just
-  under different hashes - and re-publishing it would replace a good history
-  with a fresh variant for no content change.
+  commit is recognisable by that pair. Take every commit `rev` has and origin
+  does not. If each has such a twin on origin, the branch has been published
+  under different hashes. Re-publishing it would replace a good history with a
+  fresh variant for no content change.
   """
   local_only = git(
     "log", "--format=%s|%at", f"origin/{default}..{rev}", check=False
@@ -2039,7 +2047,7 @@ def _wrap_up(
 ) -> int:
   """
   Shared tail of every successful run: land back on the default branch and
-  dispose of the local arena branch (add -d to drop the remote copy too).
+  dispose of the local arena branch. Add -d to drop the remote copy too.
   """
   keep = bool(getattr(args, "keep_branch", False))
   drop_remote = bool(getattr(args, "delete_branch", False))
@@ -2085,10 +2093,10 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
   started_on = current  # where to go back to if the user cancels
   log.info(f"current branch: {current}")
 
-  # Refuse to move the working tree out from under uncommitted changes - and
-  # decide that before anything has moved, so an aborted run leaves the repo
-  # exactly as it was found. Landing on the arena branch counts as a move, as
-  # does hopping back to the default branch at the end to dispose of it.
+  # Refuse to move the working tree out from under uncommitted changes. Decide
+  # that before anything has moved, so an aborted run leaves the repo as it was
+  # found. Landing on the arena branch counts as a move. So does hopping back
+  # to the default branch at the end to dispose of it.
   prospective = args.branch or current
   if not args.branch and current.lower() == default.lower():
     will_switch = True  # we will hop onto the arena branch
@@ -2120,7 +2128,7 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
     target = "HEAD"
     if current.lower() == default.lower():
       log.info(f"on {default}; locating origin/{ARENA_PREFIX}* branch")
-      local, remote_ref = pick_arena_branch(log)
+      local, remote_ref = select_arena_branch(log)
       target_name = local
       switched = True
       target = ensure_branch(
@@ -2137,8 +2145,8 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
   publish = target if cfg.dry_run else "HEAD"
   cleaning_default = target_name.lower() == default.lower()
 
-  # Removing paths means the branch is going to change on purpose, so the
-  # "nothing to publish" shortcuts below would be answering the wrong question.
+  # Removing paths means the branch is going to change on purpose. The
+  # "nothing to publish" shortcuts below would then answer the wrong question.
   rewriting_paths = bool(cfg.paths)
 
   if (
@@ -2160,10 +2168,12 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
     )
 
   # Rewriting here would swap an already-published history for a fresh variant
-  # without changing a single file - and if origin/<default> has moved on since
-  # (a maintenance commit, say), pushing would replace that too. Both patterns
-  # show up when origin/<default> absorbed this branch's work after a cleanup
-  # while the local branch kept the pre-cleanup commits. Detect and stop.
+  # without changing a single file. If origin/<default> has moved on since, say
+  # by a maintenance commit, pushing would replace that too.
+  #
+  # Both patterns show up when origin/<default> absorbed this branch's work
+  # after a cleanup. The local branch kept the pre-cleanup commits. Detect and
+  # stop.
   if (
     not rewriting_paths
     and not cleaning_default
@@ -2234,8 +2244,8 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
     require_pr=not explicit,
   )
 
-  # Tag shas as they are right now: after the rewrite this is what tells us
-  # which tags moved (and therefore which ones origin has to be told about).
+  # Tag shas as they are right now. After the rewrite this is what tells us
+  # which tags moved. Those are the ones origin has to be told about.
   tags_before = local_tags()
 
   paths = None
@@ -2246,7 +2256,7 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
   if not stats.changed and cfg.dry_run:
     log.ok("history already clean; nothing to rewrite")  # real runs already said so
 
-  # "Nothing to rewrite" does not mean "nothing to publish": the branch may
+  # "Nothing to rewrite" does not mean "nothing to publish". The branch may
   # still hold commits origin has never seen, or have just had paths removed.
   removed_paths = bool(paths and (paths.rewritten or paths.pruned or cfg.dry_run))
   if stats.changed or removed_paths or not already_published(default, publish):
@@ -2353,15 +2363,15 @@ def cmd_doctor(args: argparse.Namespace, log: Log) -> int:
     if auth.rc == 0:
       log.ok("gh authenticated")
     else:
-      # the UI can fix this, so point at the thing that fixes it rather than
-      # at a shell the container may not give you
+      # the UI can fix this. Point at the thing that fixes it rather than at
+      # a shell the container may not give you
       log.error(
         "gh is not authenticated - open the Access panel in the web UI, "
         "or run `gh auth login` in the container"
       )
       log.block(auth.err or auth.out)
       rc = 1
-    # signing in to gh does not configure git; an https remote needs this
+    # signing in to gh does not configure git; an https remote needs this.
     # gh writes a host-scoped helper, not a bare credential.helper
     helpers = " ".join(
       git("config", "--global", "--get-all", key, check=False).text
@@ -2426,8 +2436,8 @@ environment:
 
 def build_parser() -> argparse.ArgumentParser:
   """
-  One parser for every command, so `arena-cleanup --help` lists every flag -
-  per-subcommand parsers hid `run`'s flags behind `arena-cleanup run --help`,
+  One parser for every command, so `arena-cleanup --help` lists every flag.
+  Per-subcommand parsers hid `run`'s flags behind `arena-cleanup run --help`,
   which is where nobody looks for them.
   """
   parser = argparse.ArgumentParser(

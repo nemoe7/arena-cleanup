@@ -1,11 +1,12 @@
 # arena-cleanup
 
-A small web app that cleans an Arena agent branch, rewrites its history to your
-identity, signs the commits, and publishes the result to your default branch.
+A small web app that cleans an Arena agent branch. It rewrites the history to
+your identity, signs the commits, and publishes the result to your default
+branch.
 
 Paste a repository URL once and it is remembered. The dashboard then shows, per
-repo, how far its arena branch is ahead or behind, whether the tree is dirty, and
-what its pull request checks say.
+repo, how far its arena branch is ahead or behind. It also shows whether the
+tree is dirty and what its pull request checks say.
 
 ![The dashboard: three remembered repositories, each with its arena branch and PR check rollup](docs/ui-overview.png)
 
@@ -57,8 +58,8 @@ repository in its data directory.
 
 ### Docker (any machine, amd64 or arm64)
 
-The image carries everything the app shells out to (`git`, `gh`,
-`git-filter-repo` and `gnupg`), so the host needs none of them.
+The image carries everything the app shells out to: `git`, `gh`,
+`git-filter-repo`, and `gnupg`. The host needs none of them.
 
 A green CI run on `main` publishes `ghcr.io/nemoe7/arena-cleanup:latest` for
 amd64 and arm64 (`.github/workflows/docker.yml`). That is the only tag, and it
@@ -94,10 +95,9 @@ docker run --rm -p 8080:8080 \
 open http://localhost:8080
 ```
 
-You do not need to mount a repository: paste its URL in the UI and it is cloned
-into the container's data volume. If you would rather
-work on a checkout that already exists on the host, mount it and add the path
-instead:
+You do not need to mount a repository. Paste its URL in the UI and it is cloned
+into the container's data volume. To work on a checkout that already exists on
+the host, mount it and add the path instead:
 
 ```console
 docker run --rm -p 8080:8080 \
@@ -107,16 +107,17 @@ docker run --rm -p 8080:8080 \
   arena-cleanup
 ```
 
-On a Raspberry Pi it is the same command: `docker build` produces an arm64 image
-there, and the `buildx` line above publishes one tag that both a PC and a Pi can
-pull.
+On a Raspberry Pi it is the same command, and `docker build` produces an arm64
+image there. The `buildx` line above publishes one tag that both a PC and a Pi
+can pull.
 
-That volume holds `gh`'s token, your git identity, the GPG key the UI creates,
-the repo registry and any repos cloned from a URL, so a rebuilt container still
-knows all of them.
+That volume holds `gh`'s token, your git identity, and the GPG key the UI
+creates. It also holds the repo registry and any repos cloned from a URL. A
+rebuilt container still knows all of them.
 
-Or with compose. This is the setup the rest of the README assumes: two
-containers, a healthcheck on each, and the app published only through Tailscale.
+Or with compose. This is the setup the rest of the README assumes. It runs two
+containers with a healthcheck on each, and publishes the app only through
+Tailscale.
 
 ```console
 cp .env.example .env
@@ -127,7 +128,7 @@ docker compose exec arena-cleanup gh auth login    # once, if there is no token
 
 `docker compose` reads `.env` from the directory it runs in, so those three
 values need no `export`. The file is in `.gitignore`, and `.dockerignore` keeps
-it out of the build context, so the auth key and token stay on the machine.
+it out of the build context. The auth key and token stay on the machine.
 `docker compose config` prints the substituted file without starting anything,
 which is the quickest way to check a mistyped variable name.
 
@@ -176,8 +177,9 @@ Then open <http://localhost:8080>.
 4. **Clean & publish** starts the run immediately and streams its output into
    the console.
 
-Repositories are remembered across restarts, container rebuilds (the volume) and
-browser reloads (the registry lives on the server, not in localStorage).
+Repositories are remembered across restarts, container rebuilds, and browser
+reloads. The volume keeps them across rebuilds, and the registry lives on the
+server, not in localStorage.
 
 ## Git and GitHub authentication
 
@@ -200,8 +202,8 @@ order the panel tries them:
 The token needs the `repo` scope for private repositories and PR checks;
 `read:org` covers organisation repos. A fine-grained token needs *Pull requests:
 read* (and *Contents: read* to clone). The panel prints the scopes it can see and
-says when `repo` is missing, because a token without it authenticates cleanly and
-then silently sees no pull requests.
+says when `repo` is missing. A token without it authenticates cleanly and then
+silently sees no pull requests.
 
 The token goes to `gh` through stdin, never on a command line. It lands in the
 container's `arena-home` volume, so it survives a rebuild. It is never written
@@ -210,24 +212,24 @@ into the page, and the field is a password input that is cleared on success.
 ### git: cloning and pushing
 
 Signing in to `gh` does **not** configure git. Until `gh auth setup-git` has run,
-an HTTPS clone of a private repo fails with a password prompt that nobody is
-there to answer. The panel detects that and offers **Set up git credentials**,
-which is one command and applies to every repository in the container.
+an HTTPS clone of a private repo fails with a password prompt nobody answers.
+The panel detects that and offers **Set up git credentials**. That is one
+command, and it applies to every repository in the container.
 
 | URL shape                         | how git authenticates                          |
 |-----------------------------------|------------------------------------------------|
 | `https://github.com/you/repo.git` | the credential helper from `gh auth setup-git` |
 | `git@github.com:you/repo.git`     | SSH - ignores the helper, needs a key          |
 
-For SSH, either mount your own key (`-v ~/.ssh:/home/arena/.ssh:ro`) or generate
-one in the container with `ssh-keygen` and add it to GitHub; the panel lists
-which keys it can see.
+For SSH, mount your own key (`-v ~/.ssh:/home/arena/.ssh:ro`). Or generate one
+in the container with `ssh-keygen` and add it to GitHub. The panel lists which
+keys it can see.
 
 ### What happens when it is not connected
 
 Signed out, every arena branch reads **checks unavailable** instead of
 **no PR**. An empty result from `gh` and no `gh` at all
-look identical, so "no PR" would be a claim the app cannot support. A banner
+look identical. "No PR" would be a claim the app cannot support. A banner
 across the top of the dashboard offers **Connect GitHub**.
 
 Signing in or out invalidates the cached repository status, so the cards correct
@@ -235,8 +237,8 @@ themselves immediately instead of eight seconds later.
 
 ## Use it as an app
 
-The UI is a PWA. On a phone or a desktop browser you can install it and it opens
-full screen with its own icon and no address bar.
+The UI is a PWA. On a phone or a desktop browser you can install it. It then
+opens full screen with its own icon and no address bar.
 
 ![The dashboard at phone width: the same page, no separate build](docs/ui-narrow.png)
 
@@ -270,12 +272,12 @@ says so instead of failing quietly. Three ways to get a secure origin:
 | cached (app shell) | the page, fonts, icons, manifest - so the icon opens instantly |
 | **never** cached   | every `/api/` response, the job event stream                   |
 
-A cached status would go stale between runs, so a card could still claim checks
-had passed long after they failed. When the server cannot be reached the app
+A cached status would go stale between runs. A card could then still claim
+checks had passed long after they failed. When the server cannot be reached the app
 says **Cannot reach the server** and renders no dashboard at all.
 
-The worker is served with `Cache-Control: no-store`, so a rebuilt container is
-picked up on the next load rather than being shadowed by an old shell.
+The worker is served with `Cache-Control: no-store`. A rebuilt container is
+used on the next load rather than being shadowed by an old shell.
 
 ## The dashboard
 
@@ -303,7 +305,7 @@ dashboard is open. It is cached for 8 seconds, so clicking around does not hamme
 
 ## Cleaning a repository
 
-![The repo view: the task in one sentence, its options, the run card with one row per phase, and the commit list](docs/ui-run.png)
+![The repo view: task sentence, options, the run card with one row per phase, and the commit list](docs/ui-run.png)
 
 - **Target branch:** clean a branch directly, without a PR. Empty means "the
   current branch"; clicking an arena branch in the sidebar selects it.
@@ -328,15 +330,15 @@ one will do:
 | `Check setup`     | reads git, gh, identity and signing; writes nothing     |
 
 The button in the run card carries the task's name, and the exact argv is in its
-tooltip, so the UI never does anything you could not have spelled out yourself.
+tooltip. The UI never does anything you could not have spelled out yourself.
 
 A finished run reads as a list of phases: `Prepare`, `PR checks`, `Rewrite and
 sign`, `Publish`, `Finish`. Each row shows its own result, its elapsed time, and
 opens to the lines it produced. The raw log is folded behind **Show log** with a
 line count, and **Copy log** takes it all. **Cancel** stops a run in flight.
 
-The **Commits** card answers "what changed": how many commits are on the branch,
-then one row per commit with the short SHA, subject, author, date, and a tick when
+The **Commits** card answers "what changed" with the commit count and one row
+per commit. Each row has the short SHA, subject, author, date, and a tick when
 the commit is signed. Diffs are not rendered here; the PR link on the dashboard
 opens GitHub when you want to read one.
 
@@ -345,9 +347,9 @@ bundle before it moves any ref, so nothing is unrecoverable.
 
 ### On a phone
 
-The same page, no separate build: cards stack into one column, the options card
-becomes a single column, and the primary actions stick to the bottom of the
-screen so a run is still two taps away.
+The same page, no separate build. Cards stack into one column, and the options
+card becomes a single column. The primary actions stick to the bottom of the
+screen, so a run is still two taps away.
 
 ![The dashboard on an iPhone-width screen: stacked cards, full-width add button](docs/ui-narrow.png)
 
@@ -367,8 +369,9 @@ GitHub has the matching public key, so the panel does both halves:
 ![The signing panel: active key, GitHub verification warning, key creation and the steps to add it](docs/ui-signing.png)
 
 With no key in the container, type a name and email and press **Create key**.
-The key is generated inside the container (ed25519, no passphrase, because a
-background run cannot answer a prompt) and made the active `user.signingkey`.
+The key is generated inside the container and made the active `user.signingkey`.
+It is ed25519 with no passphrase, because a background run cannot answer a
+prompt.
 
 **Copy public key** puts it on the clipboard for GitHub → Settings → SSH and GPG
 keys → New GPG key. The email on the key must be a verified email on the account,
@@ -415,9 +418,9 @@ In the UI, put the paths in **Remove paths** and run. Under the hood that is
 
 ## Tags after a rewrite
 
-A rewrite gives every commit a new hash, so a tag that is not moved ends up
-naming a commit the branch no longer contains, and `git checkout v1` would hand
-back exactly the history that was just cleaned. Both stages keep tags attached:
+A rewrite gives every commit a new hash. A tag that is not moved then names a
+commit the branch no longer contains. `git checkout v1` would hand back the
+history that was just cleaned. Both stages keep tags attached:
 
 - `git filter-repo` re-points tags whose commits it rewrote.
 - The claim/sign pass re-points them again for the commits it rewrote itself,
@@ -448,7 +451,7 @@ to name a commit that exists at the end:
 2. That signing pass rewrites the published branch again, giving those commits
    yet another hash, so tags into them are re-pointed a second time.
 
-The second movement is conditional: when the signing pass finds nothing to do
+The second movement is conditional. When the signing pass finds nothing to do,
 the walk ends at "nothing to rewrite" and no tag is touched. Doing it in one
 pass would mean giving up signing, because `git fast-import` has no way to
 produce a signed commit.
@@ -493,9 +496,9 @@ What changes in the repo, by mode:
 | `Doctor`           | untouched                | untouched                  | untouched           |
 | any + dry run      | untouched                | untouched                  | untouched           |
 
-Safety rails: a backup bundle is written before each rewrite stage
-(`git-pre-filter-repo-<stamp>.bundle` and `git-pre-rewrite-<stamp>.bundle` in the
-temp dir), refs move with compare-and-swap, and the push is lease-protected
+Safety rails: a backup bundle is written before each rewrite stage. The bundles
+are `git-pre-filter-repo-<stamp>.bundle` and `git-pre-rewrite-<stamp>.bundle` in
+the temp dir. Refs move with compare-and-swap, and the push is lease-protected
 against the value fetched at the start.
 
 ## Reach it over Tailscale
@@ -530,19 +533,18 @@ The sidecar reads `docker/tailscale-serve.json`:
 }
 ```
 
-`${TS_CERT_DOMAIN}` is filled in by the tailscale image with the node's own
-MagicDNS name, so the file has no tailnet name in it.
+The tailscale image fills in `${TS_CERT_DOMAIN}` with the node's own MagicDNS
+name. The file has no tailnet name in it.
 
-The proxy dials `arena-app`, not `arena-cleanup`. The sidecar has to be
-*hostnamed* `arena-cleanup` for the node to get that MagicDNS name, and a
-container's own hostname resolves to itself inside it, so a proxy pointed at
-`arena-cleanup:8080` would dial the sidecar's own port and fail with
-`connect: connection refused`. Compose gives the app the `arena-app` alias on
-the same network, which can only mean the app.
+The proxy dials `arena-app`, not `arena-cleanup`, because the sidecar has to be
+*hostnamed* `arena-cleanup` for its MagicDNS name. A container's own hostname
+resolves to itself inside it. A proxy pointed at `arena-cleanup:8080` would
+therefore dial the sidecar's own port and fail with `connect: connection
+refused`. Compose gives the app the `arena-app` alias on the same network, which
+can only mean the app.
 
-There is deliberately no `AllowFunnel` key: serve only. If you do want public
-access later, that is a decision to make in the admin console, not a default
-here.
+There is deliberately no `AllowFunnel` key: serve only. If you want public
+access later, make that decision in the admin console, not as a default here.
 
 Check it from the host:
 
@@ -552,12 +554,12 @@ docker exec arena-cleanup-tailscale tailscale serve status
 ```
 
 The first `up` needs `TS_AUTHKEY`. After that the state volume carries the node
-key, and the auth key can be revoked in the admin console, since it is only
-needed to join once.
+key. The auth key is only needed to join once, so you can revoke it in the admin
+console.
 
 If the browser shows an error and `docker logs arena-cleanup-tailscale` has
-`proxy error: dial tcp ...: connect: connection refused`, the sidecar is up and
-the app is not answering on 8080. Two things cause that, and one command tells
+`proxy error: dial tcp ...: connect: connection refused`, the sidecar is up. The
+app is then not answering on 8080. Two things cause that, and one command tells
 them apart:
 
 ```console
@@ -565,12 +567,13 @@ curl -s localhost:8080/healthz     # the app, straight from the host
 ```
 
 An answer here means the app is fine and the sidecar is dialling the wrong
-thing, which is the hostname collision above; recreate both containers after
-pulling the current compose file with
-`docker compose up -d --force-recreate`. No answer means the app is down:
-`docker compose ps` shows whether it is restarting, and `docker logs
-arena-cleanup` says why. The usual reason is `/home/arena` on a bind mount
-owned by another user, which stops the entrypoint before the server starts.
+thing: the hostname collision above. Pull the current compose file, then
+recreate both containers with `docker compose up -d --force-recreate`.
+
+No answer means the app is down: `docker compose ps` shows whether it is
+restarting, and `docker logs arena-cleanup` says why. The usual reason is
+`/home/arena` on a bind mount owned by another user, which stops the entrypoint
+before the server starts.
 
 ## What survives a rebuild
 
@@ -588,14 +591,14 @@ as the `arena-home` volume:
 | `git-filter-repo`     | image                              | reinstalled      |
 
 So `docker compose up -d --build` after a `docker compose down` needs no
-re-authentication: the token is still in the volume, `gh auth status` still
+re-authentication. The token is still in the volume, `gh auth status` still
 answers, and the dashboard still lists your repos. `git-filter-repo` is the
 opposite case. It is a tool rather than state, so the image reinstalls it and
 nobody sets it up.
 
 The Access panel shows this table for the container you are actually running,
 read from `/proc/self/mountinfo`. If `$HOME` is not under a mount, every
-credential row is marked **lost on rebuild** and the card tells you the exact
+credential row is marked **lost on rebuild**. The card then tells you the exact
 `-v` to add. A file in the container's writable layer is here now and gone after
 the next `docker rm`.
 
@@ -648,7 +651,7 @@ Environment:
 `GIT_AUTHOR_NAME`/`GIT_AUTHOR_EMAIL` are only a seed: once the container has a
 volume, `git config --global` inside it wins, including changes the signing
 panel makes. Under compose all of the variables in the table come from `.env`
-when it exists; the shell environment is only consulted for names that the file
+when it exists. The shell environment is only consulted for names that the file
 does not set.
 
 ## Security
@@ -683,28 +686,38 @@ uv sync
 uv run bash run-tests.sh
 ```
 
-462 checks against throwaway repos in a temp dir: a real bare `origin`, a stub
-`gh` that plays no-PR/green/failing/running/superseded rollups, a throwaway GPG
-key, and pty-driven runs that type answers into the prompts. It covers the
-rewrite rules, idempotency, the PR gate, the push lease, multiple arena
-branches, divergence choices, uncommitted-change handling, dry-run read-only
-guarantees, path removal, tag movement (annotated and lightweight), and the web
-app's repo store, clone-from-URL path, job argv, event stream, signing endpoints,
-gh sign-in and sign-out (including the "checks unavailable" state), the PWA
-manifest, icons and service worker, `/healthz`, the storage report, job
-cancellation being distinguishable from a crash, and input validation.
+462 checks against throwaway repos in a temp dir. The fixtures are a real bare
+`origin`, a stub `gh` with no-PR/green/failing/running/superseded rollups, and a
+throwaway GPG key. Pty-driven runs type answers into the prompts.
+
+Engine coverage:
+
+- rewrite rules, idempotency, the PR gate, and the push lease
+- multiple arena branches, divergence choices, and uncommitted-change handling
+- dry-run read-only guarantees, path removal, and tag movement (annotated and lightweight)
+
+Web app coverage:
+
+- repo store, clone-from-URL path, job argv, event stream, and signing endpoints
+- gh sign-in and sign-out, including the "checks unavailable" state
+- the PWA manifest, icons, and service worker, `/healthz`, and the storage report
+- job cancellation being distinguishable from a crash, and input validation
 
 The path and app sections skip cleanly when `git-filter-repo` is missing; the
 summary says `SKIPPED: n section(s)` so a green run cannot hide it.
 
 ### The demo
 
-`scripts/demo.py` builds a throwaway fixture and serves the UI on it: three
-local repositories with an arena branch each (`shop-web`, `billing-api`,
-`docs-site`), a stub `gh` that answers from files, the git identity the engine
-claims commits as, and a throwaway GPG key when `gpg` is installed. The server
-runs with `HOME`, `GIT_CONFIG_GLOBAL`, and `GNUPGHOME` inside the demo root, so
-the host's git, gh, and gpg state stays untouched.
+`scripts/demo.py` builds a throwaway fixture and serves the UI on it. The
+fixture holds:
+
+- three local repositories with an arena branch each: `shop-web`, `billing-api`, `docs-site`
+- a stub `gh` that answers from files
+- the git identity the engine claims commits as
+- a throwaway GPG key when `gpg` is installed
+
+The server runs with `HOME`, `GIT_CONFIG_GLOBAL`, and `GNUPGHOME` inside the
+demo root. The host's git, gh, and gpg state stays untouched.
 
 ```console
 uv run scripts/demo.py --port 8080
@@ -713,11 +726,16 @@ uv run scripts/demo.py --root /tmp/demo --no-serve
 ```
 
 It prints the demo root and the `gh` flag file. The stub `gh` reads that
-root's `gh/` directory: `signed-in` present means `gh auth status` succeeds
-(`gh auth login` creates it), `slow` present gives every branch a PR whose
-check never finishes, `prs.json` holds each branch's PR and check rollup, and
-`gpg-keys` lists the key ids `gh api user/gpg_keys` reports. A temporary root
-is removed when the server stops.
+root's `gh/` directory:
+
+| File | Meaning |
+| --- | --- |
+| `signed-in` | present means `gh auth status` succeeds; `gh auth login` creates it |
+| `slow` | present gives every branch a PR whose check never finishes |
+| `prs.json` | each branch's PR and check rollup |
+| `gpg-keys` | the key ids `gh api user/gpg_keys` reports |
+
+A temporary root is removed when the server stops.
 
 ### The two QA tools
 
@@ -735,11 +753,11 @@ python3 tools/measure.py --url http://localhost:8080 --out /tmp/after \
   --against /tmp/measure/report.json --fail-on-offgrid
 ```
 
-It prints a histogram, every off-scale value with the selector that owns it,
-"loners" (a value used once in a component whose siblings agree), and it saves a
-full-page screenshot per view so the numbers can be checked against pixels. The
-stylesheet uses one 2px scale, `1 2 4 6 8 10 12 16 20 24 32 40`, and a comment
-at the top of the `<style>` block says so.
+It prints a histogram and every off-scale value with the selector that owns it.
+It marks "loners": a value used once in a component whose siblings agree. It also
+saves a full-page screenshot per view, so the numbers can be checked against
+pixels. The stylesheet uses one 2px scale, `1 2 4 6 8 10 12 16 20 24 32 40`, and
+a comment at the top of the `<style>` block says so.
 
 **`tools/walk.py`** presses every control in the app and asserts what each one
 did. It clicks cards, the command switch, every toggle, the path chips, cancel,
@@ -754,29 +772,34 @@ python3 tools/walk.py --driver cli --url http://localhost:8080 --out /tmp/walk-c
 ```
 
 The walk flips signed-in state through `--gh-flag <file>`: it writes or removes
-that marker and then re-checks `/api/auth`, which is what the demo's `gh` stub
-reads: pass the `gh flag` path `scripts/demo.py` prints. The same fixture
-supplies the signing key and the git identity; against a plain server the app
-sees the host's `gh` and no key, and about a dozen steps fail for reasons that
-have nothing to do with the UI.
+that marker and then re-checks `/api/auth`. The demo's `gh` stub reads that
+marker, so pass the `gh flag` path `scripts/demo.py` prints. The same fixture
+supplies the signing key and the git identity.
+
+Against a plain server the app sees the host's `gh` and no key. About a dozen
+steps then fail for reasons unrelated to the UI.
 
 Both drivers share one `walk_view()`, so the two runs assert the same things and
 disagree only when the driver does. The `cli` driver shells out to
 `playwright cli` and adapts its snapshot-and-locator interface to the same small
-page object (`CliPage`), including a keyboard shim, because the CLI has no
+page object (`CliPage`). That includes a keyboard shim, because the CLI has no
 `keyboard` object of its own.
 
-58 steps at desktop and phone widths, one screenshot per step
-(`docs/walk/` holds the last run), a `walk-report.json`, and a non-zero exit if
-any step fails or the console logs an error. The cancel step parks a real run at
-the PR gate (the stub `gh` reports a check that never finishes), presses
-**Cancel** there, and waits for `cancelled`, so the button meets a live process
+58 steps at desktop and phone widths, one screenshot per step (`docs/walk/`
+holds the last run), and a `walk-report.json`. The exit is non-zero if any step
+fails or the console logs an error.
+
+The cancel step parks a real run at the PR
+gate, where the stub `gh` reports a check that never finishes. It presses
+**Cancel** there and waits for `cancelled`. The button thus meets a live process
 rather than a job that already exited.
 
-It found four bugs while being written: no Start button on desktop, `back` from
-Access landing in a repo you had already left, a cancelled run reported as
-`exit -15`, and a `gh pr view` response shaped like a list reaching the engine
-as an AttributeError instead of a message.
+It found four bugs while being written:
+
+- no Start button on desktop
+- `back` from Access landing in a repo you had already left
+- a cancelled run reported as `exit -15`
+- a `gh pr view` response shaped like a list reaching the engine as an AttributeError instead of a message
 
 Formatting contracts:
 
@@ -794,14 +817,14 @@ markdownlint README.md CHANGELOG.md
 The two QA tools need Playwright: `uv sync --group qa`, then
 `uv run playwright install chromium`.
 
-Four workflows run on GitHub. `ci.yml` runs the four formatting checks and
-the suite on every push to `main` and every pull request. `pr-check.yml` holds pull
-requests to Conventional Commit subjects and a Summary, Changes, Validation
-body (`scripts/check_pr.py`). `container-scan.yml` builds the image and prints
-a Trivy report when an image input changes; it never fails the build.
-`docker.yml` builds the image on a native runner per architecture after a
-green CI run on `main`, puts both digests under `latest`, and deletes the
-untagged versions the move leaves behind.
+Four workflows run on GitHub:
+
+| Workflow | Job |
+| --- | --- |
+| `ci.yml` | the four formatting checks and the suite on every push to `main` and every pull request |
+| `pr-check.yml` | holds pull requests to Conventional Commit subjects and a Summary, Changes, Validation body (`scripts/check_pr.py`) |
+| `container-scan.yml` | builds the image and prints a Trivy report when an image input changes; it never fails the build |
+| `docker.yml` | after a green CI run on `main`, builds the image on a native runner per architecture. Both digests go under `latest`; the untagged versions the move leaves behind are deleted |
 
 ### Layout
 

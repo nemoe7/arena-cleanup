@@ -2,10 +2,10 @@
 """
 arena-ui - the web front end for arena-cleanup.
 
-Serves a dashboard of remembered repositories and runs the CLI against them:
-every button press becomes an argv, never a shell string, and the process
-output streams straight back to the browser. Nothing about the rewrite logic
-lives here - engine.py stays the only thing that touches git.
+Serves a dashboard of remembered repositories and runs the CLI against them.
+Every button press becomes an argv, never a shell string. The process output
+streams straight back to the browser. Nothing about the rewrite logic lives
+here: engine.py stays the only thing that touches git.
 
     python3 ui/server.py [--data DIR] [--port 8080] [--repo PATH]
 
@@ -75,7 +75,7 @@ def run_cmd(
 ) -> tuple[int, str, str]:
   """(returncode, stdout, stderr) - never raises for a non-zero exit.
 
-  Anything secret goes through `stdin_text`, never through argv: a token in a
+  Anything secret goes through `stdin_text`, never through argv. A token in a
   command line is visible to every process on the box.
   """
   opts: dict[str, Any] = {
@@ -112,7 +112,7 @@ class Registry:
   A JSON file of known repositories, written atomically.
 
   Small enough that a lock around every operation is cheaper than reasoning
-  about interleavings, and it is read on every request.
+  about interleavings. It is read on every request.
   """
 
   def __init__(self, data_dir: Path) -> None:
@@ -356,11 +356,10 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
     if len(counts) == 2:
       ahead, behind = (int(counts[0]), int(counts[1]))
 
-  # PR state for each arena branch, bounded so a repo with many branches does
-  # not turn one dashboard load into a dozen API calls. `pr_checked` is what
-  # lets the dashboard say "cannot see checks" instead of "no PR" when gh is
-  # signed out - those two look identical in an empty dict and mean very
-  # different things.
+  # PR state for each arena branch, bounded. A repo with many branches must
+  # not turn one dashboard load into a dozen API calls. `pr_checked` lets the
+  # dashboard say "cannot see checks" instead of "no PR" when gh is signed
+  # out. Those two look identical in an empty dict and mean different things.
   checks: dict[str, Any] = {}
   gh = auth_report()["gh"]
   authenticated = bool(gh["installed"] and gh["authenticated"])
@@ -417,8 +416,8 @@ def secret_keys() -> list[dict[str, Any]]:
     fields = line.split(":")
     if not fields:
       continue
-    kind = fields[0]
-    if kind == "sec":
+    record = fields[0]
+    if record == "sec":
       current = {
         "fingerprint": "",
         "created": fields[5],
@@ -428,14 +427,14 @@ def secret_keys() -> list[dict[str, Any]]:
       keys.append(current)
       pending_fpr = True
     elif (
-      kind == "fpr"
+      record == "fpr"
       and pending_fpr
       and current is not None
       and not current["fingerprint"]
     ):
       current["fingerprint"] = fields[9]
       pending_fpr = False
-    elif kind == "uid" and current is not None and not current["uid"]:
+    elif record == "uid" and current is not None and not current["uid"]:
       current["uid"] = fields[9]
   return [k for k in keys if k["fingerprint"]]
 
@@ -459,7 +458,7 @@ def global_config(key: str) -> str:
 def commits_report(repo: dict[str, Any], limit: int = 30) -> dict[str, Any]:
   """The most recent commits on HEAD, with their signature state.
 
-  The run card shows which commits a cleanup produced; this is the git answer,
+  The run card shows which commits a cleanup produced. This is the git answer,
   read after the run rather than parsed out of the log.
   """
   cwd = repo["path"]
@@ -652,8 +651,8 @@ def is_secure_request(handler: BaseHTTPRequestHandler) -> bool:
   Is this origin a secure context?
 
   Service workers only register on localhost or over HTTPS. Plain-HTTP access
-  from a phone on the LAN is neither, which is exactly the case the PWA needs
-  to explain instead of failing silently.
+  from a phone on the LAN is neither. That is the case the PWA needs to
+  explain instead of failing silently.
   """
   forwarded = (handler.headers.get("X-Forwarded-Proto") or "").split(",")[0].strip()
   if forwarded.lower() == "https":
@@ -776,23 +775,23 @@ def storage_report(data_dir: Path) -> dict[str, Any]:
   """
   What survives `docker rm`, a rebuild, or a fresh image pull - and what does not.
 
-  The distinction that actually bites people: credentials live in $HOME (a
-  volume if they remembered -v), while the tools live in the image. Forget the
-  volume and everything looks fine until the next build, when the container is
+  The distinction that bites people: credentials live in $HOME, while the
+  tools live in the image. $HOME is a volume only with -v. Forget the volume and
+  everything looks fine until the next build. Then the container is
   unauthenticated and the registry is empty.
   """
   home = Path(os.environ.get("HOME") or Path.home())
   mounted = mount_point_for(home)
 
-  def item(label: str, path: Path, kind: str, note: str) -> dict[str, Any]:
+  def item(label: str, path: Path, source: str, note: str) -> dict[str, Any]:
     inside = path == home or home in path.parents or path in home.parents
-    # a file that exists is not the same as a file that survives: only a path
+    # a file that exists is not the same as a file that survives. Only a path
     # under a mount point outlives the container
     mount = mount_point_for(path if path.exists() else path.parent)
     return {
       "label": label,
       "path": str(path),
-      "kind": kind,  # volume | image | env
+      "source": source,  # volume | image | env
       "exists": path.exists(),
       "inside_home": inside,
       "mount_point": mount,
@@ -910,10 +909,11 @@ def build_argv(body: dict[str, Any], repo: dict[str, Any]) -> list[str]:
   """
   Turn a JSON body into an argv, from a whitelist.
 
-  Nothing the browser sends is ever interpolated into a shell string: each
+  Nothing the browser sends is ever interpolated into a shell string. Each
   option becomes its own list element, and unknown keys are rejected loudly.
-  `action: "clean"` is the one-click path - the full run with the defaults the
-  dashboard promises, spelled out here so the argv preview can show them.
+  `action: "clean"` is the one-click path: the full run with the defaults the
+  dashboard promises. They are spelled out here so the argv preview can show
+  them.
   """
   action = body.get("action", "run")
   if action == "clean":
@@ -960,7 +960,7 @@ def build_argv(body: dict[str, Any], repo: dict[str, Any]) -> list[str]:
       if branch.startswith("-") or "\0" in branch:
         raise BadRequest(f"invalid branch {branch!r}")
       argv += ["--branch", branch]
-    # One click never guesses what to do with diverged history: the engine
+    # One click never guesses what to do with diverged history. The engine
     # refuses without a terminal, and the UI then offers the two choices.
     divergence = body.get("divergence") or "ask"
     if divergence not in {"ask", "remote", "local"}:
@@ -1062,8 +1062,8 @@ class Handler(BaseHTTPRequestHandler):
       "Content-Type", CONTENT_TYPES.get(target.suffix, "application/octet-stream")
     )
     self.send_header("Content-Length", str(len(data)))
-    # the worker has to be revalidated on every load or a new version of the
-    # app can never take over from the old cached shell
+    # the worker has to be revalidated on every load. Otherwise a new version
+    # of the app can never take over from the old cached shell
     no_store = target.suffix == ".html" or target.name == "sw.js"
     self.send_header(
       "Cache-Control", "no-store" if no_store else "public, max-age=86400"
@@ -1128,8 +1128,8 @@ class Handler(BaseHTTPRequestHandler):
       elif path == "/api/storage":
         self._json(storage_report(self.reg.data))
       elif path in ("/healthz", "/api/health"):
-        # Deliberately cheap: docker's HEALTHCHECK and a Tailscale monitor both
-        # poll this on a short interval, so it must not shell out to git.
+        # Deliberately cheap. docker's HEALTHCHECK and a Tailscale monitor both
+        # poll this on a short interval. It must not shell out to git.
         self._json(
           {
             "ok": True,
@@ -1328,8 +1328,8 @@ class Handler(BaseHTTPRequestHandler):
 def bootstrap(args: argparse.Namespace, reg: Registry) -> str:
   """Register the mounted repo on first boot; return its path for defaults."""
   candidate = args.repo or os.environ.get("ARENA_REPO") or ""
-  # An empty bind mount is normal (compose always mounts /repo), so a path that
-  # is not a git work tree is silent rather than a warning on every boot.
+  # An empty bind mount is normal, because compose always mounts /repo. A path
+  # that is not a git work tree is silent rather than a warning on every boot.
   if (
     candidate
     and os.path.isdir(candidate)

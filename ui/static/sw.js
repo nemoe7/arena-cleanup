@@ -3,8 +3,8 @@
  *
  * The app shell is cached so the icon opens instantly and works on a flaky
  * connection. Nothing else is: every /api/ request goes straight to the
- * network, because a cached repository status would be a lie about someone's
- * git state. If the network is gone, the shell still opens and says so.
+ * network. A cached repository status would be a lie about someone's git
+ * state. If the network is gone, the shell still opens and says so.
  */
 
 const SHELL = "arena-shell-v1";
@@ -45,7 +45,7 @@ self.addEventListener("fetch", (event) => {
   // live state: never serve a stale dashboard out of a cache
   if (url.pathname.startsWith("/api/")) return;
 
-  // navigations: network first, so a rebuilt server is picked up immediately
+  // navigations: network first, so a rebuilt server is used immediately
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
