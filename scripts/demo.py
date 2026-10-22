@@ -33,6 +33,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent
@@ -83,6 +84,39 @@ REPOS = [
 OTHER = ("other-dev", "other@example.com")
 AGENT = ("arena-agent", "agent@arena.ai")
 BOT = ("arena-ai-coding-agent[bot]", "bot@arena.ai")
+ME = (ME_NAME, ME_EMAIL)
+FIRST_COMMIT = datetime(2024, 1, 1, 10, tzinfo=timezone(timedelta(hours=8)))
+
+# main: a plain project history, one commit a day, so the commits card has
+# something to list. Subject, file, author.
+MAIN_HISTORY = [
+  ("chore: init", "README.md", OTHER),
+  ("feat: project skeleton", "app.py", OTHER),
+  ("docs: usage notes", "README.md", OTHER),
+  ("feat: config loading", "config.py", ME),
+  ("test: config loading", "tests.py", ME),
+  ("fix: empty config file", "config.py", OTHER),
+  ("feat: command line entry", "cli.py", OTHER),
+  ("refactor: split the modules", "app.py", ME),
+  ("ci: add the workflow", "ci.yml", OTHER),
+  ("fix: windows paths", "config.py", ME),
+  ("feat: structured logging", "log.py", OTHER),
+  ("docs: configuration reference", "README.md", OTHER),
+  ("chore: bump the dependencies", "pyproject.toml", OTHER),
+  ("fix: flaky timing test", "tests.py", ME),
+]
+# the arena branch: one session of mixed authorship, with bodies to trim
+BRANCH_HISTORY = [
+  ("feat: external contribution\n\nbody the human wrote", "docs.md", OTHER),
+  ("feat: agent work\n\nlong body that should be trimmed", "app.py", AGENT),
+  ("fix: mine already fine", "app.py", ME),
+  ("chore: bot cleanup\n\nanother body to trim", "tests.py", BOT),
+  ("feat: checkout form\n\nscaffolded from the issue", "checkout.py", AGENT),
+  ("fix: review feedback", "checkout.py", OTHER),
+  ("test: checkout form\n\ngenerated cases", "tests.py", AGENT),
+  ("style: format the module", "app.py", BOT),
+  ("docs: checkout notes", "docs.md", ME),
+]
 
 GH_STUB = '''#!/usr/bin/env python3
 """Demo stand-in for gh: state lives in files next to this script's data."""
@@ -262,12 +296,13 @@ def make_repo(root: Path, name: str, branch: str, env: dict[str, str]) -> Path:
   work.parent.mkdir(parents=True, exist_ok=True)
   run("git", "init", "--bare", "--quiet", "-b", "main", str(origin), env=env)
   run("git", "clone", "--quiet", str(origin), str(work), env=env)
+  (work / "README.md").write_text(f"# {name}\n")
 
-  def commit(
-    file: str, text: str, message: str, who: tuple[str, str], date: str
-  ) -> None:
-    (work / file).write_text(text)
+  def commit(message: str, file: str, who: tuple[str, str], day: int) -> None:
+    with (work / file).open("a") as fh:
+      fh.write(message.splitlines()[0] + "\n")
     run("git", "add", file, cwd=work, env=env)
+    date = (FIRST_COMMIT + timedelta(days=day)).isoformat()
     run(
       "git",
       "commit",
@@ -279,38 +314,12 @@ def make_repo(root: Path, name: str, branch: str, env: dict[str, str]) -> Path:
       env=git_env(env, who[0], who[1], date),
     )
 
-  me = (ME_NAME, ME_EMAIL)
-  commit("README.md", f"# {name}\n", "chore: init", OTHER, "2024-01-01T10:00:00+08:00")
+  for day, entry in enumerate(MAIN_HISTORY):
+    commit(*entry, day)
   run("git", "push", "--quiet", "-u", "origin", "main", cwd=work, env=env)
   run("git", "checkout", "--quiet", "-b", branch, cwd=work, env=env)
-  commit(
-    "docs.md",
-    "notes\n",
-    "feat: external contribution\n\nbody the human wrote",
-    OTHER,
-    "2024-01-02T10:00:00+08:00",
-  )
-  commit(
-    "app.py",
-    "print('hello')\n",
-    "feat: agent work\n\nlong body that should be trimmed",
-    AGENT,
-    "2024-01-03T10:00:00+08:00",
-  )
-  commit(
-    "app.py",
-    "print('hello, world')\n",
-    "fix: mine already fine",
-    me,
-    "2024-01-04T10:00:00+08:00",
-  )
-  commit(
-    "tests.py",
-    "assert True\n",
-    "chore: bot cleanup\n\nanother body to trim",
-    BOT,
-    "2024-01-05T10:00:00+08:00",
-  )
+  for day, entry in enumerate(BRANCH_HISTORY, len(MAIN_HISTORY)):
+    commit(*entry, day)
   run("git", "push", "--quiet", "-u", "origin", branch, cwd=work, env=env)
   run("git", "checkout", "--quiet", "main", cwd=work, env=env)
   return work
