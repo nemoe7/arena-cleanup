@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    # Steering syncs carry no shipped code, so their pushes skip CI and never
+    # cancel a code run through the concurrency group below.
+    paths-ignore: &steering
+      - ".agents/**"
+      - "ARENA.md"
+      - "AGENTS.md"
+  pull_request:
+    paths-ignore: *steering
+
+# A new push stops the older run of the same branch or PR.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: "Lint, format, prose, and tests"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.1
+        with:
+          # The newest uv in the action's version manifest; a newer release
+          # fails the step until the manifest lists it.
+          version: "0.13.4"
+          # The image runtime: Debian 13 ships Python 3.13.
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run --no-sync ruff check engine.py ui/server.py tools/*.py
+      - run: uv run --no-sync ruff format --check engine.py ui/server.py tools/*.py
+      - run: uv run --no-sync shfmt -i 2 -d run-tests.sh docker-entrypoint.sh
+      - name: Lint Markdown
+        uses: DavidAnson/markdownlint-cli2-action@v24.2.0
+        with:
+          config: .markdownlint.json
+          globs: |
+            README.md
+            CHANGELOG.md
+      # The suite needs git, gpg, curl, and git-filter-repo; the runner has
+      # the first three, and `uv run` puts the fourth on PATH.
+      - run: uv run --no-sync bash run-tests.sh

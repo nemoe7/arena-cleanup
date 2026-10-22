@@ -759,6 +759,12 @@ markdownlint README.md CHANGELOG.md
 The two QA tools need Playwright: `uv sync --group qa`, then
 `uv run playwright install chromium`.
 
+Three workflows run on GitHub. `ci.yml` runs the four formatting checks and
+the suite on every push to `main` and every pull request. `pr-check.yml` holds pull
+requests to Conventional Commit subjects and a Summary, Changes, Validation
+body (`scripts/check_pr.py`). `container-scan.yml` builds the image and prints
+a Trivy report when an image input changes; it never fails the build.
+
 ### Layout
 
 | path                          | what it is                                               |
@@ -776,6 +782,8 @@ The two QA tools need Playwright: `uv sync --group qa`, then
 | `Dockerfile`                  | Debian slim + git, gh, git-filter-repo, gnupg            |
 | `pyproject.toml`              | the version, the dependency groups, the Ruff settings    |
 | `uv.lock`                     | the pinned tool chain `uv sync` installs                 |
+| `.github/workflows/`          | CI, the pull request contract, and the container scan    |
+| `scripts/check_pr.py`         | the commit, title, and body contract `pr-check.yml` runs |
 
 The front end is a single page with four views (dashboard, repo, signing,
 access). It reaches the server through one `fetch` wrapper and follows a run over
