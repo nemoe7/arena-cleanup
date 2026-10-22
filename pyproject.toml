@@ -8,6 +8,7 @@ dependencies = []
 [dependency-groups]
 dev = [
   "git-filter-repo>=2.47",
+  "pytest>=8.3",
   "ruff==0.16.6",
   "shfmt-py>=4.2",
 ]
@@ -27,3 +28,6 @@ extend-select = ["E501"]
 
 [tool.ruff.lint.pycodestyle]
 max-line-length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

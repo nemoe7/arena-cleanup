@@ -38,13 +38,29 @@ jobs:
           python-version: "3.13"
           enable-cache: true
       - run: uv sync --locked
-      - run: uv run --no-sync ruff check engine.py ui/server.py tools/*.py
-      - run: uv run --no-sync ruff format --check engine.py ui/server.py tools/*.py
-      - run: uv run --no-sync shfmt -i 2 -d run-tests.sh docker-entrypoint.sh
+      - run: uv run --no-sync ruff check engine.py ui/server.py scripts/*.py tests
+      - run: uv run --no-sync ruff format --check engine.py ui/server.py scripts/*.py tests
+      - run: uv run --no-sync shfmt -i 2 -d docker-entrypoint.sh
       - name: Lint Markdown
         uses: DavidAnson/markdownlint-cli2-action@v24.2.0
         with:
           globs: "**/*.md"
-      # The suite needs git, gpg, curl, and git-filter-repo; the runner has
-      # the first three, and `uv run` puts the fourth on PATH.
-      - run: uv run --no-sync bash run-tests.sh
+      # The suite needs git, gpg, and git-filter-repo; the runner has the first
+      # two, and `uv run` puts the third on PATH. Browser tests skip here.
+      - run: uv run --no-sync pytest
+  e2e:
+    name: "Browser walk and spacing audit"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.1
+        with:
+          version: "0.13.4"
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync --locked --group qa
+      - run: uv run --no-sync playwright install --with-deps chromium
+      - run: uv run --no-sync pytest tests/e2e

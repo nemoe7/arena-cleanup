@@ -9,7 +9,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- uv-managed tool chain: `uv sync` installs Ruff, shfmt, and `git-filter-repo` from `uv.lock`.
+- uv-managed tool chain: `uv sync` installs Ruff, shfmt, pytest, and `git-filter-repo` from `uv.lock`.
 - GitHub workflows: CI (lint, format, Markdown, suite), the pull request contract, and an advisory container scan.
 - Image publishing: a green CI run on `main` pushes `ghcr.io/nemoe7/arena-cleanup:latest` for amd64 and arm64, the only tag.
 - `scripts/demo.py`: a throwaway fixture served by the UI for demos and the QA tools. It holds three repositories, a stub `gh`, an identity, and a GPG key.
@@ -21,6 +21,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `/api/access` storage rows name their origin under `source` instead of `kind`. <!-- nonemo: P001 -->
 - UI type sizes come from one ramp per width class, held in `--fs-*` tokens. Inline SVG icons replace the text glyphs.
 - At 360 px the signing fields, commit metadata, and access labels stack. Create key is disabled while gpg is missing.
+- The test suite is pytest under `tests/`: the engine, web app, and compose checks keep the bash fixtures. `uv run pytest` runs it, in CI too.
+- The browser walk and the spacing audit are Playwright tests in `tests/e2e/`. A second CI job installs Chromium and runs them.
+
+### Removed
+
+- `run-tests.sh`, `tools/walk.py`, and `tools/measure.py`; the tests under `tests/` replace them.
 
 ## [0.1.0] - 2026-10-22
 
