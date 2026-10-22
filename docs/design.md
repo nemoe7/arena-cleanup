@@ -76,7 +76,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ## Accessibility and inclusion
 
 - Target: WCAG 2.2 AA for keyboard use and names. Applied so far: a skip link, `aria-label` on icon buttons, `role="status"` for the run state, and focus rings. Targets are 44 px on a phone.
-- Test methods: the browser walk in `tests/e2e/test_walk.py` (keyboard and names) and the measure reports (target sizes).
+- Test methods: the browser walk in `scripts/walk.py` (keyboard and names) and the measure reports (target sizes).
 - Not run: screen reader sessions, contrast measurement.
 
 ## Content and assets
@@ -96,7 +96,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - 2026-10-22 audit, before the fixes: nine font sizes at 1280 px and six at 360 px. The signing fields, commit rows, and access rows broke at 360 px. Create key stayed enabled without gpg, and icons were text glyphs.
 - 2026-10-22 after the fixes: screenshots of the four views at 1280 and 360 px, plus measure reports. They show five sizes at 1280 px, stacked rows at 360 px, and inline SVG icons. The 8 px scale check still reports the 6, 10, and 12 px steps; see the decision below.
-- Readiness: implemented; the walk and the spacing audit run in `tests/e2e/`.
+- Readiness: implemented; the spacing audit runs in `tests/e2e/`, the walk from `scripts/walk.py`.
 
 ## Decisions and history
 
