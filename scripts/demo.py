@@ -7,6 +7,8 @@ The fixture holds:
 - five local repositories: an arena branch each, one with two, and one whose
   default branch moved on after the arena branch was pushed
 - a stub `gh` that answers from files
+- origins that answer to `https://github.com/demo/<name>`, mapped onto the local
+  bare repositories with `url.<path>.insteadOf`
 - a git identity that matches the engine's constants
 - a throwaway GPG key when `gpg` is installed
 
@@ -47,6 +49,8 @@ from ui.server import Registry, register_path
 # The demo identity: the gitconfig the stub writes, and the author of the claimed commits.
 ME_NAME = "nemoe7"
 ME_EMAIL = "60245796+nemoe7@users.noreply.github.com"
+
+PAGE_BASE = "https://github.com/demo"
 
 SUCCESS = {"status": "COMPLETED", "conclusion": "SUCCESS"}
 FAILURE = {"status": "COMPLETED", "conclusion": "FAILURE"}
@@ -366,6 +370,11 @@ def make_repo(
   work.parent.mkdir(parents=True, exist_ok=True)
   run("git", "init", "--bare", "--quiet", "-b", "main", str(origin), env=env)
   run("git", "clone", "--quiet", str(origin), str(work), env=env)
+  # the clone names a GitHub URL, as a live install does. git rewrites it to
+  # the bare repository for every fetch and push.
+  page = f"{PAGE_BASE}/{name}"
+  run("git", "remote", "set-url", "origin", page, cwd=work, env=env)
+  run("git", "config", "--global", f"url.{origin}.insteadOf", page, env=env)
   (work / "README.md").write_text(f"# {name}\n")
 
   days = itertools.count()

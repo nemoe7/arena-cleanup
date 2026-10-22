@@ -298,6 +298,22 @@ def test_reset_to_origin(ui: UI, world: World, ids: dict[str, str]) -> None:
   assert ui.status("POST", "/api/repos/nope/reset", {}) == 404
 
 
+def test_the_remote_row_shows_the_configured_url(
+  ui: UI, world: World, ids: dict[str, str]
+) -> None:
+  page = "https://github.com/acme/work"
+  world.git("remote", "set-url", "origin", page)
+  world.git("config", f"url.{world.origin}.insteadOf", page)
+  try:
+    # reset answers with a fresh status, and its fetch rides the rewrite
+    out = ui.post(f"/api/repos/{ids['repo']}/reset", {})
+    assert out["reset"] == "origin/main"
+    assert out["status"]["remote"] == page
+  finally:
+    world.git("config", "--unset", f"url.{world.origin}.insteadOf")
+    world.git("remote", "set-url", "origin", str(world.origin))
+
+
 def test_the_argv_whitelist(ui: UI, ids: dict[str, str]) -> None:
   jobs = f"/api/repos/{ids['repo']}/jobs"
   assert ui.status("POST", jobs, {"action": "rm -rf /"}) == 400

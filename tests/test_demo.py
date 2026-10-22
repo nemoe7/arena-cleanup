@@ -11,17 +11,22 @@ import pytest
 from scripts import demo
 
 
-def git(*argv: str, cwd: Path) -> str:
+def git(*argv: str, cwd: Path, env: dict[str, str] | None = None) -> str:
   res = subprocess.run(
-    ["git", *argv], cwd=cwd, capture_output=True, text=True, check=True
+    ["git", *argv], cwd=cwd, env=env, capture_output=True, text=True, check=True
   )
   return res.stdout.strip()
 
 
 @pytest.fixture(scope="module")
-def repos(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Path]:
+def env(tmp_path_factory: pytest.TempPathFactory) -> dict[str, str]:
   root = tmp_path_factory.mktemp("demo")
-  env = {**os.environ, "HOME": str(root), "GIT_CONFIG_GLOBAL": str(root / "gitconfig")}
+  return {**os.environ, "HOME": str(root), "GIT_CONFIG_GLOBAL": str(root / "gitconfig")}
+
+
+@pytest.fixture(scope="module")
+def repos(env: dict[str, str]) -> dict[str, Path]:
+  root = Path(env["HOME"])
   return {
     name: demo.make_repo(root, name, branches, later, env)
     for name, branches, later in demo.REPOS
@@ -50,6 +55,17 @@ def test_one_default_branch_moved_on_after_its_session(repos: dict[str, Path]) -
   assert moved == ["infra-tools"]
   assert ahead == {name: len(demo.MAIN_LATER) if name in moved else 0 for name in repos}
   assert behind == ahead  # the clone has not pulled, so the card shows the drift
+
+
+def test_the_origins_answer_to_github_urls(
+  repos: dict[str, Path], env: dict[str, str]
+) -> None:
+  for name, work in repos.items():
+    page = f"{demo.PAGE_BASE}/{name}"
+    assert git("config", "--get", "remote.origin.url", cwd=work, env=env) == page
+    resolved = git("remote", "get-url", "origin", cwd=work, env=env)
+    assert resolved.endswith(f"/origins/{name}.git")
+    assert git("ls-remote", "--heads", "origin", "main", cwd=work, env=env)
 
 
 def test_one_repository_keeps_two_arena_branches(repos: dict[str, Path]) -> None:
