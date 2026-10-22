@@ -258,8 +258,6 @@ def flow_board(_: dict[str, bytes]) -> str:
     + '<div class="bar">'
     + block(icon("arrow-left") + "&nbsp;All repos", width="100px")
     + block("shop-web", width="80px")
-    + '<div class="grow"></div>'
-    + block("Publish · Rewrite · Check", width="150px")
     + "</div>"
     + '<div class="bar" style="align-items:flex-start">'
     + block("branches", height=150, width="90px")
@@ -369,12 +367,8 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     + '<div class="bar">'
     + block(icon("arrow-left") + "&nbsp;All repos", width="100px")
     + block("shop-web", width="90px")
-    + '<div class="grow"></div>'
-    + block("Publish", hi=True, width="70px")
-    + block("Rewrite", width="70px")
-    + block("Check", width="60px")
     + "</div>"
-    + block("task sentence: what the selected command will do", soft=True, height=28)
+    + block("task sentence: what the run does", soft=True, height=28)
     + f'<div class="scr" style="width:auto">{options}</div>'
     + f'<div class="scr" style="width:auto">{run}</div>'
     + f'<div class="scr" style="width:auto">{commits}</div></div>'
@@ -385,7 +379,7 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     '<tr><td class="mono">Cancel</td><td>terminates the child process; the log says cancelled</td></tr>'
     '<tr><td class="mono">Show log</td><td>unfolds the raw lines under the phase list</td></tr>'
     '<tr><td class="mono">Copy log</td><td>puts the whole log on the clipboard</td></tr>'
-    '<tr><td class="mono">Ctrl + Enter</td><td>starts the selected command from anywhere</td></tr>'
+    '<tr><td class="mono">Ctrl + Enter</td><td>starts the run from anywhere</td></tr>'
     '<tr><td class="mono">720 px</td><td>primary actions stick to the bottom; one column</td></tr></table>'
   )
   body = (
