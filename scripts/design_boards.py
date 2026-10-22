@@ -81,6 +81,8 @@ PHASE_ICON = {
 }
 
 BOARD_CSS = """
+/* frozen motion keeps a board byte-identical between runs */
+.board *, .board *::before, .board *::after { animation: none !important; transition: none !important; }
 .board { padding: 32px; background: var(--bg); color: var(--text); font-family: var(--sans);
   width: max-content; max-width: 1536px; }
 .board h1 { font-size: var(--fs-5); font-weight: 640; margin: 0 0 4px; }
