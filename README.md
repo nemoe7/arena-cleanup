@@ -678,33 +678,32 @@ does not set.
 ## Development
 
 [uv](https://docs.astral.sh/uv/) manages the tool chain. `uv sync` creates
-`.venv` with Ruff, shfmt, and `git-filter-repo` from `uv.lock`; `uv run` puts
-them on `PATH`. The app itself has no dependencies and runs on the system Python.
+`.venv` with Ruff, shfmt, pytest, and `git-filter-repo` from `uv.lock`; `uv run`
+puts them on `PATH`. The app itself has no dependencies and runs on the system
+Python.
 
 ```console
 uv sync
-uv run bash run-tests.sh
+uv run pytest
 ```
 
-462 checks against throwaway repos in a temp dir. The fixtures are a real bare
-`origin`, a stub `gh` with no-PR/green/failing/running/superseded rollups, and a
-throwaway GPG key. Pty-driven runs type answers into the prompts.
+The suite in `tests/` runs against throwaway repos in a temp dir. The fixtures
+are a real bare `origin`, a stub `gh` with no-PR/green/failing/running/superseded
+rollups, and a throwaway GPG key. Pty-driven runs type answers into the prompts.
 
-Engine coverage:
+- `tests/test_engine.py`: rewrite rules, idempotency, the PR gate, the push
+  lease, multiple arena branches, divergence choices, uncommitted changes,
+  dry-run guarantees, path removal, and tag movement. The tests run in file
+  order and share one repository state.
+- `tests/test_ui.py`: the repo store, clone-from-URL, job argv, the event
+  stream, signing, gh sign-in and sign-out, the PWA assets, `/healthz`, the
+  storage report, cancellation, and input validation.
+- `tests/test_compose.py`: the compose file, `.env.example`, and the sidecar
+  wiring.
+- `tests/e2e/`: the browser walk and the spacing audit (below).
 
-- rewrite rules, idempotency, the PR gate, and the push lease
-- multiple arena branches, divergence choices, and uncommitted-change handling
-- dry-run read-only guarantees, path removal, and tag movement (annotated and lightweight)
-
-Web app coverage:
-
-- repo store, clone-from-URL path, job argv, event stream, and signing endpoints
-- gh sign-in and sign-out, including the "checks unavailable" state
-- the PWA manifest, icons, and service worker, `/healthz`, and the storage report
-- job cancellation being distinguishable from a crash, and input validation
-
-The path and app sections skip cleanly when `git-filter-repo` is missing; the
-summary says `SKIPPED: n section(s)` so a green run cannot hide it.
+The path and signing tests skip when `git-filter-repo` or `gpg` is missing. The
+summary lists every skip, so a green run cannot hide one.
 
 ### The demo
 
@@ -737,64 +736,36 @@ root's `gh/` directory:
 
 A temporary root is removed when the server stops.
 
-### The two QA tools
+### Browser tests
 
-Both are local-only: they drive a real Chromium against a URL you give them and
-write their results to disk. Neither talks to a service. Point them at the demo.
-
-**`tools/measure.py`** walks the four views and dumps the computed padding,
-margin and gap of every element, then reports what is off the stylesheet's
-scale:
+`tests/e2e/` drives a real Chromium against a fresh demo instance. It needs
+Playwright: `uv sync --group qa`, then `uv run playwright install chromium`.
+Without them the tests skip. `E2E_CHROMIUM=<binary>` points them at another
+Chromium.
 
 ```console
-python3 tools/measure.py --url http://localhost:8080 --out /tmp/measure
-# compare against a saved run, and fail the shell when spacing drifts
-python3 tools/measure.py --url http://localhost:8080 --out /tmp/after \
-  --against /tmp/measure/report.json --fail-on-offgrid
+uv run pytest tests/e2e
 ```
 
-It prints a histogram and every off-scale value with the selector that owns it.
-It marks "loners": a value used once in a component whose siblings agree. It also
-saves a full-page screenshot per view, so the numbers can be checked against
-pixels. The stylesheet uses one 2px scale, `1 2 4 6 8 10 12 16 20 24 32 40`, and
-a comment at the top of the `<style>` block says so.
+`test_walk.py` presses every control in the app and asserts what each one did.
+It clicks cards, the command switch, every toggle, the path chips, cancel, copy,
+every back button, and the token form. It goes through the states that are easy
+to forget: offline, signed out, a rejected token, a cancelled run. It runs at
+desktop and phone widths and fails on any console error.
 
-**`tools/walk.py`** presses every control in the app and asserts what each one
-did. It clicks cards, the command switch, every toggle, the path chips, cancel,
-copy, every back button and the token form, and it goes through the states that
-are easy to forget: empty, offline, signed out, a rejected token, a cancelled
-run.
+`docs/walk/` holds screenshots from an earlier manual walk.
 
-```console
-python3 tools/walk.py --url http://localhost:8080 --out /tmp/walk
-# the same walk driven through the Playwright CLI instead of the library
-python3 tools/walk.py --driver cli --url http://localhost:8080 --out /tmp/walk-cli
-```
+The cancel test parks a real run at the PR gate, where the stub `gh` reports a
+check that never finishes. It presses **Cancel** there and waits for
+`cancelled`, so the button meets a live process. The signed-out tests write or
+remove the demo's `gh/signed-in` marker and re-check `/api/auth`.
 
-The walk flips signed-in state through `--gh-flag <file>`: it writes or removes
-that marker and then re-checks `/api/auth`. The demo's `gh` stub reads that
-marker, so pass the `gh flag` path `scripts/demo.py` prints. The same fixture
-supplies the signing key and the git identity.
+`test_spacing.py` reads the computed padding, margin, and gap of every visible
+element in the four views at both widths. Every non-zero value has to be even
+or the 1 px border allowance. Every font size has to come from the width's type
+ramp. `docs/design.md` records the scale and the ramps.
 
-Against a plain server the app sees the host's `gh` and no key. About a dozen
-steps then fail for reasons unrelated to the UI.
-
-Both drivers share one `walk_view()`, so the two runs assert the same things and
-disagree only when the driver does. The `cli` driver shells out to
-`playwright cli` and adapts its snapshot-and-locator interface to the same small
-page object (`CliPage`). That includes a keyboard shim, because the CLI has no
-`keyboard` object of its own.
-
-58 steps at desktop and phone widths, one screenshot per step (`docs/walk/`
-holds the last run), and a `walk-report.json`. The exit is non-zero if any step
-fails or the console logs an error.
-
-The cancel step parks a real run at the PR
-gate, where the stub `gh` reports a check that never finishes. It presses
-**Cancel** there and waits for `cancelled`. The button thus meets a live process
-rather than a job that already exited.
-
-It found four bugs while being written:
+The walk found four bugs while being written:
 
 - no Start button on desktop
 - `back` from Access landing in a repo you had already left
@@ -808,20 +779,17 @@ Formatting contracts:
 - `.markdownlint-cli2.jsonc`: every `*.md` outside `.agents/`, `ARENA.md`, and `LICENSE.md`; defaults, `MD013` off, `MD060` on, `MD024` siblings only
 
 ```console
-uv run ruff format engine.py ui/server.py tools/*.py
-uv run ruff check --fix engine.py ui/server.py tools/*.py
-uv run shfmt -i 2 -w run-tests.sh docker-entrypoint.sh
+uv run ruff format engine.py ui/server.py scripts/*.py tests
+uv run ruff check --fix engine.py ui/server.py scripts/*.py tests
+uv run shfmt -i 2 -w docker-entrypoint.sh
 markdownlint-cli2
 ```
-
-The two QA tools need Playwright: `uv sync --group qa`, then
-`uv run playwright install chromium`.
 
 Four workflows run on GitHub:
 
 | Workflow | Job |
 | --- | --- |
-| `ci.yml` | the four formatting checks and the suite on every push to `main` and every pull request |
+| `ci.yml` | the formatting checks and `pytest` on every push to `main` and every pull request; a second job installs Chromium and runs `tests/e2e` |
 | `pr-check.yml` | holds pull requests to Conventional Commit subjects and a Summary, Changes, Validation body (`scripts/check_pr.py`) |
 | `container-scan.yml` | builds the image and prints a Trivy report when an image input changes; it never fails the build |
 | `docker.yml` | after a green CI run on `main`, builds the image on a native runner per architecture. Both digests go under `latest`; the untagged versions the move leaves behind are deleted |
@@ -834,9 +802,8 @@ Four workflows run on GitHub:
 | `ui/static/index.html`        | the whole front end: no build step, no CDN, no framework |
 | `ui/static/fonts/`            | Inter and JetBrains Mono, self-hosted (OFL)              |
 | `engine.py`                   | the rewrite engine; spawned per run, one process each    |
-| `run-tests.sh`                | the 462-check suite                                      |
-| `tools/measure.py`            | spacing auditor: computed styles vs the 2px scale        |
-| `tools/walk.py`               | presses every control, screenshots each step             |
+| `tests/`                      | the pytest suite: engine, web app, compose               |
+| `tests/e2e/`                  | the browser walk and the spacing audit (Playwright)      |
 | `docker-compose.yml`          | `arena-cleanup` + `arena-cleanup-tailscale`              |
 | `docker/tailscale-serve.json` | the `tailscale serve` config the sidecar mounts          |
 | `.env.example`                | the settings `docker compose` reads from `.env`          |

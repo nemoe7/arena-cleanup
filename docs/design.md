@@ -7,7 +7,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Goal: clean an arena branch (rewrite, sign, publish) from a browser, on a phone or a desktop.
 - Scope: the dashboard, the repository view, the GitHub access view, and the commit signing view.
 - Constraints: one HTML file, no build step, and a dark theme only. Fonts and icons ship with the page, so nothing loads from the network.
-- Acceptance checks: the suite in `run-tests.sh`, screenshots at 1280 and 360 px, and the nemo-ui-ux measure reports.
+- Acceptance checks: the pytest suite in `tests/`, screenshots at 1280 and 360 px, and the nemo-ui-ux measure reports.
 - Design status: accepted for the four views; the audit findings of 2026-10-22 are fixed.
 
 ## Users, tasks, and language
@@ -76,7 +76,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ## Accessibility and inclusion
 
 - Target: WCAG 2.2 AA for keyboard use and names. Applied so far: a skip link, `aria-label` on icon buttons, `role="status"` for the run state, and focus rings. Targets are 44 px on a phone.
-- Test methods: the e2e walk in `tools/walk.py` (keyboard and names) and the measure reports (target sizes).
+- Test methods: the browser walk in `tests/e2e/test_walk.py` (keyboard and names) and the measure reports (target sizes).
 - Not run: screen reader sessions, contrast measurement.
 
 ## Content and assets
@@ -96,7 +96,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - 2026-10-22 audit, before the fixes: nine font sizes at 1280 px and six at 360 px. The signing fields, commit rows, and access rows broke at 360 px. Create key stayed enabled without gpg, and icons were text glyphs.
 - 2026-10-22 after the fixes: screenshots of the four views at 1280 and 360 px, plus measure reports. They show five sizes at 1280 px, stacked rows at 360 px, and inline SVG icons. The 8 px scale check still reports the 6, 10, and 12 px steps; see the decision below.
-- Readiness: implemented; the pytest port of `tools/walk.py` is the open item.
+- Readiness: implemented; the walk and the spacing audit run in `tests/e2e/`.
 
 ## Decisions and history
 
