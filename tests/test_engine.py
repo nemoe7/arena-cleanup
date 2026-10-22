@@ -543,6 +543,34 @@ def test_blacklist_claims_a_bare_arena_author(world: World) -> None:
   world.git("branch", "-q", "-D", "arena/bl-check")
 
 
+def test_claim_rules_come_from_git_config(world: World) -> None:
+  world.git("checkout", "-q", "main")
+  world.git("checkout", "-q", "-b", "arena/rules-check", "main")
+  for subject, author in (
+    ("chore: by someone", "someone <someone@example.com>"),
+    ("feat: bare arena author", "arena <arena@example.com>"),
+  ):
+    world.git(
+      "commit",
+      "-q",
+      "--allow-empty",
+      "-m",
+      subject,
+      f"--author={author}",
+      "--no-gpg-sign",
+    )
+  world.git("config", "--global", "--add", "arena.claim-name", "someone")
+  try:
+    assert world.cleanup("strip").rc == 0
+    # the configured rule replaces the constant one, it does not extend it
+    assert world.git("log", "-1", "--format=%ae", "HEAD~1") == ME_EMAIL
+    assert world.git("log", "-1", "--format=%ae", "HEAD") == "arena@example.com"
+  finally:
+    world.git("config", "--global", "--unset-all", "arena.claim-name")
+    world.git("checkout", "-q", "main")
+    world.git("branch", "-q", "-D", "arena/rules-check")
+
+
 def test_superseded_check_runs(world: World) -> None:
   world.git("checkout", "-q", "-b", "arena/superseded", "main")
   world.agent_commit("chore: agent work for check dedupe")

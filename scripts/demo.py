@@ -38,8 +38,11 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(HERE))
 
-import engine
 from ui.server import Registry, register_path
+
+# The demo identity: the gitconfig the stub writes, and the author of the claimed commits.
+ME_NAME = "nemoe7"
+ME_EMAIL = "60245796+nemoe7@users.noreply.github.com"
 
 SUCCESS = {"status": "COMPLETED", "conclusion": "SUCCESS"}
 FAILURE = {"status": "COMPLETED", "conclusion": "FAILURE"}
@@ -197,7 +200,7 @@ def git_env(base: dict[str, str], name: str, email: str, date: str) -> dict[str,
 
 
 def write_gitconfig(path: Path, key_id: str) -> None:
-  user = [f"  name = {engine.AUTHOR_NAME}", f"  email = {engine.AUTHOR_EMAIL}"]
+  user = [f"  name = {ME_NAME}", f"  email = {ME_EMAIL}"]
   if key_id:
     user.append(f"  signingkey = {key_id}")
   lines = [
@@ -231,7 +234,7 @@ def make_key(gnupghome: Path) -> str:
         "--passphrase",
         "",
         "--quick-generate-key",
-        f"Demo Signer <{engine.AUTHOR_EMAIL}>",
+        f"Demo Signer <{ME_EMAIL}>",
         "default",
         "default",
         "0",
@@ -276,7 +279,7 @@ def make_repo(root: Path, name: str, branch: str, env: dict[str, str]) -> Path:
       env=git_env(env, who[0], who[1], date),
     )
 
-  me = (engine.AUTHOR_NAME, engine.AUTHOR_EMAIL)
+  me = (ME_NAME, ME_EMAIL)
   commit("README.md", f"# {name}\n", "chore: init", OTHER, "2024-01-01T10:00:00+08:00")
   run("git", "push", "--quiet", "-u", "origin", "main", cwd=work, env=env)
   run("git", "checkout", "--quiet", "-b", branch, cwd=work, env=env)

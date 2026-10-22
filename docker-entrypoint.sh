@@ -11,12 +11,12 @@ if ! git config --global --get-all safe.directory 2>/dev/null | grep -qx '\*'; t
 fi
 
 # Identity has to live in git config, because the engine reads it back. Seed it
-# from the environment once; afterwards `git config --global` in the container
-# wins.
-if [ -n "${GIT_AUTHOR_NAME:-}" ]; then
+# from the environment only while the config is empty. A value set in the
+# container (Settings page or `git config --global`) survives a restart.
+if [ -n "${GIT_AUTHOR_NAME:-}" ] && [ -z "$(git config --global user.name || true)" ]; then
   git config --global user.name "$GIT_AUTHOR_NAME"
 fi
-if [ -n "${GIT_AUTHOR_EMAIL:-}" ]; then
+if [ -n "${GIT_AUTHOR_EMAIL:-}" ] && [ -z "$(git config --global user.email || true)" ]; then
   git config --global user.email "$GIT_AUTHOR_EMAIL"
 fi
 

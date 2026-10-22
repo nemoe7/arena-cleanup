@@ -30,4 +30,5 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A shallow history: one Back leaves a sub-view, the next one leaves the page.
 - The card shows `N uncommitted` only when the clone is dirty.
 - The app copy says repo and repos.
+- The claim rules come from the global git config keys `arena.claim-email` and `arena.claim-name`; the constants are the fallback. The container seeds the identity only while git config is empty.
 - Reset to origin in the repository sidebar: fetch, check out the default branch, and reset it hard. Untracked files stay.

@@ -16,8 +16,11 @@ ui/server.py::build_argv is the only thing that should ever construct it.
 Flags: -n dry run, -v verbose, -b/--branch, -d/--delete-branch,
 -k/--skip-pr-check, -t/--check-timeout, -i/--check-interval, -c/--check (strip),
 -p/--path, -E/--keep-empty (run, strip), -T/--no-tags (run).
-Everything else (identity, blacklist, signing, arena prefix) is a constant at
-the top of this file. Each is a per-machine setting, not a per-run choice.
+
+Everything else is a per-machine setting, not a per-run choice. The identity
+is `git config user.name` and `user.email`. The claim rules are the global git
+config keys `arena.claim-email` and `arena.claim-name`, else the constants at
+the top of this file. Signing and the arena prefix are constants.
 
 Exit codes: 0 ok / 1 error / 2 usage / 7 strip -c: rewrite needed
 """
@@ -51,16 +54,17 @@ PROG = "arena-cleanup"
 # Defaults - edit these, or override per-run with the matching flags
 # =============================================================================
 
-# Your identity, applied to every commit that gets claimed below.
-AUTHOR_NAME = "nemoe7"
-AUTHOR_EMAIL = "60245796+nemoe7@users.noreply.github.com"
+# The claim rules. `git config --global --add arena.claim-email <email>` and
+# `--add arena.claim-name <name>` replace these; each constant applies only
+# while its key is unset. The identity is `git config user.name/user.email`.
 
-# Any OTHER emails that were also yours (space separated, may be empty).
-EXTRA_EMAILS = ""
+# Emails that were yours (space separated). The configured user.email is
+# always claimed too.
+CLAIM_EMAILS = "60245796+nemoe7@users.noreply.github.com"
 
 # Commits authored/committed by these names get claimed and rewritten
 # (space separated; matched against both author and committer name).
-BLACKLIST = "arena-ai-coding-agent[bot] arena-agent arena"
+CLAIM_NAMES = "arena-ai-coding-agent[bot] arena-agent arena"
 
 # Only branches under this prefix are scanned for cleanup.
 ARENA_PREFIX = "arena/"
@@ -304,17 +308,15 @@ def which(tool: str) -> str | None:
 
 class Settings:
   """
-  Everything the rewrite needs is a constant at the top of this file. There
-  are no flags for identity, blacklist, or signing, by design. They are
-  per-machine settings, not per-run choices. Flip SIGN_COMMITS there to stop
-  signing commits.
+  There are no flags for identity, claim rules, or signing, by design. They
+  are per-machine settings, not per-run choices. The claim rules come from the
+  global git config, else from the constants at the top of this file. Flip
+  SIGN_COMMITS there to stop signing commits.
   """
 
   def __init__(self, args: argparse.Namespace) -> None:
-    self.author_name = AUTHOR_NAME
-    self.author_email = AUTHOR_EMAIL
-    self.extra_emails = _split(EXTRA_EMAILS)
-    self.blacklist = _split(BLACKLIST)
+    self.claim_emails = claim_rules("arena.claim-email") or _split(CLAIM_EMAILS)
+    self.claim_names = claim_rules("arena.claim-name") or _split(CLAIM_NAMES)
     self.sign = SIGN_COMMITS
     self.paths = list(getattr(args, "paths", None) or [])
     self.keep_empty = bool(getattr(args, "keep_empty", False))
@@ -324,17 +326,21 @@ class Settings:
     self.verbose = bool(args.verbose)
 
   def describe(self) -> str:
-    return "identity={} <{}>; claimed emails={}; blacklist={}; sign={}".format(
-      self.author_name,
-      self.author_email,
-      ", ".join([self.author_email, *self.extra_emails]) or "-",
-      ", ".join(self.blacklist) or "-",
+    return "claimed emails={}; claimed names={}; sign={}".format(
+      ", ".join(self.claim_emails) or "-",
+      ", ".join(self.claim_names) or "-",
       "yes" if self.sign else "no",
     )
 
 
 def _split(value: str) -> list[str]:
   return [p for p in value.replace(",", " ").split() if p]
+
+
+def claim_rules(key: str) -> list[str]:
+  """Every value of a multi-valued global git config key, in order."""
+  text = git("config", "--global", "--get-all", key, check=False).text
+  return [line.strip() for line in text.splitlines() if line.strip()]
 
 
 # =============================================================================
@@ -1359,7 +1365,7 @@ class Commit:
     self.committer: tuple[str, str, str] = (cn, ce, cd)
 
   def claimed(self, my_emails: Sequence[str], bots: Sequence[str]) -> bool:
-    """Is this commit ours (by email) or produced by a blacklisted agent?"""
+    """Is this commit ours (by email) or produced by a claimed name?"""
     an, ae, _ = self.author
     cn, _ce, _ = self.committer
     return ae in my_emails or an in bots or cn in bots
@@ -1394,7 +1400,7 @@ def rewrite_history(
   Rebuild the current branch commit-by-commit.
 
   A commit is "claimed" when its author email is one of ours, or its
-  author/committer name is blacklisted. A claimed commit gets:
+  author/committer name is a claimed name. A claimed commit gets:
     * author + committer rewritten to the current git identity (dates kept).
     * message trimmed to its subject line.
     * re-signed with -S (unless SIGN_COMMITS is False).
@@ -1414,8 +1420,8 @@ def rewrite_history(
   new_email = git("config", "user.email", check=False).text
   if not new_name or not new_email:
     raise Fail("git user.name / user.email are not configured")
-  if not cfg.blacklist:
-    raise Fail("blacklist is empty (nothing would ever be claimed)")
+  if not cfg.claim_names:
+    raise Fail("the claimed names are empty (nothing would ever be claimed)")
   identity = (new_name, new_email)
 
   # a half-finished rebase on top would corrupt everything downstream
@@ -1427,8 +1433,8 @@ def rewrite_history(
   stats.total = len(revs)
   stats.old_tip = revs[-1]
 
-  my_emails = [new_email, cfg.author_email] + cfg.extra_emails
-  bots = cfg.blacklist
+  my_emails = [new_email, *cfg.claim_emails]
+  bots = cfg.claim_names
   read_only = "" if apply else " (read-only)"
   log.info(f"scanning {len(revs)} commit(s) as {new_name} <{new_email}>{read_only}")
 

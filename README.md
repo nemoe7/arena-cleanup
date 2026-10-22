@@ -106,16 +106,19 @@ stacks into one column, and the primary actions stick to the bottom.
 
 | variable                   | used for                                                   |
 |----------------------------|------------------------------------------------------------|
-| `GIT_AUTHOR_NAME`          | seeded into git config at container start                  |
-| `GIT_AUTHOR_EMAIL`         | seeded into git config at container start                  |
+| `GIT_AUTHOR_NAME`          | seeded into git config at start, while it is empty         |
+| `GIT_AUTHOR_EMAIL`         | seeded into git config at start, while it is empty         |
 | `GH_TOKEN`                 | `gh` auth without an interactive login                     |
 | `ARENA_DATA`               | registry + clones (default `~/.local/share/arena-cleanup`) |
 | `ARENA_REPO`               | repo registered on startup (default `/repo`)               |
 | `ARENA_HOST`, `ARENA_PORT` | bind address (default `0.0.0.0:8080`)                      |
 | `TS_AUTHKEY`               | joins the Tailscale sidecar once; a volume keeps the node  |
 
-Per-machine constants sit at the top of `engine.py`: `AUTHOR_NAME`,
-`AUTHOR_EMAIL`, `BLACKLIST`, `ARENA_PREFIX`, and `SIGN_COMMITS`.
+The claim rules live in the global git config: `arena.claim-email` and
+`arena.claim-name`, both multi-valued (`git config --global --add`). While a
+key is unset, the matching constant at the top of `engine.py` applies:
+`CLAIM_EMAILS` or `CLAIM_NAMES`. `ARENA_PREFIX` and `SIGN_COMMITS` stay
+constants.
 
 `GET /healthz` returns the version, uptime, and repo count; compose uses it as
 the app's healthcheck and gates the sidecar on it.
