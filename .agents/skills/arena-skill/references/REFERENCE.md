@@ -29,6 +29,7 @@ Run every command as the bare `arena-preview`; the script under the installed `a
 | `state import [FILE]` | Import copied NDJSON or JSON notes, tasks and report answers from a file or stdin in one transaction; it always replaces the live notes, answers, reports and tasks; `--replace-tasks` replaces only tasks |
 | `download-request <url>` | Queue one pending file download for the owner to approve in Downloads; `--allow-proxy` permits the two proxies |
 | `image-data-uri <path>` | Print one Markdown line carrying a local PNG, JPEG, GIF or WebP file as a data URI; the command checks the type and a 2 MiB size cap before encoding |
+| `outline [--max-entries N] [--json] <path>` | Print a read-only source outline with line ranges for a local repository file up to 1 MB and 200 entries |
 | `report publish <source.md> --id <id> --title <title>` | Publish or update a rendered report. Publication embeds readable local images as data URIs, skips remote sources with a helper hint, and keeps links and data URIs |
 | `report unpublish <id>` | Remove a report from the tab, retaining answers and source. Unacknowledged answers or unseen answer receipts block the call with 409. A fresh owner view does not block agent unpublish, and the page retains the open report until the owner clicks away |
 | `report unpublish --stale` | Recheck eligibility, then unpublish only stale reports through existing guards; retain sources and answers |
@@ -109,6 +110,7 @@ Choose the primary deliverable type: `report` for findings or assessments, `code
 | `--type report\|code\|docs\|ops\|misc` | Required for normal new tasks; omit on updates to keep the stored type. Restore missing legacy types as `misc` |
 | `--order N` | Set 1-based position in the task's status group |
 | Repeatable `--details` | Set the detail lines; the arguments replace the stored details |
+| `-A`, `--append` | Append the detail lines to the stored details without replacing them |
 | `--msg-id <full-message-id>` | Link the note or report answer a task came from; optional, and only a note-born or report-born task carries it; still call `ack` |
 | `--report <report-id>` | Link a blocked task to the report it waits on; an answer to that report clears the blocked mark |
 | `--amend <previous-task-id>` | Rename a task without losing its details or order |
@@ -135,12 +137,12 @@ A task row shows the answers linked to it in a read-only block under its details
 
 ## Report fields
 
-In report diffs, keep leading and trailing whitespace outside `~~...~~` and `==...==`; do not mark whitespace-only runs.
+In report diffs, keep leading and trailing whitespace outside `~~...~~` and `==...==` spans; do not mark whitespace-only runs.
 
 | Markdown marker | Control |
 | --- | --- |
-| `- ( ) option` (`- (x)` to preselect) | One radio choice; the preselect is the marked recommended answer |
-| `- [ ] option` (`- [x]` to preselect) | Checkbox choices |
+| `- ( ) option` (`- (x)` to mark recommended) | One radio choice; the UI prefixes a marked choice with `* ` and `report publish` prints `you recommended:` |
+| `- [ ] option` (`- [x]` to mark recommended) | Checkbox choices; the UI prefixes each marked choice with `* ` |
 | `- ( ) Label: ___` or `- [ ] Label: ___` inside a group | A labeled free-text choice |
 | `Label: ___` or bare `___` | A text answer |
 

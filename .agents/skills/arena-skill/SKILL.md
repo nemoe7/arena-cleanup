@@ -25,6 +25,8 @@ Use this guide and its Markdown references for instructions. Do not read shipped
 
 Answer from existing knowledge only: NEVER research answers, open other files, run code, ask another system, reuse earlier responses, or inspect the answer key.
 
+Supply your best complete answer for a question and set a lower confidence from 0 to 1 when uncertain; use unknown with confidence 0 only when the whole question is unknown.
+
 Omit questionnaire answers and answer-key details from summaries and handoffs.
 
 ## Setup
@@ -100,9 +102,9 @@ ALWAYS report reproducible skill defects or unresolved skill failures through a 
 - For a task waiting on a report, use `--report <report-id>`; an answer or unpublishing clears its blocked mark. While blocked, it sorts first in its group.
 - Treat report removal as a queue-state change, never as approval for work that needs approval.
 
-- Write actual work in task details; NEVER use report section headers or aliases as details.
+- Write complete, self-contained actual work in task details across scope, progress, verification, and commits (`-A`/`--append` to add steps) so compaction/resets lose nothing; NEVER use report section headers or aliases as details.
 
-When a task creates a commit, MUST add its landed subject and short hash to task details.
+When a task creates a commit, MUST append its landed subject and short hash to task details with `-A` or `--append`.
 
 ## Publish reports and forms
 

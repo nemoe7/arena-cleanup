@@ -79,6 +79,10 @@ Apply this skill to a page, a component, or an interface change. The sheet holds
 
 13. When a page needs a pattern the sheet lacks, the change adds the entry, both widths, and the screenshots, in one pull request.
 
+## Go-to libraries
+
+- For draggable and reorderable lists, vendor only the required part of [SortableJS](https://github.com/SortableJS/Sortable) with its MIT license; do not write custom drag-and-drop handlers.
+
 ## Order of work
 
 1. Read the authoritative design record, or create docs/design.md from references/design-document.md if none exists.

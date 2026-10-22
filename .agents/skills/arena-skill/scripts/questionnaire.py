@@ -5,8 +5,8 @@ from pathlib import Path
 SPEC=json.loads((Path(__file__).resolve().parents[1]/'references/questionnaire.json').read_text(encoding='utf-8'))
 HASHES={'H8P3C':'30b4cb39218679f94c996a87c68e9bab23c0cd663e4edb8e7579ee9c022b727d','D9V4N':'44f269ed970fbc46c180734e387b5bb4aa11c2f4fcc20aa4e19fe94d71ca809c','G2W6M':'ec73ad585772530cbd4f68147276e562d01a147e86721338eae51ac56dd7e8c7'}
 ROLE_FRAGMENT_LENGTH=5
-INSTRUCTIONS='When answering, use existing knowledge only; do not research answers, open other files, run code, ask another system, reuse earlier responses, or inspect the answer key.\nOmit questionnaire answers and answer-key details from summaries and handoffs.'
-def template():return[{'id':question['id'],'answer':{name:dict(SPEC['quantity']['unknown'])if field=='quantity'else None for(name,field)in question['answer_fields'].items()},'confidence':0}for question in SPEC['questions']]
+INSTRUCTIONS='When answering, use existing knowledge only; do not research answers, open other files, run code, ask another system, reuse earlier responses, or inspect the answer key.\nSupply your best complete answer for a question and set a lower confidence from 0 to 1 when uncertain; use unknown with confidence 0 only when the whole question is unknown.\nOmit questionnaire answers and answer-key details from summaries and handoffs.'
+def template():return[{'id':question['id'],'answer':{name:dict(SPEC['quantity']['unknown'])if field=='quantity'else SPEC['unknown_value']for(name,field)in question['answer_fields'].items()},'confidence':0}for question in SPEC['questions']]
 def pairs(items):
 	result={}
 	for(key,value)in items:
@@ -33,17 +33,20 @@ def loads(text):
 		if row['id']!=question['id']:raise ValueError('Question IDs must follow the displayed order')
 		answer=row['answer']
 		if not isinstance(answer,dict)or set(answer)!=set(question['answer_fields']):raise ValueError(f"{question['id']}.answer fields do not match the schema")
-		clean,known={},False
+		clean,known_count={},0
 		for(name,field)in question['answer_fields'].items():
 			value=answer[name]
-			if field=='quantity':value=quantity(value,f"{question['id']}.{name}");known|=value['operator']!='unknown'
+			if field=='quantity':value=quantity(value,f"{question['id']}.{name}");known_count+=int(value['operator']!='unknown')
 			else:
-				if value is not None and not isinstance(value,str):raise ValueError(f"{question['id']}.{name} must be a string or null")
-				known|=value is not None;value=value.casefold()if isinstance(value,str)else value
+				if value is None:raise ValueError(f"{question['id']}.{name} must not be null; use 'unknown'")
+				if not isinstance(value,str)or not value.strip():raise ValueError(f"{question['id']}.{name} must be a non-empty string or 'unknown'")
+				value=value.casefold();known_count+=int(value!='unknown')
 			clean[name]=value
-		confidence=row['confidence']
+		if known_count not in(0,len(question['answer_fields'])):raise ValueError(f"{question['id']}.answer must fill every field or set all fields to unknown")
+		known=known_count>0;confidence=row['confidence']
 		if type(confidence)not in(int,float)or not 0<=confidence<=1:raise ValueError(f"{question['id']}.confidence must be a number from 0 to 1")
 		if not known and confidence!=0:raise ValueError(f"{question['id']}.confidence must be zero when all values are unknown")
+		if known and confidence<=0:raise ValueError(f"{question['id']}.confidence must be greater than zero when an answer is supplied")
 		normalized.append({'id':question['id'],'answer':clean,'confidence':confidence,'known':known})
 	return normalized
 def grade(text):

@@ -29,6 +29,11 @@ if ! "$VENV/bin/python" -c 'import markdown_it, yaml' >/dev/null 2>&1; then
   "$VENV/bin/pip" install --quiet markdown-it-py PyYAML || fail "cannot install markdown-it-py and PyYAML into $VENV"
 fi
 
+# 3b. Pinned Acorn and CSS-tree parsers in ignored ~/.agents tool storage. Keep the preview usable on failure.
+if ! "$VENV/bin/python" -c 'import sys; sys.path.insert(0, "skills/refs/arena-skill/scripts"); sys.path.insert(0, ".agents/skills/arena-skill/scripts"); import preview; preview.install_portable_parsers()' >/dev/null 2>&1; then
+  echo "arena-preview installer: warning: portable parser setup skipped; preview remains usable" >&2
+fi
+
 # 4. Ignore the state directory through core.excludesFile, never through the repository .gitignore.
 touch "$GLOBAL_IGNORE" || fail "cannot write $GLOBAL_IGNORE"
 grep -qxF "$STATE_REL/" "$GLOBAL_IGNORE" || echo "$STATE_REL/" >> "$GLOBAL_IGNORE" || fail "cannot append to $GLOBAL_IGNORE"

@@ -31,7 +31,7 @@ ASSETS=Path(__file__).resolve().parents[1]/'assets'
 IDENTIFIER=re.compile('[a-zA-Z0-9_-]{1,80}\\Z')
 VIOLATION_NOTES="type NOT IN ('', 'questionnaire')"
 PENDING_SUBMISSIONS='acknowledged_at IS NULL AND seq IN (SELECT MAX(seq) FROM submissions GROUP BY report_id)'
-REPLY_REFERENCE=re.compile('^RE:\\s*([a-zA-Z0-9_-]{1,80})(?:\\s|$)',re.IGNORECASE)
+REPLY_REFERENCE=re.compile('^RE:\\s*([a-zA-Z0-9_-]{1,80}(?:/[a-zA-Z0-9_-]{1,80})?)(?:\\s|$)',re.IGNORECASE)
 MAX_REPORT=2000000
 WS_TICK_SECONDS=.25
 WS_HEARTBEAT_SECONDS=10
@@ -529,6 +529,9 @@ def reply_thread(record,notes):
 	thread,seen=[],{record['id']};target=reply_reference(record.get('text'))
 	while target:
 		parent=notes.get(target)
+		if parent is None and'/'in target:
+			report_id,question_id=target.split('/',1);candidate=notes.get(report_id)
+			if candidate is not None and candidate.get('type')=='report':parent=candidate|{'question_id':question_id}
 		if parent is None:
 			matches=[note for(note_id,note)in notes.items()if note_id.startswith(target)]
 			if len(matches)!=1:break
@@ -658,8 +661,8 @@ def field_html(question):
 	if question['type']=='text':return f'{body}<textarea class="answer-text" rows="2" placeholder="Answer" aria-label="{prompt}"></textarea></div>'
 	control='radio'if question['type']=='choice'else'checkbox';group=f'<div class="options" role="group" aria-label="{prompt}">'
 	for option in question['options']:
-		value=html.escape(option,quote=True);checked=' checked'if option in question['default']else'';label=custom_label(option)
-		if label is None:group+=f'<label class="option"><input type="{control}" name="{name}" value="{value}"{checked}> {html.escape(option)}</label>';continue
+		value=html.escape(option,quote=True);recommended=option in question['default'];checked=' checked'if recommended else'';label=custom_label(option)
+		if label is None:display=f"* {option}"if recommended else option;group+=f'<label class="option"><input type="{control}" name="{name}" value="{value}"{checked}> {html.escape(display)}</label>';continue
 		named=html.escape(label,quote=True);group+=f'<label class="option"><input type="{control}" name="{name}" value="{value}"{checked} data-label="{named}" aria-label="{named}"><textarea class="custom-text" rows="1" data-custom="{named}" placeholder="Something else..." aria-label="{named}, your own answer"></textarea></label>'
 	return f"{body}{group}</div></div>"
 TASK_STATUSES='upcoming','finished'
@@ -855,7 +858,7 @@ def format_pending_item(item):
 	if not reply_reference(item.get('text')):return format_pending_record(item)
 	context=''
 	for parent in item.get('thread')or[]:
-		if parent.get('type')=='report':source=parent.get('source')or f"/api/reports/{parent['id']}/source";context=f"RE: {parent['id']}\nSource: {source}";continue
+		if parent.get('type')=='report':source=parent.get('source')or f"/api/reports/{parent['id']}/source";target_id=f"{parent['id']}/{parent['question_id']}"if parent.get('question_id')else parent['id'];context=f"RE: {target_id}\nSource: {source}";continue
 		body=REPLY_REFERENCE.sub('',parent.get('text')or'',count=1).lstrip('\r\n');body=format_pending_record(parent|{'text':body}).partition('\n')[2]
 		if context:body=context+'\n\n'+body
 		context='\n'.join('> '+line for line in body.split('\n'))
@@ -3009,6 +3012,161 @@ def image_payload(path:Path)->tuple:
 	else:raise ValueError(f"{path} is not a supported image; the allowed types are PNG, JPEG, GIF and WebP")
 	encoded=base64.b64encode(data).decode('ascii');return mime,encoded
 def image_data_uri(path:Path)->str:mime,encoded=image_payload(path);alt=path.stem.replace('\\','\\\\').replace('[','\\[').replace(']','\\]');return f"![{alt}](data:{mime};base64,{encoded})"
+OUTLINE_MAX_BYTES=1000000
+OUTLINE_MAX_ENTRIES=200
+PARSER_TOOL_DIR_ENV='ARENA_PREVIEW_PARSER_DIR'
+PARSER_PACKAGES={'acorn':'8.18.0','css-tree':'3.2.1'}
+PARSER_MANIFEST={'name':'arena-preview-parsers','private':True,'dependencies':dict(PARSER_PACKAGES)}
+PARSER_LOCKFILE={'name':'arena-preview-parsers','lockfileVersion':3,'requires':True,'packages':{'':{'name':'arena-preview-parsers','dependencies':dict(PARSER_PACKAGES)},'node_modules/acorn':{'version':'8.18.0','resolved':'https://registry.npmjs.org/acorn/-/acorn-8.18.0.tgz','integrity':'sha512-lGq+9yr1/GuAWaVYIHRjvvySG5/4VfKIvC8EWxStPdcDh/Ka7FG3twP6v4d5BkravUilhIAsG4Qj83t02LWUPQ==','license':'MIT','bin':{'acorn':'bin/acorn'},'engines':{'node':'>=0.4.0'}},'node_modules/css-tree':{'version':'3.2.1','resolved':'https://registry.npmjs.org/css-tree/-/css-tree-3.2.1.tgz','integrity':'sha512-X7sjQzceUhu1u7Y/ylrRZFU2FS6LRiFVp6rKLPg23y3x3c3DOKAwuXGDp+PAGjh6CSnCjYeAul8pcT8bAl+lSA==','license':'MIT','dependencies':{'mdn-data':'2.27.1','source-map-js':'^1.2.1'},'engines':{'node':'^10 || ^12.20.0 || ^14.13.0 || >=15.0.0'}},'node_modules/mdn-data':{'version':'2.27.1','resolved':'https://registry.npmjs.org/mdn-data/-/mdn-data-2.27.1.tgz','integrity':'sha512-9Yubnt3e8A0OKwxYSXyhLymGW4sCufcLG6VdiDdUGVkPhpqLxlvP5vl1983gQjJl3tqbrM731mjaZaP68AgosQ==','license':'CC0-1.0'},'node_modules/source-map-js':{'version':'1.2.2','resolved':'https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.2.tgz','integrity':'sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==','license':'BSD-3-Clause','engines':{'node':'>=0.10.0'}}}}
+def parser_tool_dir(tool_dir=None):
+	if tool_dir is not None:return Path(tool_dir).resolve()
+	configured=os.environ.get(PARSER_TOOL_DIR_ENV,'').strip()
+	if configured:return Path(configured).resolve()
+	return(Path.home()/'.agents'/'.arena-preview-parsers').resolve()
+def _check_parser_package(base_dir,package_name,expected_version):
+	pkg_dir=Path(base_dir)/'node_modules'/package_name;pkg_json=pkg_dir/'package.json'
+	if not pkg_json.is_file():return None,None
+	try:meta=json.loads(pkg_json.read_text(encoding='utf-8'))
+	except(OSError,UnicodeDecodeError,json.JSONDecodeError):return None,None
+	version_str=meta.get('version');main_rel=meta.get('main')or'index.js';entry=(pkg_dir/main_rel).resolve()
+	if version_str!=expected_version or not entry.is_file():return None,version_str
+	return str(entry),version_str
+def discover_portable_parsers(tool_dir=None):target=parser_tool_dir(tool_dir);acorn_entry,acorn_ver=_check_parser_package(target,'acorn',PARSER_PACKAGES['acorn']);csstree_entry,csstree_ver=_check_parser_package(target,'css-tree',PARSER_PACKAGES['css-tree']);available=bool(acorn_entry and csstree_entry);message=f"Pinned Acorn {acorn_ver} and CSS-tree {csstree_ver} ready in {target}"if available else f"Local Acorn/CSS-tree parsers are not installed in {target}; rerun .agents/skills/arena-skill/scripts/install.sh with Node and npm available.";return{'available':available,'directory':str(target),'acorn':acorn_entry,'css_tree':csstree_entry,'versions':{'acorn':acorn_ver,'css-tree':csstree_ver},'message':message}
+def install_portable_parsers(tool_dir=None,which=shutil.which,runner=subprocess.run):
+	target=parser_tool_dir(tool_dir);target.mkdir(parents=True,exist_ok=True);manifest_path=target/'package.json';lockfile_path=target/'package-lock.json';manifest_text=json.dumps(PARSER_MANIFEST,indent=2)+'\n';lockfile_text=json.dumps(PARSER_LOCKFILE,indent=2)+'\n'
+	if not manifest_path.is_file()or manifest_path.read_text(encoding='utf-8')!=manifest_text:manifest_path.write_text(manifest_text,encoding='utf-8')
+	if not lockfile_path.is_file()or lockfile_path.read_text(encoding='utf-8')!=lockfile_text:lockfile_path.write_text(lockfile_text,encoding='utf-8')
+	existing=discover_portable_parsers(target)
+	if existing['available']:return{**existing,'status':'reused'}
+	if not which('node')or not which('npm'):return{**existing,'status':'skipped','message':'Node or npm is unavailable; skipping portable parser install (preview remains usable).'}
+	completed=runner(['npm','ci','--ignore-scripts','--no-audit','--no-fund'],cwd=str(target),capture_output=True,text=True,check=False);after=discover_portable_parsers(target)
+	if completed.returncode!=0 or not after['available']:detail=(completed.stderr or completed.stdout or'npm ci failed').strip();return{**after,'status':'failed','message':f"Portable parser install failed ({detail}); preview remains usable."}
+	return{**after,'status':'installed'}
+def _outline_repo_root(repo_root=None):
+	if repo_root is not None:return Path(repo_root).resolve()
+	cwd=Path.cwd().resolve()
+	for candidate in(cwd,*cwd.parents):
+		if(candidate/'.git').exists():return candidate
+	return Path(resolve_repo_root()).resolve()
+def _resolve_outline_source(path,repo_root=None):
+	root=_outline_repo_root(repo_root);raw=Path(path);candidate=raw if raw.is_absolute()else Path.cwd()/raw
+	if not raw.is_absolute()and not candidate.exists()and not candidate.is_symlink():
+		alt=root/raw
+		if alt.exists()or alt.is_symlink():candidate=alt
+	lexical=Path(os.path.abspath(candidate))
+	try:lexical.relative_to(root)
+	except ValueError:raise ValueError(f"{path} is outside the repository checkout ({root})")from None
+	resolved=candidate.resolve()
+	try:rel_resolved=resolved.relative_to(root)
+	except ValueError:raise ValueError(f"{path} resolves outside the repository checkout ({root})")from None
+	if not resolved.exists()or not resolved.is_file():raise ValueError(f"{path} is not an existing file")
+	size=resolved.stat().st_size
+	if size>OUTLINE_MAX_BYTES:raise ValueError(f"{rel_resolved.as_posix()} is {size} bytes; the maximum is {OUTLINE_MAX_BYTES} bytes")
+	with resolved.open('rb')as handle:data=handle.read(OUTLINE_MAX_BYTES+1)
+	if len(data)>OUTLINE_MAX_BYTES:raise ValueError(f"{rel_resolved.as_posix()} exceeds {OUTLINE_MAX_BYTES} bytes")
+	try:text=data.decode('utf-8')
+	except UnicodeDecodeError as error:raise ValueError(f"{rel_resolved.as_posix()} is not valid UTF-8: {error}")from None
+	return rel_resolved.as_posix(),resolved,text
+def _format_python_arguments(ast_mod,args):
+	parts=[];pos=list(args.posonlyargs)+list(args.args);defaults=[None]*(len(pos)-len(args.defaults))+list(args.defaults)
+	for(index,(arg,default))in enumerate(zip(pos,defaults)):
+		piece=arg.arg
+		if arg.annotation is not None:piece+=f": {ast_mod.unparse(arg.annotation)}"
+		if default is not None:piece+=f" = {ast_mod.unparse(default)}"
+		parts.append(piece)
+		if args.posonlyargs and index+1==len(args.posonlyargs):parts.append('/')
+	if args.vararg is not None:
+		vararg=f"*{args.vararg.arg}"
+		if args.vararg.annotation is not None:vararg+=f": {ast_mod.unparse(args.vararg.annotation)}"
+		parts.append(vararg)
+	elif args.kwonlyargs:parts.append('*')
+	for(arg,default)in zip(args.kwonlyargs,args.kw_defaults):
+		piece=arg.arg
+		if arg.annotation is not None:piece+=f": {ast_mod.unparse(arg.annotation)}"
+		if default is not None:piece+=f" = {ast_mod.unparse(default)}"
+		parts.append(piece)
+	if args.kwarg is not None:
+		kwarg=f"**{args.kwarg.arg}"
+		if args.kwarg.annotation is not None:kwarg+=f": {ast_mod.unparse(args.kwarg.annotation)}"
+		parts.append(kwarg)
+	return', '.join(parts)
+def _outline_python(rel_path,text):
+	import ast as ast_mod
+	try:tree=ast_mod.parse(text,filename=rel_path)
+	except SyntaxError as error:line=error.lineno or 1;col=error.offset or 1;raise ValueError(f"{rel_path}:{line}:{col}: Python syntax error: {error.msg}")from None
+	entries=[]
+	def walk(body,stack,in_class=False):
+		for node in body:
+			if isinstance(node,(ast_mod.ClassDef,ast_mod.FunctionDef,ast_mod.AsyncFunctionDef)):
+				qual_stack=[*stack,node.name];qualified='.'.join(qual_stack);decorators=[f"@{ast_mod.unparse(item)}"for item in node.decorator_list];start_line=min([node.lineno,*(item.lineno for item in node.decorator_list)]);end_line=getattr(node,'end_lineno',None)or node.lineno
+				if isinstance(node,ast_mod.ClassDef):symbol_type='class';bases=[ast_mod.unparse(base)for base in node.bases]+[f"{kw.arg}={ast_mod.unparse(kw.value)}"if kw.arg else f"**{ast_mod.unparse(kw.value)}"for kw in node.keywords];signature=f"class {node.name}({', '.join(bases)})"if bases else f"class {node.name}"
+				else:
+					is_async=isinstance(node,ast_mod.AsyncFunctionDef)
+					if in_class:symbol_type='async_method'if is_async else'method'
+					else:symbol_type='async_function'if is_async else'function'
+					prefix='async def'if is_async else'def';params=_format_python_arguments(ast_mod,node.args);returns=f" -> {ast_mod.unparse(node.returns)}"if node.returns is not None else'';signature=f"{prefix} {node.name}({params}){returns}"
+				entries.append({'type':symbol_type,'name':node.name,'qualified_name':qualified,'signature':signature,'decorators':decorators,'line':start_line,'def_line':node.lineno,'end_line':end_line});walk(node.body,qual_stack,in_class=isinstance(node,ast_mod.ClassDef))
+	walk(tree.body,[],in_class=False);return entries
+HTML_VOID_TAGS=frozenset({'area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr'})
+HTML_LANDMARK_TAGS=frozenset({'main','header','footer','nav','aside','section','article','dialog'})
+HTML_FORM_TAGS=frozenset({'form','fieldset','legend','input','textarea','select','output','label'})
+HTML_INTERACTIVE_TAGS=frozenset({'button','details','summary'})
+HTML_STRUCTURAL_TAGS=frozenset({'html','head','body','template','table','h1','h2','h3','h4','h5','h6','script','style','link','meta','title'})
+HTML_KEY_ATTRIBUTES='id','class','role','type','name','href','src','for','action','method','aria-label','aria-labelledby','aria-controls','data-tab','data-action'
+def _outline_html(rel_path,text):
+	from html.parser import HTMLParser;del rel_path;entries=[];stack=[]
+	def classify_tag(tag,attrs_map):
+		if tag in HTML_LANDMARK_TAGS or'role'in attrs_map:return'landmark'
+		if tag in HTML_FORM_TAGS:return'form'
+		if tag in HTML_INTERACTIVE_TAGS or tag=='a'and'href'in attrs_map:return'interactive'
+		if tag in HTML_STRUCTURAL_TAGS:return'structural'
+		if any(key in attrs_map for key in('id','data-tab','data-action','aria-label','aria-labelledby','name')):return'identified'
+		return None
+	def build_label(tag,attrs_map):
+		label=tag
+		if attrs_map.get('id'):label+=f"#{attrs_map['id']}"
+		if attrs_map.get('class'):
+			classes='.'.join(part for part in attrs_map['class'].split()if part)
+			if classes:label+=f".{classes}"
+		elif not attrs_map.get('id')and attrs_map.get('name'):label+=f"[name={attrs_map['name']}]"
+		return label
+	class OutlineHTMLParser(HTMLParser):
+		def _record_open(self,tag,attrs,self_closing=False):
+			lower=tag.lower();attrs_map={}
+			for(key,value)in attrs:
+				if not key:continue
+				k=key.lower()
+				if k in HTML_KEY_ATTRIBUTES and value is not None and k not in attrs_map:attrs_map[k]=value
+			tag_type=classify_tag(lower,attrs_map);line,_=self.getpos();raw=self.get_starttag_text()or'';end_line=line+raw.count('\n');entry=None
+			if tag_type is not None:ordered_attrs={key:attrs_map[key]for key in HTML_KEY_ATTRIBUTES if key in attrs_map};summary=' '.join(f'{key}="{ordered_attrs[key]}"'for key in ordered_attrs);entry={'type':tag_type,'tag':lower,'label':build_label(lower,ordered_attrs),'attributes':ordered_attrs,'summary':summary,'line':line,'end_line':end_line};entries.append(entry)
+			if not self_closing and lower not in HTML_VOID_TAGS:stack.append((lower,entry))
+		def handle_starttag(self,tag,attrs):self._record_open(tag,attrs,self_closing=False)
+		def handle_startendtag(self,tag,attrs):self._record_open(tag,attrs,self_closing=True)
+		def handle_endtag(self,tag):
+			lower=tag.lower();end_line,_=self.getpos()
+			for index in range(len(stack)-1,-1,-1):
+				open_tag,_open_entry=stack[index]
+				if open_tag==lower:
+					for(_,closed_entry)in stack[index:]:
+						if closed_entry is not None and end_line>closed_entry['end_line']:closed_entry['end_line']=end_line
+					del stack[index:];break
+	parser=OutlineHTMLParser(convert_charrefs=True);parser.feed(text);parser.close();return entries
+def outline_file(path,repo_root=None,max_entries=OUTLINE_MAX_ENTRIES):
+	if type(max_entries)is not int or not 1<=max_entries<=OUTLINE_MAX_ENTRIES:raise ValueError(f"--max-entries must be an integer from 1 to {OUTLINE_MAX_ENTRIES}")
+	rel_path,resolved,text=_resolve_outline_source(path,repo_root=repo_root);suffix=resolved.suffix.lower()
+	if suffix=='.py':language='python';all_entries=_outline_python(rel_path,text)
+	elif suffix in{'.html','.htm'}:language='html';all_entries=_outline_html(rel_path,text)
+	else:raise ValueError(f"{rel_path}: unsupported outline file type ({suffix or'no extension'})")
+	entries=all_entries[:max_entries];total=len(all_entries);return{'path':rel_path,'language':language,'entries':entries,'total':total,'omitted':max(0,total-len(entries))}
+def format_outline(result,as_json=False):
+	if as_json:return json.dumps(result,ensure_ascii=False)
+	entries=result['entries'];total=result['total'];omitted=result['omitted'];unit='tags'if result['language']=='html'else'symbols';omitted_note=f", {omitted} omitted"if omitted else'';lines=[f"{result['path']} ({result['language']}, {len(entries)}/{total} {unit}{omitted_note})"]
+	for entry in entries:
+		span=f"{entry['line']}-{entry['end_line']}";label=entry.get('qualified_name')or entry.get('label')or entry.get('name','');detail=entry.get('signature')or entry.get('summary')or''
+		if detail:lines.append(f"{span} {label} — {detail}")
+		else:lines.append(f"{span} {label}")
+	if omitted:singular=unit[:-1]if omitted==1 else unit;lines.append(f"... {omitted} more {singular} omitted (use --max-entries up to {OUTLINE_MAX_ENTRIES})")
+	return'\n'.join(lines)
 IMAGE_IN_MARKDOWN=re.compile('!\\[([^\\]\\n]*)\\]\\(\\s*(<[^>]+>|[^)\\s]+)([^)\\n]*)\\)')
 def embed_report_images(markdown,report_dir):
 	def swap(match):
@@ -3159,7 +3317,7 @@ class PreviewArgumentParser(argparse.ArgumentParser):
 	def print_usage(self,file=None):pass
 	def exit(self,status=0,message=None):super().exit(status,message.removeprefix('arena-preview: ')if message else message)
 def main():
-	parser=PreviewArgumentParser(description=CLI_DESCRIPTION,prog='arena-preview');parser.add_argument('-r','--reminder',action='store_true',help='Print unacked-count reminder; exit');commands=parser.add_subparsers(dest='command',required=False);serve=commands.add_parser('serve',help='Serve preview page; -p names port');serve.add_argument('-p','--port',type=int,default=DEFAULT_PORT,help=f"Port (default: {DEFAULT_PORT}; only supported port)");init=commands.add_parser('init',help='Create state directory and database');init.add_argument('--tz',help='CLI stamp IANA zone; TZ env wins');questionnaire_parser=commands.add_parser('questionnaire',help='Show questions and schema, or submit ordered JSON');questionnaire_parser.add_argument('answers',nargs='?',help='Ordered answer JSON');commands.add_parser('read',help='Print every pending note, answer and upload');commands.add_parser('skills',help='List skill names, full descriptions, and paths without loading skills');note_group=commands.add_parser('note',help='Read stored notes');note_verbs=note_group.add_subparsers(dest='verb',required=True);note_list=note_verbs.add_parser('list',help='Stored note IDs by page, newest first; acknowledged included');note_list.add_argument('--page',type=int,default=1,help='Page number (default: 1)');note_list.add_argument('--page-size',type=int,default=20,help='IDs per page, 1 to 100 (default: 20)');note_reread=note_verbs.add_parser('show',help='Reread stored note by short or full ID');note_reread.add_argument('id',help='Six or all note ID characters');image_uri=commands.add_parser('image-data-uri',help='Print Markdown: one local image as data URI');image_uri.add_argument('path',type=Path,help='One local PNG, JPEG, GIF or WebP file up to 2 MiB');commands.add_parser('key',help='Print the recorded agent key, host and use line');pre=commands.add_parser('pre',help='Run all pre-Bash gates in order; list completed steps');pre.add_argument('--line',default='',help='Shell command line from hook');pre.add_argument('--command',dest='command_text',default='',help='Command reached by DEBUG trap');pre.add_argument('--repo',default='.',help='Bible repository');pre.add_argument('--shell',default='',help='Shell name');pre.add_argument('--done',default='',help="This shell's completed steps, space-separated");run_group=commands.add_parser('run',help='Start long command; read result');run_verbs=run_group.add_subparsers(dest='verb',required=True);route=run_verbs.add_parser('start',help='Detach command, keep output tail; show exit on later call');route.add_argument('--task',dest='task_id',metavar='TASK-ID',help='Link run to upcoming task, not current task');route.add_argument('--after',metavar='GATE',help='Run only after this gate passes');route.add_argument('name',help='Short run name; example: gates');route.add_argument('command_args',nargs=argparse.REMAINDER,help='Command after --');route_run=commands.add_parser('route-run',help='Run command here; record exit for later call');route_run.add_argument('name',help='Run name already recorded by caller');route_run.add_argument('command_args',nargs=argparse.REMAINDER,help='Command after --');logs=run_verbs.add_parser('logs',help='Print routed run status and recorded output tail');logs.add_argument('name',help='Run name to read');worktree=commands.add_parser('worktree',help='Create or collect detached task worktree beside root gate');worktree_action=worktree.add_subparsers(dest='worktree_action',required=True);worktree_start=worktree_action.add_parser('start',help='Create detached worktree beside root gate, or without one');worktree_start.add_argument('name',help='Short worktree name');worktree_start.add_argument('destination',type=Path,help='New path outside root');worktree_start.add_argument('--gate',default=None,help='Running root gate name; optional');worktree_start.add_argument('--allow',action='append',default=[],help='Glob of paths task may change');worktree_collect=worktree_action.add_parser('collect',help='Print allowed detached-worktree patch after root gate passes');worktree_collect.add_argument('name',help='Worktree name to collect');rename=commands.add_parser('rename',help='Move note, answer, report, or task to new ID');rename.add_argument('old_id',help='Stored ID or unique record prefix');rename.add_argument('new_id',help='Destination record ID');gate=commands.add_parser('gate',help='Inbox gate; -p blocks on any unacked note; -l names blocked line');gate.add_argument('-p','--push',action='store_true',help='Block on any unacked note or answer, regardless of call count');gate.add_argument('-l','--line',default='',help='Command line from hook; blocked calls name commands to drop');commands.add_parser('poll',help='Wait for owner answer or gate completion');download=commands.add_parser('download-request',help='Request HTTPS browser download; preview Approve click required; -a allows proxy fallback');download.add_argument('url',help='One HTTPS URL without embedded credentials');download.add_argument('-a','--allow-proxy',action='store_true',help='Owner may opt in to AllOrigins and CodeTabs fallback for this request');ack=commands.add_parser('ack',help='Answer notes with inline Markdown; omit IDs for one pending item');ack.add_argument('ids',nargs='*');ack.add_argument('markdown',help='Literal inline Markdown answer');ack.add_argument('--id',dest='task_id');ack.add_argument('--title',dest='task_title');ack.add_argument('--type',dest='task_type',choices=TASK_TYPES);ack.add_argument('--detail',dest='task_detail',action='append');report_group=commands.add_parser('report',help='Publish, withdraw and inspect reports');report_verbs=report_group.add_subparsers(dest='verb',required=True);publish=report_verbs.add_parser('publish',help='Publish report; -i ID, -t title');publish.add_argument('source',type=Path);publish.add_argument('--submission-format',type=Path,help='Optional question, answer, and template JSON');publish.add_argument('-i','--id',required=True);publish.add_argument('-t','--title',required=True);unpublish=report_verbs.add_parser('unpublish',help='Withdraw report by ID, or all stale reports with --stale');unpublish.add_argument('report_id',nargs='?');unpublish.add_argument('--stale',action='store_true',help='Withdraw every stale report');report_verbs.add_parser('stale',help='List stale published report IDs and reasons without changing state')
+	parser=PreviewArgumentParser(description=CLI_DESCRIPTION,prog='arena-preview');parser.add_argument('-r','--reminder',action='store_true',help='Print unacked-count reminder; exit');commands=parser.add_subparsers(dest='command',required=False);serve=commands.add_parser('serve',help='Serve preview page; -p names port');serve.add_argument('-p','--port',type=int,default=DEFAULT_PORT,help=f"Port (default: {DEFAULT_PORT}; only supported port)");init=commands.add_parser('init',help='Create state directory and database');init.add_argument('--tz',help='CLI stamp IANA zone; TZ env wins');questionnaire_parser=commands.add_parser('questionnaire',help='Show questions and schema, or submit ordered JSON');questionnaire_parser.add_argument('answers',nargs='?',help='Ordered answer JSON');commands.add_parser('read',help='Print every pending note, answer and upload');commands.add_parser('skills',help='List skill names, full descriptions, and paths without loading skills');note_group=commands.add_parser('note',help='Read stored notes');note_verbs=note_group.add_subparsers(dest='verb',required=True);note_list=note_verbs.add_parser('list',help='Stored note IDs by page, newest first; acknowledged included');note_list.add_argument('--page',type=int,default=1,help='Page number (default: 1)');note_list.add_argument('--page-size',type=int,default=20,help='IDs per page, 1 to 100 (default: 20)');note_reread=note_verbs.add_parser('show',help='Reread stored note by short or full ID');note_reread.add_argument('id',help='Six or all note ID characters');image_uri=commands.add_parser('image-data-uri',help='Print Markdown: one local image as data URI');image_uri.add_argument('path',type=Path,help='One local PNG, JPEG, GIF or WebP file up to 2 MiB');outline_parser=commands.add_parser('outline',help='Print read-only source outline with line ranges for local repository files');outline_parser.add_argument('path',type=Path,help='Local source file inside the repository checkout');outline_parser.add_argument('--max-entries',type=int,default=OUTLINE_MAX_ENTRIES,help=f"Maximum entries to print, 1 to {OUTLINE_MAX_ENTRIES} (default: {OUTLINE_MAX_ENTRIES})");outline_parser.add_argument('--json',dest='as_json',action='store_true',help='Print JSON outline with path, language, entries, total, and omitted count');commands.add_parser('key',help='Print the recorded agent key, host and use line');pre=commands.add_parser('pre',help='Run all pre-Bash gates in order; list completed steps');pre.add_argument('--line',default='',help='Shell command line from hook');pre.add_argument('--command',dest='command_text',default='',help='Command reached by DEBUG trap');pre.add_argument('--repo',default='.',help='Bible repository');pre.add_argument('--shell',default='',help='Shell name');pre.add_argument('--done',default='',help="This shell's completed steps, space-separated");run_group=commands.add_parser('run',help='Start long command; read result');run_verbs=run_group.add_subparsers(dest='verb',required=True);route=run_verbs.add_parser('start',help='Detach command, keep output tail; show exit on later call');route.add_argument('--task',dest='task_id',metavar='TASK-ID',help='Link run to upcoming task, not current task');route.add_argument('--after',metavar='GATE',help='Run only after this gate passes');route.add_argument('name',help='Short run name; example: gates');route.add_argument('command_args',nargs=argparse.REMAINDER,help='Command after --');route_run=commands.add_parser('route-run',help='Run command here; record exit for later call');route_run.add_argument('name',help='Run name already recorded by caller');route_run.add_argument('command_args',nargs=argparse.REMAINDER,help='Command after --');logs=run_verbs.add_parser('logs',help='Print routed run status and recorded output tail');logs.add_argument('name',help='Run name to read');worktree=commands.add_parser('worktree',help='Create or collect detached task worktree beside root gate');worktree_action=worktree.add_subparsers(dest='worktree_action',required=True);worktree_start=worktree_action.add_parser('start',help='Create detached worktree beside root gate, or without one');worktree_start.add_argument('name',help='Short worktree name');worktree_start.add_argument('destination',type=Path,help='New path outside root');worktree_start.add_argument('--gate',default=None,help='Running root gate name; optional');worktree_start.add_argument('--allow',action='append',default=[],help='Glob of paths task may change');worktree_collect=worktree_action.add_parser('collect',help='Print allowed detached-worktree patch after root gate passes');worktree_collect.add_argument('name',help='Worktree name to collect');rename=commands.add_parser('rename',help='Move note, answer, report, or task to new ID');rename.add_argument('old_id',help='Stored ID or unique record prefix');rename.add_argument('new_id',help='Destination record ID');gate=commands.add_parser('gate',help='Inbox gate; -p blocks on any unacked note; -l names blocked line');gate.add_argument('-p','--push',action='store_true',help='Block on any unacked note or answer, regardless of call count');gate.add_argument('-l','--line',default='',help='Command line from hook; blocked calls name commands to drop');commands.add_parser('poll',help='Wait for owner answer or gate completion');download=commands.add_parser('download-request',help='Request HTTPS browser download; preview Approve click required; -a allows proxy fallback');download.add_argument('url',help='One HTTPS URL without embedded credentials');download.add_argument('-a','--allow-proxy',action='store_true',help='Owner may opt in to AllOrigins and CodeTabs fallback for this request');ack=commands.add_parser('ack',help='Answer notes with inline Markdown; omit IDs for one pending item');ack.add_argument('ids',nargs='*');ack.add_argument('markdown',help='Literal inline Markdown answer');ack.add_argument('--id',dest='task_id');ack.add_argument('--title',dest='task_title');ack.add_argument('--type',dest='task_type',choices=TASK_TYPES);ack.add_argument('--detail',dest='task_detail',action='append');report_group=commands.add_parser('report',help='Publish, withdraw and inspect reports');report_verbs=report_group.add_subparsers(dest='verb',required=True);publish=report_verbs.add_parser('publish',help='Publish report; -i ID, -t title');publish.add_argument('source',type=Path);publish.add_argument('--submission-format',type=Path,help='Optional question, answer, and template JSON');publish.add_argument('-i','--id',required=True);publish.add_argument('-t','--title',required=True);unpublish=report_verbs.add_parser('unpublish',help='Withdraw report by ID, or all stale reports with --stale');unpublish.add_argument('report_id',nargs='?');unpublish.add_argument('--stale',action='store_true',help='Withdraw every stale report');report_verbs.add_parser('stale',help='List stale published report IDs and reasons without changing state')
 	for verb in('pin','unpin'):pin=report_verbs.add_parser(verb,help=f"{verb.capitalize()} a report against staleness");pin.add_argument('report_id')
 	report_state=report_verbs.add_parser('state',help='Print publication, owner view stamp and answer visibility for one report or all');report_state.add_argument('report_id',nargs='?');task_group=commands.add_parser('task',help='Read and update tasks');task_verbs=task_group.add_subparsers(dest='verb',required=True);task_list=task_verbs.add_parser('list',help='List tasks; -f includes finished');task_list.add_argument('-f','--full',action='store_true',help='print every task, finished included');task_show=task_verbs.add_parser('show',help='Print one stored task in full');task_show.add_argument('task_id',metavar='TASK-ID');task=task_verbs.add_parser('set',help='Write/update task; -s status, -o order, -d details, -A append, -m message, -r report, -u unblocked, -a amend, --type type');task.add_argument('id_arg',nargs='?',metavar='TASK-ID');task.add_argument('title_arg',nargs='?',metavar='TASK-TITLE');task.add_argument('detail_arg',nargs='*',metavar='TASK-DETAIL');task.add_argument('-d','--details',dest='task_details',action='append',help='One step per line; max 120 characters; repeatable');task.add_argument('-A','--append',dest='append_details',action='store_true',help='Append provided details instead of replacing stored details');task.add_argument('-u','--unblocked',dest='blocked',action='store_false',default=None,help='Clear report wait or legacy blocked mark');task.add_argument('-m','--msg-id',help='Message task answers; mark it as having a task');task.add_argument('-r','--report',metavar='REPORT-ID',help='Awaited report; answer clears blocked mark');task.add_argument('-a','--amend',metavar='PREV-ID',help='Rename task under this ID to given ID');task.add_argument('-b','--blocked-by',dest='blocked_by',action='append',metavar='TASK-ID',help='Dependency task; repeatable; cycles refused');task.add_argument('-s','--status',choices=TASK_STATUSES,default=None);task.add_argument('--type',dest='task_type',choices=TASK_TYPES,default=None,help='Primary deliverable type; omitted flag keeps stored type');task.add_argument('-o','--order',type=int,default=None,help='1-based place within div, not end');task_unlink=task_verbs.add_parser('unlink',help='Unlink a submission from all tasks; retain its history');task_unlink.add_argument('submission_id');task_remove=task_verbs.add_parser('remove',help='Delete task by ID');task_remove.add_argument('task_id');state_group=commands.add_parser('state',help='Import or clear stored state');state_verbs=state_group.add_subparsers(dest='verb',required=True);state_import=state_verbs.add_parser('import',help='Import NDJSON backup; replace live state');state_import.add_argument('source',nargs='?',type=Path);state_import.add_argument('-r','--replace-tasks',action='store_true');state_verbs.add_parser('clear',help='Empty all state tables in place; keep agent key record');args=parser.parse_args()
 	if args.command=='serve'and args.port!=DEFAULT_PORT:serve.error(f"--port must be {DEFAULT_PORT}")
@@ -3182,6 +3340,10 @@ def main():
 		if args.command=='skills':print_skills();return 0
 		if args.command=='image-data-uri':
 			try:print(image_data_uri(args.path))
+			except ValueError as error:print(error,file=sys.stderr);return 1
+			return 0
+		if args.command=='outline':
+			try:result=outline_file(args.path,max_entries=args.max_entries);print(format_outline(result,as_json=args.as_json))
 			except ValueError as error:print(error,file=sys.stderr);return 1
 			return 0
 		if args.command=='worktree':
@@ -3251,7 +3413,8 @@ def main():
 				with args.submission_format.open('rb')as stream:data=stream.read(MAX_REPORT+1)
 				if len(data)>MAX_REPORT:raise ValueError('Submission format exceeds the report size limit')
 				metadata=json.loads(data.decode('utf-8'))
-			count=store.publish(args.id,args.title,args.source,submission_format=metadata);revision=store.report(args.id)['updated_at'];warnings=verify_publication(store,args.id,revision,count);plural=''if count==1 else's';print(f"Published {args.id}, {count} field{plural}. Verified.")
+			count=store.publish(args.id,args.title,args.source,submission_format=metadata);revision=store.report(args.id)['updated_at'];warnings=verify_publication(store,args.id,revision,count);plural=''if count==1 else's';print(f"Published {args.id}, {count} field{plural}. Verified.");recommendations=[f"{question['prompt']}: {', '.join(question['default'])}"for question in parse_fields(Path(args.source).read_text('utf-8'))[1]if question.get('default')]
+			if recommendations:print('you recommended:\n'+'\n'.join(recommendations))
 			for warning in warnings or():print(f"{args.source}:{warning['line']}: Warning: possible unparsed {warning['marker']} marker. Keep spaces outside the markers. Literal marker text can be intentional.",file=sys.stderr)
 			if not count and'{#'in Path(args.source).read_text('utf-8'):print('Warning: 0 fields parsed. A `{#id}` marker ends a prompt line, then the `- ( ) option` lines follow.',file=sys.stderr)
 		elif args.command=='report':

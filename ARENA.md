@@ -92,7 +92,7 @@
 - Mermaid: ALWAYS in documentation, NEVER anywhere else.
 - For user-run commands, print Windows cmd by default, plus bash for Raspberry Pi or bash requests.
 - Task completion alone needs no report.
-- MUST update task status and retain required verification and landed commit details in its record.
+- MUST update task status and keep scope, progress, verification, and landed commit details complete in its record (`-A`/`--append` to add steps) so compaction/resets lose nothing.
 - NEVER waive requested reports or assessment/question/blocked-task reports.
 
 ## Scope
@@ -109,7 +109,7 @@
 - Use `ask_user` ONLY for: explicit tool request, unavailable preview (incl. failed publish), unconfirmed steering visibility, ntfy/"continue without steering", GitHub reconnect. NEVER when a report/new report can carry it.
 - Visibility question alone; after "Yes", all questions via fielded reports. Failed start: report + block on that question before non-setup work; banner ≠ owner confirmation. Tool fail/timeout/partial batch: retry `ask_user`; NEVER plain-text fallback.
 - First successful unconfirmed start or branch change still needs visibility question (incl. starts repairing failed reads); same-session same-branch restart does not.
-- 3+ options/open choice MUST carry a recommended answer, marked in options; yes/no/confirm: none.
+- 3+ options/open choice MUST carry a recommended answer, marked with `(x)`/`[x]` (never `(recommended)` or `*` in text); yes/no/confirm: none.
 - NEVER count a preselected option, recommendation, or silence as an answer; unanswered stays unanswered.
 - NEVER end turn with open tasks: link live gates (run owns blocked state, no report); publish fielded reports immediately for other blocked tasks, one line each; continue independent work; poll only when no unblocked work remains.
 - MUST state each unavoidable assumption in the acknowledgement before work.

@@ -21,7 +21,7 @@ from pathlib import Path
 from measure import check as check_measurements
 from measure import parse_sheet
 
-VERSION = "0.1.3"
+VERSION = "0.1.4"
 HOME = Path(__file__).resolve().parent.parent
 CATALOG = HOME / "data" / "vendor" / "ui-ux-pro-max"
 WIDTHS = (1280, 360)
