@@ -256,13 +256,6 @@ def open_repo_from_its_card(w: Walker, demo: Demo) -> None:
 
 
 @step("desktop")
-def card_open_button_opens_the_repo(w: Walker, demo: Demo) -> None:
-  w.click(".repo-card .btn.ghost >> nth=0", 700)
-  assert w.visible("#view-repo")
-  w.click("#back")
-
-
-@step("desktop")
 def keyboard_enter_on_a_card(w: Walker, demo: Demo) -> None:
   w.page.focus(".repo-card")
   w.page.keyboard.press("Enter")

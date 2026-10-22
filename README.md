@@ -81,10 +81,11 @@ python3 ui/server.py --repo /path/to/repo
 3. The shield icon opens **Signing**: the active GPG key, whether GitHub has
    it, and **Create key** when there is none. Add the public key at GitHub →
    Settings → GPG keys with a verified e-mail, then **Re-check**.
-4. **Clean & publish** runs the pipeline and streams the log. **Open** shows
-   the repo view first: target branch, paths to remove, the divergence policy,
-   the check timeout, and the options (dry run, skip the PR gate, keep empty
-   commits, leave tags alone, keep the branch, force the push).
+4. **Clean & publish** runs the pipeline and streams the log. A click on the
+   card shows the repo view first: target branch, paths to remove, the
+   divergence policy, the check timeout, and the options (dry run, skip the
+   PR gate, keep empty commits, leave tags alone, keep the branch, force the
+   push).
 
 Signed out, every card reads **checks unavailable** instead of **no PR**. The
 run writes a backup bundle before each rewrite stage, and **Cancel** stops a

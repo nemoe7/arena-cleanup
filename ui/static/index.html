@@ -229,6 +229,7 @@
     transition: border-color .12s, background .12s, transform .12s;
   }
   .repo-card:hover { border-color: #2c333c; background: #0f1216; }
+  .repo-card:hover .repo-name, .repo-card:focus-visible .repo-name { text-decoration: underline; text-underline-offset: 3px; }
   .repo-card:active { transform: translateY(1px); }
   .repo-head { display: flex; align-items: flex-start; gap: 10px; }
   .repo-ico {
@@ -959,7 +960,6 @@
 
     const actions = el("div", { class: "card-actions" },
       el("button", { class: "btn primary", onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, "Clean & publish"),
-      el("button", { class: "btn ghost", onclick: (e) => { e.stopPropagation(); openRepo(repo.id); } }, "Open"),
       el("div", { class: "grow" }),
       (() => {
         // Deleting a card can delete its clone, so the first click only arms
