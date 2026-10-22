@@ -399,6 +399,11 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
     for name in arena:
       count = git("rev-list", "--count", f"origin/{default}..origin/{name}", cwd=cwd)
       ahead[name] = int(count or 0)
+  # The commit time of each tip; the page offers the newest branch first.
+  activity = {
+    name: int(git("log", "-1", "--format=%ct", f"origin/{name}", cwd=cwd) or 0)
+    for name in arena
+  }
 
   # PR state for each arena branch, bounded. A repo with many branches must
   # not turn one dashboard load into a dozen API calls. `pr_checked` lets the
@@ -420,6 +425,7 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
     "default": default or "?",
     "dirty": len(dirty),
     "ahead": ahead,
+    "activity": activity,
     "arena": arena,
     "pr": checks,
     "pr_checked": authenticated,
@@ -959,6 +965,7 @@ def build_argv(body: dict[str, Any], repo: dict[str, Any]) -> list[str]:
     "keep_empty",
     "one_click",
     "branch",
+    "arena",
     "divergence",
     "force",
     "skip_pr_check",
@@ -991,6 +998,13 @@ def build_argv(body: dict[str, Any], repo: dict[str, Any]) -> list[str]:
     if branch.startswith(engine.ARENA_PREFIX):
       raise BadRequest(f"the page does not target {engine.ARENA_PREFIX}* branches")
     argv += ["--branch", branch]
+  # With several arena branches the page selects one; the engine would ask.
+  arena = str(body.get("arena") or "").strip()
+  if arena:
+    bad = arena.startswith("-") or "\0" in arena
+    if bad or not arena.startswith(engine.ARENA_PREFIX):
+      raise BadRequest(f"invalid arena branch {arena!r}")
+    argv += ["--arena", arena]
   # One click never guesses what to do with diverged history. The engine
   # refuses without a terminal, and the UI then offers the two choices.
   divergence = body.get("divergence") or "ask"

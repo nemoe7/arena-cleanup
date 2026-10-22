@@ -225,6 +225,8 @@ def test_add_by_path(ui: UI, world: World, ids: dict[str, str]) -> None:
   assert added["status"]["default"] == "main"
   status = added["status"]
   assert set(status["ahead"]) == set(status["arena"]), "one count per arena branch"
+  assert set(status["activity"]) == set(status["arena"]), "one tip time per branch"
+  assert all(stamp > 0 for stamp in status["activity"].values())
   assert added["managed"] is False
   assert len(json.loads((ui.data / "repos.json").read_text())) == 1
 
@@ -327,6 +329,10 @@ def test_the_argv_whitelist(ui: UI, ids: dict[str, str]) -> None:
   assert ui.status("POST", jobs, {"action": "strip"}) == 400, "strip is CLI only"
   arena = {"action": "run", "branch": "arena/session-1", "dry_run": True}
   assert ui.status("POST", jobs, arena) == 400, "the page never targets arena/*"
+  assert ui.status("POST", jobs, {"action": "run", "arena": "main"}) == 400
+  chosen = ui.post(jobs, {"action": "run", "arena": "arena/session-1", "dry_run": True})
+  assert chosen["argv"][-2:] == ["--arena", "arena/session-1"], chosen["argv"]
+  ui.wait_for_job(chosen["id"])  # let the dry run end before the next test
   assert ui.status("POST", jobs, {"action": "run", "timeout": -5}) == 400
   assert ui.status("POST", "/api/repos/deadbeef1234/jobs", {"action": "run"}) == 404
   assert ui.status("POST", "/api/jobs/deadbeef1234/cancel") == 404

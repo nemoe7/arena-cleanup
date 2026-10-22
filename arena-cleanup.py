@@ -519,19 +519,23 @@ def confirm(log: Log, question: str, *, default: bool = False) -> bool:
     log.plain("  (please answer y or n)")
 
 
-def select_arena_branch(log: Log) -> tuple[str, str]:
+def select_arena_branch(log: Log, wanted: str = "") -> tuple[str, str]:
   """
   Choose the arena branch to work on: (local name, remote-tracking ref).
 
   Several origin/arena/* branches usually means leftover sessions. Nothing is
   guessed: they are listed, and the user selects. Without a terminal (and so
-  without an answer) the run stops rather than touching the wrong branch;
-  `-b <branch>` selects one non-interactively.
+  without an answer) the run stops rather than touching the wrong branch.
+  `-a <branch>` answers the menu without a prompt.
   """
   remotes = remote_arena_branches()
   if not remotes:
     raise Fail(f"no origin/{ARENA_PREFIX}* branch found")
-  if len(remotes) == 1:
+  if wanted:
+    remote_ref = wanted if wanted.startswith("origin/") else f"origin/{wanted}"
+    if remote_ref not in remotes:
+      raise Fail(f"{remote_ref} is not an origin/{ARENA_PREFIX}* branch")
+  elif len(remotes) == 1:
     remote_ref = remotes[0]
   else:
     log.warning(f"{len(remotes)} origin/{ARENA_PREFIX}* branches found")
@@ -543,7 +547,7 @@ def select_arena_branch(log: Log) -> tuple[str, str]:
     if choice is None:
       raise Fail(
         f"cancelled: {len(remotes)} origin/{ARENA_PREFIX}* branches found and "
-        "none chosen (pass -b <branch> to choose non-interactively)"
+        "none chosen (pass -a <branch> to choose without a prompt)"
       )
     remote_ref = choice
   return remote_ref[len("origin/") :], remote_ref
@@ -2080,6 +2084,8 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
 
   log.info(f"{PROG} {__version__} starting")
   log.info(cfg.describe())
+  if args.branch and args.arena:
+    raise Fail("--arena and --branch exclude each other")
   if cfg.dry_run:
     log.warning("dry run: no branch will be deleted, no ref will move, nothing pushed")
 
@@ -2130,7 +2136,7 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
     target = "HEAD"
     if current.lower() == default.lower():
       log.info(f"on {default}; locating origin/{ARENA_PREFIX}* branch")
-      local, remote_ref = select_arena_branch(log)
+      local, remote_ref = select_arena_branch(log, args.arena)
       target_name = local
       switched = True
       target = ensure_branch(
@@ -2484,6 +2490,14 @@ def build_parser() -> argparse.ArgumentParser:
     "discovering arena/* (e.g. -b main); no PR required",
   )
   run_group.add_argument(
+    "-a",
+    "--arena",
+    metavar="NAME",
+    default=argparse.SUPPRESS,
+    help="the origin/arena/* branch to clean when several exist "
+    "(e.g. -a arena/session-2); answers the menu without a prompt",
+  )
+  run_group.add_argument(
     "-d",
     "--delete-branch",
     action="store_true",
@@ -2628,6 +2642,7 @@ def main(argv: Sequence[str] | None = None) -> int:
   args.check_timeout = getattr(args, "check_timeout", 900)
   args.check_interval = getattr(args, "check_interval", 1)
   args.branch = getattr(args, "branch", None)
+  args.arena = getattr(args, "arena", "")
   args.delete_branch = getattr(args, "delete_branch", False)
   args.keep_branch = getattr(args, "keep_branch", False)
   args.force = getattr(args, "force", False)

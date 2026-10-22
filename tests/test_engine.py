@@ -470,8 +470,23 @@ LONG_FLAGS = (
   "--path",
   "--keep-empty",
   "--no-tags",
+  "--arena",
 )
-SHORT_FLAGS = ("-b", "-d", "-k", "-t", "-i", "-n", "-v", "-c", "-V", "-p", "-E", "-T")
+SHORT_FLAGS = (
+  "-b",
+  "-a",
+  "-d",
+  "-k",
+  "-t",
+  "-i",
+  "-n",
+  "-v",
+  "-c",
+  "-V",
+  "-p",
+  "-E",
+  "-T",
+)
 USAGE_ERROR = 2
 STRIP_CHECK_CODES = {0, 7}
 
@@ -724,7 +739,7 @@ def test_multiple_origin_arena_branches(world: World) -> None:
   res = world.cleanup()
   assert res.rc == 1
   assert res.says("2 origin/arena/* branches found"), res.text
-  assert res.says("-b <branch>")
+  assert res.says("-a <branch>")
   assert world.git("branch", "--show-current") == "main"
   assert sum(b.startswith("arena/multi") for b in world.remote_heads()) == 2
 
@@ -748,6 +763,20 @@ def test_multiple_origin_arena_branches(world: World) -> None:
     world.git("push", "-q", "-u", "origin", f"arena/{name}")
   world.git("checkout", "-q", "main")
   tips_before = world.git("ls-remote", "--heads", "origin")
+
+  # --arena answers the menu without a terminal and keeps the full flow
+  res = world.cleanup("-n", "--arena", "arena/multi-d")
+  assert res.rc == 0, res.text
+  assert res.says("arena/multi-d"), res.text
+  assert not res.says("Which one should this run clean?")
+  res = world.cleanup("-n", "-a", "arena/nope")
+  assert res.rc == 1
+  assert res.says("origin/arena/nope is not an origin/arena/* branch"), res.text
+  res = world.cleanup("-n", "-a", "arena/multi-d", "-b", "main")
+  assert res.rc == 1
+  assert res.says("--arena and --branch exclude each other"), res.text
+  assert world.git("ls-remote", "--heads", "origin") == tips_before
+
   res = world.interactive("arena-cleanup", "c\n")
   assert res.rc == 1
   assert res.says("cancelled:")

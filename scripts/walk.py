@@ -317,6 +317,28 @@ def back_from_signing(w: Walker, demo: Demo) -> None:
 
 
 @step("desktop")
+def arena_select_lists_the_newest_first(w: Walker, demo: Demo) -> None:
+  w.goto(1000)
+  assert not w.visible("#opt-arena"), "the select waits for the repository page"
+  w.click(".repo-card >> nth=0", 800)
+  assert not w.visible("#opt-arena"), "one arena branch needs no select"
+  w.goto(1000)
+  w.click(".repo-card >> nth=4", 800)
+  assert w.visible("#opt-arena")
+  name = w.text("#repo-title").strip()
+  repo = next(r for r in demo.api("/api/repos") if r["name"] == name)
+  status = repo["status"]
+  newest = max(status["activity"], key=status["activity"].get)
+  options = [o.get_attribute("value") for o in w.page.locator("#arena option").all()]
+  assert len(options) == len(status["arena"]) >= 2
+  assert options[0] == newest and w.page.input_value("#arena") == newest
+  assert f"--arena {newest}" in w.start_argv()
+  w.page.select_option("#arena", options[1])
+  w.page.wait_for_timeout(200)
+  assert f"--arena {options[1]}" in w.start_argv()
+
+
+@step("desktop")
 def sidebar_and_branch_selector(w: Walker, demo: Demo) -> None:
   w.goto(1000)
   w.click(".repo-card", 800)

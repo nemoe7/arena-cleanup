@@ -331,6 +331,7 @@
   /* two columns: the divergence control needs about 360 px, which four cells never give */
   .options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
   .opt { padding: 8px 2px; border-bottom: 1px solid var(--line); min-width: 0; }
+  .opt[hidden] { display: none; }
   .opt-label { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
   .opt-label label, .opt-label span.lbl { font-weight: 560; font-size: var(--fs-2); }
   .opt-label .desc { color: var(--dim); font-size: var(--fs-1); }
@@ -690,6 +691,10 @@
               <div class="opt-label"><label for="branch">Target branch</label><span class="desc">the default runs via the arena branch; a named branch is cleaned in place</span></div>
               <select class="field mono-field" id="branch"></select>
             </div>
+            <div class="opt" id="opt-arena" hidden>
+              <div class="opt-label"><label for="arena">Arena branch</label><span class="desc">the session this run cleans; newest activity first</span></div>
+              <select class="field mono-field" id="arena"></select>
+            </div>
             <div class="opt" id="opt-paths">
               <div class="opt-label"><label for="pathin">Remove paths</label><span class="desc">git filter-repo, every ref</span>
                 <button type="button" class="link-btn" id="browse" aria-expanded="false" aria-controls="tree">Browse</button></div>
@@ -815,6 +820,7 @@
     divergence: "ask",
     paths: [],
     branch: "",
+    arena: "",
     job: null,
     es: null,
     phases: [],
@@ -1090,11 +1096,13 @@
     if (!repo) return;
     state.repo = repo;
     state.branch = "";
+    state.arena = "";
     state.paths = [];
     closeTree();
     $("repo-title").textContent = repo.name;
     renderSidebar();
     renderBranchSelect();
+    renderArenaSelect();
     renderPaths();
     renderCommand();
     resetPhases();
@@ -1190,6 +1198,19 @@
     $("branch").value = state.branch;
   }
 
+  // With one arena branch the run finds it; with several the page selects the
+  // newest tip and offers the rest, so the engine never has to ask.
+  function renderArenaSelect() {
+    const s = state.repo?.status || {};
+    const activity = s.activity || {};
+    const names = [...(s.arena || [])].sort((a, b) => (activity[b] || 0) - (activity[a] || 0));
+    const several = names.length >= 2;
+    $("opt-arena").hidden = !several;
+    state.arena = several ? (names.includes(state.arena) ? state.arena : names[0]) : "";
+    $("arena").replaceChildren(...names.map((name) => el("option", { value: name }, `${name} · ${when(activity[name] * 1000)}`)));
+    $("arena").value = state.arena;
+  }
+
   async function refreshStatus() {
     if (!state.repo) return;
     try {
@@ -1203,6 +1224,7 @@
         $("repo-title").textContent = repo.name;
         renderSidebar();
         renderBranchSelect();
+        renderArenaSelect();
       }
     } catch { /* keep the last good view */ }
   }
@@ -1286,6 +1308,7 @@
       dry_run: state.opts.dry_run,
       keep_empty: state.opts.keep_empty,
       branch: state.branch || "",
+      arena: state.arena || "",
       divergence: state.divergence,
       force: state.opts.force,
       skip_pr_check: state.opts.skip_pr_check,
@@ -1300,6 +1323,7 @@
     const parts = ["run"];
     if (body.dry_run) parts.push("--dry-run");
     if (state.branch) parts.push("--branch", state.branch);
+    if (state.arena) parts.push("--arena", state.arena);
     for (const p of state.paths) parts.push("--path", p);
     if (body.keep_empty) parts.push("--keep-empty");
     if (body.skip_pr_check) parts.push("--skip-pr-check");
@@ -1320,6 +1344,7 @@
   function optionsSummary() {
     const body = payload();
     const bits = [];
+    if (state.arena) bits.push(state.arena);
     if (state.paths.length) bits.push(`${state.paths.length} path${state.paths.length === 1 ? "" : "s"}`);
     for (const [key, word] of SUMMARY_WORDS) if (body[key]) bits.push(word);
     if (body.divergence !== "ask") bits.push(DIVERGENCE_WORDS[body.divergence] || body.divergence);
@@ -1523,7 +1548,7 @@
   async function oneClick(repo) {
     openRepo(repo.id);
     await new Promise((r) => setTimeout(r, 30));
-    await startJob({ action: "clean" });
+    await startJob(state.arena ? { action: "clean", arena: state.arena } : { action: "clean" });
   }
 
   function follow(id) {
@@ -2045,6 +2070,7 @@
   };
 
   $("branch").onchange = (ev) => { state.branch = ev.target.value; renderSidebar(); renderCommand(); };
+  $("arena").onchange = (ev) => { state.arena = ev.target.value; renderCommand(); };
 
   $("browse").onclick = async () => {
     const tree = $("tree");
