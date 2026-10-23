@@ -622,3 +622,27 @@ def test_the_tree_route_lists_one_level_of_head(
   assert 'id="options-fold" aria-expanded="true" aria-controls="options"' in page
   assert 'id="options-sum"' in page
   assert not re.search(r"branch-opt|opt-sum|<details", page), "the branch-only fold"
+
+
+PAGE = ROOT / "ui" / "static" / "index.html"
+TEXT_CONTRAST = 4.5
+
+
+def luminance(colour: str) -> float:
+  def channel(hex2: str) -> float:
+    c = int(hex2, 16) / 255
+    return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
+  r, g, b = (channel(colour[i : i + 2]) for i in (1, 3, 5))
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def test_the_primary_button_fill_reads_under_white() -> None:
+  page = PAGE.read_text(encoding="utf-8")
+  tokens = dict(re.findall(r"--([a-z0-9-]+): (#[0-9a-f]{6});", page))
+  assert "background: var(--accent-deep); border-color" in page
+  assert ".btn.primary:hover { background: var(--accent-deep-hi); }" in page
+  for name in ("accent-deep", "accent-deep-hi"):
+    ratio = 1.05 / (luminance(tokens[name]) + 0.05)
+    assert ratio >= TEXT_CONTRAST, f"--{name} {tokens[name]} gives {ratio:.2f}:1"
+  assert luminance(tokens["accent-deep-hi"]) < luminance(tokens["accent-deep"])

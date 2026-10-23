@@ -37,8 +37,8 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 ### Colour
 
-- Roles: `bg`, `surface`, `surface-2`, `surface-3`, `line`, `line-2`, `text`, `muted`, `dim`, `accent`, `accent-hi`, `accent-soft`, `ok`, `warn`, `err`, `info`.
-- One dark theme, `color-scheme: dark`. Contrast checks: not run.
+- Roles: `bg`, `surface`, `surface-2`, `surface-3`, `line`, `line-2`, `text`, `muted`, `dim`, `accent`, `accent-hi`, `accent-deep`, `accent-deep-hi`, `accent-soft`, `ok`, `warn`, `err`, `info`.
+- One dark theme, `color-scheme: dark`. Contrast checks: white on the primary button 5.3:1 at rest and 5.9:1 on hover. `accent` itself gives 3.9:1 under white, so it fills checked boxes and marks rows, never a text button.
 
 ### Type
 
@@ -139,6 +139,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-22: the card and the sidebar show how far each arena branch is ahead of the default branch. The clone's own drift stays out of sight. Nobody commits in the container, and the engine handles that divergence itself.
 - Accepted 2026-10-22: the primary button reads Clean & Push. The phase list keeps Publish for the push, tags, and cleanup step.
 - Accepted 2026-10-22: a tree selector for Remove paths. It reads `git ls-tree` of HEAD in the clone, so it works for path repos and never calls GitHub. File contents stay out. A path only old commits carried stays a typed chip.
+- Accepted 2026-10-23: the primary button takes `accent-deep`, 5.3:1 under white, and `accent-deep-hi` on hover. The `accent` token stays for fills and marks.
 - Accepted 2026-10-23: the options card puts the selects and Remove paths left, PR check timeout and the checkboxes right. Two column wrappers flow on their own, so a long path list never pushes the timeout down.
 - Accepted 2026-10-23: the page draws the checkboxes. `appearance: none` drops the browser box, so the boxes match the select and the fields in every browser.
 - Accepted 2026-10-22: the card Remove X moves from the action row to the top right corner. At rest it is a bare glyph, so the primary button stands alone. The red frame returns on hover, on press, and while armed.
