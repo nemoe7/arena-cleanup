@@ -9,6 +9,7 @@ dependencies = []
 dev = [
   "git-filter-repo>=2.47",
   "pytest>=8.3",
+  "pytest-xdist>=3.6",
   "ruff==0.16.6",
   "shfmt-py>=4.2",
 ]
@@ -31,3 +32,4 @@ max-line-length = 120
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-n auto --dist loadfile -q"
