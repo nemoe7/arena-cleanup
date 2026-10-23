@@ -31,7 +31,7 @@ package is private: `docker login ghcr.io` with a token that has
 
 ```console
 cp .env.example .env
-$EDITOR .env                                       # name, email, TS_AUTHKEY
+$EDITOR .env                                       # name, email, TS_AUTHKEY, TZ
 docker compose up -d
 docker compose exec arena-cleanup gh auth login    # once, if there is no token
 ```
@@ -52,6 +52,10 @@ docker run --rm -p 127.0.0.1:8080:8080 -v arena-home:/home/arena \
 
 The `arena-home` volume keeps the `gh` token, the git identity, the GPG key,
 the repo registry, and the clones. A rebuilt container keeps all of them.
+
+`docker compose logs -f` shows one stamped line per job, repo change, and
+failed request, in the zone of `TZ`. `command: ["-v"]` on the service adds
+every request and every engine line.
 
 ### Python
 

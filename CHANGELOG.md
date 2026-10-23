@@ -42,6 +42,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The page matches its design record after an audit. Every banner leads with its glyph. Pointer targets are at least 24 px: Browse, the chip X, the tree select, the check rows, and the slider. The version chip weighs 520 and bold runs 600. A dead brand size rule goes, and two paddings sit on the scale.
 - The repo wireframe board grows its blocks with their text, and its marks are glyphs instead of font symbols.
 - The Docker workflow starts only for CI on main, so other branches no longer record a skipped run.
+- The container log stamps every line in the zone of `TZ`. It names the start and the end of each job, each repo add and remove, and each failed request. `-v` adds every request and every engine line.
 - The test suite runs on every CPU core through pytest-xdist. Each file stays on one worker, so the web app story in `tests/test_ui.py` keeps its order.
 - The config files follow the repo template. Git normalizes line endings to LF, and GitHub prefills a pull request body with its three sections. The project metadata names the README and the licence.
 - `AGENTS.md` carries the shared agent rules of the repo template, with the nuu and nemoizer sections below them.

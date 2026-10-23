@@ -79,7 +79,8 @@ class UI:
           "--port",
           str(self.port),
         ],
-        env=self.world.env,
+        # a fixed zone, so the log stamps are checkable below
+        env={**self.world.env, "TZ": "Asia/Manila"},
         stdout=log,
         stderr=subprocess.STDOUT,
       )
@@ -575,6 +576,26 @@ def test_repos_survive_a_restart_and_can_be_forgotten(
   assert removed["removed"] == ids["clone"]
   assert len(ui.get("/api/repos")) == 1
   assert not Path(ids["clone_path"]).exists()
+
+
+LOG_LINE = re.compile(
+  r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \+0800 (INFO|WARNING|ERROR) "
+)
+
+
+def test_the_container_log_names_jobs_and_errors_in_the_tz_zone(
+  ui: UI, ids: dict[str, str]
+) -> None:
+  lines = ui.log.read_text().splitlines()
+  stamped = [line for line in lines if LOG_LINE.match(line)]
+  assert stamped, lines[-5:]
+  assert all(LOG_LINE.match(line) for line in lines if " arena-ui " in line)
+  assert any(" arena-ui " in line and "tz=PST +0800" in line for line in stamped)
+  assert any(f"job {ids['job']} start" in line for line in stamped)
+  assert any(f"job {ids['job']} done" in line and "exit 0" in line for line in stamped)
+  assert any("repo add work " in line for line in stamped)
+  assert any("repo remove work and its clone" in line for line in stamped)
+  assert any("GET /api/repos/deadbeef1234 -> 404" in line for line in stamped)
 
 
 COMMIT_FIELDS = {"sha", "short", "subject", "author", "date", "signed"}

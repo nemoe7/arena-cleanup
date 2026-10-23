@@ -28,6 +28,8 @@ services:
       # git identity - the engine refuses to rewrite commits without one
       GIT_AUTHOR_NAME: ${GIT_AUTHOR_NAME:-}
       GIT_AUTHOR_EMAIL: ${GIT_AUTHOR_EMAIL:-}
+      # clock of the container log, an IANA zone name
+      TZ: ${TZ:-UTC}
     volumes:
       # gh credentials, git config, the GPG key, the repo registry, and every
       # clone made from a URL all live here

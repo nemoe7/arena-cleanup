@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import logging
 import os
 import re
 import shutil
@@ -59,6 +60,7 @@ def project_version() -> str:
 
 
 VERSION = project_version()
+LOG = logging.getLogger("arena-ui")
 
 COMMANDS = {"run"}
 MAX_LINES = 4000
@@ -734,19 +736,30 @@ class Job:
       bufsize=1,
       env={**os.environ, "PYTHONUNBUFFERED": "1", "NO_COLOR": "1", "TERM": "dumb"},
     )
+    LOG.info("job %s start %s: %s", self.id, self.repo["name"], " ".join(self.argv[2:]))
     threading.Thread(target=self._pump, daemon=True).start()
 
   def _pump(self) -> None:
     assert self._proc is not None and self._proc.stdout is not None
     for line in self._proc.stdout:
+      text = line.rstrip("\n")
+      LOG.debug("job %s | %s", self.id, text)
       with self._cond:
-        self.lines.append((time.time(), line.rstrip("\n")))
+        self.lines.append((time.time(), text))
         self._cond.notify_all()
     self._proc.wait()
     with self._cond:
       self.exit = self._proc.returncode
       self.finished = time.time()
       self._cond.notify_all()
+    LOG.info(
+      "job %s %s %s: exit %s in %.1fs",
+      self.id,
+      "cancelled" if self.cancelled else "done",
+      self.repo["name"],
+      self.exit,
+      self.finished - self.started,
+    )
 
   def cancel(self) -> bool:
     proc = self._proc
@@ -1073,12 +1086,11 @@ CONTENT_TYPES = {
 class Handler(BaseHTTPRequestHandler):
   server_version = "arena-ui/" + VERSION
   reg: Registry
-  verbose = False
 
   # -- plumbing ----------------------------------------------------------
   def log_message(self, fmt: str, *args: object) -> None:
-    if self.verbose:
-      sys.stderr.write(f"{self.address_string()} {fmt % args}\n")
+    if self.path != "/healthz":
+      LOG.debug("%s %s", self.address_string(), fmt % args)
 
   def _json(self, payload: Any, status: int = 200) -> None:
     raw = json.dumps(payload).encode()
@@ -1090,6 +1102,8 @@ class Handler(BaseHTTPRequestHandler):
     self.wfile.write(raw)
 
   def _error(self, message: str, status: int = 400) -> None:
+    if status < 500:
+      LOG.warning("%s %s -> %s %s", self.command, self.path, status, message)
     self._json({"error": message}, status)
 
   def _body(self) -> dict[str, Any]:
@@ -1231,6 +1245,7 @@ class Handler(BaseHTTPRequestHandler):
     except BrokenPipeError:
       pass
     except Exception as exc:
+      LOG.exception("%s %s failed", self.command, self.path)
       self._error(f"internal error: {exc}", 500)
 
   # -- POST --------------------------------------------------------------
@@ -1250,6 +1265,7 @@ class Handler(BaseHTTPRequestHandler):
         if not entry:
           self._error(err or "could not add that repo", 400)
         else:
+          LOG.info("repo add %s %s", entry["name"], entry["source"])
           self._json({**entry, "status": STATUS.get(entry)}, 201)
       elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "reset":
         repo = self._repo(parts[2])
@@ -1263,12 +1279,14 @@ class Handler(BaseHTTPRequestHandler):
           return
         STATUS.drop(parts[2])
         body = self._body()
-        if (
+        delete = bool(
           body.get("delete")
           and repo.get("managed")
           and repo["path"].startswith(str(self.reg.clones))
-        ):
+        )
+        if delete:
           shutil.rmtree(repo["path"], ignore_errors=True)
+        LOG.info("repo remove %s%s", repo["name"], " and its clone" if delete else "")
         self._json({"removed": repo["id"]})
       elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "jobs":
         repo = self._repo(parts[2])
@@ -1305,6 +1323,7 @@ class Handler(BaseHTTPRequestHandler):
     except BrokenPipeError:
       pass
     except Exception as exc:
+      LOG.exception("%s %s failed", self.command, self.path)
       self._error(f"internal error: {exc}", 500)
 
   def _handle_auth(self, body: dict[str, Any]) -> None:
@@ -1416,6 +1435,13 @@ class Handler(BaseHTTPRequestHandler):
         return
 
 
+class Server(ThreadingHTTPServer):
+  daemon_threads = True
+
+  def handle_error(self, request: object, client_address: object) -> None:
+    LOG.exception("request from %s failed", client_address)
+
+
 def main() -> int:
   parser = argparse.ArgumentParser(
     prog="arena-ui", description="Web UI for arena-cleanup."
@@ -1431,27 +1457,42 @@ def main() -> int:
   parser.add_argument(
     "--port", type=int, default=int(os.environ.get("ARENA_PORT", "8080"))
   )
-  parser.add_argument("-v", "--verbose", action="store_true", help="log every request")
+  parser.add_argument(
+    "-v",
+    "--verbose",
+    action="store_true",
+    help="log every request and every engine line",
+  )
   args = parser.parse_args()
+  # One line per event on stderr, stamped in the zone of TZ, so `docker logs`
+  # reads in the clock of the owner.
+  logging.basicConfig(
+    stream=sys.stderr,
+    level=logging.DEBUG if args.verbose else logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S %z",
+  )
 
   if not TOOL.is_file():
-    print(f"arena-ui: {TOOL} not found - the UI sits next to the tool", file=sys.stderr)
+    LOG.error("%s not found - the UI sits next to the tool", TOOL)
     return 2
 
   reg = Registry(Path(args.data).expanduser())
   Handler.reg = reg
-  Handler.verbose = args.verbose
 
-  httpd = ThreadingHTTPServer((args.host, args.port), Handler)
-  httpd.daemon_threads = True
-  print(
-    f"arena-ui {VERSION} on http://{args.host}:{args.port}  data={reg.data}",
-    flush=True,
+  httpd = Server((args.host, args.port), Handler)
+  LOG.info(
+    "arena-ui %s on http://%s:%s data=%s tz=%s",
+    VERSION,
+    args.host,
+    args.port,
+    reg.data,
+    time.strftime("%Z %z"),
   )
   try:
     httpd.serve_forever()
   except KeyboardInterrupt:
-    print("\nbye", flush=True)
+    LOG.info("bye")
   finally:
     httpd.server_close()
   return 0
