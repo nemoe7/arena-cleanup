@@ -5,6 +5,13 @@ This file documents all notable changes to this project.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-10-23
+
+### Changed
+
+- The phase rows of the run card show counts instead of hint texts: the checks
+  and how many still run, the commits signed, and the tags moved.
+
 ## [0.2.3] - 2026-10-23
 
 ### Changed

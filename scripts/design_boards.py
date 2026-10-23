@@ -355,11 +355,11 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     + "".join(
       block(f"{n} — {s}", height=24)
       for n, s in (
-        ("Prepare", "fetch, branches, checkout"),
-        ("PR checks", "read the pull request"),
-        ("Rewrite and sign", "claim, trim, sign"),
-        ("Publish", "push, tags, cleanup"),
-        ("Finish", "back to the default branch"),
+        ("Prepare", "time"),
+        ("PR checks", "checks, running"),
+        ("Rewrite and sign", "commits signed"),
+        ("Publish", "tags moved"),
+        ("Finish", "time"),
       )
     )
   )
@@ -462,13 +462,11 @@ def states_board(_: dict[str, bytes]) -> str:
   )
   phases = (
     '<ul class="phases card" style="width:420px">'
-    + phase("done", "Prepare", "fetch, branches, checkout", "0.4s")
-    + phase(
-      "run", "PR checks", 'check "ci": still running, waiting up to 15 min', "running"
-    )
-    + phase("idle", "Rewrite and sign", "claim, trim, sign", "")
-    + phase("skip", "Publish", "skipped: dry run", "")
-    + phase("fail", "Finish", "working tree has 1 uncommitted change", "<0.1s")
+    + phase("done", "Prepare", "", "0.4s")
+    + phase("run", "PR checks", "2 checks, 1 running", "running")
+    + phase("idle", "Rewrite and sign", "", "")
+    + phase("skip", "Publish", "", "")
+    + phase("fail", "Finish", "", "<0.1s")
     + "</ul>"
   )
   pr_pills = (

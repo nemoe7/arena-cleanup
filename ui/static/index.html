@@ -875,6 +875,7 @@
     opened: 0,
     phases: [],
     phase: null,
+    counts: { checks: {}, dry: false },
     signing: null,
   };
 
@@ -1452,13 +1453,14 @@
   // ------------------------------------------------------------------- jobs
   // ------------------------------------------------------------ run stages
   // GitHub's run view, not a wall of text: one row per stage, ticked off as
-  // the engine reaches it, and the raw log one click away.
+  // the engine reaches it, and the raw log one click away. A row carries no
+  // text until the engine reports a count for it.
   const PHASES = [
-    { id: "prepare", name: "Prepare", sub: "fetch, branches, checkout" },
-    { id: "pr", name: "PR checks", sub: "read the pull request" },
-    { id: "rewrite", name: "Rewrite and sign", sub: "claim, trim, sign" },
-    { id: "publish", name: "Publish", sub: "push, tags, cleanup" },
-    { id: "sync", name: "Finish", sub: "back to the default branch" },
+    { id: "prepare", name: "Prepare", sub: "" },
+    { id: "pr", name: "PR checks", sub: "" },
+    { id: "rewrite", name: "Rewrite and sign", sub: "" },
+    { id: "publish", name: "Publish", sub: "" },
+    { id: "sync", name: "Finish", sub: "" },
   ];
   const PHASE_TESTS = [
     ["prepare", /^arena-cleanup \d|^claimed |^dry run:/],
@@ -1480,9 +1482,54 @@
     return null;
   }
 
+  function plural(n, word) {
+    return `${n} ${word}${n === 1 ? "" : "s"}`;
+  }
+
+  // The row texts come from the engine's own lines: how many checks the PR
+  // has and how many still run, how many commits got a signature, and how
+  // many tags moved on origin. A dry run says what would move instead.
+  function countFrom(text) {
+    const match = /^\S+\s+(INFO|OK|WARN|ERROR|DEBUG)\s+(.*)$/.exec(text);
+    if (!match) return;
+    const [, level, msg] = match;
+    const counts = state.counts;
+    const row = (id) => state.phases.find((p) => p.id === id) || {};
+    let m;
+    if (/^dry run:/.test(msg)) {
+      counts.dry = true;
+    } else if ((m = /^check "([^"]+)": /.exec(msg))) {
+      counts.checks[m[1]] = level; // WARN while it runs, ERROR when it failed
+      const states = Object.values(counts.checks);
+      const live = states.filter((x) => x === "WARN").length;
+      const failed = states.filter((x) => x === "ERROR").length;
+      row("pr").sub = plural(states.length, "check")
+        + (live ? `, ${live} running` : "") + (failed ? `, ${failed} failed` : "");
+    } else if (/reports no status checks at all/.test(msg)) {
+      row("pr").sub = "no checks";
+    } else if (/^no open PR for /.test(msg)) {
+      row("pr").sub = "no PR";
+    } else if (/^--skip-pr-check set/.test(msg)) {
+      row("pr").sub = "skipped";
+    } else if ((m = /^scanning\.\.\. \d+% \((\d+)\/(\d+)\)(?: - (\d+) rewritten)?/.exec(msg))) {
+      row("rewrite").sub = counts.dry
+        ? `${m[3] || 0} of ${plural(+m[2], "commit")} to rewrite`
+        : `${m[1]} of ${m[2]} scanned, ${m[3] || 0} rewritten`;
+    } else if ((m = /(\d+) commit\(s\): \d+ rewritten, (\d+) signed/.exec(msg))) {
+      row("rewrite").sub = `${m[2]} of ${plural(+m[1], "commit")} signed`;
+    } else if ((m = /^(\d+) tag\(s\) point into these commits and would move/.exec(msg))) {
+      row("publish").sub = `${plural(+m[1], "tag")} to move`;
+    } else if ((m = /^updated (\d+) tag\(s\) on origin/.exec(msg))) {
+      row("publish").sub = `${plural(+m[1], "tag")} moved`;
+    } else if ((m = /^--no-tags set: (\d+) tag\(s\) still name/.exec(msg))) {
+      row("publish").sub = `${plural(+m[1], "tag")} not moved`;
+    }
+  }
+
   function resetPhases() {
     state.phases = PHASES.map((p) => ({ ...p, state: "idle", lines: 0, start: 0, end: 0 }));
     state.phase = "prepare";
+    state.counts = { checks: {}, dry: false };
     $("phases").replaceChildren(...state.phases.map((p) =>
       el("li", { class: "phase", "data-phase": p.id, "data-state": "idle" },
         el("div", { class: "phase-head" },
@@ -1526,6 +1573,9 @@
     for (const p of state.phases) {
       if (p.state === "run") p.state = p === last && !ok && !cancelled ? "fail" : "done";
       if (p.state === "idle") p.state = "skip";
+      if (p.id === "publish" && p.state === "done" && !p.sub) {
+        p.sub = state.counts.dry ? "0 tags to move" : "0 tags moved";
+      }
       paintPhase(p);
     }
   }
@@ -1575,10 +1625,7 @@
       phase.lines += 1;
       phase.start = phase.start || line.t || Date.now() / 1000;
       phase.end = line.t || phase.end || Date.now() / 1000;
-      if (/^ok\b/i.test(msgOf(text)) || / done\b/.test(msgOf(text))) {
-        // a short status line for the row, so the list says what happened
-        phase.sub = text.replace(/^.*?\s(?:INFO|OK|WARN|ERROR)\s+/, "").slice(0, 64);
-      }
+      countFrom(text);
       if (phase.state === "idle") phase.state = "run";
       markEarlierDone(id);
     }
