@@ -192,7 +192,8 @@ async function metrics(page, selector) {
     return {width: innerWidth, height: innerHeight, elements,
       overflow: document.documentElement.scrollWidth > innerWidth,
       preference: {dark: matchMedia('(prefers-color-scheme: dark)').matches,
-        reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches},
+        reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+        coarsePointer: matchMedia('(pointer: coarse)').matches},
       active: {tag: document.activeElement?.tagName,
         id: document.activeElement?.id, role: document.activeElement?.getAttribute('role')}};
   }, selector);
@@ -556,9 +557,11 @@ async function run() {
   const timeout = request.timeout * 1000;
   try {
     for (const width of request.widths) {
+      const touch = width <= 768;
       for (const scheme of ['light', 'dark']) {
         for (const motion of ['no-preference', 'reduce']) {
           const context = await browser.newContext({viewport: {width, height: 900},
+            hasTouch: touch, isMobile: touch,
             colorScheme: scheme, reducedMotion: motion, acceptDownloads: false});
           const page = await context.newPage();
           const errors = [];
@@ -566,7 +569,7 @@ async function run() {
           page.on('console', message => {
             if (message.type() === 'error') errors.push({type: 'console', message: message.text()});
           });
-          const row = {width, scheme, motion, status: 'not_checked', errors,
+          const row = {width, touch, scheme, motion, status: 'not_checked', errors,
             flow: {status: 'not_run'}, edit: {status: 'not_run'}};
           captures.push(row);
           try {

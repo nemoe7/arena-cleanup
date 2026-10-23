@@ -1162,11 +1162,13 @@ def read_set_input_warning(line,root=None,cwd=None):
 			warning=read_set_input_warning(substitution or backtick,base,here)
 			if warning:return warning
 	protected=None;incoming=set();piece=[]
-	def paths(words,recursive=False):
+	def paths(words):
 		nonlocal protected
 		if protected is None:protected={path.resolve():path.relative_to(base).as_posix()for path in read_set_paths(base)}
 		found=set()
-		for word in words:candidate=(here/Path(word).expanduser()).resolve();found.update(path for path in protected if path==candidate or recursive and candidate in path.parents)
+		for word in words:
+			candidate=(here/Path(word).expanduser()).resolve()
+			if candidate in protected:found.add(candidate)
 		return found
 	for token in[*tokens,';']:
 		if token not in(';','&&','||','|','|&','&','(',')','\n'):piece.append(token);continue
@@ -1187,7 +1189,7 @@ def read_set_input_warning(line,root=None,cwd=None):
 					if warning:return warning
 					break
 		elif head in('cat','grep','head','tail'):
-			files=[];pattern=head!='grep';recursive=False;flags=True;index=0
+			files=[];pattern=head!='grep';flags=True;index=0
 			while index<len(words):
 				word=words[index];index+=1
 				if word in('<','>','>>','<<','<<-','<<<','<&','>&'):
@@ -1196,10 +1198,10 @@ def read_set_input_warning(line,root=None,cwd=None):
 				elif flags and word=='--':flags=False
 				elif flags and word.startswith('-'):
 					if head=='grep':
-						recursive|=word in('--recursive','--dereference-recursive')or not word.startswith('--')and any(flag in word[1:]for flag in'rR')
 						if word in('-e','--regexp','-f','--file'):
 							if word in('-f','--file'):files.extend(words[index:index+1])
 							pattern=True;index+=1
+						elif word in('-m','--max-count','-A','--after-context','-B','--before-context','-C','--context','--exclude','--exclude-dir','--exclude-from','--include','--label','--devices','--directories','--binary-files'):index+=1
 						elif word.startswith(('-e','--regexp=','-f','--file=')):
 							if word.startswith('-f'):files.append(word[2:])
 							elif word.startswith('--file='):files.append(word.split('=',1)[1])
@@ -1207,7 +1209,7 @@ def read_set_input_warning(line,root=None,cwd=None):
 					elif word in('-n','-c','--lines','--bytes'):index+=1
 				elif not pattern:pattern=True
 				else:files.append(word)
-			sources=paths(files,recursive)|incoming
+			sources=paths(files)|incoming
 			if head in GATE_NOISE and sources:name=protected[min(sources)];return f"BIBLE BLOCKED: `{head}` reads {name}. Use read_file for the full file."
 		incoming=sources if token in('|','|&')else set()
 	return None
@@ -1903,7 +1905,7 @@ class Store:
 				note_id=new_id()
 				if not any(db.execute(f"SELECT 1 FROM {table} WHERE id = ?",(note_id,)).fetchone()for table in('notes','submissions','uploads','reports','tasks')):break
 			else:raise RuntimeError('The state holds no free six-character ID for a bible note')
-			listed='\n'.join(f"- `{path}`"for path in paths);prefix='Bible checkpoint.'if manual else f"Bible checkpoint after a {READ_SET_INTERVAL_MINUTES}-minute interval.";text=f"{prefix} Read each listed path in full with the read tool only if its current full text is absent from context, then acknowledge this note.\nAnswer the survey only if any required bible text was absent from context before this check.\n{listed}";record=self.note(note_id,text,shared=db,autosave=False,quiet=True,blocking=True);db.execute('INSERT INTO meta(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',(READ_SET_SLOT_META,slot));db.execute('INSERT INTO meta(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',(READ_SET_LAST_META,moment.isoformat()))
+			listed='\n'.join(f"- `{path}`"for path in paths);prefix='Bible checkpoint.'if manual else f"Bible checkpoint after a {READ_SET_INTERVAL_MINUTES}-minute interval.";import survey;text=f"{prefix} Read each listed path in full with the read tool only if its current full text is absent from context, then acknowledge this note.\nAnswer the survey only if any required bible text was absent from context before this check.\n{survey.INSTRUCTIONS}\n{listed}";record=self.note(note_id,text,shared=db,autosave=False,quiet=True,blocking=True);db.execute('INSERT INTO meta(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',(READ_SET_SLOT_META,slot));db.execute('INSERT INTO meta(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',(READ_SET_LAST_META,moment.isoformat()))
 		self.autosave();return record
 	def submission(self,submission_id,report_id,text,at=None,acknowledged_at=None,ack_type=None,ack_text=None,seen_at=None,task_id=None,ack_edited_at=None,shared=None,autosave=True,replies=None,ack_edited_seen_count=None,answer_data=None):
 		identifier(submission_id);identifier(report_id);submission_text(text)
@@ -3072,7 +3074,7 @@ def handler(store):
 					with survey_lock:
 						with closing(store.connect())as db:pending=db.execute("SELECT id FROM notes WHERE quiet = 1 AND blocking = 1 AND type IN ('', 'survey') AND acknowledged_at IS NULL LIMIT 1").fetchone()
 						if pending is None:
-							if survey_state['results']is None:store.note(uuid.uuid4().hex[:6],'Acknowledge this note, then follow the arena-skill survey procedure.',quiet=True,blocking=True,type='survey')
+							if survey_state['results']is None:import survey;store.note(uuid.uuid4().hex[:6],f"Acknowledge this note, then follow the arena-skill survey procedure.\n{survey.INSTRUCTIONS}",quiet=True,blocking=True,type='survey')
 							else:store.schedule_read_set_note(manual=True)
 						survey_state['requested']=True
 					self.reply(200,json.dumps({'ok':True}));return

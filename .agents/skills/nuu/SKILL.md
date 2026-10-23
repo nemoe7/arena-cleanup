@@ -51,6 +51,8 @@ Apply this skill to a page, a component, or an interface change. The sheet holds
 
 13. When a page needs a pattern the sheet lacks, the change adds the entry, both widths, and the screenshots, in one pull request.
 
+14. Enable touch input (`hasTouch` and `isMobile`) when auditing or inspecting mobile widths (`<= 768` px, including `360` px) so `@media (pointer: coarse)` rules apply.
+
 ## Go-to libraries
 
 - For draggable and reorderable lists, vendor only the required part of [SortableJS](https://github.com/SortableJS/Sortable) with its MIT license; do not write custom drag-and-drop handlers.
