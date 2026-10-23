@@ -271,15 +271,15 @@
   .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
 
   .arena-list { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--line); padding-top: 12px; }
-  .arena-row { display: flex; align-items: center; gap: 8px; font-size: var(--fs-2); min-width: 0; flex-wrap: wrap; row-gap: 2px; }
-  /* the name takes the free width, so the pills need no auto margin */
-  .arena-row .bname { flex: 1 1 auto; min-width: 0; font-family: var(--mono); font-size: var(--fs-1); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* two lines at every width: the name, then the ahead chip and the PR pill */
+  .arena-row { display: flex; flex-direction: column; align-items: stretch; gap: 4px; font-size: var(--fs-2); min-width: 0; }
+  .arena-row .bname { min-width: 0; font-family: var(--mono); font-size: var(--fs-1); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .arena-tail { display: flex; align-items: center; gap: 8px; min-width: 0; }
   /* the checks pill is the link: one control, no orphan "Pull request" label */
   .arena-row .prlink { flex: none; display: inline-flex; align-items: center;
     text-decoration: none; border-radius: 999px; min-height: 24px; }
   .arena-row .prlink:hover .pill { border-color: var(--line-2); }
-  .arena-row > .pill { flex: none; }
-  /* a long arena name keeps its width and pushes the counts onto a second line */
+  .arena-tail > .pill { flex: none; }
   .row-btn.select { flex-wrap: wrap; row-gap: 2px; }
   .row-btn.select .txt { flex: 1 0 auto; max-width: 100%; }
   .row-btn.select .tail { display: inline-flex; gap: 8px; margin-left: auto; }
@@ -1000,7 +1000,6 @@
     const cls = pr.state === "passing" ? "ok" : pr.state === "failing" ? "err" : pr.state === "running" ? "run" : "mono";
     if (pr.state === "none") return el("span", { class: "pill mono" }, `PR #${pr.number}, no checks`);
     return el("span", { class: "pill " + cls, title: pr.title },
-      el("i", { class: "dot" }),
       `PR #${pr.number}`,
       `, ${pr.passed}/${pr.total}`);
   }
@@ -1056,16 +1055,16 @@
         for (const name of s.arena.slice(0, 3)) {
           const pr = (s.pr || {})[name];
           arena.append(el("div", { class: "arena-row" },
-            el("i", { class: "dot", style: `background:${pr ? (pr.state === 'passing' ? 'var(--ok)' : pr.state === 'failing' ? 'var(--err)' : 'var(--info)') : 'var(--line-2)'};margin-left:2px` }),
-            el("span", { class: "bname" }, name),
-            aheadPill((s.ahead || {})[name], s.default),
-            pr && pr.url
-              ? el("a", { class: "prlink", href: pr.url, target: "_blank", rel: "noopener",
-                  title: `Open pull request ${pr.number ? "#" + pr.number : ""} on GitHub`,
-                  "aria-label": `Open pull request ${pr.number ? "#" + pr.number : ""} on GitHub`,
-                  onclick: (e) => e.stopPropagation() },
-                  checksPill(pr, s.pr_checked, s.pr_reason))
-              : checksPill(pr, s.pr_checked, s.pr_reason)));
+            el("span", { class: "bname", title: name }, name),
+            el("div", { class: "arena-tail" },
+              aheadPill((s.ahead || {})[name], s.default),
+              pr && pr.url
+                ? el("a", { class: "prlink", href: pr.url, target: "_blank", rel: "noopener",
+                    title: `Open pull request ${pr.number ? "#" + pr.number : ""} on GitHub`,
+                    "aria-label": `Open pull request ${pr.number ? "#" + pr.number : ""} on GitHub`,
+                    onclick: (e) => e.stopPropagation() },
+                    checksPill(pr, s.pr_checked, s.pr_reason))
+                : checksPill(pr, s.pr_checked, s.pr_reason))));
         }
       }
     }
