@@ -703,11 +703,11 @@
           <div class="card-body options" id="options">
             <div class="opt row" id="opt-branch">
               <label for="branch">Target branch</label>
-              <select class="field mono-field" id="branch" title="The default branch runs via the arena branch; a named branch is cleaned in place."></select>
+              <select class="field mono-field" id="branch" title="The default branch runs via the arena branch. A named branch is cleaned in place."></select>
             </div>
             <div class="opt row" id="opt-arena" hidden>
               <label for="arena">Arena branch</label>
-              <select class="field mono-field" id="arena" title="The session this run cleans; newest activity first."></select>
+              <select class="field mono-field" id="arena" title="The session this run cleans, newest activity first."></select>
             </div>
             <div class="opt row" id="opt-paths">
               <label for="pathin">Remove paths</label>
@@ -726,7 +726,7 @@
               <label class="check" title="Prints every step it would take and writes nothing."><input type="checkbox" data-opt="dry_run">Dry Run</label>
               <label class="check" title="Publishes even when the pull request still has running or failing checks."><input type="checkbox" data-opt="skip_pr_check">Ignore PR Checks</label>
               <label class="check" title="Keeps commits that would be empty once the removed paths are gone."><input type="checkbox" data-opt="keep_empty">Keep Empty Commits</label>
-              <label class="check" title="Moves the tags to the rewritten commits; unchecked, they stay on the old ones."><input type="checkbox" data-opt="update_tags" checked>Update Tags</label>
+              <label class="check" title="Moves the tags to the rewritten commits. Unchecked, they stay on the old ones."><input type="checkbox" data-opt="update_tags" checked>Update Tags</label>
               <label class="check danger" title="Pushes even when the push would drop commits that are on the default branch."><input type="checkbox" data-opt="force">Force Push</label>
             </div>
           </div>
@@ -1783,7 +1783,7 @@
 
     // -- gh -------------------------------------------------------------
     if (!gh.installed) {
-      ghNodes.push(el("div", { class: "banner err" }, "gh is not installed in this container. Rebuild the image; it bundles the GitHub CLI."));
+      ghNodes.push(el("div", { class: "banner err" }, "gh is not installed in this container. Rebuild the image, it bundles the GitHub CLI."));
     } else if (gh.authenticated) {
       ghNodes.push(el("div", { class: "banner ok" },
         el("span", { class: "ico" }, icon("check")),

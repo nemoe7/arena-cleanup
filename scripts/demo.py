@@ -481,7 +481,7 @@ def build(root: Path) -> dict[str, str]:
 def main() -> int:
   parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
   parser.add_argument(
-    "--root", help="demo directory; default: a fresh temp dir, removed on exit"
+    "--root", help="demo directory (default: a fresh temp dir, removed on exit)"
   )
   parser.add_argument("--host", default="0.0.0.0")
   parser.add_argument("--port", type=int, default=8080)

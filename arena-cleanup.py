@@ -474,7 +474,7 @@ def ask_choice(
   """
   if not _interactive():
     log.warning(
-      "no terminal to ask on; not guessing (use the flags shown below "
+      "no terminal to ask on. Not guessing (use the flags shown below "
       "to decide this non-interactively)"
     )
     return default if default is not None else None
@@ -504,7 +504,7 @@ def ask_choice(
 def confirm(log: Log, question: str, *, default: bool = False) -> bool:
   """Yes/no question. Without a terminal, returns `default` and says so."""
   if not _interactive():
-    log.warning("no terminal to ask on; assuming %s" % ("yes" if default else "no"))
+    log.warning("no terminal to ask on, assuming %s" % ("yes" if default else "no"))
     return default
   suffix = " [Y/n] " if default else " [y/N] "
   while True:
@@ -674,7 +674,7 @@ def pull_latest(log: Log, cfg: Settings, default: str) -> bool:
 
   upstream = upstream_ref()
   if not upstream:
-    log.info("no upstream configured for %s; skipping pull" % (current_branch() or "?"))
+    log.info("no upstream configured for %s, skipping pull" % (current_branch() or "?"))
     return True
 
   if not rev_count(f"{upstream}..HEAD"):
@@ -698,11 +698,11 @@ def pull_latest(log: Log, cfg: Settings, default: str) -> bool:
   if same_content:
     log.info(
       f"local history is a rewritten version of {upstream} (same content, "
-      "new commit ids); keeping local history"
+      "new commit ids), keeping local history"
     )
     return True
   if not upstream_only:
-    log.info(f"local history is ahead of {upstream}; keeping local history")
+    log.info(f"local history is ahead of {upstream}, keeping local history")
     return True
 
   # ------------ diverged for real: different commits, different content ----
@@ -728,7 +728,7 @@ def pull_latest(log: Log, cfg: Settings, default: str) -> bool:
       ],
     )
     if choice is None:
-      log.warning("cancelled: local and remote differ; local history was kept")
+      log.warning("cancelled: local and remote differ, local history kept")
       return False
     if choice == "local":
       log.info("keeping local history")
@@ -791,9 +791,9 @@ def force_push(
     if len(at_risk) > 10:
       log.dim(f"    ... and {len(at_risk) - 10} more")
     if force:
-      log.warning("--force set; publishing anyway")
+      log.warning("--force set, publishing anyway")
     elif confirm(log, "Publish anyway? Those commit(s) will be dropped"):
-      log.warning("confirmed; publishing anyway")
+      log.warning("confirmed, publishing anyway")
     else:
       raise Fail(
         f"cancelled before pushing: origin/{default} has {len(at_risk)} "
@@ -1050,7 +1050,7 @@ def pr_gate(
   and `--skip-pr-check` skips the gate entirely.
   """
   if skip:
-    log.warning("--skip-pr-check set; skipping PR validation entirely")
+    log.warning("--skip-pr-check set, skipping PR validation entirely")
     return None
 
   log.info(f"checking PR status for {target}")
@@ -1058,11 +1058,11 @@ def pr_gate(
   if pr is None:
     if require_pr:
       raise Fail(
-        f"no open PR for branch {target}; cannot proceed without an "
+        f"no open PR for branch {target}, cannot proceed without an "
         "associated PR (pass --skip-pr-check to bypass)"
       )
     log.warning(
-      f"no open PR for {target}; continuing because the branch was named "
+      f"no open PR for {target}, continuing because the branch was named "
       "explicitly with --branch"
     )
     return None
@@ -1091,7 +1091,7 @@ def pr_gate(
         f"waiting is disabled (--check-timeout=0): {summary.describe_running()}"
       )
     log.info(
-      f"{len(summary.running)} check(s) still running; waiting up to "
+      f"{len(summary.running)} check(s) still running, waiting up to "
       f"{_duration(wait_timeout)} (polling every {wait_interval}s)"
     )
     summary = wait_for_checks(log, pr, wait_interval, wait_timeout, summary, seen)
@@ -1581,7 +1581,7 @@ def _retarget_tag(raw: bytes, new_commit: str) -> bytes:
   """Same tag object, same tagger, same message - aimed at a new commit."""
   lines = raw.split(b"\n")
   if not lines[0].startswith(b"object "):
-    raise Fail("unexpected tag object; refusing to re-point it")
+    raise Fail("unexpected tag object, refusing to re-point it")
   lines[0] = b"object " + new_commit.encode()
   return b"\n".join(lines)
 
@@ -1831,7 +1831,7 @@ def delete_local_branch(log: Log, name: str, default: str, dry_run: bool) -> Non
     return
   if current_branch().lower() == name.lower():
     log.warning(
-      f"local branch {name} is still checked out; not deleted "
+      f"local branch {name} is still checked out, not deleted "
       f"(switch off it, then: git branch -D {name})"
     )
     return
@@ -1957,7 +1957,7 @@ def guard_dirty_tree(
     return
   if not will_switch:
     log.warning(
-      f"working tree has {len(dirty)} uncommitted change(s); nothing here "
+      f"working tree has {len(dirty)} uncommitted change(s), nothing here "
       "moves the working tree, so they are left alone"
     )
     return
@@ -1970,7 +1970,7 @@ def guard_dirty_tree(
   if len(dirty) > 10:
     log.dim(f"    ... and {len(dirty) - 10} more")
   if force:
-    log.warning("--force set; continuing - the final reset will discard those changes")
+    log.warning("--force set, continuing. The final reset will discard those changes")
     return
   raise Fail(
     "commit or stash them first (git stash), or pass -f to continue and lose them"
@@ -2098,7 +2098,7 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
 
   current = current_branch()
   if not current:
-    raise Fail("HEAD is detached; a branch is required")
+    raise Fail("HEAD is detached, a branch is required")
   started_on = current  # where to go back to if the user cancels
   log.info(f"current branch: {current}")
 
@@ -2136,7 +2136,7 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
     target_name = current
     target = "HEAD"
     if current.lower() == default.lower():
-      log.info(f"on {default}; locating origin/{ARENA_PREFIX}* branch")
+      log.info(f"on {default}, locating origin/{ARENA_PREFIX}* branch")
       local, remote_ref = select_arena_branch(log, args.arena)
       target_name = local
       switched = True
@@ -2162,7 +2162,7 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
     not rewriting_paths and not cleaning_default and already_published(default, publish)
   ):
     log.ok(
-      f"origin/{default} already contains {target_name} ({head_short(publish)}); nothing to publish"
+      f"origin/{default} already contains {target_name} ({head_short(publish)}), nothing to publish"
     )
     return _wrap_up(
       log,
@@ -2222,7 +2222,7 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
           None,
           note="done, nothing to publish",
         )
-      log.warning("confirmed; publishing anyway")
+      log.warning("confirmed, publishing anyway")
     else:
       log.warning(
         f"{target_name} and origin/{default} have identical content but different history"
@@ -2263,7 +2263,7 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
 
   stats = rewrite_history(log, cfg, apply=not cfg.dry_run, rev=publish)
   if not stats.changed and cfg.dry_run:
-    log.ok("history already clean; nothing to rewrite")  # real runs already said so
+    log.ok("history already clean, nothing to rewrite")  # real runs already said so
 
   # "Nothing to rewrite" does not mean "nothing to publish". The branch may
   # still hold commits origin has never seen, or have just had paths removed.
@@ -2350,12 +2350,12 @@ def cmd_doctor(args: argparse.Namespace, log: Log) -> int:
         signing_key = git("config", "user.signingkey", check=False).text
         if not which("gpg"):
           log.warning(
-            "gpg not found - re-signing will fail; set "
+            "gpg not found - re-signing will fail. Set "
             "SIGN_COMMITS = False at the top of the script"
           )
           rc = rc or 0
         else:
-          log.ok("gpg present; user.signingkey=%s" % (signing_key or "(default key)"))
+          log.ok("gpg present, user.signingkey=%s" % (signing_key or "(default key)"))
     else:
       log.warning("not inside a git repo (run me from one)")
 
@@ -2364,7 +2364,7 @@ def cmd_doctor(args: argparse.Namespace, log: Log) -> int:
     log.ok("git-filter-repo: " + (version[0] if version else "present"))
   else:
     log.warning(
-      "git-filter-repo: not found (only needed for --path/-p; pip install git-filter-repo)"
+      "git-filter-repo: not found (only needed for --path/-p, pip install git-filter-repo)"
     )
 
   if which("gh"):
@@ -2469,7 +2469,7 @@ def build_parser() -> argparse.ArgumentParser:
     "-n",
     "--dry-run",
     action="store_true",
-    help="report what would happen; change nothing",
+    help="report what would happen and change nothing",
   )
   group.add_argument(
     "-v",
@@ -2488,7 +2488,7 @@ def build_parser() -> argparse.ArgumentParser:
     metavar="NAME",
     default=argparse.SUPPRESS,
     help="clean this branch directly instead of "
-    "discovering arena/* (e.g. -b main); no PR required",
+    "discovering arena/* (e.g. -b main), no PR required",
   )
   run_group.add_argument(
     "-a",
@@ -2496,7 +2496,7 @@ def build_parser() -> argparse.ArgumentParser:
     metavar="NAME",
     default=argparse.SUPPRESS,
     help="the origin/arena/* branch to clean when several exist "
-    "(e.g. -a arena/session-2); answers the menu without a prompt",
+    "(e.g. -a arena/session-2), answers the menu without a prompt",
   )
   run_group.add_argument(
     "-d",
@@ -2527,7 +2527,7 @@ def build_parser() -> argparse.ArgumentParser:
     "--force",
     action="store_true",
     default=argparse.SUPPRESS,
-    help="run even with uncommitted changes; the final reset will discard them",
+    help="run even with uncommitted changes, the final reset will discard them",
   )
   run_group.add_argument(
     "-k",
@@ -2577,7 +2577,7 @@ def build_parser() -> argparse.ArgumentParser:
     "--no-tags",
     action="store_true",
     default=argparse.SUPPRESS,
-    help="do not move tags on origin; they keep naming the old history",
+    help="do not move tags on origin, they keep naming the old history",
   )
 
   strip_group = parser.add_argument_group("strip")
@@ -2586,7 +2586,7 @@ def build_parser() -> argparse.ArgumentParser:
     "--check",
     action="store_true",
     default=argparse.SUPPRESS,
-    help="do not touch HEAD; exit 7 if a rewrite is needed",
+    help="do not touch HEAD, exit 7 if a rewrite is needed",
   )
 
   return parser

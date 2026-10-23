@@ -496,7 +496,7 @@ def cancel_a_run_in_flight(w: Walker, demo: Demo) -> None:
     w.click("#start", 0)
     w.open_log()
     w.page.wait_for_function(
-      "() => document.querySelector('#log').innerText.includes('still running; waiting up to')",
+      "() => document.querySelector('#log').innerText.includes('still running, waiting up to')",
       timeout=30000,
     )
     assert w.visible("#cancel")

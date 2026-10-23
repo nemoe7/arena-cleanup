@@ -354,7 +354,7 @@ def reset_to_origin(repo: dict[str, Any]) -> str:
   cwd = repo["path"]
   for job in JOBS.values():
     if job.repo["id"] == repo["id"] and job.exit is None:
-      raise BadRequest("a run is in progress; cancel it first")
+      raise BadRequest("a run is in progress, cancel it first")
   default = default_branch(cwd)
   if not default:
     raise BadRequest("origin has no default branch")

@@ -294,7 +294,7 @@ def flow_board(_: dict[str, bytes]) -> str:
     + arrow("gear icon, from either view")
     + frame(
       "Settings",
-      "Identity, GitHub access, signing, and the claim rules; then About.",
+      "Identity, GitHub access, signing, and the claim rules, then About.",
       settings,
     )
     + "</div></div>"
@@ -373,19 +373,19 @@ def wireframe_board(_: dict[str, bytes]) -> str:
   actions = (
     '<table class="sheet"><tr><td class="mono">Clean &amp; Push</td>'
     "<td>starts the run with the options shown</td></tr>"
-    '<tr><td class="mono">Cancel</td><td>terminates the child process; the log says cancelled</td></tr>'
+    '<tr><td class="mono">Cancel</td><td>terminates the child process, the log says cancelled</td></tr>'
     '<tr><td class="mono">Show log</td><td>unfolds the raw lines under the phase list</td></tr>'
     '<tr><td class="mono">Copy log</td><td>puts the whole log on the clipboard</td></tr>'
     '<tr><td class="mono">Ctrl + Enter</td><td>starts the run from anywhere</td></tr>'
     '<tr><td class="mono">980 px</td><td>the sidebar stacks below the run card</td></tr>'
-    '<tr><td class="mono">720 px</td><td>primary actions stick to the bottom; one column</td></tr></table>'
+    '<tr><td class="mono">720 px</td><td>primary actions stick to the bottom, one column</td></tr></table>'
   )
   body = (
     '<div class="wf"><div class="row">'
     + frame(
       "Repo view",
       "Deep dive: the one view where a run happens. The sidebar holds the facts and the "
-      "commits; the run card is the story, the raw log is one click away.",
+      "commits. The run card is the story, the raw log is one click away.",
       screen,
     )
     + frame("Key actions", "What the view promises.", actions)
@@ -409,7 +409,7 @@ def views_board(shots: dict[str, bytes]) -> str:
     )
     + frame(
       "After a run",
-      "Five phases with their results and times; the raw log unfolded.",
+      "Five phases with their results and times, the raw log unfolded.",
       img(shots, "after-run", 460),
     )
     + frame(
@@ -430,18 +430,18 @@ def views_board(shots: dict[str, bytes]) -> str:
 def states_board(_: dict[str, bytes]) -> str:
   run_states = (
     '<table class="sheet">'
-    f"<tr><td>{status('', 'idle')}</td><td>before Start; the phase list is grey</td></tr>"
-    f"<tr><td>{status('running', 'running')}</td><td>the LED pulses; Cancel is enabled</td></tr>"
-    f"<tr><td>{status('ok', 'exit 0')}</td><td>every phase done; the log stays folded</td></tr>"
-    f"<tr><td>{status('fail', 'exit 1')}</td><td>the failing phase is red; the log opens</td></tr>"
-    f"<tr><td>{status('fail', 'cancelled')}</td><td>Cancel pressed; distinct from a crash</td></tr>"
+    f"<tr><td>{status('', 'idle')}</td><td>before Start, the phase list is grey</td></tr>"
+    f"<tr><td>{status('running', 'running')}</td><td>the LED pulses, Cancel is enabled</td></tr>"
+    f"<tr><td>{status('ok', 'exit 0')}</td><td>every phase done, the log stays folded</td></tr>"
+    f"<tr><td>{status('fail', 'exit 1')}</td><td>the failing phase is red, the log opens</td></tr>"
+    f"<tr><td>{status('fail', 'cancelled')}</td><td>Cancel pressed, distinct from a crash</td></tr>"
     "</table>"
   )
   phases = (
     '<ul class="phases card" style="width:420px">'
     + phase("done", "Prepare", "fetch, branches, checkout", "0.4s")
     + phase(
-      "run", "PR checks", 'check "ci": still running; waiting up to 15 min', "running"
+      "run", "PR checks", 'check "ci": still running, waiting up to 15 min', "running"
     )
     + phase("idle", "Rewrite and sign", "claim, trim, sign", "")
     + phase("skip", "Publish", "skipped: dry run", "")
@@ -451,8 +451,8 @@ def states_board(_: dict[str, bytes]) -> str:
   pr_pills = (
     '<table class="sheet">'
     f"<tr><td>{pill('ok', 'PR #142, 4/4')}</td><td>open pull request, all checks passed</td></tr>"
-    f"<tr><td>{pill('err', 'PR #88, 1/3')}</td><td>a check failed; the run stops at the gate</td></tr>"
-    f"<tr><td>{pill('run', 'PR #12, 2/3')}</td><td>checks still running; the run waits</td></tr>"
+    f"<tr><td>{pill('err', 'PR #88, 1/3')}</td><td>a check failed, the run stops at the gate</td></tr>"
+    f"<tr><td>{pill('run', 'PR #12, 2/3')}</td><td>checks still running, the run waits</td></tr>"
     f"<tr><td>{pill('mono', 'no PR', dot=False)}</td><td>the branch exists, no open pull request</td></tr>"
     f"<tr><td>{pill('warn', 'checks unavailable', dot=False)}</td><td>signed out: the app cannot know</td></tr>"
     "</table>"
@@ -462,7 +462,7 @@ def states_board(_: dict[str, bytes]) -> str:
     + frame("Run status", "The pill in the run card head.", run_states)
     + frame(
       "Phase rows",
-      "One row per phase; the glyph and its colour are the state.",
+      "One row per phase. The glyph and its colour are the state.",
       phases,
     )
     + frame(
@@ -548,7 +548,7 @@ def components_board(_: dict[str, bytes]) -> str:
     )
     + frame(
       "Pills and chips",
-      "Pills carry a dot or a glyph and a word; mono pills carry names and hashes. Chips are inert; chip-x removes.",
+      "Pills carry a dot or a glyph and a word. Mono pills carry names and hashes. Chips are inert, chip-x removes.",
       pills,
     )
     + frame(
@@ -560,7 +560,7 @@ def components_board(_: dict[str, bytes]) -> str:
     + frame(
       "Checkboxes", "Off, on, and the warn colour for a destructive option.", checks
     )
-    + frame("Banners", "A bold lead, one sentence of action; ok, warn, err.", banners)
+    + frame("Banners", "A bold lead, one sentence of action: ok, warn, err.", banners)
     + frame(
       "Cards", "12 px radius, 1 px line, a 44 px head with an optional hint.", cards
     )
@@ -751,7 +751,7 @@ def do_dont_board(_: dict[str, bytes]) -> str:
     + '</div><div class="row" style="margin-top:24px">'
     + pair(
       "Phone width",
-      "Name and e-mail stack at 360 px; each field keeps 16 px text.",
+      "Name and e-mail stack at 360 px. Each field keeps 16 px text.",
       stack_do,
       "Side by side: the e-mail truncates and iOS zooms the field.",
       stack_dont,
@@ -778,7 +778,7 @@ def do_dont_board(_: dict[str, bytes]) -> str:
   return board(
     "Do and do not",
     "Pairs from the audit findings and the accepted decisions. The left side is the "
-    "stylesheet as it is; the right side is what was there before, or what to avoid.",
+    "stylesheet as it is. The right side is what was there before, or what to avoid.",
     body,
   )
 

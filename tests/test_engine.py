@@ -161,7 +161,7 @@ def test_pr_gate(world: World) -> None:
   world.gh_state("pending")
   res = world.cleanup("run", "-K", "--check-interval", "1", "--check-timeout", "30")
   assert res.rc == 0
-  assert res.says("still running; waiting up to"), res.text
+  assert res.says("still running, waiting up to"), res.text
   assert res.says('check "build": SUCCESS')
   assert res.says("all 1 check(s) finished")
 
@@ -679,7 +679,7 @@ def test_uncommitted_changes(world: World) -> None:
   # -f forces past the guard, and then git's own error is what the log shows
   res = world.cleanup("-K", "-f")
   assert res.rc == 1
-  assert res.says("--force set; continuing")
+  assert res.says("--force set, continuing")
   assert res.says("failed to switch to arena/conflict")
   assert res.says("  | "), "raw output not shown"
   assert re.search(r"would be overwritten|local changes", res.text, re.IGNORECASE)
@@ -989,7 +989,7 @@ def test_push_guard_for_a_maintenance_commit_on_main(world: World) -> None:
   # answered at the terminal: publish anyway
   res = world.interactive("arena-cleanup -K", "y\n")
   assert res.rc == 0
-  assert res.says("confirmed; publishing anyway"), res.text
+  assert res.says("confirmed, publishing anyway"), res.text
   assert world.rev("origin/main") == world.rev("arena/new-work")
 
   world.git("checkout", "-q", "main")
