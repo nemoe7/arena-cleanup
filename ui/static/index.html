@@ -196,6 +196,9 @@
     transition: background .12s, border-color .12s;
   }
   .btn:hover { background: var(--surface-3); border-color: #313842; }
+  .btn.icon { width: 34px; padding: 0; --ico: var(--ico-l); }
+  .clean .sparkles { opacity: 0; transition: opacity .12s; }
+  .clean:hover .sparkles, .clean:focus-visible .sparkles { opacity: 1; }
   .btn:active { transform: translateY(.5px); }
   .btn:disabled { opacity: .45; cursor: not-allowed; }
   .btn.primary { background: var(--accent-deep); border-color: #5c67c6; color: #fff; }
@@ -313,6 +316,7 @@
   /* pinned to the card bottom, so the buttons line up across a grid row */
   .card-actions { display: flex; gap: 8px; align-items: center; margin-top: auto; }
   .card-actions .btn { height: 30px; font-size: var(--fs-2); padding: 0 12px; }
+  .card-actions .btn.icon { width: 30px; padding: 0; }
 
   .loading-line { margin: 20px 0 0; color: var(--dim); font-size: var(--fs-2); }
   .empty-state {
@@ -767,7 +771,7 @@
           <div class="card-head">
             <h2>Options</h2>
             <div class="grow"></div>
-            <button class="btn primary" id="start" data-state="idle">Clean &amp; Push</button>
+            <button class="btn primary clean" id="start" data-state="idle"><span class="ico-svg" data-icon="broom-sparkles" aria-hidden="true"></span>Clean &amp; Push</button>
           </div>
           <div class="card-body options" id="options">
             <div class="opt row" id="opt-branch">
@@ -815,7 +819,7 @@
       </div>
     </div>
     <div class="tabbar" id="tabbar">
-      <button class="btn primary" id="start-mobile" data-state="idle">Clean &amp; Push</button>
+      <button class="btn primary clean" id="start-mobile" data-state="idle"><span class="ico-svg" data-icon="broom-sparkles" aria-hidden="true"></span>Clean &amp; Push</button>
     </div>
   </div>
 
@@ -895,7 +899,7 @@
     "circle-small": svg('<circle cx="12" cy="12" r="6"/>'),
     user: svg(paths("M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2") + '<circle cx="12" cy="7" r="4"/>'),
     // the app icon; scripts/app_icon.py draws the same paths at every size
-    "broom-sparkles": svg(paths("M11 2v2", "M12 3h-2", "M13.5 10.5 22 2", "M14.734 13.841a2 2 0 00-.314-2.42L12.58 9.58a2 2 0 00-2.421-.314l-7.657 4.461A1 1 0 002.3 15.3l6.403 6.403a1 1 0 001.571-.204z", "M20 15v4", "M22 17h-4", "M4 4v4", "m5 18 2-2", "M6 6H2", "m7.699 10.7 5.602 5.601")),
+    "broom-sparkles": svg(paths("M13.5 10.5 22 2", "M14.734 13.841a2 2 0 00-.314-2.42L12.58 9.58a2 2 0 00-2.421-.314l-7.657 4.461A1 1 0 002.3 15.3l6.403 6.403a1 1 0 001.571-.204z", "m5 18 2-2", "m7.699 10.7 5.602 5.601") + '<g class="sparkles">' + paths("M11 2v2", "M12 3h-2", "M20 15v4", "M22 17h-4", "M4 4v4", "M6 6H2") + "</g>"),
     "loader-circle": svg(paths("M21 12a9 9 0 1 1-6.219-8.56")),
     "git-branch": svg(paths("M15 6a9 9 0 0 0-9 9V3") + '<circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>'),
     "refresh-cw": svg(paths("M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8", "M21 3v5h-5", "M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16", "M8 16H3v5")),
@@ -1094,7 +1098,7 @@
     }
 
     const actions = el("div", { class: "card-actions" },
-      el("button", { class: "btn primary", onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, "Clean & Push"));
+      el("button", { class: "btn primary icon clean", "aria-label": "Clean & Push", title: "Clean & Push", onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, icon("broom-sparkles")));
 
     return el("div", { class: "repo-card", onclick: () => openRepo(repo.id) },
       head, meta, arena, actions);
@@ -1669,7 +1673,7 @@
     for (const id of ["start", "start-mobile"]) {
       const btn = $(id);
       btn.dataset.state = mode;
-      btn.textContent = running ? "Cancel" : "Clean & Push";
+      btn.replaceChildren(...(running ? ["Cancel"] : [icon("broom-sparkles"), "Clean & Push"]));
       btn.classList.toggle("primary", !running);
       btn.disabled = mode === "starting";
       if (running) btn.title = "Stops this run";

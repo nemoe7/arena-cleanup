@@ -718,9 +718,15 @@ def test_the_brand_mark_and_the_app_icon_share_one_glyph(ui: UI) -> None:
   page = ui.text("/")
   assert 'class="brand" href="#/"' in page
   assert '<span class="ico-svg" data-icon="broom-sparkles" aria-hidden="true">' in page
-  entry = re.search(r'"broom-sparkles": svg\(paths\((.*?)\)\),', page)
+  entry = re.search(
+    r'"broom-sparkles": svg\(paths\((.*?)\) \+ \'<g class="sparkles">\' \+ paths\((.*?)\)'
+    r' \+ "</g>"\),',
+    page,
+  )
   assert entry
-  assert tuple(json.loads(f"[{entry.group(1)}]")) == app_icon.GLYPH
+  assert tuple(json.loads(f"[{entry.group(1)}]")) == app_icon.BROOM
+  assert tuple(json.loads(f"[{entry.group(2)}]")) == app_icon.SPARKLES
+  assert app_icon.GLYPH == app_icon.BROOM + app_icon.SPARKLES
 
 
 def test_pwa_assets(ui: UI) -> None:
@@ -1032,6 +1038,28 @@ def test_every_icon_name_on_the_page_is_vendored() -> None:
     if button_id in GLYPH_ONLY:
       assert f'aria-label="{GLYPH_ONLY[button_id]}"' in match.group(0)
       assert re.sub(r"<[^>]+>", "", match.group(1)) == ""
+
+
+CLEAN_GLYPH = (
+  '<span class="ico-svg" data-icon="broom-sparkles" aria-hidden="true"></span>'
+)
+
+
+def test_every_clean_button_carries_the_broom_glyph() -> None:
+  page = PAGE.read_text(encoding="utf-8")
+  for button_id in ("start", "start-mobile"):
+    match = re.search(
+      rf'<button class="btn primary clean" id="{button_id}"[^>]*>(.*?)</button>', page
+    )
+    assert match is not None, button_id
+    assert match.group(1) == CLEAN_GLYPH + "Clean &amp; Push", button_id
+  card = 'class: "btn primary icon clean", "aria-label": "Clean & Push", title: "Clean & Push"'
+  assert card in page
+  assert 'running ? ["Cancel"] : [icon("broom-sparkles"), "Clean & Push"]' in page
+  assert ".clean .sparkles { opacity: 0;" in page
+  assert (
+    ".clean:hover .sparkles, .clean:focus-visible .sparkles { opacity: 1; }" in page
+  )
 
 
 WEIGHTS = {400, 520, 560, 600, 620, 640}

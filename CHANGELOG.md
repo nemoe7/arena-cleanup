@@ -7,6 +7,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.0] - 2026-10-23
 
+### Changed
+
+- Every Clean & Push button carries the broom glyph, and its sparkles appear on
+  hover and focus. The dashboard card button is the glyph alone, named in
+  `aria-label` and `title`. The repo view button leads with the glyph.
+
 ### Removed
 
 - The Keep Empty Commits option, its `keep_empty` run field, and the CLI flag

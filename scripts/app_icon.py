@@ -27,23 +27,19 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ui" / "static" / "icons"
 ACCENT = "#6e79d6"
 BACKGROUND = "#0d0f12"
-# Lucide 1.61.0 broom-sparkles, ISC licence in ui/static/LICENSE-lucide.txt.
-# The page draws the same paths in its top bar mark.
-GLYPH = (
-  "M11 2v2",
-  "M12 3h-2",
+# Lucide 1.61.0 broom-sparkles, ISC licence in ui/static/LICENSE-lucide.txt. The page
+# draws the same paths in its brand mark, and the clean buttons show the sparkles on hover.
+BROOM = (
   "M13.5 10.5 22 2",
   (
     "M14.734 13.841a2 2 0 00-.314-2.42L12.58 9.58a2 2 0 00-2.421-.314l-7.657 4.461"
     "A1 1 0 002.3 15.3l6.403 6.403a1 1 0 001.571-.204z"
   ),
-  "M20 15v4",
-  "M22 17h-4",
-  "M4 4v4",
   "m5 18 2-2",
-  "M6 6H2",
   "m7.699 10.7 5.602 5.601",
 )
+SPARKLES = ("M11 2v2", "M12 3h-2", "M20 15v4", "M22 17h-4", "M4 4v4", "M6 6H2")
+GLYPH = BROOM + SPARKLES
 GRID = 24  # the Lucide drawing grid
 # name -> (pixel size, padding as a share of the side, background)
 PICTURES = {

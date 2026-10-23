@@ -507,8 +507,10 @@ def states_board(_: dict[str, bytes]) -> str:
 def components_board(_: dict[str, bytes]) -> str:
   buttons = (
     '<table class="sheet">'
-    '<tr><td>primary</td><td><button class="btn primary">Clean &amp; Push</button></td>'
-    '<td><button class="btn primary" disabled>Clean &amp; Push</button></td></tr>'
+    f'<tr><td>primary</td><td><button class="btn primary clean">{icon("broom-sparkles")}Clean &amp; Push</button></td>'
+    f'<td><button class="btn primary clean" disabled>{icon("broom-sparkles")}Clean &amp; Push</button></td></tr>'
+    '<tr><td>primary, glyph</td><td><button class="btn primary icon clean" aria-label="Clean &amp; Push">'
+    f'{icon("broom-sparkles")}</button></td><td><button class="btn primary">Cancel</button></td></tr>'
     '<tr><td>default</td><td><button class="btn">Save</button></td>'
     '<td><button class="btn" disabled>Save</button></td></tr>'
     f'<tr><td>ghost</td><td><button class="btn ghost">{icon("refresh-cw")}Re-check</button></td>'

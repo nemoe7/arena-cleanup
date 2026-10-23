@@ -20,6 +20,8 @@ GLYPHS = {
   ".commit .avatar.none .ico-svg": INLINE,
 }
 BOX = "e => e.getBoundingClientRect().width"
+OPACITY = "e => Number(getComputedStyle(e).opacity)"
+CARD_CLEAN = ".repo-card .btn.icon.clean"
 
 
 def glyph_widths(walker: Walker) -> dict[str, float]:
@@ -37,3 +39,22 @@ def test_desktop_glyphs_sit_on_the_size_tokens(desktop: Walker) -> None:
 
 def test_phone_glyphs_keep_the_desktop_sizes(phone: Walker) -> None:
   assert glyph_widths(phone) == GLYPHS
+
+
+def test_clean_buttons_carry_the_broom_and_sparkle_on_hover(desktop: Walker) -> None:
+  desktop.goto(1200)
+  page = desktop.page
+  assert page.eval_on_selector(f"{CARD_CLEAN} .ico-svg", BOX) == ICON_BUTTON
+  idle = page.eval_on_selector(f"{CARD_CLEAN} .sparkles", OPACITY)
+  page.hover(CARD_CLEAN)
+  page.wait_for_function(
+    f"() => getComputedStyle(document.querySelector('{CARD_CLEAN} .sparkles')).opacity === '1'"
+  )
+  assert idle == 0
+  assert (
+    page.eval_on_selector(CARD_CLEAN, "e => e.getAttribute('aria-label')")
+    == "Clean & Push"
+  )
+  desktop.click(".repo-card:has-text('shop-web')", 800)
+  assert page.eval_on_selector("#start .ico-svg", BOX) == BUTTON
+  assert page.eval_on_selector("#start .sparkles", OPACITY) == 0
