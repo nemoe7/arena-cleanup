@@ -70,6 +70,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ### Theme and motion
 
 - Transitions of 120 to 180 ms on transform, opacity, border, and background. `prefers-reduced-motion` stops them.
+- Scroll-edge fade, the nuu recipe: the commit list and the log carry `scroll-panel`. A scrolled edge fades over 12 px, and the fade grows and shrinks over a 192 px scroll ramp. A panel that does not scroll stays unmasked. The rule needs `animation-timeline: scroll(self)` and no reduced-motion preference. Other scrolling regions keep their edges.
 
 ## Components and contracts
 
@@ -176,3 +177,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: the counts read `passed/total` for the checks, `collecting`, `signing X/Y`, and `signed X commits` for the rewrite, and `moving`, `pushing`, and `pushed X tags` for the push. The Publish row is named Push, and a run without tags leaves it empty.
 - Accepted 2026-10-23: the commit rows show the author's GitHub picture for every author. The server caches one picture per address for 30 days after its last use and prunes the rest.
 - Accepted 2026-10-23: the app icon and the brand mark are the Lucide `broom-sparkles` glyph in the accent. The regular pictures are the glyph alone, the maskable picture and the Apple touch icon get the dark ground.
+- Accepted 2026-10-23: the scroll-edge fade applies to the commit list and the log alone.

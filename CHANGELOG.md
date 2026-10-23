@@ -7,6 +7,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.0] - 2026-10-23
 
+### Added
+
+- The commit list and the log fade 12 px at a scrolled edge, the nuu
+  scroll-edge fade. It needs scroll-driven animations and no reduced-motion
+  preference, and a panel that does not scroll stays unmasked.
+
 ### Changed
 
 - Every Clean & Push button carries the broom glyph, and its sparkles appear on
