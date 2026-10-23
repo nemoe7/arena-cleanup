@@ -34,16 +34,19 @@ def test_dry_run_changes_nothing(world: World) -> None:
   res = world.cleanup("run", "--dry-run")
   assert res.rc == 0
   assert world.rev() == before
-  assert res.says("would force-push")
+  assert res.says("would push (with lease)")
   assert res.says("would delete stale local branch arena/stale")
   assert world.has_ref("refs/heads/arena/stale")
+  res = world.cleanup("run", "--dry-run", "-f")
+  assert res.says("would force-push (no lease)"), res.text
+  assert world.rev() == before
 
   # on the default branch it must resolve the arena branch first and describe
   # THAT branch, without touching the working tree
   world.git("checkout", "-q", "main")
   res = world.cleanup("--dry-run")
   assert res.says("would switch to arena/session-1")
-  assert res.says("would force-push arena/session-1")
+  assert res.says("would push (with lease) arena/session-1")
   assert world.git("branch", "--show-current") == "main"
   assert world.rev("main") == world.rev("origin/main")
   world.git("checkout", "-q", "arena/session-1")
@@ -111,7 +114,7 @@ def test_full_run_from_the_default_branch(world: World) -> None:
   res = world.cleanup("-K")
   assert res.rc == 0, res.text
   assert res.says("switching to arena/session-1")
-  assert res.says("force-pushing")
+  assert res.says("pushing (with lease)")
   assert world.git("branch", "--show-current") == "main"
   assert world.rev("main") == world.rev("origin/main")
   assert not world.has_ref("refs/heads/arena/stale")
@@ -282,6 +285,43 @@ def test_force_push_lease_protects_the_default_branch(world: World) -> None:
     wrapper.unlink()
 
 
+@needs_gpg
+def test_no_lease_push_lands_when_the_default_branch_moved(world: World) -> None:
+  real_git = shutil.which("git")
+  flag = world.root / "sabotaged"
+  wrapper = world.bin / "git"
+  wrapper.write_text(
+    "#!/usr/bin/env bash\n"
+    "# sabotage: move origin/main after the tool's fetch, just before its push\n"
+    f'if [ "$1" = "push" ] && [ ! -f "{flag}" ]; then\n'
+    f'  touch "{flag}"\n'
+    f'  SAB="$("{real_git}" -C "{world.origin}" rev-parse refs/heads/arena/session-1)"\n'
+    f'  "{real_git}" -C "{world.origin}" update-ref refs/heads/main "$SAB"\n'
+    "fi\n"
+    f'exec "{real_git}" "$@"\n'
+  )
+  wrapper.chmod(wrapper.stat().st_mode | stat.S_IEXEC)
+  try:
+    world.git("checkout", "-q", "main")
+    world.git("update-ref", "refs/heads/main", world.rev("origin/main"))
+    world.git("checkout", "-q", "arena/session-1")
+    world.agent_commit("chore: agent work for the no-lease test")
+    world.gh_state("open")
+    res = world.cleanup("-K", "-f")
+    assert res.rc == 0, res.text
+    assert res.says("force-pushing (no lease)")
+    assert not res.says("stale info")
+    origin_main = world.git("-C", str(world.origin), "rev-parse", "refs/heads/main")
+    assert origin_main == world.rev()
+    assert world.git("log", "-1", "--format=%ae") == ME_EMAIL
+  finally:
+    wrapper.unlink()
+  # the tests after this one expect unpublished work on the local arena branch
+  world.git("checkout", "-q", "arena/session-1")
+  world.agent_commit("chore: agent work after the no-lease push")
+  world.git("checkout", "-q", "main")
+
+
 def test_upstream_diverged_with_different_content(world: World) -> None:
   sibling = world.root / "sibling"
   world.git("clone", "-q", str(world.origin), str(sibling), cwd=world.root)
@@ -397,7 +437,7 @@ def test_branch_main_cleans_the_default_branch_in_place(world: World) -> None:
   res = world.cleanup("--branch", "main", cwd=work)
   assert res.rc == 0
   assert res.says("nothing to push"), res.text
-  assert not res.says("force-pushing"), "pushed again for no reason"
+  assert not res.says("pushing ("), "pushed again for no reason"
 
   res = world.cleanup("--branch", "no-such-branch", cwd=work)
   assert res.rc == 1
@@ -718,7 +758,7 @@ def test_local_arena_branch_is_the_pre_cleanup_copy(world: World) -> None:
   assert res.says("identical content but different history"), res.text
   assert res.says("already carries a cleaned-up version")
   assert world.rev("origin/main") == main_tip
-  assert not res.says("force-push"), "force-pushed anyway"
+  assert not res.says("pushing ("), "force-pushed anyway"
   world.git("branch", "-q", "-D", "arena/stale-copy", check=False)
 
 
@@ -946,7 +986,7 @@ def test_default_branch_already_absorbed_the_branch(world: World) -> None:
   assert res.says("arena-cleanup -b main")
   assert world.rev("origin/main") == main_now
   assert world.git_rc("merge-base", "--is-ancestor", maint_sha, "origin/main") == 0
-  assert not res.says("force-push"), "pushed despite the risk"
+  assert not res.says("pushing ("), "pushed despite the risk"
 
   # -f insists, and that is a documented way to lose the maintenance commit
   res = world.cleanup("-K", "-f")
@@ -976,6 +1016,12 @@ def test_push_guard_for_a_maintenance_commit_on_main(world: World) -> None:
   world.git("push", "-q", "origin", "main")
   world.git("fetch", "-q", "--prune", "origin")
   main_before = world.rev("origin/main")
+
+  res = world.cleanup("-K", "--dry-run", "-f")
+  assert res.says("a real run would publish anyway (-f)"), res.text
+  res = world.cleanup("-K", "--dry-run")
+  assert res.says("a real run would stop here"), res.text
+  assert world.rev("origin/main") == main_before
 
   res = world.cleanup("-K")
   assert res.rc == 1

@@ -12,6 +12,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Every Clean & Push button carries the broom glyph, and its sparkles appear on
   hover and focus. The dashboard card button is the glyph alone, named in
   `aria-label` and `title`. The repo view button leads with the glyph.
+- The Force Push option reads No lease. Checked, or with `-f`, the run pushes
+  with `git push --force` and no lease, so it lands even when the default
+  branch moved during the run. The log says `pushing (with lease)` or
+  `force-pushing (no lease)`, and a dry run says what a real run would do.
 
 ### Removed
 

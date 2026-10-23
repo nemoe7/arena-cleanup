@@ -347,7 +347,7 @@ def wireframe_board(_: dict[str, bytes]) -> str:
         ("Dry Run", False),
         ("Ignore PR Checks", False),
         ("Update Tags", True),
-        ("Force Push", False),
+        ("No lease", False),
       )
     )
     + "</div>"
@@ -544,7 +544,7 @@ def components_board(_: dict[str, bytes]) -> str:
     '<div class="checks">'
     + check("Dry Run", False)
     + check("Dry Run", True)
-    + check("Force Push", True, danger=True)
+    + check("No lease", True, danger=True)
     + "</div>"
   )
   banners = (

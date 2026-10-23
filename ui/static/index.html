@@ -799,7 +799,7 @@
               <label class="check" title="Prints every step it would take and writes nothing."><input type="checkbox" data-opt="dry_run">Dry Run</label>
               <label class="check" title="Publishes even when the pull request still has running or failing checks."><input type="checkbox" data-opt="skip_pr_check">Ignore PR Checks</label>
               <label class="check" title="Moves the tags to the rewritten commits. Unchecked, they stay on the old ones."><input type="checkbox" data-opt="update_tags" checked>Update Tags</label>
-              <label class="check danger" title="Pushes even when the push would drop commits that are on the default branch."><input type="checkbox" data-opt="force">Force Push</label>
+              <label class="check danger" title="Pushes with git push --force and no lease, so it lands even when the default branch moved during the run. Also runs with uncommitted changes, which the final reset discards, and pushes over commits the run would drop."><input type="checkbox" data-opt="force">No lease</label>
             </div>
           </div>
         </section>

@@ -830,6 +830,7 @@ def test_the_commit_list_and_the_page_shell(ui: UI, ids: dict[str, str]) -> None
   assert 'id="task-note"' not in page, "the task note went with the hint texts"
   assert 'id="timeout" type="range"' in page and 'id="timeout-out"' in page
   assert 'data-opt="update_tags" checked' in page
+  assert 'data-opt="force">No lease</label>' in page
   assert 'data-opt="keep_branch"' not in page, "no local arena branch survives a run"
   assert 'data-opt="keep_empty"' not in page, "empty commits are always dropped"
   assert 'id="start-mobile"' in page

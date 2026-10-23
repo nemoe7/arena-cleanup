@@ -740,22 +740,25 @@ def force_push(
   ignore: set[str] | None = None,
 ) -> None:
   """
-  Publish HEAD onto origin/<default>, refusing to clobber a ref that moved.
+  Publish HEAD onto origin/<default>.
 
-  The push spells the lease out (`--force-with-lease=refs/heads/<default>:<sha>`)
-  with the value we fetched at the start of the run. The guard is thus pinned
-  to the one ref we overwrite. Nothing can move under us between the fetch and
-  the push.
+  Without `force` the push spells the lease out, as
+  `--force-with-lease=refs/heads/<default>:<sha>` with the value fetched at the
+  start of the run. The guard is pinned to the one ref we overwrite. Nothing
+  moves under us between the fetch and the push. With `force` the push is a
+  plain `git push --force`, which lands even when origin/<default> moved.
   """
   remote_ref = f"refs/heads/{default}"
   expected = git("rev-parse", f"origin/{default}", check=False).text
+  verb = "force-push (no lease)" if force else "push (with lease)"
 
   if dry_run:
-    log.info(f"would force-push {rev} ({head_short(rev)}) -> origin/{default}")
+    log.info(f"would {verb} {rev} ({head_short(rev)}) -> origin/{default}")
     at_risk = at_risk_on_origin(default, rev, ignore)
     if at_risk:
+      outcome = "publish anyway (-f)" if force else "stop here"
       log.warning(
-        f"a real run would stop here: {len(at_risk)} commit(s) on "
+        f"a real run would {outcome}: {len(at_risk)} commit(s) on "
         f"origin/{default} are not part of this push and would be dropped"
       )
       for line in at_risk[:10]:
@@ -782,12 +785,15 @@ def force_push(
         "commit(s) that this push would drop (pass -f to publish anyway)"
       )
 
-  if expected:
-    lease = f"--force-with-lease={remote_ref}:{expected}"
+  if force:
+    guard = "--force"
+  elif expected:
+    guard = f"--force-with-lease={remote_ref}:{expected}"
   else:  # empty remote: nothing to protect
-    lease = "--force-with-lease"
-  log.info(f"force-pushing (with lease) HEAD -> {remote_ref}")
-  git("push", lease, "origin", f"HEAD:{default}")
+    guard = "--force-with-lease"
+  doing = "force-pushing (no lease)" if force else "pushing (with lease)"
+  log.info(f"{doing} HEAD -> {remote_ref}")
+  git("push", guard, "origin", f"HEAD:{default}")
   log.ok(f"pushed {head_short()} to origin/{default}")
 
 
@@ -2496,7 +2502,9 @@ def build_parser() -> argparse.ArgumentParser:
     "--force",
     action="store_true",
     default=argparse.SUPPRESS,
-    help="run even with uncommitted changes, the final reset will discard them",
+    help="no lease: push with git push --force even when origin/<default> moved "
+    "during the run. Also run with uncommitted changes, which the final reset "
+    "discards, and push over commits the run would drop",
   )
   run_group.add_argument(
     "-k",

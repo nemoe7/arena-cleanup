@@ -14,7 +14,8 @@ One click runs the pipeline:
 3. Remove the named paths from every commit, when asked.
 4. Rewrite the commits to your identity, sign them, and move the tags.
 5. `git push --force-with-lease` to the default branch, then delete the local
-   arena branch.
+   arena branch. **No lease** pushes with `git push --force` instead, which
+   lands even when the default branch moved during the run.
 
 Nothing leaves the machine except the git and `gh` calls you would have made by
 hand.
@@ -109,7 +110,7 @@ flags, and `arena-cleanup doctor` checks the setup.
 4. **Clean & Push** runs the pipeline and streams the log. A click on the
    card shows the repo view first: target branch, paths to remove, the
    check timeout, and the options (dry run, skip the PR gate, leave tags
-   alone, keep the branch, force the push).
+   alone, keep the branch, push with no lease).
 
 Signed out, every card reads **checks unavailable** instead of **no PR**. The
 run writes a backup bundle before each rewrite stage, and **Cancel** stops a
