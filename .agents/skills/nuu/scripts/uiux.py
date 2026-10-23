@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 
+from annotate import annotate_image
 from measure import check as check_measurements
 from measure import parse_sheet
 
@@ -439,6 +440,8 @@ def browser(args):
     "output": str(Path(args.artifacts).resolve()),
     "widths": sorted({*WIDTHS, *args.widths}),
     "selector": args.selector,
+    "ready": getattr(args, "ready", None),
+    "a11y": bool(getattr(args, "a11y", False) or args.command in {"a11y", "audit"}),
     "engine": args.engine,
     "executable": args.executable,
     "timeout": args.timeout,
@@ -645,16 +648,25 @@ def main(argv=None):
     "assets",
     "lint",
     "extract",
+    "annotate",
     "doctor",
     "inspect",
     "flow",
     "audit",
+    "a11y",
     "live",
     *MODES,
   ):
     command = commands.add_parser(name)
     command.add_argument("--project", type=Path, default=Path.cwd())
-    command.add_argument("--output", type=Path)
+    command.add_argument("--output", type=Path, required=name == "annotate")
+    if name == "annotate":
+      command.add_argument("--input", type=Path, required=True)
+      command.add_argument("--box", action="append", default=[])
+      command.add_argument("--label", action="append", default=[])
+      command.add_argument("--arrow", action="append", default=[])
+      command.add_argument("--callout", action="append", default=[])
+      command.add_argument("--spec", type=Path)
     if name == "brief":
       command.add_argument("--input", type=Path)
       for field in ("audience", "task", "goal", "stack"):
@@ -679,13 +691,15 @@ def main(argv=None):
       command.add_argument("--fetch")
       command.add_argument("--destination")
       command.add_argument("--authorize-fetch", action="store_true")
-    if name in {"inspect", "flow", "audit", "live"}:
+    if name in {"inspect", "flow", "audit", "a11y", "live"}:
       command.add_argument("--url", required=name != "audit")
       command.add_argument("--artifacts", default="ui-evidence")
       command.add_argument("--widths", nargs="*", type=int, default=[])
       command.add_argument(
         "--selector", default="button,input,textarea,select,a,h1,h2,img,main"
       )
+      command.add_argument("--ready")
+      command.add_argument("--a11y", action="store_true")
       command.add_argument("--engine", default="auto")
       command.add_argument("--executable")
       command.add_argument("--timeout", type=int, default=20)
@@ -722,9 +736,20 @@ def main(argv=None):
       result = lint(root)
     elif args.command == "extract":
       result = extract(root)
+    elif args.command == "annotate":
+      result = annotate_image(
+        args.input,
+        args.output,
+        boxes=args.box,
+        labels=args.label,
+        arrows=args.arrow,
+        callouts=args.callout,
+        spec_path=args.spec,
+      )
+      args.output = None
     elif args.command == "doctor":
       result = doctor(root, args.manifest, args.config)
-    elif args.command in {"inspect", "flow", "live"}:
+    elif args.command in {"inspect", "flow", "a11y", "live"}:
       if args.timeout <= 0 or any(width <= 0 for width in args.widths):
         raise ValueError("timeout and widths must be positive")
       result = browser(args)

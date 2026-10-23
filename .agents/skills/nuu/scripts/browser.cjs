@@ -146,6 +146,212 @@ async function metrics(page, selector) {
   }, selector);
 }
 
+async function a11yChecks(page) {
+  return page.evaluate(() => {
+    function selectorFor(element) {
+      if (element.id) return `#${CSS.escape(element.id)}`;
+      const parent = element.parentElement;
+      if (!parent) return element.tagName.toLowerCase();
+      const siblings = [...parent.children].filter(node => node.tagName === element.tagName);
+      return `${selectorFor(parent)} > ${element.tagName.toLowerCase()}:nth-of-type(${siblings.indexOf(element) + 1})`;
+    }
+    function isVisible(element) {
+      const style = getComputedStyle(element);
+      if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+      const box = element.getBoundingClientRect();
+      return box.width > 0 && box.height > 0;
+    }
+    function parseRgba(value) {
+      const match = String(value || '').match(/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,/\s]+([\d.]+))?\s*\)/i);
+      if (!match) return null;
+      return [Number(match[1]), Number(match[2]), Number(match[3]), match[4] === undefined ? 1 : Number(match[4])];
+    }
+    function blend(fg, bg) {
+      const a = fg[3] + bg[3] * (1 - fg[3]);
+      if (a <= 0) return [255, 255, 255, 0];
+      return [
+        (fg[0] * fg[3] + bg[0] * bg[3] * (1 - fg[3])) / a,
+        (fg[1] * fg[3] + bg[1] * bg[3] * (1 - fg[3])) / a,
+        (fg[2] * fg[3] + bg[2] * bg[3] * (1 - fg[3])) / a,
+        a,
+      ];
+    }
+    function resolveBackground(element) {
+      const layers = [];
+      let cur = element;
+      while (cur && cur.nodeType === 1) {
+        const parsed = parseRgba(getComputedStyle(cur).backgroundColor);
+        if (parsed && parsed[3] > 0) {
+          layers.push(parsed);
+          if (parsed[3] >= 1) break;
+        }
+        cur = cur.parentElement;
+      }
+      const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+      let base = dark ? [0, 0, 0, 1] : [255, 255, 255, 1];
+      for (let i = layers.length - 1; i >= 0; i--) {
+        base = blend(layers[i], base);
+      }
+      return base;
+    }
+    function luminance([r, g, b]) {
+      const channel = v => {
+        const s = v / 255;
+        return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+      };
+      return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+    }
+    function contrastRatio(c1, c2) {
+      const l1 = luminance(c1), l2 = luminance(c2);
+      return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+    }
+    function accessibleName(element) {
+      const ariaLabel = (element.getAttribute('aria-label') || '').trim();
+      if (ariaLabel) return ariaLabel;
+      const labelledBy = (element.getAttribute('aria-labelledby') || '').trim();
+      if (labelledBy) {
+        const text = labelledBy.split(/\s+/).map(id => document.getElementById(id)?.textContent?.trim() || '').filter(Boolean).join(' ');
+        if (text) return text;
+      }
+      if (element.labels && element.labels.length) {
+        const text = [...element.labels].map(node => node.textContent.trim()).filter(Boolean).join(' ');
+        if (text) return text;
+      }
+      const tag = element.tagName.toLowerCase();
+      if (tag === 'input') {
+        const type = (element.getAttribute('type') || 'text').toLowerCase();
+        if (['button', 'submit', 'reset'].includes(type)) {
+          return (element.getAttribute('value') || type).trim();
+        }
+        if (type === 'image') {
+          return (element.getAttribute('alt') || '').trim();
+        }
+        return (element.getAttribute('title') || element.getAttribute('placeholder') || '').trim();
+      }
+      const imgAlt = [...element.querySelectorAll('img[alt]')].map(img => (img.getAttribute('alt') || '').trim()).filter(Boolean).join(' ');
+      if (imgAlt) return imgAlt;
+      return (element.textContent || element.getAttribute('title') || '').trim();
+    }
+
+    const findings = [];
+    const interactiveSelector = [
+      'button', 'a[href]', 'input:not([type="hidden"])', 'select', 'textarea',
+      '[role="button"]', '[role="link"]', '[role="checkbox"]', '[role="radio"]',
+      '[role="switch"]', '[role="tab"]', '[role="menuitem"]', '[role="combobox"]', '[role="textbox"]',
+    ].join(',');
+
+    for (const control of document.querySelectorAll(interactiveSelector)) {
+      if (!isVisible(control)) continue;
+      if (!accessibleName(control)) {
+        findings.push({
+          rule: 'UIX301',
+          severity: 'review',
+          criterion: '4.1.2',
+          selector: selectorFor(control),
+          evidence: `Interactive <${control.tagName.toLowerCase()}> has no accessible name`,
+        });
+      }
+      const nested = control.querySelector(interactiveSelector);
+      if (nested && isVisible(nested)) {
+        findings.push({
+          rule: 'UIX303',
+          severity: 'review',
+          criterion: '4.1.2',
+          selector: selectorFor(control),
+          evidence: `Nested interactive control ${selectorFor(nested)} inside ${selectorFor(control)}`,
+        });
+      }
+    }
+
+    const ariaRefAttrs = ['aria-labelledby', 'aria-describedby', 'aria-controls', 'aria-owns'];
+    for (const attr of ariaRefAttrs) {
+      for (const element of document.querySelectorAll(`[${attr}]`)) {
+        const raw = (element.getAttribute(attr) || '').trim();
+        if (!raw) continue;
+        const missing = raw.split(/\s+/).filter(id => id && !document.getElementById(id));
+        if (missing.length) {
+          findings.push({
+            rule: 'UIX302',
+            severity: 'review',
+            criterion: '1.3.1',
+            selector: selectorFor(element),
+            evidence: `${attr} references missing id: ${missing.join(', ')}`,
+          });
+        }
+      }
+    }
+
+    const idCounts = new Map();
+    for (const element of document.querySelectorAll('[id]')) {
+      const id = (element.getAttribute('id') || '').trim();
+      if (!id) continue;
+      idCounts.set(id, (idCounts.get(id) || 0) + 1);
+    }
+    for (const [id, count] of idCounts.entries()) {
+      if (count > 1) {
+        findings.push({
+          rule: 'UIX304',
+          severity: 'review',
+          criterion: '4.1.1',
+          selector: `#${CSS.escape(id)}`,
+          evidence: `Duplicate id="${id}" (${count} elements)`,
+        });
+      }
+    }
+
+    let previousLevel = 0;
+    for (const heading of document.querySelectorAll('h1,h2,h3,h4,h5,h6,[role="heading"][aria-level]')) {
+      if (!isVisible(heading)) continue;
+      const level = /^H[1-6]$/.test(heading.tagName)
+        ? Number(heading.tagName.slice(1))
+        : Number(heading.getAttribute('aria-level'));
+      if (!Number.isInteger(level) || level < 1) continue;
+      if (previousLevel > 0 && level > previousLevel + 1) {
+        findings.push({
+          rule: 'UIX305',
+          severity: 'review',
+          criterion: '1.3.1',
+          selector: selectorFor(heading),
+          evidence: `Heading level skipped from h${previousLevel} to h${level}`,
+        });
+      }
+      previousLevel = level;
+    }
+
+    const walker = document.createTreeWalker(document.body || document.documentElement, NodeFilter.SHOW_TEXT);
+    const checkedElements = new Set();
+    let textNode;
+    while ((textNode = walker.nextNode())) {
+      if (!textNode.nodeValue || !textNode.nodeValue.trim()) continue;
+      const parent = textNode.parentElement;
+      if (!parent || checkedElements.has(parent) || ['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(parent.tagName)) continue;
+      checkedElements.add(parent);
+      if (!isVisible(parent)) continue;
+      const style = getComputedStyle(parent);
+      const fgRaw = parseRgba(style.color);
+      if (!fgRaw || fgRaw[3] <= 0) continue;
+      const bg = resolveBackground(parent);
+      const fg = blend(fgRaw, bg);
+      const ratio = contrastRatio(fg, bg);
+      const size = parseFloat(style.fontSize) || 16;
+      const weight = Number(style.fontWeight) || (style.fontWeight === 'bold' ? 700 : 400);
+      const large = size >= 24 || (size >= 18.66 && weight >= 700);
+      const threshold = large ? 3.0 : 4.5;
+      if (ratio + 1e-4 < threshold) {
+        findings.push({
+          rule: 'UIX306',
+          severity: 'review',
+          criterion: '1.4.3',
+          selector: selectorFor(parent),
+          evidence: `Contrast ratio ${ratio.toFixed(2)}:1 is below ${threshold}:1`,
+        });
+      }
+    }
+
+    return {status: 'checked', findings};
+  });
+}
+
 function validateFlow(steps) {
   if (!Array.isArray(steps)) throw new Error('Flow must be an array');
   const actions = new Set(['goto', 'click', 'fill', 'press', 'hover', 'focus', 'offline',
@@ -239,6 +445,10 @@ async function run() {
   if (request.overlaps !== undefined && typeof request.overlaps !== 'boolean') {
     throw new Error('Overlaps flag must be a boolean');
   }
+  if (request.ready !== undefined && request.ready !== null &&
+      (typeof request.ready !== 'string' || !request.ready.trim())) {
+    throw new Error('Ready requires a non-empty selector');
+  }
     url(request.url);
     validateFlow(request.flow || []);
     if (!Array.isArray(request.widths) || !request.widths.length ||
@@ -311,6 +521,9 @@ async function run() {
             const response = await page.goto(target, {waitUntil: 'load', timeout});
             row.http_status = response?.status();
             if (response && !response.ok()) throw new Error('Page returned a failing HTTP status');
+            if (request.ready) {
+              await page.locator(request.ready).first().waitFor({state: 'visible', timeout});
+            }
             row.measurements = await metrics(page, request.selector);
             if (captures.length === 1) {
               row.flow = await flow(page, context, request.flow || [], output, timeout);
@@ -335,6 +548,9 @@ async function run() {
             }
             row.measurements = await metrics(page, request.selector);
             if (request.overlaps) row.overlaps = await overlaps(page, request.selector);
+            if (request.a11y || request.command === 'a11y' || request.command === 'audit') {
+              row.a11y = await a11yChecks(page);
+            }
             row.screenshot = path.join(output, `${width}-${scheme}-${motion}.png`);
             await page.screenshot({path: row.screenshot, fullPage: true, timeout});
             row.status = 'captured';
@@ -357,6 +573,11 @@ async function run() {
     if (row.flow.status === 'failed') findings.push({rule: 'UIX103', severity: 'error', location, evidence: row.flow});
     if (row.errors.length) findings.push({rule: 'UIX102', severity: 'review', location, evidence: row.errors});
     if (row.measurements?.overflow) findings.push({rule: 'UIX101', severity: 'review', location, evidence: 'Horizontal overflow'});
+    if (row.a11y?.findings?.length) {
+      for (const item of row.a11y.findings) {
+        findings.push({...item, location});
+      }
+    }
   }
   return {status: findings.length ? 'findings' : 'captured', findings,
     engine: chosen[0], captures, automated_flow: 'first capture only',

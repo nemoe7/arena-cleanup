@@ -34,21 +34,21 @@ becomes:
 python3 skills/nemoizer/scripts/nemoize.py --format .
 ```
 
-Do not rewrite exclusion markers or the rotation table; apply only unsuppressed rotations.
+Do not rewrite exclusion markers or the rotation table; apply only unsuppressed rotations and straight-quote replacements for curly quotation marks.
 
 - Use `nonemo: <id>` to suppress only that rule on the line.
 - For file scope, place `nonemo: <id>` in the first three lines with no avoided word before the marker.
 - Use any comment syntax for `nonemo: <id>`; scanning reads text, not syntax.
 - Apply an exclusion only to a known matching rule ID.
-- With `nemoizer collect` or `--ignores`, print every nonemo marker: path, line, rule ID, scope, and text.
+- With `nemoizer collect` or `--ignores`, print every nonemo marker: path, line, rule ID, scope, and text; with `nemoizer audit` or `--audit`, print every `nonemo` marker and manual-review finding.
 
 
-Run rotations and serial-comma checks (`NMO`), semicolon/sentence/manual-review style checks (`STE`), paragraph checks (`NMP`), and test reviews (`NMT`) by default.
+Run rotations and serial-comma checks (`NMO`), semicolon/sentence/nominalization/manual-review style checks (`STE`), human-prose checks (`HMN`), paragraph checks (`NMP`), and test reviews (`NMT`) by default.
 Limit sentences to 20 words for unclassified prose, 25 for explicit description scope.
 
 ## Prose review
 
-- Prefer removing “the” only if phrases/sentences stay complete and natural without changing meaning.
+- Prefer removing "the" only if phrases/sentences stay complete and natural without changing meaning.
 - Replace wordy action phrases with plain verbs only when actor, timing, and meaning stay unchanged.
 - Remove stock prose openers and closers only if they add no claim or required action.
 - State supported claims directly unless both contrast sides carry distinct facts.
@@ -56,7 +56,7 @@ Limit sentences to 20 words for unclassified prose, 25 for explicit description 
 - Remove a closer only when it repeats earlier content and adds no fact, consequence, or required action.
 - Replace aphorisms or importance claims with their supported concrete claims.
 - Remove objections only if they answer no real claim and carry no independent information.
-- Avoid forced triads (three-item lists, three parallel examples, or three short facts plus a lesson): keep three items only if each adds a distinct fact, and merge or cut redundant ones.
+- Keep each list item that adds a distinct fact, and merge only redundant items.
 - Vary repeated sentence openings only when repetition is unintended and every claim survives.
 - Replace prose dashes unless the requested writing sample uses them, preserving each clause relation.
 - Remove redundant qualifiers only if confidence, scope, and every safety or legal condition survive.
@@ -67,12 +67,13 @@ Limit sentences to 20 words for unclassified prose, 25 for explicit description 
 - Name the source and its claim when available, otherwise remove only unsupported appeals to authority.
 - Use is, are, or has only if it preserves the longer verb phrase's relation.
 - Remove bold labels only if they add no information or necessary structure.
-- Match requested quotation style without changing quoted content.
+- Use straight quotation marks (`"` and `'`) instead of curly quotation marks, and avoid `→` arrows and consecutive emojis in Markdown prose.
 - State missing source facts without inventing plausible replacements or hiding relevant knowledge limits.
 - Remove sentences that repeat their headings only if they add no information.
 - Remove redundant document narration while retaining useful source credits, action-changing caveats, and change history.
 - Lead contextual replies with their decisions, retaining required evidence and reasoning that can change those decisions.
 - Limit instructions to 20 words and descriptions to 25 unless preserving meaning requires more.
+- Put one instruction per sentence unless simultaneous actions require one sentence.
 - Rewrite noun clusters over three words when the technical term and its meaning survive.
 - Keep one topic per paragraph within four sentences or the stricter project limit.
 - Use the serial (Oxford) comma in lists of three or more items.

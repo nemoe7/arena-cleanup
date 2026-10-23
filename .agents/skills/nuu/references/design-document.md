@@ -115,5 +115,5 @@ Visual-reference template: [design-visuals.md](design-visuals.md).
 
 - Mark decisions as proposed, accepted, or retired, and keep unresolved questions distinct from settled implementation facts.
 - Mark missing research, measurements, approvals, and test coverage as unknown or not run instead of inventing evidence.
-- Keep overview wireframes, workflow views, applicable component states, and shared style examples in separate local visual-reference documents, and link them from the authoritative design record.
+- Keep composite image boards — overview wireframe flow boards with navigation arrows, detail wireframes, side-by-side workflow views, multi-state component boards, shared component family sheets, and foundation style boards — in separate local visual-reference documents, and link them from the authoritative design record.
 - Delete an entry only with the code it describes.

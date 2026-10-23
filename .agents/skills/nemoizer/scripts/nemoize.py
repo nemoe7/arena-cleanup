@@ -14,6 +14,64 @@ import sys
 import tokenize
 from pathlib import Path
 
+try:
+  from markers import (
+    MARKER,
+    MARKER_SPAN,
+    audit_lines,
+    collect_markers,
+    is_advisory_finding,
+  )
+  from markers import (
+    head_marker as marker_head,
+  )
+except ImportError:
+  MARKER = re.compile(r"\bnonemo:[ \t]*(.*?)(?=-->|\*/|;|\s|$|\bnonemo:)")
+  MARKER_SPAN = re.compile(r"\bnonemo:[ \t]*.*?(?=-->|\*/|;|\s|$|\bnonemo:)[ \t]*;?")
+
+  def marker_head(line, position=None, rotations=()):
+    marker = MARKER.search(line)
+    if marker is None:
+      return False
+    before = line[: marker.start() if position is None else position]
+    return not any(
+      re.search(pattern, before, flags=re.IGNORECASE) for _, pattern, _ in rotations
+    )
+
+  def collect_markers(path, lines, known_rule_ids, rotations=()):
+    file_ids, line_ids, marks = set(), [], []
+    for number, line in enumerate(lines, 1):
+      suppressed = set()
+      for marker in MARKER.finditer(line):
+        code = marker[1]
+        scope = "unknown"
+        if code in known_rule_ids:
+          suppressed.add(code)
+          scope = (
+            "file"
+            if number <= 3 and marker_head(line, marker.start(), rotations)
+            else "line"
+          )
+          if scope == "file":
+            file_ids.add(code)
+        marks.append(f"{path}:{number}: {code or '<missing>'} {scope}: {line.strip()}")
+      line_ids.append(suppressed)
+    return file_ids, line_ids, marks
+
+  def is_advisory_finding(finding, advisory_rule_ids):
+    return finding.rsplit(": ", 1)[-1].split()[0] in advisory_rule_ids
+
+  def audit_lines(marks, findings, advisory_rule_ids):
+    return [
+      *marks,
+      *(
+        finding
+        for finding in findings
+        if is_advisory_finding(finding, advisory_rule_ids)
+      ),
+    ]
+
+
 from prose import COMMENT_SUFFIXES, SPECIAL_CODE_NAMES, prose_spans
 
 # (name, avoided pattern, plain word).
@@ -35,15 +93,56 @@ RULE_IDS = {
   "kind": "NMO100",
   "repository": "NMO901",
 }
-ADVISORY_RULE_IDS = {"NMO901", "STE901", "STE902", "STE903"}
+ADVISORY_RULE_IDS = {
+  "NMO901",
+  "STE901",
+  "STE902",
+  "STE903",
+  "STE904",
+  "STE905",
+  "STE906",
+  "STE908",
+  "HMN901",
+  "HMN902",
+  "HMN903",
+  "HMN904",
+  "HMN905",
+  "HMN906",
+  "HMN907",
+  "HMN908",
+  "HMN909",
+  "HMN910",
+}
 SENTENCE_CAPS = {"instruction": 20, "description": 25}
 PARAGRAPH_CAP = 4
 PROSE_RULE_IDS = {
+  "dangling_conjunction": "STE001",
   "semicolon": "STE100",
   "sentence": "STE200",
+  "nominalization": "STE300",
   "passive": "STE901",
   "phrasal": "STE902",
   "ellipsis": "STE903",
+  "compound_instruction": "STE904",
+  "noun_cluster": "STE905",
+  "synonym_cluster": "STE906",
+  "compound_tense": "STE908",
+  "staged_frame": "HMN100",
+  "stacked_qualifier": "HMN200",
+  "ai_vocabulary": "HMN300",
+  "arrow": "HMN400",
+  "chatbot_courtesy": "HMN500",
+  "curly_quote": "HMN600",
+  "negative_contrast": "HMN901",
+  "aphorism": "HMN902",
+  "rhetorical_setup": "HMN903",
+  "repeated_opener": "HMN904",
+  "prose_dash": "HMN905",
+  "vague_attribution": "HMN906",
+  "copula_avoidance": "HMN907",
+  "bold_label_bullet": "HMN908",
+  "consecutive_emoji": "HMN909",
+  "self_narration": "HMN910",
   "paragraph": "NMP100",
   "serial_comma": "NMO003",
 }
@@ -55,8 +154,9 @@ KNOWN_RULE_IDS = {
   *TEST_RULE_IDS.values(),
   *RESERVED_RULE_IDS,
 }
-MARKER = re.compile(r"\bnonemo:[ \t]*(.*?)(?=-->|\*/|;|\s|$|\bnonemo:)")
-MARKER_SPAN = re.compile(r"\bnonemo:[ \t]*.*?(?=-->|\*/|;|\s|$|\bnonemo:)[ \t]*;?")
+CURLY_QUOTES = str.maketrans(
+  {"\u201c": '"', "\u201d": '"', "\u2018": "'", "\u2019": "'"}
+)
 # The rotation table names the avoided words, so its own rows never flag.
 TABLE_ROW = re.compile(r"^\|\s*`[^`]+`\s*\|")
 SKIP_DIRS = {
@@ -118,31 +218,12 @@ def walk(targets, ignores):
 
 def head_marker(line, position=None):
   """Identify a header marker with no avoided word before it on the line."""
-  marker = MARKER.search(line)
-  if marker is None:
-    return False
-  before = line[: marker.start() if position is None else position]
-  return not any(
-    re.search(pattern, before, flags=re.IGNORECASE) for _, pattern, _ in ROTATIONS
-  )
+  return marker_head(line, position, ROTATIONS)
 
 
 def exclusions(path, lines):
   """Collect every marker and the known rule IDs it suppresses."""
-  file_ids, line_ids, marks = set(), [], []
-  for number, line in enumerate(lines, 1):
-    suppressed = set()
-    for marker in MARKER.finditer(line):
-      code = marker[1]
-      scope = "unknown"
-      if code in KNOWN_RULE_IDS:
-        suppressed.add(code)
-        scope = "file" if number <= 3 and head_marker(line, marker.start()) else "line"
-        if scope == "file":
-          file_ids.add(code)
-      marks.append(f"{path}:{number}: {code or '<missing>'} {scope}: {line.strip()}")
-    line_ids.append(suppressed)
-  return file_ids, line_ids, marks
+  return collect_markers(path, lines, KNOWN_RULE_IDS, ROTATIONS)
 
 
 def suppressed(code, ids, name=None):
@@ -173,6 +254,8 @@ def rotate(line, suppressed=frozenset()):
       line,
       flags=re.IGNORECASE,
     )
+  if PROSE_RULE_IDS["curly_quote"] not in suppressed:
+    line = line.translate(CURLY_QUOTES)
   return line
 
 
@@ -202,7 +285,7 @@ def scan(targets, ignores):
 
 
 def is_advisory(finding):
-  return finding.rsplit(": ", 1)[-1].split()[0] in ADVISORY_RULE_IDS
+  return is_advisory_finding(finding, ADVISORY_RULE_IDS)
 
 
 def format_paths(targets, ignores, out=None):
@@ -605,6 +688,264 @@ def prose_semicolons(text):
   return semicolons
 
 
+DANGLING_CONJUNCTION_RE = re.compile(
+  r"^\s*(?:[-*+]|\d+[.)])\s+.*[,;]\s+(?:and|or)[.;:]?\s*$",
+  re.IGNORECASE,
+)
+NOMINALIZATION_RE = re.compile(
+  r"\b(?:make|made|makes|making)\s+(?:a\s+|an\s+|the\s+)?"
+  r"(?:decision|determination|adjustment|modification|selection|recommendation|assumption)\b|"
+  r"\b(?:perform|performed|performs|performing|conduct|conducted|conducts|conducting)\s+"
+  r"(?:a\s+|an\s+|the\s+)?"
+  r"(?:validation|verification|investigation|analysis|assessment|evaluation|examination|inspection|comparison)\b|"
+  r"\b(?:provide|provided|provides|providing|give|gave|gives|giving)\s+"
+  r"(?:a\s+|an\s+|the\s+)?(?:description|explanation|indication|illustration)\b|"
+  r"\b(?:is|are|was|were)\s+indicative\s+of\b|"
+  r"\b(?:for\s+the\s+purpose\s+of|with\s+the\s+aim\s+of)\b",
+  re.IGNORECASE,
+)
+COMPOUND_INSTRUCTION_RE = re.compile(
+  r"\b(?:click|press|tap|select|open|close|save|delete|run|execute)\s+"
+  r"[^.!?;,]{2,40},\s+and\s+then\s+"
+  r"(?:click|press|tap|select|open|close|save|delete|run|execute)\b",
+  re.IGNORECASE,
+)
+NOUN_CLUSTER_WORD = (
+  r"(?:system|server|client|user|interface|configuration|management|process|service|"
+  r"module|component|pipeline|workflow|database|connection|request|response|handler|"
+  r"controller|policy|validation|execution|parameter|environment|storage|session|"
+  r"token|state|schema|gateway|proxy|adapter|provider|registry)"
+)
+NOUN_CLUSTER_RE = re.compile(
+  rf"\b{NOUN_CLUSTER_WORD}(?:\s+{NOUN_CLUSTER_WORD}){{3,}}\b",
+  re.IGNORECASE,
+)
+SYNONYM_CLUSTER_RE = re.compile(
+  r"\b(?:rules?\s+(?:and|or)\s+regulations?|null\s+and\s+void|each\s+and\s+every|"
+  r"first\s+and\s+foremost|basic\s+and\s+fundamental|various\s+and\s+sundry|"
+  r"checks?\s+and\s+validations?)\b",
+  re.IGNORECASE,
+)
+COMPOUND_TENSE_RE = re.compile(
+  r"\b(?:will\s+have\s+[a-z]{3,}ed|would\s+have\s+[a-z]{3,}ed|"
+  r"(?:has|have|had)\s+been\s+[a-z]{3,}ing)\b",
+  re.IGNORECASE,
+)
+STAGED_FRAME_RE = re.compile(
+  r"\b(?:let's\s+dive\s+in|without\s+further\s+ado|in\s+today's\s+fast-paced\s+world|"
+  r"in\s+conclusion,\s+by\s+leveraging|all\s+things\s+considered,\s+it\s+is\s+clear|"
+  r"hope\s+this\s+helps)\b",
+  re.IGNORECASE,
+)
+STACKED_QUALIFIER_RE = re.compile(
+  r"\b(?:very\s+unique|completely\s+essential|absolutely\s+critical|"
+  r"truly\s+remarkable|undeniably\s+important|extremely\s+crucial|highly\s+pivotal)\b",
+  re.IGNORECASE,
+)
+AI_VOCABULARY_RE = re.compile(
+  r"\b(?:delve|delves|delved|delving|tapestry|testament\s+to|beacon\s+of|"
+  r"paradigm\s+shift|game-changer|groundbreaking|synergy|unleash(?:ing)?|"
+  r"elevate\s+your|foster(?:ing)?\s+innovation|realm\s+of)\b",
+  re.IGNORECASE,
+)
+ARROW_RE = re.compile(r"\u2192")
+CHATBOT_COURTESY_RE = re.compile(
+  r"\b(?:as\s+an\s+ai(?:\s+language\s+model)?|"
+  r"as\s+of\s+my\s+last\s+(?:knowledge\s+)?(?:update|cutoff)|"
+  r"i\s+don't\s+have\s+access\s+to\s+real-time|certainly!\s+here\s+is|"
+  r"sure\s+thing!\s+here)\b",
+  re.IGNORECASE,
+)
+CURLY_QUOTE_RE = re.compile(r"[\u201c\u201d\u2018\u2019]")
+NEGATIVE_CONTRAST_RE = re.compile(
+  r"\bnot\s+(?:just|merely|simply)\s+[^,.!?;]{2,40},\s+but\s+"
+  r"(?:rather|instead|also)?\s*[A-Za-z]",
+  re.IGNORECASE,
+)
+APHORISM_RE = re.compile(
+  r"\b(?:at\s+the\s+end\s+of\s+the\s+day\b|the\s+bottom\s+line\s+is\b|"
+  r"it\s+goes\s+without\s+saying\b|key\s+takeaway:|why\s+this\s+matters:)",
+  re.IGNORECASE,
+)
+RHETORICAL_SETUP_RE = re.compile(
+  r"\b(?:you\s+might\s+be\s+wondering|have\s+you\s+ever\s+wondered|"
+  r"some\s+critics\s+might\s+argue|what\s+if\s+i\s+told\s+you)\b",
+  re.IGNORECASE,
+)
+PROSE_DASH_RE = re.compile(
+  r"(?:[A-Za-z0-9]\u2014[A-Za-z0-9]|\s\u2013\s|\\u201[34])",
+  re.IGNORECASE,
+)
+UI_STRING_DASH_RE = re.compile(
+  r"""(['"`])(?:\\.|(?!\1)[^\r\n])*?(?:[\u2013\u2014]|\\u201[34])(?:\\.|(?!\1)[^\r\n])*?\1""",
+  re.IGNORECASE,
+)
+VAGUE_ATTRIBUTION_RE = re.compile(
+  r"\b(?:experts\s+agree\s+that|studies\s+have\s+shown\s+that|"
+  r"researchers\s+say\s+that|industry\s+leaders\s+believe|"
+  r"many\s+people\s+think\s+that)\b",
+  re.IGNORECASE,
+)
+COPULA_AVOIDANCE_RE = re.compile(
+  r"\b(?:serves\s+as\s+a|stands\s+as\s+a|boasts\s+a|"
+  r"features\s+a\s+wide\s+array\s+of)\b",
+  re.IGNORECASE,
+)
+BOLD_LABEL_BULLET_RE = re.compile(
+  r"^\s*[-*+]\s+\*\*[A-Z][A-Za-z0-9]*(?:\s+[A-Z][A-Za-z0-9]*)?:\*\*"
+)
+EMOJI_CHAR = r"[\U0001F300-\U0001FAFF\u2600-\u27BF]"
+CONSECUTIVE_EMOJI_RE = re.compile(rf"{EMOJI_CHAR}\s*{EMOJI_CHAR}")
+SELF_NARRATION_RE = re.compile(
+  r"\b(?:this\s+section\s+(?:covers|explains|describes|outlines)|"
+  r"in\s+this\s+(?:document|section|guide),\s+we\s+will)\b",
+  re.IGNORECASE,
+)
+
+
+def prose_dangling_conjunctions(text):
+  return prose_line_matches(
+    text, lambda clean: list(DANGLING_CONJUNCTION_RE.finditer(clean))
+  )
+
+
+def prose_nominalizations(text):
+  return prose_line_matches(text, lambda clean: list(NOMINALIZATION_RE.finditer(clean)))
+
+
+def prose_compound_instructions(text):
+  return prose_line_matches(
+    text, lambda clean: list(COMPOUND_INSTRUCTION_RE.finditer(clean))
+  )
+
+
+def prose_noun_clusters(text):
+  return prose_line_matches(text, lambda clean: list(NOUN_CLUSTER_RE.finditer(clean)))
+
+
+def prose_synonym_clusters(text):
+  return prose_line_matches(
+    text, lambda clean: list(SYNONYM_CLUSTER_RE.finditer(clean))
+  )
+
+
+def prose_compound_tenses(text):
+  return prose_line_matches(text, lambda clean: list(COMPOUND_TENSE_RE.finditer(clean)))
+
+
+def prose_staged_frames(text):
+  return prose_line_matches(text, lambda clean: list(STAGED_FRAME_RE.finditer(clean)))
+
+
+def prose_stacked_qualifiers(text):
+  return prose_line_matches(
+    text, lambda clean: list(STACKED_QUALIFIER_RE.finditer(clean))
+  )
+
+
+def prose_ai_vocabulary(text):
+  return prose_line_matches(text, lambda clean: list(AI_VOCABULARY_RE.finditer(clean)))
+
+
+def prose_arrows(text):
+  return prose_line_matches(text, lambda clean: list(ARROW_RE.finditer(clean)))
+
+
+def prose_chatbot_courtesy(text):
+  return prose_line_matches(
+    text, lambda clean: list(CHATBOT_COURTESY_RE.finditer(clean))
+  )
+
+
+def prose_curly_quotes(text):
+  return prose_line_matches(text, lambda clean: list(CURLY_QUOTE_RE.finditer(clean)))
+
+
+def prose_negative_contrasts(text):
+  return prose_line_matches(
+    text, lambda clean: list(NEGATIVE_CONTRAST_RE.finditer(clean))
+  )
+
+
+def prose_aphorisms(text):
+  return prose_line_matches(text, lambda clean: list(APHORISM_RE.finditer(clean)))
+
+
+def prose_rhetorical_setups(text):
+  return prose_line_matches(
+    text, lambda clean: list(RHETORICAL_SETUP_RE.finditer(clean))
+  )
+
+
+def prose_repeated_openers(text):
+  """Find three consecutive sentences on a prose line or block with the same two-word opener."""
+  rows = []
+  fence = None
+  for index, line in enumerate(text.splitlines()):
+    number = index + 1
+    marker = re.match(r"^\s*(`{3,}|~{3,})", line)
+    if marker:
+      if fence is None:
+        fence = marker[1]
+      elif (
+        marker[1][0] == fence[0]
+        and len(marker[1]) >= len(fence)
+        and not line[marker.end() :].strip()
+      ):
+        fence = None
+      continue
+    if fence is not None or TABLE_ROW.match(line.strip()):
+      continue
+    clean = re.sub(r"(`+)(.*?)\1", lambda match: " " * len(match[0]), line)
+    clean = blank_inline_comments(clean)
+    sentences = [
+      part.strip() for part in re.split(r"(?<=[.!?])\s+", clean) if part.strip()
+    ]
+    openers = []
+    for sentence in sentences:
+      words = re.findall(r"[A-Za-z]+", sentence)
+      openers.append(
+        f"{words[0].lower()} {words[1].lower()}" if len(words) >= 2 else ""
+      )
+    for pos in range(len(openers) - 2):
+      if openers[pos] and openers[pos] == openers[pos + 1] == openers[pos + 2]:
+        rows.append((number, 1, 1))
+        break
+  return rows
+
+
+def prose_dashes(text):
+  return prose_line_matches(text, lambda clean: list(PROSE_DASH_RE.finditer(clean)))
+
+
+def prose_vague_attributions(text):
+  return prose_line_matches(
+    text, lambda clean: list(VAGUE_ATTRIBUTION_RE.finditer(clean))
+  )
+
+
+def prose_copula_avoidance(text):
+  return prose_line_matches(
+    text, lambda clean: list(COPULA_AVOIDANCE_RE.finditer(clean))
+  )
+
+
+def prose_bold_label_bullets(text):
+  return prose_line_matches(
+    text, lambda clean: list(BOLD_LABEL_BULLET_RE.finditer(clean))
+  )
+
+
+def prose_consecutive_emojis(text):
+  return prose_line_matches(
+    text, lambda clean: list(CONSECUTIVE_EMOJI_RE.finditer(clean))
+  )
+
+
+def prose_self_narration(text):
+  return prose_line_matches(text, lambda clean: list(SELF_NARRATION_RE.finditer(clean)))
+
+
 def prose_review(path, text, context, paragraph_cap):
   """Return unsuppressed measurable candidates for one explicit text scope."""
   lines = text.splitlines()
@@ -643,9 +984,31 @@ def prose_review(path, text, context, paragraph_cap):
           }
         )
   for key, detector in (
+    ("dangling_conjunction", prose_dangling_conjunctions),
+    ("nominalization", prose_nominalizations),
     ("passive", prose_passives),
     ("phrasal", prose_phrasal_verbs),
     ("ellipsis", prose_ellipsis),
+    ("compound_instruction", prose_compound_instructions),
+    ("noun_cluster", prose_noun_clusters),
+    ("synonym_cluster", prose_synonym_clusters),
+    ("compound_tense", prose_compound_tenses),
+    ("staged_frame", prose_staged_frames),
+    ("stacked_qualifier", prose_stacked_qualifiers),
+    ("ai_vocabulary", prose_ai_vocabulary),
+    ("arrow", prose_arrows),
+    ("chatbot_courtesy", prose_chatbot_courtesy),
+    ("curly_quote", prose_curly_quotes),
+    ("negative_contrast", prose_negative_contrasts),
+    ("aphorism", prose_aphorisms),
+    ("rhetorical_setup", prose_rhetorical_setups),
+    ("repeated_opener", prose_repeated_openers),
+    ("prose_dash", prose_dashes),
+    ("vague_attribution", prose_vague_attributions),
+    ("copula_avoidance", prose_copula_avoidance),
+    ("bold_label_bullet", prose_bold_label_bullets),
+    ("consecutive_emoji", prose_consecutive_emojis),
+    ("self_narration", prose_self_narration),
     ("serial_comma", prose_serial_commas),
   ):
     code = PROSE_RULE_IDS[key]
@@ -707,6 +1070,27 @@ def source_prose(path, text, context, paragraph_cap):
       ids = file_ids | line_ids[row["line"] - 1]
       if not suppressed(row["rule"], ids):
         findings.append(row)
+  if path.name.endswith(".user.js"):
+    code = PROSE_RULE_IDS["prose_dash"]
+    if not suppressed(code, file_ids):
+      seen_lines = {row["line"] for row in findings if row["rule"] == code}
+      for number, line in enumerate(lines, 1):
+        if number in seen_lines or suppressed(code, line_ids[number - 1]):
+          continue
+        visible = MARKER_SPAN.sub(lambda match: " " * len(match[0]), line)
+        matches = list(UI_STRING_DASH_RE.finditer(visible))
+        if matches:
+          findings.append(
+            {
+              "rule": code,
+              "path": str(path),
+              "line": number,
+              "column": matches[0].start() + 1,
+              "count": len(matches),
+              "cap": 0,
+              "status": "manual_review",
+            }
+          )
   return findings
 
 
@@ -1106,6 +1490,8 @@ def main(argv=None):
     return prose_main(argv[1:])
   if argv[:1] == ["review-tests"]:
     return review_tests_main(argv[1:])
+  if argv[:1] == ["audit"]:
+    argv = ["--audit", *argv[1:]]
   parser = argparse.ArgumentParser(description="Check Nemoizer prose and test domains.")
   parser.add_argument("targets", nargs="*", default=["."])
   parser.add_argument(
@@ -1116,6 +1502,11 @@ def main(argv=None):
   )
   parser.add_argument(
     "--ignores", action="store_true", help="list every nonemo marker instead"
+  )
+  parser.add_argument(
+    "--audit",
+    action="store_true",
+    help="list every nonemo marker and manual-review finding",
   )
   parser.add_argument(
     "--format", action="store_true", help="apply the rotations in place"
@@ -1167,6 +1558,12 @@ def main(argv=None):
       + (" (manual review)" if row["rule"] in ADVISORY_RULE_IDS else "")
       for row in rows
     )
+  if arguments.audit:
+    print("\n".join(audit_lines(marks, findings, ADVISORY_RULE_IDS)))
+    if errors:
+      print("\n".join(errors), file=sys.stderr)
+      return 2
+    return 0
   result = review_tests(tests)
   findings.extend(
     f"{row['path']}:{row['line']}: {row['rule']} {row['evidence']}"

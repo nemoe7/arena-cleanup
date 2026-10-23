@@ -110,7 +110,8 @@ python scripts/measure.py ruler --from 120,340 --to 264,340
 - `references/measure.md`: the report shape, the snippet, and the ruler.
 - `scripts/measure.py`: the check and the ruler.
 
-- `scripts/uiux.py`: briefs, catalog search, system proposals, design records, assets, source checks, extraction, and evidence-based task modes.
+- `scripts/uiux.py`: briefs, catalog search, system proposals, design records, assets, source checks, screenshot annotation (`annotate`), extraction, and evidence-based task modes.
 - `scripts/browser.cjs`: optional Playwright captures, declared flows, and authorized transient live edits.
 - `data/vendor/`: licensed catalog data and source hashes.
 - `references/tools.md`: command contracts, report fields, and coverage limits.
+- `references/offline-fonts.md`: bundled and offline zero-jitter font recipe (`preload` with `crossorigin`, `font-display: block`, inline Base64 WOFF2, `FontFace` binary buffers, and metric-matched fallbacks).

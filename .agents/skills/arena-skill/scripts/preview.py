@@ -95,7 +95,7 @@ AGENT_KEY_EXPIRY_META='agent_key_expired_at'
 AGENT_SEEN_META='agent_seen_at'
 AGENT_INTERRUPT_META='agent_interrupt'
 AGENT_INTERRUPT_FLAG_META='agent_interrupt_flag'
-VIOLATION_TYPES={'notes':('bash-violation','process-violation','missing-details','out-of-scope','task-not-created'),'downloads':('bash-violation','process-violation'),'reports':('format-violation','unnecessary-report'),'tasks':('current-task-violation','empty-task-list','missing-details','out-of-scope','task-not-created')}
+VIOLATION_TYPES={'notes':('bash-violation','process-violation','missing-details','out-of-scope','task-not-created'),'downloads':('bash-violation','process-violation'),'reports':('format-violation','unnecessary-report','wall-of-text'),'tasks':('current-task-violation','empty-task-list','missing-details','out-of-scope','task-not-created')}
 READ_SET_CACHE={}
 CALL_GROUP_META='call_group'
 CALL_STARTED_META='call_started_at'
@@ -320,9 +320,9 @@ def pr_failed_check(root='.'):
 		if rows.returncode:return None
 		newest={}
 		for row in rows.stdout.splitlines():
-			name,_,rest=row.partition('\t');stamp,_,conclusion=rest.partition('\t')
-			if name and(name not in newest or stamp.rstrip('Z')>newest[name][0]):newest[name]=stamp.rstrip('Z'),conclusion
-		failed=[name for(name,(_,conclusion))in newest.items()if conclusion in FAILED_CONCLUSIONS];return', '.join(failed)
+			name,_,rest=row.partition('\t');stamp,_,conclusion=rest.partition('\t');rank=1 if not conclusion else 0,stamp.rstrip('Z')
+			if name and(name not in newest or rank>newest[name][0]):newest[name]=rank,conclusion
+		any_active=any(not conclusion for(_,conclusion)in newest.values());failed=[name for(name,(_,conclusion))in newest.items()if conclusion in FAILED_CONCLUSIONS and not(any_active and conclusion=='cancelled')];return', '.join(failed)
 	except OSError:return None
 def pr_check_once(result,root):
 	failed=pr_failed_check(root)
@@ -360,8 +360,8 @@ def pr_check_latest(root,slug,sha):
 		try:stamp=datetime.fromisoformat(node['at'].replace('Z','+00:00'))
 		except ValueError:return None
 		if stamp.tzinfo is None:return None
-		key=node['type'],node['name'],node['workflow']
-		if key not in latest or stamp>latest[key][0]:latest[key]=stamp,node
+		active=node['state']not in PR_CHECK_SUCCESS_STATES+PR_CHECK_FAILURE_STATES;rank=1 if active else 0,stamp;key=node['type'],node['name'],node['workflow']
+		if key not in latest or rank>latest[key][0]:latest[key]=rank,node
 	return[node for(_stamp,node)in sorted(latest.values(),key=lambda entry:(entry[1]['workflow'],entry[1]['name'],entry[1]['type']))]
 def pr_check_rollup(root,slug,sha):
 	latest=pr_check_latest(root,slug,sha)
@@ -406,7 +406,7 @@ def pr_checks_watch(root='.',seconds=PR_CHECK_DISCOVERY_SECONDS,step=PR_CHECK_DI
 		if latest is None:return unavailable('gh did not read the check rollup')
 		elapsed=time.monotonic()-started
 		if latest:seen_any=True
-		failed=[node for node in latest if node['state']in PR_CHECK_FAILURE_STATES]
+		active=any(node['state']not in PR_CHECK_SUCCESS_STATES+PR_CHECK_FAILURE_STATES for node in latest);failed=[node for node in latest if node['state']in PR_CHECK_FAILURE_STATES and not(active and node['state']=='CANCELLED')]
 		for node in failed:
 			identity=node['type'],node['workflow'],node['name'],node['at']
 			if identity in reported:continue
@@ -684,7 +684,7 @@ def parse_fields(markdown):
 			if question['type']!='text'and not any(custom_label(option)is not None for option in question['options']):question['options'].append('Something else...: ___')
 	return blocks,questions
 def render_inline(markdown):
-	markdown=strip_md_comments(markdown)
+	markdown=unescape_fences(strip_md_comments(markdown))
 	try:from markdown_it import MarkdownIt
 	except ImportError:return html.escape(markdown)
 	parser=MarkdownIt('commonmark',{'html':False}).enable(['strikethrough']);highlight_markdown(parser);parser.add_render_rule('link_open',open_link);return parser.renderInline(markdown)
@@ -954,6 +954,27 @@ def format_fetch_job(job):
 	return'\n'.join(parts)
 def format_import_receipt(receipt):notes=receipt.get('notes',0);answers=receipt.get('answers',0);reports=receipt.get('reports',0);tasks=receipt.get('tasks',0);return f"Imported notes {notes}, answers {answers}, reports {reports}, tasks {tasks}; the live state was replaced"
 def format_clear_state(counts):parts=[f"{k} {v}"for(k,v)in counts.items()];return'Cleared '+', '.join(parts)if parts else'Cleared'
+def _state_record_category(record):
+	if'markdown'in record:return'reports'
+	if'title'in record:return'tasks'
+	if'report_id'in record:return'answers'
+	return'notes'
+def resolve_compare_state_source(state_dir,source=None):
+	if source is not None:return Path(source)
+	uploads_dir=Path(state_dir)/'uploads'
+	if uploads_dir.is_dir():
+		candidates=[path for path in uploads_dir.iterdir()if path.is_file()and path.suffix.lower()in{'.ndjson','.json'}]
+		if candidates:candidates.sort(key=lambda path:path.stat().st_mtime,reverse=True);return candidates[0]
+	saved=Path(state_dir)/'saved-state.ndjson'
+	if saved.is_file():return saved
+	raise ValueError('Give a state file or upload one first')
+def format_state_comparison(comparison,source=None):
+	label=f" ({Path(source).name})"if source is not None else'';live_stamp=clip_stamp(comparison.get('live_stamp'))or'none';file_stamp=clip_stamp(comparison.get('file_stamp'))or'none';lines=[f"State compare{label}: {comparison['verdict']} (live {live_stamp}, file {file_stamp})"];groups=comparison.get('groups')or{}
+	for name in('notes','answers','reports','tasks'):
+		row=groups.get(name)or{};only_live=row.get('only_live')or[];only_file=row.get('only_file')or[];changed=row.get('changed')or[];line=f"{name}: live {row.get('live',0)} file {row.get('file',0)} +{len(only_live)} -{len(only_file)} ~{len(changed)}"
+		if only_file:line+=f" file_only={','.join(only_file[:5])}"
+		lines.append(line)
+	return'\n'.join(lines)
 def preview_server_available(store):
 	port=store.meta_value('port')
 	if not port:return False
@@ -1042,6 +1063,7 @@ def egress_warning(line):
 	if not hosts:return None
 	names=', '.join(hosts);return f"arena-preview gate: {names} sits outside this sandbox's egress allowlist. The TLS handshake fails with SSL_ERROR_SYSCALL, which reads as a transient fault and never clears on a retry. Read it through the fetch_page tool instead."
 def first_blocking_piece(line):
+	if platform_line(line or''):return None
 	for piece in command_pieces(agent_line(line)):
 		tokens,index=piece_tokens(piece)
 		if index>=len(tokens):continue
@@ -1097,7 +1119,7 @@ def read_set_actions(line):
 		actions.append(tokens[index+1].strip('"\''))
 	return tuple(actions)
 def inbox_pipeline_warning(line):
-	lexer=shlex.shlex(agent_line(line),posix=False,punctuation_chars=';&|()\n');lexer.whitespace=' \t\r';lexer.whitespace_split=True
+	cleaned=re.sub('\\d*>&\\d+|\\d*>&-|&>',' ',agent_line(line));lexer=shlex.shlex(cleaned,posix=False,punctuation_chars=';&|()\n');lexer.whitespace=' \t\r';lexer.whitespace_split=True
 	try:tokens=list(lexer)
 	except ValueError:return None
 	piece=[]
@@ -1426,7 +1448,7 @@ PR_CHECK_WRAPPERS='env','command','timeout','xargs','nice','nohup','stdbuf','sud
 PR_CHECK_NAMES=('pr','checks','pr-checks'),('run','watch','run-watch')
 LONG_RUN_HEADS={'pytest':'pytest','py.test':'pytest','tox':'tox','nox':'nox'}
 LONG_RUN_WORDS=(('npm','test'),'npm-tests'),(('npm','run','test*'),'npm-tests'),(('yarn','test'),'yarn-tests'),(('pnpm','test'),'pnpm-tests'),(('make','test'),'make-tests'),(('npx','jest'),'npx-tests'),(('npx','vitest'),'npx-tests'),(('npx','mocha'),'npx-tests'),(('npx','ava'),'npx-tests'),(('go','test'),'go-tests'),(('cargo','test'),'cargo-tests'),(('dotnet','test'),'dotnet-tests'),(('mvn','test'),'mvn-tests'),(('mvnw','test'),'mvn-tests'),(('gradle','test'),'gradle-tests'),(('gradlew','test'),'gradle-tests')
-WORKTREE_STEP='NEXT: work queued file task in worktree while this runs: `arena-preview worktree start [--gate <gate-name>] [--allow <glob>] <name> <destination>`.'
+WORKTREE_STEP='NEXT: work queued file task in worktree while this runs: `arena-preview worktree start [-g, --gate <gate-name>] [-a, --allow <glob>] <name> <destination>`.'
 DETACHED_NOTICE='RUN DETACHED: `{name}` runs in background, call ends clean. Verdict on later call. '+WORKTREE_STEP
 DETACHED_BLOCK='RUN BLOCKED: background start failed, wait not started. Use `arena-preview run start {name} -- <the same line>` instead.'
 DETACHED_STATUS_SECONDS=7200
@@ -1467,6 +1489,42 @@ def long_run_name(line):
 				if word==first and tokens[index+2+position]==second:return name
 	return None
 def pr_checks_command(argv):line=argv[-1]if len(argv)>2 and argv[0]in SHELL_BASENAMES else' '.join(argv);return long_run_name(line)=='pr-checks'
+def post_push_pr_checks_command(line):
+	if platform_line(line):return None
+	text=unquote_commands(agent_line(line or''))
+	for separator in('&&','||',';','|','\n','$(','`'):text=text.replace(separator,'\x00')
+	for piece in text.split('\x00'):
+		tokens=[token for token in piece.split()if token];index=0
+		while index<len(tokens)and'='in tokens[index]and not tokens[index].startswith('-'):index+=1
+		while index<len(tokens):
+			head=tokens[index].lstrip('({"\'').rsplit('/',1)[-1]
+			if head not in PR_CHECK_WRAPPERS:break
+			index+=1
+			while index<len(tokens)and(tokens[index].startswith('-')or'='in tokens[index]or tokens[index].rstrip('smhd').isdigit()):
+				if head=='command'and re.fullmatch('-[pVv]*[Vv][pVv]*',tokens[index]):index=len(tokens);break
+				index+=1
+		if index>=len(tokens):continue
+		head=tokens[index].lstrip('({"\'').rsplit('/',1)[-1]
+		if head in INERT_COMMANDS or head in SHELL_BASENAMES:continue
+		rest=tokens[index+1:]
+		if any(flag in rest for flag in('--help','-h','--version','-V','--dry-run','-n')):continue
+		if head=='git':
+			pos=0;sub=None
+			while pos<len(rest):
+				tok=rest[pos]
+				if tok in('-C','-c','--git-dir','--work-tree','--namespace'):pos+=2;continue
+				if tok.startswith('-'):pos+=1;continue
+				sub=tok;break
+			if sub=='push':return'pr-checks'
+		elif head=='gh':
+			words=[tok for tok in rest if not tok.startswith('-')]
+			if tuple(words[:2])==('pr','create'):return'pr-checks'
+	return None
+def auto_start_post_push_pr_checks(state_dir,line,rc=0):
+	if rc!=0 or not post_push_pr_checks_command(line):return False
+	if'pr-checks'in live_runs(state_dir):return False
+	if not detach_run(state_dir,'pr-checks',['bash','-c','gh pr checks --watch'],link_task=False):return False
+	print('routed pr-checks: background run after push. Verdict on later call.',file=sys.stderr,flush=True);return True
 def detached_seconds(started_at):
 	try:
 		started=datetime.fromisoformat(str(started_at))
@@ -1517,7 +1575,7 @@ def run_task_id(state_dir,selected=None):
 		if record.get('status')!='upcoming':raise ValueError(f"Task {task_id} is finished; a run needs an upcoming task")
 		return task_id
 	record=current_task(store.list_tasks());return record.get('id')if record else None
-def detach_run(state_dir,name,argv,task_id=None,after=None):
+def detach_run(state_dir,name,argv,task_id=None,after=None,link_task=True):
 	path=run_record_path(state_dir,name);standing=json_record(path)
 	if standing is not None:
 		standing=reconcile_routed_record(path,standing)
@@ -1528,7 +1586,7 @@ def detach_run(state_dir,name,argv,task_id=None,after=None):
 		parent=routed_record(state_dir,after)
 		if parent.get('exit')is None and not parent.get('detached'):raise ValueError(f"Gate {after} has no running or finished record")
 		dependency={'name':after,'run_id':parent.get('run_id')}
-	task_id=run_task_id(state_dir,task_id)
+	task_id=run_task_id(state_dir,task_id)if link_task else None
 	if os.environ.get(DETACH_DRY_RUN):pid=os.getpid();write_detached_placeholder(state_dir,name,argv,pid,process_start_identity(pid),task_id,dependency);return True
 	path=write_detached_placeholder(state_dir,name,argv,task_id=task_id,after=dependency);child_env={key:value for(key,value)in os.environ.items()if key not in('BASH_ENV',DETACH_DRY_RUN,'ARENA_PREVIEW_ROUTE')};child_env['ARENA_PREVIEW_ROUTE']='1'
 	try:child=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'route-run',name,'--',*argv],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,env=child_env,start_new_session=True,close_fds=True)
@@ -1587,17 +1645,18 @@ def poll_once(store,sleeper=None):
 	return status
 def poll_inbox(store,sleeper=None):
 	if sleeper is None:sleeper=time.sleep
-	deadline=time.monotonic()+POLL_WAIT_SECONDS;listing={'checked_at':None,'pending':[]};print(f"poll max {POLL_WAIT_SECONDS} s; bash timeout 1800 s.",file=sys.stderr,flush=True);store.start_poll();failures=[];stop_checks=threading.Event();threading.Thread(target=pr_check_watch,args=(failures,resolve_repo_root(),stop_checks),daemon=True).start()
+	deadline=time.monotonic()+POLL_WAIT_SECONDS;listing={'checked_at':None,'pending':[]};print(f"poll max {POLL_WAIT_SECONDS} s; bash timeout 1800 s. {REMINDERS[0]}",file=sys.stderr,flush=True);store.start_poll();failures=[];stop_checks=threading.Event();threading.Thread(target=pr_check_watch,args=(failures,resolve_repo_root(),stop_checks),daemon=True).start();announced_running=False
 	try:
 		for index in range(POLL_MAX_LOOPS):
 			if time.monotonic()>=deadline:break
 			violation=store.pending_violation_note();listing=store.read(include_quiet=False)
 			if violation or listing['pending']:print_read(store);return 0
 			if run_notices(store.path.parent):clear_poll_repeat(store);print('DO NOT END TURN. POLL AGAIN.',flush=True);return 0
-			if failures:print(f"PR CHECKS FAILED: {failures[0]}. Fix the failed check before the next push.",flush=True);return 0
+			if failures and'pr-checks'not in live_runs(store.path.parent):print(f"PR CHECKS FAILED: {failures[0]}. Fix the failed check before the next push.",flush=True);return 0
 			open_tasks=[item for item in store.list_tasks()if item['status']=='upcoming'and not item['blocked']]
 			if open_tasks:listing['tasks']=open_tasks;names=', '.join(item['id']for item in open_tasks);continue_line=f"CONTINUE: UNBLOCKED TASK {names}. Start a worktree with: arena-preview worktree start --gate <gate> <name> <destination>.";print(continue_line,flush=True);print(format_task_list(listing.get('tasks',[])),flush=True);return 0
 			if skip_poll_ready(store):store.take_skip_poll();store.mark_turn_ended();print('SKIP: owner pressed Skip poll. End the turn, no second poll.',flush=True);print(format_read(listing),flush=True);return 0
+			if not announced_running:announced_running=True;run_notices(store.path.parent,show_running=True)
 			if index+1<POLL_MAX_LOOPS:
 				remaining=deadline-time.monotonic()
 				if remaining<=0:break
@@ -2279,6 +2338,14 @@ class Store:
 				writer(*args,record['text'],record.get('at'),shared=db,autosave=False,**options)
 			self.import_reports(reports,shared=db)
 		receipt={'notes':sum('report_id'not in r for r in messages),'answers':sum('report_id'in r for r in messages),'reports':len(reports),'tasks':len(tasks)};return receipt
+	def compare_state(self,text):
+		records=parse_state_import(text);core_records=[row for row in records if row.get('type')!='userscript-autosave'];live_raw,_=self.state_lines(self.state()['notes'],self.tasks()or{});live_core,live_stamp=autosave_core_and_stamp(live_raw);file_core,file_stamp=autosave_core_and_stamp(core_records);groups={}
+		for name in('notes','answers','reports','tasks'):live_map={row['id']:row for row in live_core if _state_record_category(row)==name};file_map={row['id']:row for row in file_core if _state_record_category(row)==name};only_live=sorted(set(live_map)-set(file_map));only_file=sorted(set(file_map)-set(live_map));changed=sorted(record_id for record_id in set(live_map)&set(file_map)if live_map[record_id]!=file_map[record_id]);groups[name]={'live':len(live_map),'file':len(file_map),'only_live':only_live,'only_file':only_file,'changed':changed}
+		if all(not row['only_live']and not row['only_file']and not row['changed']for row in groups.values()):verdict='equal'
+		elif all(not groups[name]['only_file']for name in('notes','answers','tasks'))and any(row['only_live']or row['changed']for row in groups.values()):verdict='ahead'
+		elif all(not row['only_live']and not row['changed']for row in groups.values())and any(row['only_file']for row in groups.values()):verdict='stale'
+		else:verdict='diverged'
+		return{'verdict':verdict,'live_stamp':live_stamp,'file_stamp':file_stamp,'groups':groups}
 	def import_reports(self,records,shared=None):
 		if not isinstance(records,list):raise TypeError('Import a list of report objects')
 		prepared=[]
@@ -2605,7 +2672,7 @@ class Store:
 			age=seconds_since(report['viewed_at'])
 			if answered is not None and age is not None and 0<=age<REPORT_CHANGE_VIEW_SECONDS:remaining=max(1,int(REPORT_CHANGE_VIEW_SECONDS-age));raise ReportHeld(f"The owner is reading this report: retry after {remaining} s without a view.")
 		if hold_answer and answered is not None:raise ReportHeld('The report has a submitted answer; publish the update under a new ID.')
-	def publish(self,report_id,title,source,submission_format=None):
+	def publish(self,report_id,title,source,submission_format=None,*,allow_unparsed_markers=True):
 		identifier(report_id)
 		if not isinstance(title,str)or not title.strip()or len(title)>200:raise ValueError('Report title must contain 1–200 characters')
 		source=Path(source)
@@ -2613,6 +2680,9 @@ class Store:
 		with source.open('rb')as stream:data=stream.read(MAX_REPORT+1)
 		if len(data)>MAX_REPORT:raise ValueError('Report exceeds the 2 MB limit; split it into reports')
 		text=data.decode('utf-8');text=embed_report_images(text,source.resolve().parent);fields=parse_fields(text)[1];metadata=validate_submission_format(submission_format,fields)
+		if not allow_unparsed_markers:
+			warnings=report_marker_warnings(text)
+			if warnings:lines=[f"{source}:{warning['line']}: Error: possible unparsed {warning['marker']} marker. Keep spaces outside the markers, or pass -u / --allow-unparsed-markers if literal marker text is intentional."for warning in warnings];raise ValueError('\n'.join(lines))
 		with self.transaction()as db:
 			report=db.execute('SELECT ack_seen_at, viewed_at FROM reports WHERE id = ?',(report_id,)).fetchone()
 			if report is not None:self.guard_report_change(db,report_id,report)
@@ -2737,7 +2807,47 @@ def add_copy_buttons(rendered):
 	def replace(match):inner=match.group(1);code=html.unescape(CODE_TAG.sub('',inner));payload=html.escape(code,quote=True).replace('\n','&#10;');button=f'<button type="button" class="copy-code" aria-label="Copy code" title="Copy code" data-code="{payload}">{ICON_COPY}</button>';return f'<div class="code-block">{button}<pre>{inner}</pre></div>'
 	return CODE_BLOCK.sub(replace,rendered)
 ESCAPED_FENCE=re.compile('^(?P<indent>[ \\t]*)\\\\(?P<fence>(?:`{3,}|~{3,}))',re.MULTILINE)
-def unescape_fences(source):return ESCAPED_FENCE.sub(lambda match:match.group('indent')+match.group('fence'),source)
+def _unescape_inline_code_line(line):
+	out=[];n=len(line);i=0
+	while i<n:
+		ch=line[i]
+		if ch!='`':out.append(ch);i+=1;continue
+		run_end=i
+		while run_end<n and line[run_end]=='`':run_end+=1
+		if run_end-i>1 or i>0 and line[i-1]=='\\':out.append(line[i:run_end]);i=run_end;continue
+		if line[i:i+3]=='`\\`'and(i+3==n or line[i+3]!='`'):out.append('`\\`');i+=3;continue
+		j=i+1;escaped=0;closing=-1
+		while j<n and line[j]!='\n':
+			if line[j]=='\\'and j+1<n and line[j+1]=='`'and(j==i+1 or line[j-1]!='\\'):escaped+=1;j+=2;continue
+			if line[j]=='`':
+				if j+1<n and line[j+1]=='`':closing=-1;break
+				closing=j;break
+			j+=1
+		if closing==-1 or escaped==0:out.append('`');i+=1;continue
+		body=line[i+1:closing];buf=[];k=0;m=len(body)
+		while k<m:
+			if body[k]=='\\'and k+1<m and body[k+1]=='`'and(k==0 or body[k-1]!='\\'):buf.append('`');k+=2
+			else:buf.append(body[k]);k+=1
+		content=''.join(buf);longest=0;current=0
+		for c in content:
+			if c=='`':current+=1;longest=max(longest,current)
+			else:current=0
+		fence='`'*(longest+1)
+		if content.startswith('`')or content.endswith('`')or content.startswith(' ')and content.endswith(' '):out.append(f"{fence} {content} {fence}")
+		else:out.append(f"{fence}{content}{fence}")
+		i=closing+1
+	return''.join(out)
+def unescape_fences(source):
+	restored=ESCAPED_FENCE.sub(lambda match:match.group('indent')+match.group('fence'),source);out,fence=[],None
+	for line in restored.splitlines(keepends=True):
+		if fence is not None:
+			out.append(line)
+			if line.strip().startswith(fence):fence=None
+			continue
+		opening=FENCE.match(line)
+		if opening:fence=opening.group(1);out.append(line);continue
+		out.append(_unescape_inline_code_line(line))
+	return''.join(out)
 PARAGRAPH=re.compile('<p>.*?</p>',re.DOTALL)
 PARAGRAPH_BREAK=re.compile('<br\\s*/?>')
 def drop_paragraph_breaks(rendered):return PARAGRAPH.sub(lambda match:PARAGRAPH_BREAK.sub('',match.group(0)),rendered)
@@ -2806,7 +2916,7 @@ def handler(store):
 		def reply(self,status,body,content_type='application/json; charset=utf-8',filename=None):
 			data=body if isinstance(body,(bytes,bytearray))else body.encode('utf-8')
 			if getattr(self,'ws_request_id',None)is not None:self.ws_send(1,json.dumps({'type':'response','id':self.ws_request_id,'status':status,'body':data.decode('utf-8'),'contentType':content_type}).encode());return
-			self.send_response(status);self.send_header('Content-Type',content_type);self.send_header('Content-Length',str(len(data)));self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Content-Security-Policy',"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: ws: wss:; base-uri 'none'; form-action 'self'")
+			self.send_response(status);self.send_header('Content-Type',content_type);self.send_header('Content-Length',str(len(data)));self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Content-Security-Policy',"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https: ws: wss:; base-uri 'none'; form-action 'self'")
 			if filename:safe=header_filename(filename);self.send_header('Content-Disposition',f'attachment; filename="{safe}"')
 			self.end_headers();self.wfile.write(data)
 		def problem(self,status,error):self.reply(status,json.dumps({'error':str(error)}))
@@ -2886,6 +2996,8 @@ def handler(store):
 			try:
 				if path=='/api/ws':self.websocket();return
 				if path=='/':page=(ASSETS/'index.html').read_text(encoding='utf-8');page=page.replace('__STYLE__',(ASSETS/'style.css').read_text(encoding='utf-8'));page=page.replace('__MARKDOWN_SCRIPT__',(ASSETS/'markdown-it.min.js').read_text(encoding='utf-8'));page=page.replace('__SCRIPT__',(ASSETS/'message-markdown.js').read_text(encoding='utf-8')+'\n'+(ASSETS/'app.js').read_text(encoding='utf-8'));self.reply(200,page,'text/html; charset=utf-8');return
+				font_match=re.fullmatch('/assets/(Basel_Grotesk_(?:Book|Regular|Medium|Bold|Mono_Regular)\\.woff2)',path)
+				if font_match:self.reply(200,(ASSETS/font_match.group(1)).read_bytes(),'font/woff2');return
 				if path=='/api/questionnaire':
 					with questionnaire_lock:body=json.dumps({'results':questionnaire_state['results'],'answered_at':questionnaire_state['answered_at']})
 					self.reply(200,body);return
@@ -3260,14 +3372,14 @@ def gate_verdict(state_dir,push,line,out=None):
 		if hint:print(hint,file=out,flush=True)
 		blocker=first_blocking_piece(line)
 		if blocker:blocker=shell_command_text(blocker);print(f"Blocked by the part `{blocker}`. Run the inbox calls alone, or drop this part.",file=out,flush=True)
-		return 1
+		print(REMINDERS[0],file=out,flush=True);return 1
 	if push and main_identical():print('HEAD equals `origin/main`, so the push carries nothing. Start new work from `origin/main`.',file=out,flush=True);return 1
 	stale=main_ancestor_warning()if push else''
 	if stale:print(stale,file=out,flush=True);return 1
 	return 0
 PRE_STEPS='interrupt','read-set','remind','main-local','main-fresh','bare','proxy','gate'
 GATED_SHELLS=frozenset({'bash','sh','dash','ksh','zsh'})
-PLATFORM_LINES='arena-workspace','ss -ltn','netstat -ltn','source ~/.profile',"mkdir -p '/home/user'"
+PLATFORM_LINES='arena-workspace','ss -ltn','netstat -ltn','source ~/.profile',"mkdir -p '/home/user'","/bin/bash -l -c mkdir -p '","/bin/bash -l -c [ -e '","python3 -I - <<'PY'"
 def platform_line(line):return any(pattern in line for pattern in PLATFORM_LINES)
 def state_file(state_dir):return Path(state_dir)/'state.sqlite3'
 def bare_script_invocation(line):
@@ -3408,21 +3520,21 @@ class PreviewArgumentParser(argparse.ArgumentParser):
 	def print_usage(self,file=None):pass
 	def exit(self,status=0,message=None):super().exit(status,message.removeprefix('arena-preview: ')if message else message)
 def main():
-	parser=PreviewArgumentParser(description=CLI_DESCRIPTION,prog='arena-preview');parser.add_argument('-r','--reminder',action='store_true',help='Print unacked-count reminder; exit');commands=parser.add_subparsers(dest='command',required=False);serve=commands.add_parser('serve',help='Serve preview page; -p names port');serve.add_argument('-p','--port',type=int,default=DEFAULT_PORT,help=f"Port (default: {DEFAULT_PORT}; only supported port)");init=commands.add_parser('init',help='Create state directory and database');init.add_argument('--tz',help='CLI stamp IANA zone; TZ env wins');questionnaire_parser=commands.add_parser('questionnaire',help='Show questions and schema, or submit ordered JSON');questionnaire_parser.add_argument('answers',nargs='?',help='Ordered answer JSON');commands.add_parser('read',help='Print every pending note, answer and upload');commands.add_parser('skills',help='List skill names, full descriptions, and paths without loading skills');note_group=commands.add_parser('note',help='Read stored notes');note_verbs=note_group.add_subparsers(dest='verb',required=True);note_list=note_verbs.add_parser('list',help='Stored note IDs by page, newest first; acknowledged included');note_list.add_argument('--page',type=int,default=1,help='Page number (default: 1)');note_list.add_argument('--page-size',type=int,default=20,help='IDs per page, 1 to 100 (default: 20)');note_reread=note_verbs.add_parser('show',help='Reread stored note by short or full ID');note_reread.add_argument('id',help='Six or all note ID characters');image_uri=commands.add_parser('image-data-uri',help='Print Markdown: one local image as data URI');image_uri.add_argument('path',type=Path,help='One local PNG, JPEG, GIF or WebP file up to 2 MiB');outline_parser=commands.add_parser('outline',help='Print read-only source outline with line ranges for local repository files');outline_parser.add_argument('path',type=Path,help='Local source file inside the repository checkout');outline_parser.add_argument('--max-entries',type=int,default=OUTLINE_MAX_ENTRIES,help=f"Maximum entries to print, 1 to {OUTLINE_MAX_ENTRIES} (default: {OUTLINE_MAX_ENTRIES})");outline_parser.add_argument('--json',dest='as_json',action='store_true',help='Print JSON outline with path, language, entries, total, and omitted count');commands.add_parser('key',help='Print the recorded agent key, host and use line');pre=commands.add_parser('pre',help='Run all pre-Bash gates in order; list completed steps');pre.add_argument('--line',default='',help='Shell command line from hook');pre.add_argument('--command',dest='command_text',default='',help='Command reached by DEBUG trap');pre.add_argument('--repo',default='.',help='Bible repository');pre.add_argument('--shell',default='',help='Shell name');pre.add_argument('--done',default='',help="This shell's completed steps, space-separated");run_group=commands.add_parser('run',help='Start long command; read result');run_verbs=run_group.add_subparsers(dest='verb',required=True);route=run_verbs.add_parser('start',help='Detach command, keep output tail; show exit on later call');route.add_argument('--task',dest='task_id',metavar='TASK-ID',help='Link run to upcoming task, not current task');route.add_argument('--after',metavar='GATE',help='Run only after this gate passes');route.add_argument('name',help='Short run name; example: gates');route.add_argument('command_args',nargs=argparse.REMAINDER,help='Command after --');route_run=commands.add_parser('route-run',help='Run command here; record exit for later call');route_run.add_argument('name',help='Run name already recorded by caller');route_run.add_argument('command_args',nargs=argparse.REMAINDER,help='Command after --');logs=run_verbs.add_parser('logs',help='Print routed run status and recorded output tail');logs.add_argument('name',help='Run name to read');worktree=commands.add_parser('worktree',help='Create or collect detached task worktree beside root gate');worktree_action=worktree.add_subparsers(dest='worktree_action',required=True);worktree_start=worktree_action.add_parser('start',help='Create detached worktree beside root gate, or without one');worktree_start.add_argument('name',help='Short worktree name');worktree_start.add_argument('destination',type=Path,help='New path outside root');worktree_start.add_argument('--gate',default=None,help='Running root gate name; optional');worktree_start.add_argument('--allow',action='append',default=[],help='Glob of paths task may change');worktree_collect=worktree_action.add_parser('collect',help='Print allowed detached-worktree patch after root gate passes');worktree_collect.add_argument('name',help='Worktree name to collect');rename=commands.add_parser('rename',help='Move note, answer, report, or task to new ID');rename.add_argument('old_id',help='Stored ID or unique record prefix');rename.add_argument('new_id',help='Destination record ID');gate=commands.add_parser('gate',help='Inbox gate; -p blocks on any unacked note; -l names blocked line');gate.add_argument('-p','--push',action='store_true',help='Block on any unacked note or answer, regardless of call count');gate.add_argument('-l','--line',default='',help='Command line from hook; blocked calls name commands to drop');commands.add_parser('poll',help='Wait for owner answer or gate completion');download=commands.add_parser('download-request',help='Request HTTPS browser download; preview Approve click required; -a allows proxy fallback');download.add_argument('url',help='One HTTPS URL without embedded credentials');download.add_argument('-a','--allow-proxy',action='store_true',help='Owner may opt in to AllOrigins and CodeTabs fallback for this request');ack=commands.add_parser('ack',help='Answer notes with inline Markdown; omit IDs for one pending item');ack.add_argument('ids',nargs='*');ack.add_argument('markdown',help='Literal inline Markdown answer');ack.add_argument('--id',dest='task_id');ack.add_argument('--title',dest='task_title');ack.add_argument('--type',dest='task_type',choices=TASK_TYPES);ack.add_argument('--detail',dest='task_detail',action='append');report_group=commands.add_parser('report',help='Publish, withdraw and inspect reports');report_verbs=report_group.add_subparsers(dest='verb',required=True);publish=report_verbs.add_parser('publish',help='Publish report; -i ID, -t title');publish.add_argument('source',type=Path);publish.add_argument('--submission-format',type=Path,help='Optional question, answer, and template JSON');publish.add_argument('-i','--id',required=True);publish.add_argument('-t','--title',required=True);unpublish=report_verbs.add_parser('unpublish',help='Withdraw report by ID, or all stale reports with --stale');unpublish.add_argument('report_id',nargs='?');unpublish.add_argument('--stale',action='store_true',help='Withdraw every stale report');report_verbs.add_parser('stale',help='List stale published report IDs and reasons without changing state')
+	parser=PreviewArgumentParser(description=CLI_DESCRIPTION,prog='arena-preview');parser.add_argument('-r','--reminder',action='store_true',help='Print unacked-count reminder; exit');parser.add_argument('-c','--rc',type=int,default=0,help='Exit status of shell call for --reminder');parser.add_argument('-l','--line',dest='reminder_line',default='',help='Shell command line for --reminder');commands=parser.add_subparsers(dest='command',required=False);serve=commands.add_parser('serve',help='Serve preview page; -p names port');serve.add_argument('-p','--port',type=int,default=DEFAULT_PORT,help=f"Port (default: {DEFAULT_PORT}; only supported port)");init=commands.add_parser('init',help='Create state directory and database');init.add_argument('-z','--tz',help='CLI stamp IANA zone; TZ env wins');questionnaire_parser=commands.add_parser('questionnaire',help='Show questions and schema, or submit ordered JSON');questionnaire_parser.add_argument('answers',nargs='?',help='Ordered answer JSON');commands.add_parser('read',help='Print every pending note, answer and upload');commands.add_parser('skills',help='List skill names, full descriptions, and paths without loading skills');note_group=commands.add_parser('note',help='Read stored notes');note_verbs=note_group.add_subparsers(dest='verb',required=True);note_list=note_verbs.add_parser('list',help='Stored note IDs by page, newest first; acknowledged included');note_list.add_argument('-p','--page',type=int,default=1,help='Page number (default: 1)');note_list.add_argument('-s','--page-size',type=int,default=20,help='IDs per page, 1 to 100 (default: 20)');note_reread=note_verbs.add_parser('show',help='Reread stored note by short or full ID');note_reread.add_argument('id',help='Six or all note ID characters');image_uri=commands.add_parser('image-data-uri',help='Print Markdown: one local image as data URI');image_uri.add_argument('path',type=Path,help='One local PNG, JPEG, GIF or WebP file up to 2 MiB');outline_parser=commands.add_parser('outline',help='Print read-only source outline with line ranges for local repository files');outline_parser.add_argument('path',type=Path,help='Local source file inside the repository checkout');outline_parser.add_argument('-m','--max-entries',type=int,default=OUTLINE_MAX_ENTRIES,help=f"Maximum entries to print, 1 to {OUTLINE_MAX_ENTRIES} (default: {OUTLINE_MAX_ENTRIES})");outline_parser.add_argument('-j','--json',dest='as_json',action='store_true',help='Print JSON outline with path, language, entries, total, and omitted count');commands.add_parser('key',help='Print the recorded agent key, host and use line');pre=commands.add_parser('pre',help='Run all pre-Bash gates in order; list completed steps');pre.add_argument('-l','--line',default='',help='Shell command line from hook');pre.add_argument('-c','--command',dest='command_text',default='',help='Command reached by DEBUG trap');pre.add_argument('-r','--repo',default='.',help='Bible repository');pre.add_argument('-s','--shell',default='',help='Shell name');pre.add_argument('-d','--done',default='',help="This shell's completed steps, space-separated");run_group=commands.add_parser('run',help='Start long command; read result');run_verbs=run_group.add_subparsers(dest='verb',required=True);route=run_verbs.add_parser('start',help='Detach command, keep output tail; show exit on later call');route.add_argument('-t','--task',dest='task_id',metavar='TASK-ID',help='Link run to upcoming task, not current task');route.add_argument('-a','--after',metavar='GATE',help='Run only after this gate passes');route.add_argument('name',help='Short run name; example: gates');route.add_argument('command_args',nargs=argparse.REMAINDER,help='Command after --');route_run=commands.add_parser('route-run',help='Run command here; record exit for later call');route_run.add_argument('name',help='Run name already recorded by caller');route_run.add_argument('command_args',nargs=argparse.REMAINDER,help='Command after --');logs=run_verbs.add_parser('logs',help='Print routed run status and recorded output tail');logs.add_argument('name',help='Run name to read');worktree=commands.add_parser('worktree',help='Create or collect detached task worktree beside root gate');worktree_action=worktree.add_subparsers(dest='worktree_action',required=True);worktree_start=worktree_action.add_parser('start',help='Create detached worktree beside root gate, or without one');worktree_start.add_argument('name',help='Short worktree name');worktree_start.add_argument('destination',type=Path,help='New path outside root');worktree_start.add_argument('-g','--gate',default=None,help='Running root gate name; optional');worktree_start.add_argument('-a','--allow',action='append',default=[],help='Glob of paths task may change');worktree_collect=worktree_action.add_parser('collect',help='Print allowed detached-worktree patch after root gate passes');worktree_collect.add_argument('name',help='Worktree name to collect');rename=commands.add_parser('rename',help='Move note, answer, report, or task to new ID');rename.add_argument('old_id',help='Stored ID or unique record prefix');rename.add_argument('new_id',help='Destination record ID');gate=commands.add_parser('gate',help='Inbox gate; -p blocks on any unacked note; -l names blocked line');gate.add_argument('-p','--push',action='store_true',help='Block on any unacked note or answer, regardless of call count');gate.add_argument('-l','--line',default='',help='Command line from hook; blocked calls name commands to drop');commands.add_parser('poll',help='Wait for owner answer or gate completion');download=commands.add_parser('download-request',help='Request HTTPS browser download; preview Approve click required; -a allows proxy fallback');download.add_argument('url',help='One HTTPS URL without embedded credentials');download.add_argument('-a','--allow-proxy',action='store_true',help='Owner may opt in to AllOrigins and CodeTabs fallback for this request');ack=commands.add_parser('ack',help='Answer notes with inline Markdown; omit IDs for one pending item');ack.add_argument('ids',nargs='*');ack.add_argument('markdown',help='Literal inline Markdown answer');ack.add_argument('-i','--id',dest='task_id');ack.add_argument('-t','--title',dest='task_title');ack.add_argument('-T','--type',dest='task_type',choices=TASK_TYPES);ack.add_argument('-d','--detail',dest='task_detail',action='append');report_group=commands.add_parser('report',help='Publish, withdraw and inspect reports');report_verbs=report_group.add_subparsers(dest='verb',required=True);publish=report_verbs.add_parser('publish',help='Publish report; -i ID, -t title');publish.add_argument('source',type=Path);publish.add_argument('-s','--submission-format',type=Path,help='Optional question, answer, and template JSON');publish.add_argument('-i','--id',required=True);publish.add_argument('-t','--title',required=True);publish.add_argument('-u','--allow-unparsed-markers',action='store_true',help='Publish even when possible unparsed == or ~~ markers are found');unpublish=report_verbs.add_parser('unpublish',help='Withdraw report by ID, or all stale reports with --stale');unpublish.add_argument('report_id',nargs='?');unpublish.add_argument('-s','--stale',action='store_true',help='Withdraw every stale report');report_verbs.add_parser('stale',help='List stale published report IDs and reasons without changing state')
 	for verb in('pin','unpin'):pin=report_verbs.add_parser(verb,help=f"{verb.capitalize()} a report against staleness");pin.add_argument('report_id')
-	report_state=report_verbs.add_parser('state',help='Print publication, owner view stamp and answer visibility for one report or all');report_state.add_argument('report_id',nargs='?');task_group=commands.add_parser('task',help='Read and update tasks');task_verbs=task_group.add_subparsers(dest='verb',required=True);task_list=task_verbs.add_parser('list',help='List tasks; -f includes finished');task_list.add_argument('-f','--full',action='store_true',help='print every task, finished included');task_show=task_verbs.add_parser('show',help='Print one stored task in full');task_show.add_argument('task_id',metavar='TASK-ID');task=task_verbs.add_parser('set',help='Write/update task; -s status, -o order, -d details, -A append, -m message, -r report, -u unblocked, -a amend, --type type');task.add_argument('id_arg',nargs='?',metavar='TASK-ID');task.add_argument('title_arg',nargs='?',metavar='TASK-TITLE');task.add_argument('detail_arg',nargs='*',metavar='TASK-DETAIL');task.add_argument('-d','--details',dest='task_details',action='append',help='One step per line; max 120 characters; repeatable');task.add_argument('-A','--append',dest='append_details',action='store_true',help='Append provided details instead of replacing stored details');task.add_argument('-u','--unblocked',dest='blocked',action='store_false',default=None,help='Clear report wait or legacy blocked mark');task.add_argument('-m','--msg-id',help='Message task answers; mark it as having a task');task.add_argument('-r','--report',metavar='REPORT-ID',help='Awaited report; answer clears blocked mark');task.add_argument('-a','--amend',metavar='PREV-ID',help='Rename task under this ID to given ID');task.add_argument('-b','--blocked-by',dest='blocked_by',action='append',metavar='TASK-ID',help='Dependency task; repeatable; cycles refused');task.add_argument('-s','--status',choices=TASK_STATUSES,default=None);task.add_argument('--type',dest='task_type',choices=TASK_TYPES,default=None,help='Primary deliverable type; omitted flag keeps stored type');task.add_argument('-o','--order',type=int,default=None,help='1-based place within div, not end');task_unlink=task_verbs.add_parser('unlink',help='Unlink a submission from all tasks; retain its history');task_unlink.add_argument('submission_id');task_remove=task_verbs.add_parser('remove',help='Delete task by ID');task_remove.add_argument('task_id');state_group=commands.add_parser('state',help='Import or clear stored state');state_verbs=state_group.add_subparsers(dest='verb',required=True);state_import=state_verbs.add_parser('import',help='Import NDJSON backup; replace live state');state_import.add_argument('source',nargs='?',type=Path);state_import.add_argument('-r','--replace-tasks',action='store_true');state_verbs.add_parser('clear',help='Empty all state tables in place; keep agent key record');args=parser.parse_args()
+	report_state=report_verbs.add_parser('state',help='Print publication, owner view stamp and answer visibility for one report or all');report_state.add_argument('report_id',nargs='?');task_group=commands.add_parser('task',help='Read and update tasks');task_verbs=task_group.add_subparsers(dest='verb',required=True);task_list=task_verbs.add_parser('list',help='List tasks; -f includes finished');task_list.add_argument('-f','--full',action='store_true',help='print every task, finished included');task_show=task_verbs.add_parser('show',help='Print one stored task in full');task_show.add_argument('task_id',metavar='TASK-ID');task=task_verbs.add_parser('set',help='Write/update task; -s status, -o order, -d details, -A append, -m message, -r report, -u unblocked, -a amend, -t/--type type');task.add_argument('id_arg',nargs='?',metavar='TASK-ID');task.add_argument('title_arg',nargs='?',metavar='TASK-TITLE');task.add_argument('detail_arg',nargs='*',metavar='TASK-DETAIL');task.add_argument('-d','--details',dest='task_details',action='append',help='One step per line; max 120 characters; repeatable');task.add_argument('-A','--append',dest='append_details',action='store_true',help='Append provided details instead of replacing stored details');task.add_argument('-u','--unblocked',dest='blocked',action='store_false',default=None,help='Clear report wait or legacy blocked mark');task.add_argument('-m','--msg-id',help='Message task answers; mark it as having a task');task.add_argument('-r','--report',metavar='REPORT-ID',help='Awaited report; answer clears blocked mark');task.add_argument('-a','--amend',metavar='PREV-ID',help='Rename task under this ID to given ID');task.add_argument('-b','--blocked-by',dest='blocked_by',action='append',metavar='TASK-ID',help='Dependency task; repeatable; cycles refused');task.add_argument('-s','--status',choices=TASK_STATUSES,default=None);task.add_argument('-t','-T','--type',dest='task_type',choices=TASK_TYPES,default=None,help='Primary deliverable type; omitted flag keeps stored type');task.add_argument('-o','--order',type=int,default=None,help='1-based place within div, not end');task_unlink=task_verbs.add_parser('unlink',help='Unlink a submission from all tasks; retain its history');task_unlink.add_argument('submission_id');task_remove=task_verbs.add_parser('remove',help='Delete task by ID');task_remove.add_argument('task_id');state_group=commands.add_parser('state',help='Import, compare, or clear stored state');state_verbs=state_group.add_subparsers(dest='verb',required=True);state_import=state_verbs.add_parser('import',help='Import NDJSON backup; replace live state');state_import.add_argument('source',nargs='?',type=Path);state_import.add_argument('-r','--replace-tasks',action='store_true');state_compare=state_verbs.add_parser('compare',help='Compare NDJSON backup against live state without changing state');state_compare.add_argument('source',nargs='?',type=Path);state_verbs.add_parser('clear',help='Empty all state tables in place; keep agent key record');args=parser.parse_args()
 	if args.command=='serve'and args.port!=DEFAULT_PORT:serve.error(f"--port must be {DEFAULT_PORT}")
-	verb=getattr(args,'verb',None);grouped_commands={('note','list'):'note-list',('note','show'):'note',('run','start'):'route',('run','logs'):'logs',('report','publish'):'publish',('report','unpublish'):'unpublish',('report','stale'):'stale-reports',('report','state'):'report-state',('report','pin'):'report-pin',('report','unpin'):'report-unpin',('task','list'):'task-list',('task','show'):'task-show',('task','set'):'task',('task','remove'):'task-remove',('task','unlink'):'task-unlink',('state','import'):'import-state',('state','clear'):'clear-state'};args.command=grouped_commands.get((args.command,verb),args.command)
+	verb=getattr(args,'verb',None);grouped_commands={('note','list'):'note-list',('note','show'):'note',('run','start'):'route',('run','logs'):'logs',('report','publish'):'publish',('report','unpublish'):'unpublish',('report','stale'):'stale-reports',('report','state'):'report-state',('report','pin'):'report-pin',('report','unpin'):'report-unpin',('task','list'):'task-list',('task','show'):'task-show',('task','set'):'task',('task','remove'):'task-remove',('task','unlink'):'task-unlink',('state','import'):'import-state',('state','compare'):'compare-state',('state','clear'):'clear-state'};args.command=grouped_commands.get((args.command,verb),args.command)
 	if args.command=='route':
 		command_args=args.command_args;separator=command_args.index('--')if'--'in command_args else len(command_args)
-		if any(argument==option or argument.startswith(option+'=')for argument in command_args[:separator]for option in('--task','--after')):parser.error('put --task and --after before the run name. Use: arena-preview run start --task <id> <name> -- <command>')
+		if any(argument==option or argument.startswith(option+'=')for argument in command_args[:separator]for option in('-t','--task','-a','--after')):parser.error('put --task and --after before the run name. Use: arena-preview run start --task <id> <name> -- <command>')
 	if args.command=='unpublish'and args.stale:
 		if args.report_id:parser.error('give a report ID or --stale, not both')
 		args.command='report'
 	state_dir=resolve_state_dir();fresh_state=not(Path(state_dir).resolve()/'state.sqlite3').is_file()
 	try:
 		if args.reminder:
-			store=Store(state_dir,create=False);require_server(store);reminder=store.reminder(advance=True);store.set_meta(AGENT_CALL_ENDED_META,now())
+			store=Store(state_dir,create=False);require_server(store);auto_start_post_push_pr_checks(state_dir,args.reminder_line,rc=args.rc);reminder=store.reminder(advance=True);store.set_meta(AGENT_CALL_ENDED_META,now())
 			if'unacked 'in reminder or TASK_ORDER_NOTICE in reminder or not run_notices(state_dir,show_running=True):print(reminder,file=sys.stderr,flush=True)
 			return 0
 		if not args.command:parser.error('Command required. Run arena-preview --help.')
@@ -3504,7 +3616,7 @@ def main():
 				with args.submission_format.open('rb')as stream:data=stream.read(MAX_REPORT+1)
 				if len(data)>MAX_REPORT:raise ValueError('Submission format exceeds the report size limit')
 				metadata=json.loads(data.decode('utf-8'))
-			count=store.publish(args.id,args.title,args.source,submission_format=metadata);revision=store.report(args.id)['updated_at'];warnings=verify_publication(store,args.id,revision,count);plural=''if count==1 else's';print(f"Published {args.id}, {count} field{plural}. Verified.");recommendations=[f"{question['prompt']}: {', '.join(question['default'])}"for question in parse_fields(Path(args.source).read_text('utf-8'))[1]if question.get('default')]
+			count=store.publish(args.id,args.title,args.source,submission_format=metadata,allow_unparsed_markers=args.allow_unparsed_markers);revision=store.report(args.id)['updated_at'];warnings=verify_publication(store,args.id,revision,count);plural=''if count==1 else's';print(f"Published {args.id}, {count} field{plural}. Verified.");recommendations=[f"{question['prompt']}: {', '.join(question['default'])}"for question in parse_fields(Path(args.source).read_text('utf-8'))[1]if question.get('default')]
 			if recommendations:print('you recommended:\n'+'\n'.join(recommendations))
 			for warning in warnings or():print(f"{args.source}:{warning['line']}: Warning: possible unparsed {warning['marker']} marker. Keep spaces outside the markers. Literal marker text can be intentional.",file=sys.stderr)
 			if not count and'{#'in Path(args.source).read_text('utf-8'):print('Warning: 0 fields parsed. A `{#id}` marker ends a prompt line, then the `- ( ) option` lines follow.',file=sys.stderr)
@@ -3552,6 +3664,11 @@ def main():
 				except OSError as error:raise ValueError(f"No such state file: {error.filename or args.source}")from None
 			else:text=sys.stdin.read()
 			print(format_import_receipt(store.import_state(text,args.replace_tasks)))
+		elif args.command=='compare-state':
+			source_path=resolve_compare_state_source(state_dir,args.source)
+			try:text=source_path.read_text(encoding='utf-8')
+			except OSError as error:raise ValueError(f"No such state file: {error.filename or source_path}")from None
+			print(format_state_comparison(store.compare_state(text),source=source_path))
 		elif args.command=='clear-state':print(format_clear_state(store.clear_state()))
 		elif args.command=='init':
 			if args.tz:

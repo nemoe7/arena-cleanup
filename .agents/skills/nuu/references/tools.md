@@ -14,6 +14,7 @@
 | `assets --fetch URL --destination PATH --authorize-fetch` | Explicit HTTP(S) URL and new project path | Saved bytes, hash, and metadata still required |
 | `lint` | Project HTML, CSS, and script paths | Selected source candidates and per-file coverage |
 | `extract` | Project CSS and HTML | Custom properties, class patterns, source locations, and coverage limits |
+| `annotate` | `--input`, `--output`, `--box`, `--label`, `--arrow`, `--callout`, `--spec` | Draws bounding boxes, text labels, directional arrows, and numbered callout badges onto a local PNG screenshot without modifying the input file in place |
 | `doctor` | Optional asset manifest and JSON configuration | Runtime, browser inventory, catalog hashes, assets, and configuration |
 
 `--project` selects the source tree. `--output` saves JSON to a new file; an existing file remains unchanged. Search never executes catalog content. A matched term is not proof that a recommendation fits the product.
@@ -46,15 +47,21 @@ The default profile is `project`. `--profile house` also runs the existing `meas
 
 Use inspect --overlaps for bounded rectangle intersections, sampled top-to-bottom hit-test order, and ancestor stacking properties, and report coverage limits instead of a global z-distance.
 
-`--artifacts` selects the screenshot root. Each invocation creates a new capture directory, so earlier screenshots remain unchanged. `--selector` limits inspected elements. `--timeout` sets each action's seconds. The default viewport height is 900 px. Flows and authorized live edits run on the first capture only; other captures show a fresh page. This scope appears in the report.
+`--artifacts` selects the screenshot root. Each invocation creates a new capture directory, so earlier screenshots remain unchanged. `--selector` limits inspected elements. `--ready` waits for the selector to become visible before capture, and emits `UIX104` when it times out. `--timeout` sets each action's seconds. The default viewport height is 900 px. Flows and authorized live edits run on the first capture only; other captures show a fresh page. This scope appears in the report.
 
 | Browser ID | Evidence |
 | --- | --- |
 | `UIX101` | Horizontal overflow |
 | `UIX102` | Browser console or page errors |
 | `UIX103` | Failed declared flow |
-| `UIX104` | Failed navigation, capture, or edit |
+| `UIX104` | Failed navigation, capture, edit, or `--ready` selector wait |
 | `UIX201` | Value outside the explicitly selected house sheet |
+| `UIX301` | Rendered interactive control without an accessible name |
+| `UIX302` | Broken ARIA ID reference (`aria-labelledby`, `aria-describedby`, `aria-controls`, or `aria-owns`) |
+| `UIX303` | Nested interactive controls in the rendered DOM |
+| `UIX304` | Duplicate `id` attribute in the rendered DOM |
+| `UIX305` | Skipped heading level in the rendered DOM |
+| `UIX306` | Rendered text below WCAG AA contrast against its resolved opaque ancestor background |
 
 ## Declarative flows
 
