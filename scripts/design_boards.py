@@ -3,7 +3,7 @@
 
 The boards follow the documentation set of the uiprep article. They show the
 lay of the land, a deep-dive wireframe, example views, and component states.
-Three more show the global components, the style guide, and do and do-not pairs.
+Three more show the global components, the style guide, and the do-and-do-not pairs.
 
 Every board is HTML built from the app's own tokens, classes, and glyphs. The
 example views are screenshots of a demo instance.

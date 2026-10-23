@@ -1792,7 +1792,7 @@
           renderAccess();
           toast("re-checked");
         } }, "Re-check"),
-        g.credentials_for_gh ? null : el("button", { class: "btn ghost", onclick: setupGit }, "Set up git credentials")));
+        g.credentials_for_gh ? null : el("button", { class: "btn ghost", onclick: setupGit }, "Configure git credentials")));
     } else {
       ghNodes.push(el("div", { class: "banner warn" },
         el("span", { class: "ico" }, icon("triangle-alert")),

@@ -44,7 +44,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - Inter (variable) for text, JetBrains Mono for paths, hashes, and commands. Both ship as woff2 under `ui/static/fonts/`.
 - Desktop ramp: `--fs-1` 12 px for metadata and mono details, `--fs-2` 13 px for controls and labels. `--fs-3` 14 px for body, names, and buttons, `--fs-4` 16 px for a view title, `--fs-5` 20 px for the page title.
-- Phone ramp, 720 px and below: 12, 13, 14, 15 body, 16 fields, 19 title. The 16 px fields keep iOS from zooming.
+- Phone ramp at 720 px and below: body 12 to 15 px, fields 16 px, and title 19 px. The 16 px fields keep iOS from zooming.
 - Weights: 400, 520 to 640 for labels and names, 600 for headings.
 
 ### Icons
@@ -71,7 +71,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - `pill`: dot and word, 999 px radius, `ok`, `warn`, `mono` variants.
 - `commit`: grid `auto minmax(0, 1fr)`, the subject truncated by an ellipsis, the metadata on a second row.
 - `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`. The selected row carries a 2 px accent bar and the text colour. The name reads `Pull from <branch>`. Rows and the timeout slider are 44 px high on a phone.
-- `opt.row`: grid `128px minmax(0, 1fr) auto` for the label, the control, and Browse or the slider readout. `check`: a label with a native checkbox, `danger` colours a checked destructive option. On a phone the checkboxes form a grid with 160 px columns. Browse and the fold head are 44 px high there.
+- `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout. `check`: a label with a native checkbox. `danger` colours a checked destructive option. On a phone the checkboxes form a grid with 160 px columns. Browse and the fold head are 44 px high there.
 - `repo-card`: a flex column. The actions sit at the bottom, so the buttons line up across a grid row.
 - `sign-row`: label column of 120 px and a value column. On a phone the label takes a full row.
 - `sign-fields`: name and e-mail side by side, one column on a phone.
@@ -124,9 +124,9 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ## Decisions and history
 
 - Accepted 2026-10-22: one type ramp per width class, held in `--fs-*` tokens, instead of the nine ad hoc sizes.
-- Accepted 2026-10-22: inline SVG icons, no icon font and no text glyphs. Later that day the hand-drawn paths gave way to Lucide glyphs, as the house clause asks.
+- Accepted 2026-10-22: inline SVG icons, no icon font, and no text glyphs. Later that day the hand-drawn paths gave way to Lucide glyphs, as the house clause asks.
 - Accepted 2026-10-22: the even spacing scale with 1 px borders stays. The 8 px house scale is not adopted, because the dense rows need 6 and 10 px steps.
-- Accepted 2026-10-22: two breakpoints, 980 and 720 px. 1180 px is the content width, not a breakpoint. Four option columns were dropped, because the divergence control overflowed between 981 and 1179 px.
+- Accepted 2026-10-22: two breakpoints at 980 and 720 px. 1180 px is the content width, not a breakpoint. Four option columns were dropped, because the divergence control overflowed between 981 and 1179 px.
 - Accepted 2026-10-22: in a narrow cell a segmented control wraps whole buttons onto a second row, never words.
 - Accepted 2026-10-22: a shallow history. The dashboard is the root entry and a sub-view is at most one entry deep. One Back leaves a sub-view, the next one leaves the page.
 - Accepted 2026-10-22: no command switch on the repo page. A local rewrite without a push is a terminal task, so `strip` lives in the CLI alone.

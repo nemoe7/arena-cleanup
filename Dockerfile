@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 #
-# arena-cleanup - a web UI for cleaning Arena branches, amd64 and arm64.
+# arena-cleanup - a web UI that cleans Arena branches. It runs on amd64 and on arm64.
 #
 #   docker buildx build --platform linux/amd64,linux/arm64 -t arena-cleanup .
 #

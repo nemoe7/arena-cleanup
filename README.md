@@ -84,7 +84,7 @@ flags, and `arena-cleanup doctor` checks the setup.
 2. The gear icon opens **Settings**, one page for every per-machine setting:
    - **Identity**: the `git config` name and e-mail every claimed commit gets.
    - **GitHub**: `gh` sign-in (`GH_TOKEN`, `gh auth login`, or a pasted
-     token), its scopes, and **Set up git credentials** for HTTPS clones. The
+     token), its scopes, and **Configure git credentials** for HTTPS clones. The
      token needs `repo`. SSH URLs need a mounted key instead.
    - **Signing**: the active GPG key, whether GitHub has it, and **Create
      key** when there is none. Add the public key at GitHub → Settings → GPG

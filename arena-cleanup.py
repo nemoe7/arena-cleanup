@@ -110,7 +110,7 @@ PENDING_CONCLUSIONS = PENDING_STATES
 
 
 def _enable_windows_ansi() -> None:
-  """Turn on VT sequences for classic conhost (Win10+). No-op elsewhere."""
+  """Enable VT sequences for classic conhost (Win10+). No-op elsewhere."""
   if os.name != "nt":
     return
   try:
