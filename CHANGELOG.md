@@ -7,6 +7,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.2.4] - 2026-10-23
 
+### Added
+
+- The commit rows show the author's GitHub picture. The server keeps one picture
+  per address for 30 days after its last use and prunes the rest.
+
 ### Changed
 
 - The phase rows of the run card show counts instead of hint texts: the checks

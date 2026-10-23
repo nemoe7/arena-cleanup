@@ -12,6 +12,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
@@ -163,8 +164,50 @@ class UI:
     return b"".join(chunks).decode(errors="replace")
 
 
+AVATAR_PX = 40  # the server asks GitHub for this size
+PNG = bytes.fromhex(
+  "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489"
+  "0000000d49444154789c636000020000050001e2b1ac770000000049454e44ae426082"
+)
+
+
+class Pictures:
+  """A stand-in for GitHub's avatar host: one PNG for every path, hits counted."""
+
+  def __init__(self) -> None:
+    self.hits: list[str] = []
+    hits = self.hits
+
+    class Picture(BaseHTTPRequestHandler):
+      def do_GET(self) -> None:
+        hits.append(self.path)
+        self.send_response(200)
+        self.send_header("Content-Type", "image/png")
+        self.send_header("Content-Length", str(len(PNG)))
+        self.end_headers()
+        self.wfile.write(PNG)
+
+      def log_message(self, fmt: str, *args: object) -> None:
+        pass
+
+    self.server = ThreadingHTTPServer(("127.0.0.1", 0), Picture)
+    self.url = f"http://127.0.0.1:{self.server.server_port}"
+    threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+  def stop(self) -> None:
+    self.server.shutdown()
+
+
 @pytest.fixture(scope="module")
-def ui(world: World) -> UI:
+def pictures() -> Pictures:
+  host = Pictures()
+  yield host
+  host.stop()
+
+
+@pytest.fixture(scope="module")
+def ui(world: World, pictures: Pictures) -> UI:
+  world.env["ARENA_AVATAR_HOST"] = pictures.url
   world.git("checkout", "-q", "main")
   world.only_arena()
   world.git("reset", "-q", "--hard", "origin/main")
@@ -738,7 +781,7 @@ def test_the_container_log_names_jobs_and_errors_in_the_tz_zone(
   assert any("GET /api/repos/deadbeef1234 -> 404" in line for line in stamped)
 
 
-COMMIT_FIELDS = {"sha", "short", "subject", "author", "date", "signed"}
+COMMIT_FIELDS = {"sha", "short", "subject", "author", "date", "signed", "avatar"}
 SHORT_SHA = 7
 
 
@@ -773,6 +816,101 @@ def test_the_commit_list_and_the_page_shell(ui: UI, ids: dict[str, str]) -> None
 
 
 TREE_FILES = {"docs/guide.md": "# guide\n", "notes.txt": "notes\n"}
+
+
+def test_the_commit_pictures_come_once_per_address(
+  ui: UI, world: World, ids: dict[str, str], pictures: Pictures
+) -> None:
+  repo = ids["repo"]
+  commits = ui.get(f"/api/repos/{repo}/commits")["commits"]
+  authors = world.git("log", f"-{len(commits)}", "--format=%ae%x1f%an", "HEAD")
+  by_name = dict(line.split("\x1f")[::-1] for line in authors.splitlines())
+  noreply = {m for m in by_name.values() if m.endswith("@users.noreply.github.com")}
+  assert noreply and len(by_name) > len(noreply), "noreply and plain addresses on HEAD"
+  for commit in commits:
+    # the clone's origin is a local path, so only a noreply address has a picture
+    assert bool(commit["avatar"]) == (by_name[commit["author"]] in noreply)
+  keys = {c["avatar"] for c in commits if c["avatar"]}
+  assert len(keys) == len(noreply)
+  ui.get(f"/api/repos/{repo}/commits")
+  # every commit list so far, this one and the earlier ones, cost one download
+  assert pictures.hits == [f"/u/60245796?s={AVATAR_PX}"] * len(noreply)
+  code, headers, raw = ui.request("GET", f"/api/avatars/{keys.pop()}")
+  assert code == 200
+  assert headers["content-type"] == "image/png"
+  assert raw == PNG
+  assert ui.status("GET", "/api/avatars/0123456789abcdef") == 404
+
+
+def test_any_other_address_costs_one_gh_call(
+  tmp_path: Path, pictures: Pictures, monkeypatch: pytest.MonkeyPatch
+) -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  calls: list[list[str]] = []
+
+  def fake_gh(argv: list[str], **_: Any) -> tuple[int, str, str]:
+    calls.append(argv)
+    return 0, pictures.url + "/u/7?v=4\n", ""
+
+  monkeypatch.setattr(server, "run_cmd", fake_gh)
+  monkeypatch.setattr(server.shutil, "which", lambda name: "/usr/bin/gh")
+  store = server.Avatars(tmp_path / "avatars")
+  downloads = len(pictures.hits)
+  sha = "b" * 40
+  key = store.resolve({"other@example.com": sha}, lambda: "demo/shop-web")
+  assert key["other@example.com"]
+  assert calls == [
+    ["gh", "api", f"repos/demo/shop-web/commits/{sha}", "--jq", ".author.avatar_url"]
+  ]
+  assert pictures.hits[-1] == f"/u/7?v=4&s={server.AVATAR_PX}"
+  store.resolve({"other@example.com": "c" * 40}, lambda: "demo/shop-web")
+  assert len(calls) == 1 and len(pictures.hits) == downloads + 1, (
+    "one lookup per address"
+  )
+
+
+def test_a_picture_lives_thirty_days_after_its_last_use(
+  tmp_path: Path, pictures: Pictures, monkeypatch: pytest.MonkeyPatch
+) -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  monkeypatch.setattr(server, "AVATAR_HOST", pictures.url)
+  root = tmp_path / "avatars"
+  index = root / "index.json"
+  store = server.Avatars(root)
+  key = store.resolve({ME_EMAIL: "a" * 40}, lambda: "")[ME_EMAIL]
+  assert key and (root / key).exists()
+  downloads = len(pictures.hits)
+  first = json.loads(index.read_text())[key]["expires"]
+  assert first > time.time() + server.AVATAR_TTL - 60
+
+  # a use inside the window moves the expiry forward and downloads nothing
+  entries = json.loads(index.read_text())
+  entries[key]["expires"] = time.time() + 86400
+  index.write_text(json.dumps(entries))
+  store = server.Avatars(root)
+  assert store.resolve({ME_EMAIL: "a" * 40}, lambda: "")[ME_EMAIL] == key
+  assert json.loads(index.read_text())[key]["expires"] > first - 60
+  assert len(pictures.hits) == downloads
+
+  # past the window the picture goes, and the next use fetches it again
+  entries = json.loads(index.read_text())
+  entries[key]["expires"] = time.time() - 1
+  index.write_text(json.dumps(entries))
+  store = server.Avatars(root)
+  other = store.resolve({"other@example.com": "b" * 40}, lambda: "")
+  assert other["other@example.com"] is None
+  assert not (root / key).exists()
+  assert store.resolve({ME_EMAIL: "a" * 40}, lambda: "")[ME_EMAIL] == key
+  assert len(pictures.hits) == downloads + 1
+
+  # an address without a picture is asked once a day, not once a request
+  miss = json.loads(index.read_text())[server.Avatars.key("other@example.com")]
+  assert miss["type"] == ""
+  assert time.time() < miss["expires"] <= time.time() + server.AVATAR_MISS_TTL
 
 
 def test_the_tree_route_lists_one_level_of_head(

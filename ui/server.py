@@ -15,6 +15,7 @@ Environment: ARENA_DATA, ARENA_PORT, ARENA_HOST.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import logging
@@ -27,6 +28,7 @@ import threading
 import time
 import tomllib
 import urllib.parse
+import urllib.request
 import uuid
 from collections import deque
 from collections.abc import Callable
@@ -72,6 +74,19 @@ FETCH_DEBOUNCE = 10.0  # seconds in which the server skips a later unforced fetc
 FETCH_TIMEOUT = 120
 STARTED = time.time()  # when this process came up, for /healthz
 GIT_TIMEOUT = 20
+AVATAR_TTL = 30 * 86400  # seconds a picture lives after its last use.
+AVATAR_MISS_TTL = 86400  # seconds an address without a picture stays known.
+AVATAR_PX = 40  # the picture size GitHub renders, twice the 20 px box.
+AVATAR_LOOKUPS = 8  # new addresses one commit list resolves, the rest wait.
+AVATAR_HOST = os.environ.get(
+  "ARENA_AVATAR_HOST", "https://avatars.githubusercontent.com"
+)
+NOREPLY_RE = re.compile(
+  r"^(?:(\d+)\+)?([^@+]+)@users\.noreply\.github\.com$", re.IGNORECASE
+)
+GITHUB_REMOTE_RE = re.compile(
+  r"github\.com[:/]([^/\s]+)/([^/\s]+?)(?:\.git)?/?$", re.IGNORECASE
+)
 URL_RE = re.compile(r"^(git@|ssh://|https?://|git://|file://)")
 GITHUB_WEB_RE = re.compile(
   r"^(?:https?://)?(?:www\.)?github\.com/([^/\s]+)/([^/\s?#]+)", re.IGNORECASE
@@ -145,6 +160,7 @@ class Registry:
     self.path = data_dir / "repos.json"
     self.clones = data_dir / "repos"
     self.jobs = data_dir / "jobs"
+    self.avatars = Avatars(data_dir / "avatars")
     self.clones.mkdir(parents=True, exist_ok=True)
     self._lock = threading.Lock()
 
@@ -190,8 +206,6 @@ class Registry:
 
 
 def repo_id(path: str) -> str:
-  import hashlib
-
   return hashlib.sha1(os.path.realpath(path).encode()).hexdigest()[:12]
 
 
@@ -657,8 +671,136 @@ def clean_values(raw: Any, what: str) -> list[str]:
   return values
 
 
-def commits_report(repo: dict[str, Any], limit: int = 30) -> dict[str, Any]:
-  """The most recent commits on HEAD, with their signature state.
+def github_slug(repo: dict[str, Any]) -> str:
+  """`owner/name` of the GitHub repository behind a clone, or empty."""
+  for candidate in (
+    str(repo.get("source") or ""),
+    git("remote", "get-url", "origin", cwd=repo["path"]).strip(),
+  ):
+    match = GITHUB_REMOTE_RE.search(candidate)
+    if match:
+      return f"{match.group(1)}/{match.group(2)}"
+  return ""
+
+
+class Avatars:
+  """GitHub pictures by author address, on disk under the data directory.
+
+  One lookup per distinct address, never per commit. A noreply address names
+  the user, so its picture needs no API call. Any other address costs one
+  `gh api` call for a commit it wrote.
+
+  A picture lives 30 days after its last use, and a use renews it. Expired
+  ones go on the next sweep. An address without a picture stays known for a
+  day, so the lookup does not repeat.
+  """
+
+  def __init__(self, root: Path) -> None:
+    self.root = root
+    self.index = root / "index.json"
+    self._lock = threading.Lock()
+    self._entries: dict[str, dict[str, Any]] = {}
+    try:
+      with open(self.index, encoding="utf-8") as handle:
+        data = json.load(handle)
+      if isinstance(data, dict):
+        self._entries = data
+    except (OSError, json.JSONDecodeError):
+      pass
+
+  @staticmethod
+  def key(email: str) -> str:
+    return hashlib.sha1(email.strip().lower().encode()).hexdigest()[:16]
+
+  def resolve(
+    self, emails: dict[str, str], slug: Callable[[], str]
+  ) -> dict[str, str | None]:
+    """Address -> picture key, or None. `emails` maps each address to a commit."""
+    now = time.time()
+    answer: dict[str, str | None] = {}
+    budget = AVATAR_LOOKUPS
+    with self._lock:
+      self._sweep(now)
+      for email, sha in emails.items():
+        key = self.key(email)
+        entry = self._entries.get(key)
+        if entry is None:
+          if budget <= 0:
+            answer[email] = None
+            continue
+          budget -= 1
+          mime = self._fetch(key, email, sha, slug)
+          entry = self._entries[key] = {"type": mime}
+        if entry["type"]:
+          entry["expires"] = now + AVATAR_TTL  # a use renews the 30 days
+        else:
+          entry.setdefault("expires", now + AVATAR_MISS_TTL)
+        answer[email] = key if entry["type"] else None
+      self._write()
+    return answer
+
+  def read(self, key: str) -> tuple[bytes, str] | None:
+    entry = self._entries.get(key)
+    if not entry or not entry.get("type"):
+      return None
+    try:
+      return (self.root / key).read_bytes(), str(entry["type"])
+    except OSError:
+      return None
+
+  def _url(self, email: str, sha: str, slug: Callable[[], str]) -> str:
+    match = NOREPLY_RE.match(email)
+    if match:
+      uid, login = match.groups()
+      return f"{AVATAR_HOST}/{f'u/{uid}' if uid else login}?s={AVATAR_PX}"
+    owner = slug()
+    if not owner or not shutil.which("gh"):
+      return ""
+    rc, out, _ = run_cmd(
+      ["gh", "api", f"repos/{owner}/commits/{sha}", "--jq", ".author.avatar_url"],
+      timeout=20,
+    )
+    out = out.strip()
+    if rc != 0 or not out.startswith("http"):
+      return ""
+    return f"{out}{'&' if '?' in out else '?'}s={AVATAR_PX}"
+
+  def _fetch(self, key: str, email: str, sha: str, slug: Callable[[], str]) -> str:
+    """Store the picture for an address. Returns its content type, or empty."""
+    url = self._url(email, sha, slug)
+    if not url:
+      return ""
+    request = urllib.request.Request(url, headers={"User-Agent": "arena-ui/" + VERSION})
+    try:
+      with urllib.request.urlopen(request, timeout=15) as response:
+        data = response.read(512 * 1024)
+        mime = response.headers.get_content_type()
+    except (OSError, ValueError) as exc:
+      LOG.warning("avatar for %s: %s", email, exc)
+      return ""
+    if not data or not mime.startswith("image/"):
+      return ""
+    self.root.mkdir(parents=True, exist_ok=True)
+    (self.root / key).write_bytes(data)
+    return mime
+
+  def _sweep(self, now: float) -> None:
+    for key, entry in list(self._entries.items()):
+      if float(entry.get("expires") or 0) < now:
+        del self._entries[key]
+        (self.root / key).unlink(missing_ok=True)
+
+  def _write(self) -> None:
+    self.root.mkdir(parents=True, exist_ok=True)
+    tmp = self.index.with_suffix(".tmp")
+    tmp.write_text(json.dumps(self._entries), encoding="utf-8")
+    tmp.replace(self.index)
+
+
+def commits_report(
+  repo: dict[str, Any], limit: int = 30, avatars: Avatars | None = None
+) -> dict[str, Any]:
+  """The most recent commits on HEAD, with their signature state and picture.
 
   The run card shows which commits a cleanup produced. This is the git answer,
   read after the run rather than parsed out of the log.
@@ -666,24 +808,30 @@ def commits_report(repo: dict[str, Any], limit: int = 30) -> dict[str, Any]:
   cwd = repo["path"]
   branch = git("rev-parse", "--abbrev-ref", "HEAD", cwd=cwd) or "(detached)"
   total = git("rev-list", "--count", "HEAD", cwd=cwd).strip()
-  fmt = "%H%x1f%h%x1f%s%x1f%an%x1f%aI%x1f%G?"
+  fmt = "%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%aI%x1f%G?"
   out = git("log", f"-{limit}", f"--format={fmt}", "HEAD", cwd=cwd)
   commits = []
+  emails: dict[str, str] = {}
   for line in out.splitlines():
     fields = line.split("\x1f")
-    if len(fields) != 6:
+    if len(fields) != 7:
       continue
-    sha, short, subject, author, date, sig = fields
+    sha, short, subject, author, email, date, sig = fields
+    emails.setdefault(email, sha)
     commits.append(
       {
         "sha": sha,
         "short": short,
         "subject": subject,
         "author": author,
+        "email": email,
         "date": date,
         "signed": sig in ("G", "U"),
       }
     )
+  pictures = avatars.resolve(emails, lambda: github_slug(repo)) if avatars else {}
+  for commit in commits:
+    commit["avatar"] = pictures.get(commit.pop("email"))
   return {
     "branch": branch,
     "total": int(total) if total.isdigit() else len(commits),
@@ -1306,6 +1454,18 @@ class Handler(BaseHTTPRequestHandler):
       elif len(parts) == 3 and parts[:2] == ["api", "repos"]:
         repo = self._repo(parts[2])
         self._json({**repo, "status": STATUS.get(repo)})
+      elif len(parts) == 3 and parts[:2] == ["api", "avatars"]:
+        picture = self.reg.avatars.read(parts[2])
+        if picture is None:
+          self._error("not found", 404)
+          return
+        data, mime = picture
+        self.send_response(200)
+        self.send_header("Content-Type", mime)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "private, max-age=86400")
+        self.end_headers()
+        self.wfile.write(data)
       elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "commits":
         repo = self._repo(parts[2])
         query = urllib.parse.parse_qs(
@@ -1315,7 +1475,7 @@ class Handler(BaseHTTPRequestHandler):
           limit = max(1, min(100, int(query.get("limit", ["30"])[0])))
         except ValueError:
           limit = 30
-        self._json(commits_report(repo, limit))
+        self._json(commits_report(repo, limit, self.reg.avatars))
       elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "tree":
         repo = self._repo(parts[2])
         query = urllib.parse.parse_qs(

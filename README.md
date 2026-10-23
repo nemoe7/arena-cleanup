@@ -68,7 +68,7 @@ python3 ui/server.py
 
 | flag     | default                                         | meaning                            |
 |----------|-------------------------------------------------|------------------------------------|
-| `--data` | `$ARENA_DATA` or `~/.local/share/arena-cleanup` | repo registry and URL clones       |
+| `--data` | `$ARENA_DATA` or `~/.local/share/arena-cleanup` | registry, clones, runs, pictures   |
 | `--host` | `0.0.0.0`                                       | interface to bind                  |
 | `--port` | `8080`                                          | port                               |
 | `-v`     | off                                             | log every HTTP request             |
@@ -123,7 +123,7 @@ stacks into one column, and the primary actions stick to the bottom.
 | `GIT_AUTHOR_NAME`          | seeded into git config at start, while it is empty         |
 | `GIT_AUTHOR_EMAIL`         | seeded into git config at start, while it is empty         |
 | `GH_TOKEN`                 | `gh` auth without an interactive login                     |
-| `ARENA_DATA`               | registry + clones (default `~/.local/share/arena-cleanup`) |
+| `ARENA_DATA`               | registry, clones, runs, pictures; see `--data` above       |
 | `ARENA_HOST`, `ARENA_PORT` | bind address (default `0.0.0.0:8080`)                      |
 | `TS_AUTHKEY`               | joins the Tailscale sidecar once; a volume keeps the node  |
 

@@ -16,6 +16,7 @@ GLYPHS = {
   "#copy .ico-svg": ICON_BUTTON,
   ".phase-ico .ico-svg": BUTTON,
   ".commit .sig .ico-svg": INLINE,
+  ".commit .avatar.none .ico-svg": INLINE,
 }
 BOX = "e => e.getBoundingClientRect().width"
 

@@ -51,7 +51,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ### Icons
 
 - Lucide 1.61.0, vendored one glyph at a time into the `ICONS` map in `index.html`. Each glyph keeps its 24 px grid and its 2 px stroke in the text color.
-- Three size tokens set the glyph box per place at every width. `--ico-s` is 14 px for inline glyphs: the commit check, the chip X, and the pill arrow. `--ico-m` is 16 px for buttons, phase rows, tree rows, and banners. `--ico-l` is 18 px for icon buttons and the card mark. A glyph in running text stays at 1 em.
+- Three size tokens set the glyph box per place at every width. `--ico-s` is 14 px for inline glyphs: the commit check, the stand-in for a missing author picture, the chip X, and the pill arrow. `--ico-m` is 16 px for buttons, phase rows, tree rows, and banners. `--ico-l` is 18 px for icon buttons and the card mark. A glyph in running text stays at 1 em.
 - Navigation and file glyphs in use: arrow-left, settings, arrow-up, arrow-down, chevron-right, folder, folder-tree, file, and plus.
 - State and action glyphs in use: check, x, triangle-alert, minus, circle-small, loader-circle, git-branch, refresh-cw, and copy.
 - Buttons with a glyph: Reload is `refresh-cw` alone, named `Reload commits` in `aria-label` and `title`. Copy log is `copy` alone, named `Copy log` the same way. Re-check and Retry lead with `refresh-cw`, Copy public key with `copy`, and Browse with `folder-tree`. Every other button keeps its word alone.
@@ -73,7 +73,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - `btn`: 34 px high, 12 px side padding, 8 px radius, and 44 px high on a phone. Variants: `primary`, `ghost`, and `icon-btn`. All of them are flat: a fill and a 1 px border, no highlight, and no shadow.
 - `pill`: dot and word, 999 px radius, `ok`, `warn`, `mono` variants.
-- `commit`: grid `auto minmax(0, 1fr)`, the subject clamped to two lines with an ellipsis, the metadata on a second row. The row is a button with `aria-expanded`, and a tap shows the whole subject.
+- `commit`: grid `auto minmax(0, 1fr)`, the subject clamped to two lines with an ellipsis, the metadata on a second row. The row is a button with `aria-expanded`, and a tap shows the whole subject. The metadata carries the author's GitHub picture, 20 px and round, or a `user` glyph in the same disc when the server has none.
 - `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`. The selected row carries a 2 px accent bar and the text colour. The name reads `Pull from <branch>`. Rows and the timeout slider are 44 px high on a phone.
 - `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout. `check`: a label with a drawn checkbox. The box is 16 px, 20 px on a phone, with a 4 px radius and the surface-2 fill. Checked, it takes the accent fill and a white Lucide check. `danger` fills a checked destructive option with the warn colour and a dark check. On a phone the checkboxes form a grid with 160 px columns. Browse, the fold head, and the 16 px path field are 44 px targets there.
 - `phase`: a row with the state glyph, the name, a count, and the time. The count comes from the engine's lines: the checks and how many still run, the commits signed of the total, and the tags moved. A dry run says what would move. Before that the row carries the name alone.
@@ -99,6 +99,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ## Behavior and data
 
 - The repo registry and settings live on the server under `ARENA_DATA`. The page keeps no state beyond the open view.
+- Pictures: the server keeps the GitHub picture of each author under `ARENA_DATA/avatars/`, one lookup per address. A noreply address names the user, any other costs one `gh api` call. A picture lives 30 days after its last use, a use renews it, and expired ones get pruned. The page loads them from the server, never from GitHub.
 - Latest run: the server keeps the newest run of each repo in memory and writes the finished one to `ARENA_DATA/jobs/`. The repo view asks for it on open. A live run streams on from its first line. A finished run paints at once with its log, phases, and status. A removed repo takes its saved run with it.
 - Defaults: PR check timeout 15 minutes, dry run off.
 - Validation: the add bar accepts a clone URL, a GitHub page address, or a path. Another shape gets an error line under the field, with `aria-invalid` and `aria-describedby` on the field until the next keystroke. The server answers errors as text the banner shows.
@@ -170,3 +171,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: the log clock takes `dim`, 5.1:1 on the card. Its own grey read at 2.55:1, under the 4.5:1 floor.
 - Accepted 2026-10-23: the run card and the options card stretch to one height. The options body has no vertical padding and no rule under its last row, so its rows sit like the phase rows.
 - Accepted 2026-10-23: the phase rows lose their hint texts. A row shows a count once the engine reports one: checks and how many still run, commits signed of the total, and tags moved.
+- Accepted 2026-10-23: the commit rows show the author's GitHub picture for every author. The server caches one picture per address for 30 days after its last use and prunes the rest.
