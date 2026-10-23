@@ -1383,6 +1383,7 @@
     { id: "sync", name: "Finish", sub: "back to the default branch" },
   ];
   const PHASE_TESTS = [
+    ["prepare", /^arena-cleanup \d|^claimed |^dry run:/],
     ["pr", /(^|\s)pr\b|pull request|check|gate|status rollup/],
     ["rewrite", /rewrit|claim|sign|filter-repo|remov|empty commit|--path|identity=/],
     ["publish", /push|tag|lease|force/],

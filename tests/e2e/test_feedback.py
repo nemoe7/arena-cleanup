@@ -1,4 +1,4 @@
-"""The page's feedback lines: the offline banner and its retry button."""
+"""The page's feedback: the offline banner, the phase list, and the add bar."""
 
 from __future__ import annotations
 
@@ -28,3 +28,21 @@ def test_the_offline_banner_puts_retry_on_its_own_line(offline: Walker) -> None:
   )
   button = offline.page.eval_on_selector("#retry", "e => e.getBoundingClientRect().top")
   assert button >= lead, "the button shares a line with the text"
+
+
+def test_a_failed_pr_check_fails_the_pr_phase_alone(desktop: Walker) -> None:
+  desktop.goto(1200)
+  desktop.click(".repo-card:has-text('billing-api')", 800)
+  desktop.click('input[data-opt="dry_run"]', 0)
+  desktop.click("#start", 0)
+  assert "exit 0" not in desktop.wait_status("exit")
+  states = desktop.page.eval_on_selector_all(
+    ".phase", "els => els.map((e) => [e.dataset.phase, e.dataset.state])"
+  )
+  assert dict(states) == {
+    "prepare": "done",
+    "pr": "fail",
+    "rewrite": "skip",
+    "publish": "skip",
+    "sync": "skip",
+  }
