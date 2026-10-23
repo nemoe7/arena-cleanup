@@ -756,7 +756,7 @@ def force_push(
     log.info(f"would {verb} {rev} ({head_short(rev)}) -> origin/{default}")
     at_risk = at_risk_on_origin(default, rev, ignore)
     if at_risk:
-      outcome = "publish anyway (-f)" if force else "stop here"
+      outcome = "push anyway (-f)" if force else "stop here"
       log.warning(
         f"a real run would {outcome}: {len(at_risk)} commit(s) on "
         f"origin/{default} are not part of this push and would be dropped"
@@ -769,20 +769,20 @@ def force_push(
   if at_risk:
     log.warning(
       f"this push replaces origin/{default}, and {len(at_risk)} commit(s) "
-      "there are not part of what is being published:"
+      "there are not part of what is being pushed:"
     )
     for line in at_risk[:10]:
       log.dim("    " + line)
     if len(at_risk) > 10:
       log.dim(f"    ... and {len(at_risk) - 10} more")
     if force:
-      log.warning("--force set, publishing anyway")
-    elif confirm(log, "Publish anyway? Those commit(s) will be dropped"):
-      log.warning("confirmed, publishing anyway")
+      log.warning("--force set, pushing anyway")
+    elif confirm(log, "Push anyway? Those commit(s) will be dropped"):
+      log.warning("confirmed, pushing anyway")
     else:
       raise Fail(
         f"cancelled before pushing: origin/{default} has {len(at_risk)} "
-        "commit(s) that this push would drop (pass -f to publish anyway)"
+        "commit(s) that this push would drop (pass -f to push anyway)"
       )
 
   if force:
@@ -1675,11 +1675,11 @@ def sync_tags(log: Log, cfg: Settings, before: dict[str, str]) -> None:
     return ", ".join(ref[len("refs/tags/") :] for ref in refs)
 
   if local_only:
-    log.dim("    local-only tag(s) not published: " + names(local_only))
+    log.dim("    local-only tag(s) not pushed: " + names(local_only))
   if unpublished:
     log.warning(
       f"{len(unpublished)} tag(s) not moved on origin - they point into history "
-      f"this run does not publish: {names(unpublished)}"
+      f"this run does not push: {names(unpublished)}"
     )
     log.dim("    clean that branch too (-b <branch> -p <path>) to move them")
   if not pushable:
@@ -1725,7 +1725,7 @@ def warn_stale_remote_branches(log: Log, cfg: Settings, published: str) -> None:
   paths = ", ".join(cfg.paths)
   log.warning(
     f"{len(stale)} other branch(es) on origin still contain {paths} "
-    "- this run publishes one branch"
+    "- this run pushes one branch"
   )
   for ref in stale:
     log.dim("    " + ref)
@@ -2145,7 +2145,7 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
     not rewriting_paths and not cleaning_default and already_published(default, publish)
   ):
     log.ok(
-      f"origin/{default} already contains {target_name} ({head_short(publish)}), nothing to publish"
+      f"origin/{default} already contains {target_name} ({head_short(publish)}), nothing to push"
     )
     return _wrap_up(
       log,
@@ -2180,14 +2180,12 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
       if len(at_risk) > 10:
         log.dim(f"    ... and {len(at_risk) - 10} more")
       log.warning(
-        f"publishing {target_name} would replace origin/{default} and drop those commit(s)"
+        f"pushing {target_name} would replace origin/{default} and drop those commit(s)"
       )
       if not args.force and not confirm(
-        log, f"Publish {target_name} over origin/{default} anyway?"
+        log, f"Push {target_name} over origin/{default} anyway?"
       ):
-        log.info(
-          f"declining to publish; {target_name} is already absorbed into {default}"
-        )
+        log.info(f"declining to push; {target_name} is already absorbed into {default}")
         log.info(f"to clean {default} itself, run: arena-cleanup -b {default}")
         return _wrap_up(
           log,
@@ -2198,9 +2196,9 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
           switched,
           explicit,
           None,
-          note="done, nothing to publish",
+          note="done, nothing to push",
         )
-      log.warning("confirmed, publishing anyway")
+      log.warning("confirmed, pushing anyway")
     else:
       log.warning(
         f"{target_name} and origin/{default} have identical content but different history"
@@ -2218,7 +2216,7 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
         switched,
         explicit,
         None,
-        note="done, nothing to publish",
+        note="done, nothing to push",
       )
 
   pr = pr_gate(
@@ -2390,17 +2388,17 @@ commands:
   doctor   check tools, repo, identity, and signing setup
 
 examples:
-  arena-cleanup                     clean up, rewrite, and publish (arena/* flow)
+  arena-cleanup                     clean up, rewrite, and push (arena/* flow)
   arena-cleanup -n                  say what a run would do, change nothing
   arena-cleanup -b main             clean main itself, in place
-  arena-cleanup -d                  publish, then drop the arena branch on origin too
+  arena-cleanup -d                  push, then drop the arena branch on origin too
   arena-cleanup -K                  keep the local arena branch after the run
   arena-cleanup -k                  skip the PR gate entirely
   arena-cleanup -x remote           never ask: overwrite local with upstream
   arena-cleanup strip               rewrite local history without touching origin
   arena-cleanup strip -c            report whether a rewrite is needed
   arena-cleanup doctor              is git/gh/identity/signing all in order?
-  arena-cleanup -p uploads          ...and drop uploads/ from every commit, then publish
+  arena-cleanup -p uploads          ...and drop uploads/ from every commit, then push
   arena-cleanup strip -p notes/ -p TODO.md
                                     rewrite locally, removing two paths
   arena-cleanup -p uploads -T       ...and leave tag positions on origin alone

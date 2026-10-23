@@ -4,7 +4,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 ## Purpose and status
 
-- Goal: clean an arena branch (rewrite, sign, publish) from a browser, on a phone or a desktop.
+- Goal: clean an arena branch (rewrite, sign, push) from a browser, on a phone or a desktop.
 - Scope: the dashboard, the repo view, and the settings view.
 - Constraints: one HTML file, no build step, and a dark theme only. Fonts and icons ship with the page, so nothing loads from the network.
 - Acceptance checks: the pytest suite in `tests/`, screenshots at 1280 and 360 px, and the nemo-ui-ux measure reports.
@@ -15,7 +15,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - User group: one developer who owns the repos and the GitHub account. No research beyond that use.
 - Primary tasks: add a repo, run a cleanup, read the log, and keep the settings right. Settings: GitHub access, signing, identity, and the claim rules.
 - Repo: a clone the server registered. Identifier: the server-minted `id`. The card shows `name` only.
-- Arena branch: a branch under the `arena/` prefix with its pull request and check count.
+- Arena branch: a branch under the `arena/` prefix with its PR and check count.
 - Run: one engine execution with five phases: Prepare, PR checks, Rewrite and sign, Push, Finish.
 
 ## Journeys and information architecture
@@ -178,3 +178,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: the commit rows show the author's GitHub picture for every author. The server caches one picture per address for 30 days after its last use and prunes the rest.
 - Accepted 2026-10-23: the app icon and the brand mark are the Lucide `broom-sparkles` glyph in the accent. The regular pictures are the glyph alone, the maskable picture and the Apple touch icon get the dark ground.
 - Accepted 2026-10-23: the scroll-edge fade applies to the commit list and the log alone.
+- Accepted 2026-10-23: human-facing text says push, not publish, and PR, not pull request. Identifiers, API fields, and the history above keep their words.

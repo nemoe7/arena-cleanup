@@ -1,16 +1,16 @@
 # arena-cleanup
 
 A small web app that cleans an Arena agent branch. It rewrites the history to
-your identity, signs the commits, and publishes the result to your default
+your identity, signs the commits, and pushes the result to your default
 branch. Paste a repo URL once. The dashboard then shows each repo's arena
-branch, its distance from origin, and its pull request checks.
+branch, its distance from origin, and its PR checks.
 
 ![The dashboard: five remembered repos, each with its arena branches and PR check counts](docs/ui-overview.png)
 
 One click runs the pipeline:
 
 1. Fetch and prune, select the arena branch, and reconcile it with upstream.
-2. Wait for the pull request checks. Failing ones stop the run.
+2. Wait for the PR checks. Failing ones stop the run.
 3. Remove the named paths from every commit, when asked.
 4. Rewrite the commits to your identity, sign them, and move the tags.
 5. `git push --force-with-lease` to the default branch, then delete the local
@@ -118,7 +118,7 @@ run in flight. Exit codes: `0` success, `1` error or cancelled, `2` usage, `7`
 a check found commits to rewrite, `130` interrupted.
 
 Path removal is `git-filter-repo --invert-paths` over every ref. Commits left
-empty go. Signatures do not survive it, so the publish pass re-signs the branch
+empty go. Signatures do not survive it, so the push pass re-signs the branch
 it pushes.
 
 Tags that pointed into rewritten commits move with them, force-pushed with a
@@ -188,7 +188,7 @@ uv run scripts/walk.py --out /tmp/walk            # press every control, one scr
 ```
 
 Four workflows run on GitHub. `ci.yml` runs the lint, format, Markdown, and
-pytest steps plus the spacing audit. `pr-check.yml` holds pull requests to the
+pytest steps plus the spacing audit. `pr-check.yml` holds PRs to the
 contract in `scripts/check_pr.py`. `container-scan.yml` prints a Trivy report,
 and `docker.yml` publishes the image.
 

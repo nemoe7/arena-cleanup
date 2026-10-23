@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#08090b">
-<meta name="description" content="Clean Arena agent branches, sign the rewrite, publish to your default branch.">
+<meta name="description" content="Clean Arena agent branches, sign the rewrite, push to your default branch.">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -809,12 +809,12 @@
             </div>
             <div class="opt row" id="opt-timeout">
               <label for="timeout">PR check timeout</label>
-              <input class="slider" id="timeout" type="range" min="0" max="9" step="1" value="3" title="How long the run waits for the pull request checks; 0 does not wait.">
+              <input class="slider" id="timeout" type="range" min="0" max="9" step="1" value="3" title="How long the run waits for the PR checks; 0 does not wait.">
               <output class="readout" id="timeout-out" for="timeout">15 min</output>
             </div>
             <div class="opt checks" id="checks">
               <label class="check" title="Prints every step it would take and writes nothing."><input type="checkbox" data-opt="dry_run">Dry Run</label>
-              <label class="check" title="Publishes even when the pull request still has running or failing checks."><input type="checkbox" data-opt="skip_pr_check">Ignore PR Checks</label>
+              <label class="check" title="Pushes even when the PR still has running or failing checks."><input type="checkbox" data-opt="skip_pr_check">Ignore PR Checks</label>
               <label class="check" title="Moves the tags to the rewritten commits. Unchecked, they stay on the old ones."><input type="checkbox" data-opt="update_tags" checked>Update Tags</label>
               <label class="check danger" title="Pushes with git push --force and no lease, so it lands even when the default branch moved during the run. Also runs with uncommitted changes, which the final reset discards, and pushes over commits the run would drop."><input type="checkbox" data-opt="force">No lease</label>
             </div>
@@ -1037,7 +1037,7 @@
     if (!pr && checked === false) {
       return el("span", {
         class: "pill warn",
-        title: reason || "gh is not signed in, so pull requests and their checks cannot be read",
+        title: reason || "gh is not signed in, so PRs and their checks cannot be read",
       }, "checks unavailable");
     }
     if (!pr) return el("span", { class: "pill mono" }, "no PR");
@@ -1105,8 +1105,8 @@
               aheadPill((s.ahead || {})[name], s.default),
               pr && pr.url
                 ? el("a", { class: "prlink", href: pr.url, target: "_blank", rel: "noopener",
-                    title: `Open pull request ${pr.number ? "#" + pr.number : ""} on GitHub`,
-                    "aria-label": `Open pull request ${pr.number ? "#" + pr.number : ""} on GitHub`,
+                    title: `Open PR ${pr.number ? "#" + pr.number : ""} on GitHub`,
+                    "aria-label": `Open PR ${pr.number ? "#" + pr.number : ""} on GitHub`,
                     onclick: (e) => e.stopPropagation() },
                     checksPill(pr, s.pr_checked, s.pr_reason))
                 : checksPill(pr, s.pr_checked, s.pr_reason))));
@@ -1482,10 +1482,11 @@
   ];
   const PHASE_TESTS = [
     ["prepare", /^arena-cleanup \d|^claimed |^dry run:/],
+    ["sync", /^done(,|$)/],
     ["pr", /(^|\s)pr\b|pull request|check|gate|status rollup/],
     ["rewrite", /rewrit|claim|sign|filter-repo|remov|empty commit|--path|identity=/],
     ["publish", /push|tag|lease|force/],
-    ["sync", /return|delet|done|nothing to publish|finished|cleanup/],
+    ["sync", /return|delet|done|finished|cleanup/],
     ["prepare", /fetch|branch|switch|checkout|scan|stale|pull|prune|starting/],
   ];
 
@@ -1821,7 +1822,7 @@
     if (!gh.installed) {
       box.replaceChildren(banner("err", { style: "margin-bottom:14px" },
         el("div", {}, el("b", {}, "gh is not installed in this container."),
-          " Pull requests cannot be read and private repos cannot be cloned.")));
+          " PRs cannot be read and private repos cannot be cloned.")));
       return;
     }
     if (!gh.authenticated) {

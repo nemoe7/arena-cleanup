@@ -551,9 +551,9 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
     "pr_reason": ""
     if authenticated
     else (
-      "gh is not signed in, so pull requests and checks cannot be read"
+      "gh is not signed in, so PRs and checks cannot be read"
       if gh["installed"]
-      else "gh is not installed, so pull requests and checks cannot be read"
+      else "gh is not installed, so PRs and checks cannot be read"
     ),
     "head": git("log", "-1", "--format=%h%x09%s", cwd=cwd),
     "remote": git("config", "--get", "remote.origin.url", cwd=cwd),

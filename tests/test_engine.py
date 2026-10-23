@@ -1018,7 +1018,7 @@ def test_push_guard_for_a_maintenance_commit_on_main(world: World) -> None:
   main_before = world.rev("origin/main")
 
   res = world.cleanup("-K", "--dry-run", "-f")
-  assert res.says("a real run would publish anyway (-f)"), res.text
+  assert res.says("a real run would push anyway (-f)"), res.text
   res = world.cleanup("-K", "--dry-run")
   assert res.says("a real run would stop here"), res.text
   assert world.rev("origin/main") == main_before
@@ -1033,7 +1033,7 @@ def test_push_guard_for_a_maintenance_commit_on_main(world: World) -> None:
   # answered at the terminal: publish anyway
   res = world.interactive("arena-cleanup -K", "y\n")
   assert res.rc == 0
-  assert res.says("confirmed, publishing anyway"), res.text
+  assert res.says("confirmed, pushing anyway"), res.text
   assert world.rev("origin/main") == world.rev("arena/new-work")
 
   world.git("checkout", "-q", "main")
@@ -1263,7 +1263,7 @@ def test_tags_only_move_when_their_history_was_published(world: World) -> None:
     == 0
   )
   assert res.says("1 tag(s) not moved on origin"), res.text
-  assert res.says("does not publish: tDev")
+  assert res.says("does not push: tDev")
   assert res.says("1 other branch(es) on origin still contain uploads"), res.text
   assert res.says("origin/develop")
   assert res.says("-b <branch> -p <path>")

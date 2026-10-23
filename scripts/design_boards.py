@@ -475,10 +475,10 @@ def states_board(_: dict[str, bytes]) -> str:
   )
   pr_pills = (
     '<table class="sheet">'
-    f"<tr><td>{pill('ok', 'PR #142, 4/4', dot=False)}</td><td>open pull request, all checks passed</td></tr>"
+    f"<tr><td>{pill('ok', 'PR #142, 4/4', dot=False)}</td><td>open PR, all checks passed</td></tr>"
     f"<tr><td>{pill('err', 'PR #88, 1/3', dot=False)}</td><td>a check failed, the run stops at the gate</td></tr>"
     f"<tr><td>{pill('run', 'PR #12, 2/3', dot=False)}</td><td>checks still running, the run waits</td></tr>"
-    f"<tr><td>{pill('mono', 'no PR', dot=False)}</td><td>the branch exists, no open pull request</td></tr>"
+    f"<tr><td>{pill('mono', 'no PR', dot=False)}</td><td>the branch exists, no open PR</td></tr>"
     f"<tr><td>{pill('warn', 'checks unavailable', dot=False)}</td><td>signed out: the app cannot know</td></tr>"
     "</table>"
   )
