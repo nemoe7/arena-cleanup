@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 
 import pytest
 
 from scripts.walk import Walker
 
-REPOS_API = "**/api/repos"
+# the two calls that fill the dashboard: the plain read and the fetch-first read
+REPOS_API = re.compile(r"/api/(repos|fetch)$")
 
 
 @pytest.fixture

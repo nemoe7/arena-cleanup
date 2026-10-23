@@ -22,6 +22,8 @@ SERVER = ROOT / "ui" / "server.py"
 STARTUP_SECONDS = 15
 JOB_SECONDS = 20
 MIN_FONT_BYTES = 20_000
+MINUTE = 60.0
+TICK_SECONDS = 1.0
 MIN_LOG_LINES = 5
 MIN_ICONS = 3
 PNG_MAGIC = b"\x89PNG"
@@ -275,6 +277,49 @@ def test_add_by_clone_url(ui: UI, world: World, ids: dict[str, str]) -> None:
   assert ui.status("POST", "/api/repos", {"source": "/nope/nope"}) == 400
   assert ui.status("POST", "/api/repos", {"source": "  "}) == 400
   assert ui.status("GET", "/api/repos/deadbeef1234") == 404
+
+
+def test_a_fetch_on_demand_sees_a_new_remote_branch(
+  ui: UI, world: World, ids: dict[str, str]
+) -> None:
+  bare = world.root / "work.git"
+  world.git(f"--git-dir={bare}", "update-ref", "refs/heads/arena/ui-late", "main")
+  before = ui.get(f"/api/repos/{ids['clone']}")["status"]["arena"]
+  assert "arena/ui-late" not in before, "nothing fetched yet"
+  after = ui.post("/api/fetch", {})
+  clone = next(r for r in after if r["id"] == ids["clone"])
+  assert "arena/ui-late" in clone["status"]["arena"]
+  assert "arena/ui-late" in ui.get(f"/api/repos/{ids['clone']}")["status"]["arena"]
+
+
+def test_the_fetch_clock_is_aligned_and_ticks(
+  ui: UI, world: World, ids: dict[str, str]
+) -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui.server import FETCH_PERIOD, Fetcher, Registry, seconds_to_next_tick
+
+  assert FETCH_PERIOD == MINUTE
+  assert seconds_to_next_tick(120.0) == MINUTE, "on the mark, wait a whole period"
+  assert seconds_to_next_tick(125.5) == MINUTE - 5.5
+  assert 0 < seconds_to_next_tick(time.time()) <= MINUTE
+
+  bare = world.root / "work.git"
+  world.git(f"--git-dir={bare}", "update-ref", "refs/heads/arena/ui-tick", "main")
+  clone = Path(ids["clone_path"])
+  fetcher = Fetcher(Registry(ui.data), period=TICK_SECONDS)
+  fetcher.start()
+  try:
+    deadline = time.monotonic() + STARTUP_SECONDS
+    while time.monotonic() < deadline:
+      refs = world.git("branch", "-r", cwd=clone)
+      if "origin/arena/ui-tick" in refs:
+        break
+      time.sleep(0.1)
+    assert "origin/arena/ui-tick" in refs, "the tick fetched the clone"
+  finally:
+    fetcher.stop.set()
+    fetcher.join(timeout=STARTUP_SECONDS)
+  assert not fetcher.is_alive()
 
 
 def test_a_second_add_of_the_same_url_reuses_the_clone(

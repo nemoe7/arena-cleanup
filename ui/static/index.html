@@ -231,7 +231,7 @@
   .wrap { width: min(1180px, 100%); margin: 0 auto; padding: 24px var(--pad) 32px; }
 
   /* ----------------------------------------------------------- dashboard */
-  .hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+  .hero { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
   .hero h1, .wrap h1.page-title { font-size: var(--fs-5); font-weight: 640; margin: 0; }
 
   /* one border, not two: the bar is the field shell, so the input inside it
@@ -725,6 +725,7 @@
     <div class="wrap">
       <div class="hero">
         <h1 tabindex="-1">Repos</h1>
+        <button class="icon-btn" id="repos-refresh" aria-label="Reload repos" title="Reload repos"><span class="ico-svg" data-icon="refresh-cw" aria-hidden="true"></span></button>
       </div>
 
       <div id="offline-banner" hidden></div>
@@ -1107,10 +1108,12 @@
       head, meta, arena, actions);
   }
 
-  async function loadRepos() {
+  // fresh: ask the server to fetch every origin first. The dashboard Reload
+  // button and a page load do that, the 20 s clock reads the cached status.
+  async function loadRepos(fresh = false) {
     if (!state.auth) await refreshAuth();
     try {
-      state.repos = await api("/api/repos");
+      state.repos = fresh ? await post("/api/fetch") : await api("/api/repos");
       state.unreachable = false;
     } catch (err) {
       // "no repos" and "cannot ask the server" look identical on screen
@@ -2173,6 +2176,17 @@
     toast("reloaded");
   };
 
+  $("repos-refresh").onclick = async () => {
+    const btn = $("repos-refresh");
+    btn.disabled = true;
+    try {
+      await loadRepos(true);
+    } finally {
+      btn.disabled = false;
+    }
+    toast("reloaded");
+  };
+
   $("options-fold").onclick = () => {
     const open = $("options").hidden;
     $("options").hidden = !open;
@@ -2242,6 +2256,8 @@
     await refreshAuth();
     await loadRepos();
     await applyHash();
+    // one fetch per page load, after the cached cards are on screen
+    loadRepos(true);
     // one primary input on a desktop screen: put the cursor in it. Phones get
     // no autofocus, where the keyboard opening shifts the whole layout.
     if (window.matchMedia("(pointer: fine)").matches && !location.hash.slice(2)

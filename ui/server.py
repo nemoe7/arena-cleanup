@@ -65,6 +65,8 @@ LOG = logging.getLogger("arena-ui")
 COMMANDS = {"run"}
 MAX_LINES = 4000
 STATUS_TTL = 8.0  # seconds a repo status is reused before asking git again
+FETCH_PERIOD = 60.0  # every repo fetches origin when the clock hits a multiple
+FETCH_TIMEOUT = 120
 STARTED = time.time()  # when this process came up, for /healthz
 GIT_TIMEOUT = 20
 URL_RE = re.compile(r"^(git@|ssh://|https?://|git://|file://)")
@@ -280,6 +282,51 @@ class StatusCache:
 
 
 STATUS = StatusCache()
+
+
+def fetch_origin(repo: dict[str, Any]) -> bool:
+  """One `git fetch --prune origin`, so the status reads the remote as it is now."""
+  if not os.path.isdir(repo["path"]):
+    return False
+  rc, _, err = run_cmd(
+    ["git", "fetch", "--prune", "origin"], cwd=repo["path"], timeout=FETCH_TIMEOUT
+  )
+  if rc != 0:
+    LOG.warning("fetch %s failed: %s", repo["name"], (err or "").strip()[-200:])
+  return rc == 0
+
+
+def fetch_all(repos: list[dict[str, Any]]) -> list[dict[str, Any]]:
+  """Fetch every repo without a run in flight, then forget the cached statuses."""
+  with JOBS_LOCK:
+    busy = {job.repo["id"] for job in JOBS.values() if job.exit is None}
+  idle = [repo for repo in repos if repo["id"] not in busy]
+  with ThreadPoolExecutor(max_workers=4) as pool:
+    list(pool.map(fetch_origin, idle))
+  STATUS.clear()
+  return idle
+
+
+def seconds_to_next_tick(now: float, period: float = FETCH_PERIOD) -> float:
+  """Time until the clock next lands on a multiple of `period`. No drift."""
+  return period - (now % period)
+
+
+class Fetcher(threading.Thread):
+  """Fetches every repo at the top of each clock minute."""
+
+  def __init__(self, reg: Registry, period: float = FETCH_PERIOD) -> None:
+    super().__init__(name="fetcher", daemon=True)
+    self.reg = reg
+    self.period = period
+    self.stop = threading.Event()
+
+  def run(self) -> None:
+    while not self.stop.wait(seconds_to_next_tick(time.time(), self.period)):
+      repos = self.reg.all()
+      if repos:
+        done = fetch_all(repos)
+        LOG.debug("fetched %d of %d repos", len(done), len(repos))
 
 
 def pr_checks(branch: str, cwd: str) -> dict[str, Any] | None:
@@ -1162,6 +1209,13 @@ class Handler(BaseHTTPRequestHandler):
       raise KeyError(repo_id_)
     return repo
 
+  def _repos(self) -> list[dict[str, Any]]:
+    """Every repo with its status, four at a time."""
+    repos = self.reg.all()
+    with ThreadPoolExecutor(max_workers=4) as pool:
+      statuses = list(pool.map(STATUS.get, repos))
+    return [{**repo, "status": status} for repo, status in zip(repos, statuses)]
+
   # -- GET ---------------------------------------------------------------
   def do_GET(self) -> None:
     path = self.path.split("?", 1)[0]
@@ -1184,13 +1238,7 @@ class Handler(BaseHTTPRequestHandler):
           }
         )
       elif path == "/api/repos":
-        repos = self.reg.all()
-        with ThreadPoolExecutor(max_workers=4) as pool:
-          statuses = list(pool.map(lambda r: STATUS.get(r), repos))
-        payload = []
-        for repo, status in zip(repos, statuses):
-          payload.append({**repo, "status": status})
-        self._json(payload)
+        self._json(self._repos())
       elif len(parts) == 3 and parts[:2] == ["api", "repos"]:
         repo = self._repo(parts[2])
         self._json({**repo, "status": STATUS.get(repo)})
@@ -1261,7 +1309,10 @@ class Handler(BaseHTTPRequestHandler):
     path = self.path.split("?", 1)[0]
     parts = [p for p in path.split("/") if p]
     try:
-      if path == "/api/repos":
+      if path == "/api/fetch":
+        fetch_all(self.reg.all())
+        self._json(self._repos())
+      elif path == "/api/repos":
         body = self._body()
         source = normalize_source(str(body.get("source") or ""))
         if not source:
@@ -1487,6 +1538,7 @@ def main() -> int:
 
   reg = Registry(Path(args.data).expanduser())
   Handler.reg = reg
+  Fetcher(reg).start()
 
   httpd = Server((args.host, args.port), Handler)
   LOG.info(
