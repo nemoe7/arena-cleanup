@@ -41,10 +41,11 @@ def test_the_arena_option_shows_the_branch_and_the_day(desktop: Walker) -> None:
 def test_the_option_rows_stack_in_one_column(desktop: Walker) -> None:
   desktop.goto(1200)
   desktop.click(".repo-card .repo-name", 800)
+  # the first repo in the newest-first order has two arena branches, so the arena row shows
   edges = "e => { const b = e.getBoundingClientRect(); return [b.top, b.bottom]; }"
   rows = [
     desktop.page.eval_on_selector(f"#{name}", edges)
-    for name in ("opt-branch", "opt-paths", "opt-timeout", "checks")
+    for name in ("opt-branch", "opt-arena", "opt-paths", "opt-timeout", "checks")
   ]
   for above, below in pairwise(rows):
     assert below[0] == above[1], "each row starts on the line the one above ends"

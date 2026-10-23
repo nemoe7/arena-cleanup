@@ -9,6 +9,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- The dashboard sorts the repos: newest arena activity first, name A to Z,
+  or PR state with failures first. The select sits beside Reload and the
+  browser keeps the choice.
 - The commit list and the log fade 12 px at a scrolled edge, the nuu
   scroll-edge fade. It needs scroll-driven animations and no reduced-motion
   preference, and a panel that does not scroll stays unmasked.

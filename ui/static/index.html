@@ -249,6 +249,8 @@
 
   /* ----------------------------------------------------------- dashboard */
   .hero { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+  .hero-tools { display: flex; align-items: center; gap: 8px; }
+  .hero-tools .field { width: auto; height: 32px; }
   .hero h1, .wrap h1.page-title { font-size: var(--fs-5); font-weight: 640; margin: 0; }
 
   /* one border, not two: the bar is the field shell, so the input inside it
@@ -701,7 +703,9 @@
     .icon-btn, .btn.ghost.rm { width: 44px; height: 44px; }
     .arena-row .prlink { min-height: 44px; }
     .btn, .btn.back { min-height: 44px; }
-    .field, select.field { height: 44px; }
+    .field, select.field, .hero-tools .field { height: 44px; }
+    .hero-tools { flex: 1 1 100%; }
+    .hero-tools .field { flex: 1; min-width: 0; }
     .check { min-height: 44px; }
     .check input { width: 20px; height: 20px; }
     .check input::after { width: 15px; height: 15px; }
@@ -756,7 +760,14 @@
     <div class="wrap">
       <div class="hero">
         <h1 tabindex="-1">Repos</h1>
-        <button class="icon-btn" id="repos-refresh" aria-label="Reload repos" title="Reload repos"><span class="ico-svg" data-icon="refresh-cw" aria-hidden="true"></span></button>
+        <div class="hero-tools">
+          <select class="field" id="repo-sort" aria-label="Sort repos" title="Sort repos">
+            <option value="newest">Newest activity first</option>
+            <option value="name">Name A–Z</option>
+            <option value="pr">PR state, failures first</option>
+          </select>
+          <button class="icon-btn" id="repos-refresh" aria-label="Reload repos" title="Reload repos"><span class="ico-svg" data-icon="refresh-cw" aria-hidden="true"></span></button>
+        </div>
       </div>
 
       <div id="offline-banner" hidden></div>
@@ -1148,6 +1159,45 @@
   // fresh: false reads the cached statuses, true fetches every origin first
   // (the server skips a fetch that follows another within seconds), "force"
   // is the Reload button, which fetches regardless.
+  // Sort orders of the dashboard. Newest: the most recent arena tip first,
+  // repos without one last. PR: an unreachable repo, failing, running, passing, no checks, no PR.
+  const PR_RANK = { failing: 1, running: 2, passing: 3, none: 4 };
+  function newestTip(repo) {
+    return Math.max(0, ...Object.values((repo.status || {}).activity || {}));
+  }
+  function prRank(repo) {
+    const s = repo.status || {};
+    if (!s.ok) return 0;
+    const ranks = Object.values(s.pr || {}).map((pr) => PR_RANK[pr.state] || 5);
+    return Math.min(5, ...ranks);
+  }
+  const SORTS = {
+    newest: (a, b) => newestTip(b.repo) - newestTip(a.repo) || a.at - b.at,
+    name: (a, b) => a.repo.name.localeCompare(b.repo.name) || a.at - b.at,
+    pr: (a, b) => prRank(a.repo) - prRank(b.repo) || SORTS.newest(a, b),
+  };
+  const SORT_KEY = "repo-sort";
+
+  function sortedRepos() {
+    const order = SORTS[$("repo-sort").value] || SORTS.newest;
+    return state.repos.map((repo, at) => ({ repo, at })).sort(order).map((x) => x.repo);
+  }
+
+  function renderGrid() {
+    $("repo-grid").replaceChildren(...sortedRepos().map(repoCard));
+  }
+
+  function restoreSort() {
+    const select = $("repo-sort");
+    try {
+      if (localStorage.getItem(SORT_KEY) in SORTS) select.value = localStorage.getItem(SORT_KEY);
+    } catch { /* no storage: the default order */ }
+    select.onchange = () => {
+      try { localStorage.setItem(SORT_KEY, select.value); } catch { /* no storage: this page only */ }
+      renderGrid();
+    };
+  }
+
   async function loadRepos(fresh = false) {
     if (!state.auth) await refreshAuth();
     try {
@@ -1163,7 +1213,7 @@
     }
     $("repo-loading").hidden = true;
     const grid = $("repo-grid");
-    grid.replaceChildren(...state.repos.map(repoCard));
+    renderGrid();
     $("repo-empty").hidden = state.unreachable || state.repos.length > 0;
     grid.hidden = state.unreachable;
     const box = $("offline-banner");
@@ -2361,6 +2411,7 @@
         }, el("i", {}), el("span", { class: "lbl" }, label))));
     } catch { /* the page still works without the badge */ }
     await refreshAuth();
+    restoreSort();
     await loadRepos();
     await applyHash();
     // one fetch per page load, after the cached cards are on screen
