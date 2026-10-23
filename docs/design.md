@@ -49,7 +49,8 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 ### Icons
 
-- Lucide 1.61.0, vendored one glyph at a time into the `ICONS` map in `index.html`. Each glyph keeps its 24 px grid, drawn at 1 em and stroked at 2 in the text color.
+- Lucide 1.61.0, vendored one glyph at a time into the `ICONS` map in `index.html`. Each glyph keeps its 24 px grid and its 2 px stroke in the text color.
+- Three size tokens set the glyph box per place at every width. `--ico-s` is 14 px for inline glyphs: the commit check, the chip X, and the pill arrow. `--ico-m` is 16 px for buttons, phase rows, tree rows, and banners. `--ico-l` is 18 px for icon buttons and the card mark. A glyph in running text stays at 1 em.
 - Navigation and file glyphs in use: arrow-left, settings, arrow-up, arrow-down, chevron-right, folder, folder-tree, file, and plus.
 - State and action glyphs in use: check, x, triangle-alert, minus, circle-small, loader-circle, git-branch, refresh-cw, and copy.
 - Buttons with a glyph: Reload is `refresh-cw` alone, named `Reload commits` in `aria-label` and `title`. Copy log is `copy` alone, named `Copy log` the same way. Re-check and Retry lead with `refresh-cw`, Copy public key with `copy`, and Browse with `folder-tree`. Every other button keeps its word alone.
@@ -149,3 +150,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-22: the card Remove X moves from the action row to the top right corner. At rest it is a bare glyph, so the primary button stands alone. The red frame returns on hover, on press, and while armed.
 - Accepted 2026-10-23: a commit subject wraps to two lines, then an ellipsis. The row is a button, and a tap shows the whole subject on a phone without hover.
 - Accepted 2026-10-23: the log of the latest run stays open under the phase list. Show log goes, and Copy log is a glyph button. An empty log reads `No run yet.`
+- Accepted 2026-10-23: three icon size tokens at every width, 14, 16, and 18 px. The glyphs no longer follow the text size. That rule left most of them at 12 or 13 px on a desktop.

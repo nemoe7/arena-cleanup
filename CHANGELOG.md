@@ -16,6 +16,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - The run card keeps the log of the latest run open under the phase list. The Show log toggle is gone, and Copy log is a glyph button with an accessible name.
+- Icons follow three size tokens at every width. Inline glyphs are 14 px, buttons, phase rows, tree rows, and banners 16 px, and icon buttons 18 px. Most glyphs were 12 or 13 px.
 
 ### Fixed
 

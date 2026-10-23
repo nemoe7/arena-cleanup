@@ -60,6 +60,9 @@
     --fs-3: 14px;
     --fs-4: 16px;
     --fs-5: 20px;
+    --ico-s: 14px;
+    --ico-m: 16px;
+    --ico-l: 18px;
     font-synthesis: none;
   }
 
@@ -153,6 +156,7 @@
   .btn.ghost.rm:hover, .btn.ghost.rm:active { color: var(--err); border-color: rgba(240, 87, 79, .5); background: rgba(240, 87, 79, .1); }
   .btn.ghost.rm.armed { width: auto; padding: 0 10px; }
   .icon-btn {
+    --ico: var(--ico-l);
     display: inline-grid; place-items: center; width: 32px; height: 32px; font-size: 16px;
     border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface-2);
     color: var(--muted); cursor: pointer;
@@ -160,6 +164,7 @@
   .icon-btn:hover { color: var(--text); background: var(--surface-3); }
 
   .btn {
+    --ico: var(--ico-m);
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     height: 34px; padding: 0 12px; border-radius: 8px; cursor: pointer;
     border: 1px solid var(--line-2); background: var(--surface-2); color: var(--text);
@@ -242,6 +247,7 @@
   .repo-card:active { transform: translateY(1px); }
   .repo-head { display: flex; align-items: flex-start; gap: 10px; }
   .repo-ico {
+    --ico: var(--ico-l);
     width: 30px; height: 30px; border-radius: 8px; flex: none; font-size: 16px;
     display: grid; place-items: center; background: var(--surface-3);
     border: 1px solid var(--line-2); color: var(--muted);
@@ -249,6 +255,7 @@
   .repo-name { font-weight: 600; font-size: var(--fs-3); letter-spacing: -.01em; overflow-wrap: anywhere; }
   .repo-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .pill {
+    --ico: var(--ico-s);
     display: inline-flex; align-items: center; gap: 6px;
     font-size: var(--fs-1); font-weight: 520; border-radius: 999px;
     padding: 4px 8px; border: 1px solid var(--line-2); background: var(--surface-2); color: var(--muted);
@@ -401,7 +408,8 @@
   .tree { margin-top: 6px; padding: 4px; max-height: 260px; overflow: auto; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface-2); font: var(--fs-1) var(--mono); }
   .tree-row { display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 4px 0 calc(4px + (var(--depth) - 1) * 16px); border-radius: 6px; cursor: pointer; color: var(--text); }
   .tree-row:hover { background: var(--surface-3); }
-  .tree-caret { width: 14px; display: inline-flex; color: var(--dim); transition: transform .12s; }
+  .tree-row { --ico: var(--ico-m); }
+  .tree-caret { width: 16px; display: inline-flex; color: var(--dim); transition: transform .12s; }
   .tree-row[aria-expanded="true"] .tree-caret { transform: rotate(90deg); }
   .tree-ico { display: inline-flex; color: var(--muted); }
   .tree-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -423,7 +431,8 @@
     padding: 8px 16px; color: var(--text); font-size: var(--fs-2); text-align: left;
   }
   .phase-ico {
-    width: 16px; height: 16px; flex: none; display: grid; place-items: center;
+    --ico: var(--ico-m);
+    width: 20px; height: 20px; flex: none; display: grid; place-items: center;
     color: var(--dim); font-size: var(--fs-1); line-height: 1;
   }
   .phase[data-state="run"] .phase-ico { color: var(--accent-hi); }
@@ -487,7 +496,7 @@
     grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; color: var(--dim);
     font-size: var(--fs-1); white-space: nowrap; flex-wrap: wrap;
   }
-  .commit .sig { color: var(--ok); font-size: var(--fs-1); }
+  .commit .sig { --ico: var(--ico-s); color: var(--ok); font-size: var(--fs-1); }
   .commit .sig.none { color: var(--dim); }
 
   .empty-log { display: grid; place-items: center; gap: 8px; height: 100%; min-height: 190px; color: var(--dim); text-align: center; padding: 20px; }
@@ -515,7 +524,7 @@
   .chip-edit .pill { padding-right: 4px; }
   .chip-edit .pill button { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: transparent; color: var(--dim); cursor: pointer; padding: 0; }
   .chip-edit .pill button:hover { color: var(--text); background: var(--surface-3); }
-  .chip-edit .pill button svg { width: 12px; height: 12px; }
+  .chip-edit .pill button svg { width: var(--ico-s); height: var(--ico-s); }
   .claim-label { font-size: var(--fs-1); color: var(--muted); margin-top: 2px; }
   /* a deep link scrolls a card group under the sticky header, not behind it */
   #settings-body > .stack { scroll-margin-top: 72px; }
@@ -528,9 +537,10 @@
   .banner.warn { color: #f2ce8a; border-color: rgba(214,160,50,.34); background: rgba(214,160,50,.08); }
   .banner.ok { color: #9fe3ad; border-color: rgba(70,185,92,.3); background: rgba(70,185,92,.07); }
   .banner.err { color: #ffa8a2; border-color: rgba(240,87,79,.32); background: rgba(240,87,79,.08); }
-  .banner .ico { flex: none; margin-top: 1px; }
-  .ico-svg { display: inline-flex; width: 1em; height: 1em; flex: none; vertical-align: -.125em; }
-  .ico-svg svg, svg.ico-svg { display: block; width: 1em; height: 1em; fill: none; stroke: currentColor;
+  .banner .ico { --ico: var(--ico-m); flex: none; margin-top: 1px; }
+  /* glyph size per place through --ico; 1em is the fallback for inline text */
+  .ico-svg { display: inline-flex; width: var(--ico, 1em); height: var(--ico, 1em); flex: none; vertical-align: -.125em; }
+  .ico-svg svg, svg.ico-svg { display: block; width: var(--ico, 1em); height: var(--ico, 1em); fill: none; stroke: currentColor;
     stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .back .ico-svg { margin-right: 6px; }
   .jump .ico-svg { margin-right: 4px; }
