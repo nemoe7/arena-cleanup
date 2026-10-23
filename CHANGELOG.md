@@ -29,15 +29,15 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The repo card meta drops the tag count. It shows the branch and the tree state.
 - Arena rows on the card and in the sidebar show `↑ N` with a tooltip. N counts the commits beyond the default branch.
 - `run -a/--arena NAME` answers the arena branch menu without a prompt. The page shows that select, newest tip first, when a repo has two or more arena branches. The card button uses the newest.
-- The repo sidebar is 320 px wide. It lists the commits below the repo facts and the arena rows. The HEAD block is gone. Below 980 px it stacks under the run card, and the commit list grows with the page.
+- The repo sidebar is 320 px wide. It lists the commits below the repo facts and the arena rows. The HEAD block is gone. Below 900 px it stacks under the run card, and the commit list grows with the page.
 - A shallow history: one Back leaves a sub-view, the next one leaves the page.
 - A click on a sidebar arena row selects the arena branch the run pulls from. The Arena branch select and the row follow each other.
-- The options card: one row per option, no hint texts, no task note. Checkboxes Dry Run, Ignore PR Checks, Keep Empty Commits, Update Tags (on by default), and Force Push replace the switches. Keep arena branch is gone. PR check timeout is a slider with ten stops and a readout. The page draws the checkboxes: a 16 px box, the accent fill, and a Lucide check. Above 980 px the selects and Remove paths sit left, PR check timeout and the checkboxes right.
+- The options card: one row per option, no hint texts, no task note. Checkboxes Dry Run, Ignore PR Checks, Keep Empty Commits, Update Tags (on by default), and Force Push replace the switches. Keep arena branch is gone. PR check timeout is a slider with ten stops and a readout. The page draws the checkboxes: a 16 px box, the accent fill, and a Lucide check. Above 1200 px the selects and Remove paths sit left, PR check timeout and the checkboxes right.
 - A managed clone resets to origin before every run. The server fetches, checks out the default branch, resets hard, and drops local `arena/*` copies. The page has no Reset button, dirty chip, or On divergence control, and `--on-divergence` stays a CLI flag.
 - The app copy says repo and repos.
 - The claim rules come from the global git config keys `arena.claim-email` and `arena.claim-name`. The constants are the fallback. The container seeds the identity only while git config is empty.
 - One Settings page behind the gear icon: Identity, GitHub access, Commit signing, and Claimed commits, then About.
-- The options card keeps two columns above 980 px. Four columns overflowed between 981 and 1179 px.
+- The page has three named breakpoints, 1200, 900, and 640 px. 1200 folds the options to one column, 900 stacks the sidebar, 640 starts the phone ramp.
 - Log rows show the clock of the browser. The engine stamps each line in the server zone.
 - Remove on a card deletes its URL clone from the volume. A path repo is only forgotten.
 - `POST /api/repos/<id>/reset`: fetch, check out the default branch, and reset it hard. Untracked files stay.

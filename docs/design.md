@@ -44,7 +44,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - Inter (variable) for text, JetBrains Mono for paths, hashes, and commands. Both ship as woff2 under `ui/static/fonts/`.
 - Desktop ramp: `--fs-1` 12 px for metadata and mono details, `--fs-2` 13 px for controls and labels. `--fs-3` 14 px for body, names, and buttons, `--fs-4` 16 px for a view title, `--fs-5` 20 px for the page title.
-- Phone ramp at 720 px and below: body 12 to 15 px, fields 16 px, and title 19 px. The 16 px fields keep iOS from zooming.
+- Phone ramp at 640 px and below: body 12 to 15 px, fields 16 px, and title 19 px. The 16 px fields keep iOS from zooming.
 - Weights: 400, 520 to 640 for labels and names, 600 for headings.
 
 ### Icons
@@ -57,8 +57,8 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ### Layout
 
 - Spacing scale: 2, 4, 6, 8, 10, 12, 16, 20, 24, and 32 px, with 1 px for borders.
-- Page padding `--pad`: 20 px, 16 px at 980 px and below, 14 px at 720 px and below.
-- Breakpoints: the options sit in two columns at every width above 980 px. The left column holds Target branch, Arena branch, and Remove paths. The right column holds PR check timeout and the checkboxes. 980 px keeps one column in that order and stacks the sidebar below the run card. 720 px switches to the phone ramp, 44 px targets, and stacked rows.
+- Page padding `--pad`: 20 px, 16 px at 1200 px and below, 14 px at 640 px and below.
+- Breakpoints, the nuu trio, one change each. 1200 px folds the options to one column and tightens the padding. 900 px stacks the sidebar below the run card and the repo cards into one column. 640 px switches to the phone ramp, 44 px targets, and stacked rows. Above 1200 px the options sit in two columns. Target branch, Arena branch, and Remove paths sit left, PR check timeout and the checkboxes right. No other width carries a rule.
 - Radius `--r` 10 px for cards, 8 px for buttons and fields, 999 px for pills.
 
 ### Theme and motion
@@ -132,13 +132,14 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-22: no command switch on the repo page. A local rewrite without a push is a terminal task, so `strip` lives in the CLI alone.
 - Accepted 2026-10-22: the whole options card folds, not the Target branch row alone. The select names the default branch first, keeps the empty value, and lists no `arena/*` branch. The server refuses one too.
 - Accepted 2026-10-22: with two or more arena branches the page selects one, newest tip first, in the options card. The engine gained `--arena NAME` for it and keeps the full flow. The page never passes `-b arena/*`.
-- Accepted 2026-10-22: the sidebar grows to 320 px. The commit list sits below the repo facts and the arena rows. The HEAD block goes. The hash leads each commit row. Below 980 px the sidebar stacks under the run card instead of hiding. The commit list then grows with the page: one scroll per screen.
+- Accepted 2026-10-22: the sidebar grows to 320 px. The commit list sits below the repo facts and the arena rows. The HEAD block goes. The hash leads each commit row. Below 900 px the sidebar stacks under the run card instead of hiding. The commit list then grows with the page: one scroll per screen.
 - Accepted 2026-10-22: a click on a sidebar arena row selects the arena branch the run pulls from. The Arena branch select follows the row and the row follows the select. The marked row never sets the target branch. With one arena branch the row only shows which branch that is.
 - Accepted 2026-10-22: the options card loses its hint texts and the task note above it. Each option is one row. The switches become checkboxes with Title Case labels. Update Tags is the positive form of `--no-tags`. Keep arena branch goes. The reset before every run drops local copies, so a kept branch never reaches the next run. The timeout is a slider with ten stops and a readout.
 - Accepted 2026-10-22: a managed clone holds nothing of its own. The server resets it to origin before every run and drops local `arena/*` copies. The page loses the Reset button, the dirty chip, and On divergence. `--on-divergence` stays a CLI flag.
 - Accepted 2026-10-22: the card and the sidebar show how far each arena branch is ahead of the default branch. The clone's own drift stays out of sight. Nobody commits in the container, and the engine handles that divergence itself.
 - Accepted 2026-10-22: the primary button reads Clean & Push. The phase list keeps Publish for the push, tags, and cleanup step.
 - Accepted 2026-10-22: a tree selector for Remove paths. It reads `git ls-tree` of HEAD in the clone, so it works for path repos and never calls GitHub. File contents stay out. A path only old commits carried stays a typed chip.
+- Accepted 2026-10-23: the breakpoints move to the nuu widths 1200, 900, and 640 px. 1200 folds the options, 900 stacks the page, 640 is the phone. Between 981 and 1200 px the options lose their two columns, and nothing clips.
 - Accepted 2026-10-23: the primary button takes `accent-deep`, 5.3:1 under white, and `accent-deep-hi` on hover. The `accent` token stays for fills and marks.
 - Accepted 2026-10-23: the options card puts the selects and Remove paths left, PR check timeout and the checkboxes right. One grid with column-locked rows: PR check timeout shares the Target branch row, the checks share the next row.
 - Accepted 2026-10-23: the page draws the checkboxes. `appearance: none` drops the browser box, so the boxes match the select and the fields in every browser.

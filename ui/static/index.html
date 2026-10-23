@@ -549,17 +549,20 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  @media (max-width: 980px) {
+  /* Three named widths, one change each: 1200 folds the options, 900 stacks the page, 640 is the phone. */
+  @media (max-width: 1200px) {
     :root { --pad: 16px; }
+    .options { grid-template-columns: 1fr; grid-auto-flow: row; }
+    #opt-branch, #opt-arena, #opt-paths, #opt-timeout, #checks { grid-column: auto; }
+  }
+  @media (max-width: 900px) {
     /* One column: the run first, then the sidebar with the facts and the commits. */
     .detail { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: start; }
     .sidebar { order: 2; position: static; height: auto; overflow: visible; border-right: 0; border-top: 1px solid var(--line); }
     .side-commits .commits { overflow: visible; min-height: 0; }  /* one scroll: the page */
-    .options { grid-template-columns: 1fr; grid-auto-flow: row; }
-    #opt-branch, #opt-arena, #opt-paths, #opt-timeout, #checks { grid-column: auto; }
     .grid { grid-template-columns: 1fr; }
   }
-  @media (max-width: 720px) {
+  @media (max-width: 640px) {
     :root { --pad: 14px; }
     /* one scale on a phone: 15 body, 13 controls, 12 metadata. Before this the
        page mixed 11.5, 12, 12.5, 13, and 14 in the same view */

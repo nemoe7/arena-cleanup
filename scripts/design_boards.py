@@ -66,7 +66,7 @@ DESKTOP_RAMP = [
   ("--fs-4", "16 px", "view title"),
   ("--fs-5", "20 px", "page title"),
 ]
-PHONE_RAMP = "12, 13, 14, 15 body, 16 fields, 19 title at 720 px and below"
+PHONE_RAMP = "12, 13, 14, 15 body, 16 fields, 19 title at 640 px and below"
 SPACING = [2, 4, 6, 8, 10, 12, 16, 20, 24, 32]
 RADII = [
   ("12 px", "cards"),
@@ -384,8 +384,9 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     '<tr><td class="mono">Show log</td><td>unfolds the raw lines under the phase list</td></tr>'
     '<tr><td class="mono">Copy log</td><td>puts the whole log on the clipboard</td></tr>'
     '<tr><td class="mono">Ctrl + Enter</td><td>starts the run from anywhere</td></tr>'
-    '<tr><td class="mono">980 px</td><td>the sidebar stacks below the run card</td></tr>'
-    '<tr><td class="mono">720 px</td><td>primary actions stick to the bottom, one column</td></tr></table>'
+    '<tr><td class="mono">1200 px</td><td>the options fold to one column</td></tr>'
+    '<tr><td class="mono">900 px</td><td>the sidebar stacks below the run card</td></tr>'
+    '<tr><td class="mono">640 px</td><td>primary actions stick to the bottom, one column</td></tr></table>'
   )
   body = (
     '<div class="wf"><div class="row">'
