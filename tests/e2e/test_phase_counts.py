@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 
 import pytest
@@ -36,10 +37,81 @@ def test_a_dry_run_counts_checks_commits_and_tags(desktop: Walker) -> None:
   desktop.wait_status("exit")
   rows = row_texts(desktop)
   assert rows["prepare"] == ""
-  assert rows["pr"] == "4 checks"
-  assert re.fullmatch(r"\d+ of 23 commits to rewrite", rows["rewrite"])
-  assert rows["publish"] == "0 tags to move"
+  assert rows["pr"] == "4/4"
+  assert re.fullmatch(r"would sign \d+ commits", rows["rewrite"])
+  assert rows["publish"] == "", "no tag, no text"
   assert rows["sync"] == ""
+
+
+# a real run's lines, as the engine writes them, up to the tag push
+REAL_RUN = [
+  ("INFO", "arena-cleanup 0.2.4 on main"),
+  ("OK", 'check "unit": pass'),
+  ("WARN", 'check "e2e": running'),
+  ("OK", 'check "e2e": pass'),
+  ("INFO", "scanning 23 commit(s) as Nemo <nemo@example.com>"),
+  ("INFO", "rewriting... 50% (12/23) - 10 rewritten"),
+  (
+    "OK",
+    "history rewritten: 23 commit(s): 20 rewritten, 20 signed, 3 untouched (4.2s)",
+  ),
+  ("OK", "2 tag(s) now point at the rewritten commits"),
+  ("OK", "moved tag v1.0 11111111 -> 22222222"),
+  ("OK", "updated 2 tag(s) on origin"),
+]
+
+
+def painted(walker: Walker, lines: list[tuple[str, str]]) -> dict[str, str]:
+  """The rows after the page reattaches to a finished run made of `lines`."""
+  snap = {
+    "id": "fake",
+    "status": "done",
+    "exit": 0,
+    "cancelled": False,
+    "elapsed": 4.2,
+    "lines": [
+      {"t": 1_700_000_000 + i, "text": f"2026-10-23T10:00:{i:02d}+0000 {level} {text}"}
+      for i, (level, text) in enumerate(lines)
+    ],
+  }
+  pattern = "**/api/repos/*/jobs/latest"
+  walker.page.route(
+    pattern,
+    lambda route: route.fulfill(
+      status=200, content_type="application/json", body=json.dumps(snap)
+    ),
+  )
+  try:
+    walker.goto(1200)
+    walker.click(".repo-card:has-text('infra-tools')", 800)
+    return row_texts(walker)
+  finally:
+    walker.page.unroute(pattern)
+
+
+def test_a_real_run_reads_signing_then_signed_and_pushed(desktop: Walker) -> None:
+  rows = painted(desktop, REAL_RUN[:6])
+  assert rows["pr"] == "2/2"
+  assert rows["rewrite"] == "signing 10/23"
+  assert rows["publish"] == ""
+
+  rows = painted(desktop, REAL_RUN[:8])
+  assert rows["rewrite"] == "signed 20 commits"
+  assert rows["publish"] == "moving 2 tags"
+
+  rows = painted(desktop, REAL_RUN[:9])
+  assert rows["publish"] == "pushing 2 tags"
+
+  rows = painted(desktop, REAL_RUN)
+  assert rows["publish"] == "pushed 2 tags"
+
+
+def test_the_checks_row_counts_passed_of_total(desktop: Walker) -> None:
+  rows = painted(desktop, REAL_RUN[:3])
+  assert rows["pr"] == "1/2", "a running check counts in the total alone"
+  rows = painted(desktop, REAL_RUN[:5])
+  assert rows["pr"] == "2/2"
+  assert rows["rewrite"] == "collecting 23 commits"
 
 
 def test_a_waiting_check_shows_as_live(desktop: Walker, demo: Demo) -> None:
@@ -53,7 +125,7 @@ def test_a_waiting_check_shows_as_live(desktop: Walker, demo: Demo) -> None:
     desktop.click("#start", 0)
     desktop.page.wait_for_function(
       "() => document.querySelector('.phase[data-phase=\"pr\"] .phase-sub')"
-      ".textContent === '1 check, 1 running'",
+      ".textContent === '0/1'",
       timeout=WAIT_MS,
     )
   finally:

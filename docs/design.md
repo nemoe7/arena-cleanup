@@ -16,7 +16,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Primary tasks: add a repo, run a cleanup, read the log, and keep the settings right. Settings: GitHub access, signing, identity, and the claim rules.
 - Repo: a clone the server registered. Identifier: the server-minted `id`. The card shows `name` only.
 - Arena branch: a branch under the `arena/` prefix with its pull request and check count.
-- Run: one engine execution with five phases: Prepare, PR checks, Rewrite and sign, Publish, Finish.
+- Run: one engine execution with five phases: Prepare, PR checks, Rewrite and sign, Push, Finish.
 
 ## Journeys and information architecture
 
@@ -76,7 +76,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - `commit`: grid `auto minmax(0, 1fr)`, the subject clamped to two lines with an ellipsis, the metadata on a second row. The row is a button with `aria-expanded`, and a tap shows the whole subject. The metadata carries the author's GitHub picture, 20 px and round, or a `user` glyph in the same disc when the server has none.
 - `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`. The selected row carries a 2 px accent bar and the text colour. The name reads `Pull from <branch>`. Rows and the timeout slider are 44 px high on a phone.
 - `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout. `check`: a label with a drawn checkbox. The box is 16 px, 20 px on a phone, with a 4 px radius and the surface-2 fill. Checked, it takes the accent fill and a white Lucide check. `danger` fills a checked destructive option with the warn colour and a dark check. On a phone the checkboxes form a grid with 160 px columns. Browse, the fold head, and the 16 px path field are 44 px targets there.
-- `phase`: a row with the state glyph, the name, a count, and the time. The count comes from the engine's lines: the checks and how many still run, the commits signed of the total, and the tags moved. A dry run says what would move. Before that the row carries the name alone.
+- `phase`: a row with the state glyph, the name, a count, and the time. The count comes from the engine's lines. PR checks reads `passed/total`. Rewrite and sign reads `collecting N commits`, then `signing X/Y`, then `signed X commits`. Push reads `moving`, `pushing`, then `pushed X tags`, and stays empty without a tag. A dry run reads `would sign` and `would move`. Before a count the row carries the name alone.
 - `repo-card`: a flex column. The actions sit at the bottom, so the buttons line up across a grid row.
 - `sign-row`: label column of 120 px and a value column. On a phone the label takes a full row.
 - `sign-fields`: name and e-mail side by side, one column on a phone.
@@ -171,4 +171,5 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: the log clock takes `dim`, 5.1:1 on the card. Its own grey read at 2.55:1, under the 4.5:1 floor.
 - Accepted 2026-10-23: the run card and the options card stretch to one height. The options body has no vertical padding and no rule under its last row, so its rows sit like the phase rows.
 - Accepted 2026-10-23: the phase rows lose their hint texts. A row shows a count once the engine reports one: checks and how many still run, commits signed of the total, and tags moved.
+- Accepted 2026-10-23: the counts read `passed/total` for the checks, `collecting`, `signing X/Y`, and `signed X commits` for the rewrite, and `moving`, `pushing`, and `pushed X tags` for the push. The Publish row is named Push, and a run without tags leaves it empty.
 - Accepted 2026-10-23: the commit rows show the author's GitHub picture for every author. The server caches one picture per address for 30 days after its last use and prunes the rest.

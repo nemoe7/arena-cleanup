@@ -356,9 +356,9 @@ def wireframe_board(_: dict[str, bytes]) -> str:
       block(f"{n} — {s}", height=24)
       for n, s in (
         ("Prepare", "time"),
-        ("PR checks", "checks, running"),
-        ("Rewrite and sign", "commits signed"),
-        ("Publish", "tags moved"),
+        ("PR checks", "passed/total"),
+        ("Rewrite and sign", "signed X commits"),
+        ("Push", "pushed X tags"),
         ("Finish", "time"),
       )
     )
@@ -463,9 +463,9 @@ def states_board(_: dict[str, bytes]) -> str:
   phases = (
     '<ul class="phases card" style="width:420px">'
     + phase("done", "Prepare", "", "0.4s")
-    + phase("run", "PR checks", "2 checks, 1 running", "running")
+    + phase("run", "PR checks", "1/2", "running")
     + phase("idle", "Rewrite and sign", "", "")
-    + phase("skip", "Publish", "", "")
+    + phase("skip", "Push", "", "")
     + phase("fail", "Finish", "", "<0.1s")
     + "</ul>"
   )

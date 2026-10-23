@@ -877,7 +877,7 @@
     opened: 0,
     phases: [],
     phase: null,
-    counts: { checks: {}, dry: false },
+    counts: { checks: {}, dry: false, tags: 0, pushed: 0 },
     signing: null,
   };
 
@@ -1462,7 +1462,7 @@
     { id: "prepare", name: "Prepare", sub: "" },
     { id: "pr", name: "PR checks", sub: "" },
     { id: "rewrite", name: "Rewrite and sign", sub: "" },
-    { id: "publish", name: "Publish", sub: "" },
+    { id: "publish", name: "Push", sub: "" },
     { id: "sync", name: "Finish", sub: "" },
   ];
   const PHASE_TESTS = [
@@ -1502,37 +1502,43 @@
     if (/^dry run:/.test(msg)) {
       counts.dry = true;
     } else if ((m = /^check "([^"]+)": /.exec(msg))) {
-      counts.checks[m[1]] = level; // WARN while it runs, ERROR when it failed
+      counts.checks[m[1]] = level; // OK when it passed, WARN while it runs, ERROR when it failed
       const states = Object.values(counts.checks);
-      const live = states.filter((x) => x === "WARN").length;
-      const failed = states.filter((x) => x === "ERROR").length;
-      row("pr").sub = plural(states.length, "check")
-        + (live ? `, ${live} running` : "") + (failed ? `, ${failed} failed` : "");
+      row("pr").sub = `${states.filter((x) => x === "OK").length}/${states.length}`;
     } else if (/reports no status checks at all/.test(msg)) {
       row("pr").sub = "no checks";
     } else if (/^no open PR for /.test(msg)) {
       row("pr").sub = "no PR";
     } else if (/^--skip-pr-check set/.test(msg)) {
       row("pr").sub = "skipped";
+    } else if ((m = /^scanning (\d+) commit\(s\) as /.exec(msg))) {
+      row("rewrite").sub = `collecting ${plural(+m[1], "commit")}`;
     } else if ((m = /^scanning\.\.\. \d+% \((\d+)\/(\d+)\)(?: - (\d+) rewritten)?/.exec(msg))) {
-      row("rewrite").sub = counts.dry
-        ? `${m[3] || 0} of ${plural(+m[2], "commit")} to rewrite`
-        : `${m[1]} of ${m[2]} scanned, ${m[3] || 0} rewritten`;
-    } else if ((m = /(\d+) commit\(s\): \d+ rewritten, (\d+) signed/.exec(msg))) {
-      row("rewrite").sub = `${m[2]} of ${plural(+m[1], "commit")} signed`;
+      // the dry run only reads: its last progress line says what a real run would sign
+      if (m[1] === m[2]) row("rewrite").sub = `would sign ${plural(+(m[3] || 0), "commit")}`;
+    } else if ((m = /^rewriting\.\.\. \d+% \(\d+\/(\d+)\)(?: - (\d+) rewritten)?/.exec(msg))) {
+      row("rewrite").sub = `signing ${m[2] || 0}/${m[1]}`;
+    } else if ((m = /\d+ commit\(s\): \d+ rewritten, (\d+) signed/.exec(msg))) {
+      row("rewrite").sub = `signed ${plural(+m[1], "commit")}`;
     } else if ((m = /^(\d+) tag\(s\) point into these commits and would move/.exec(msg))) {
-      row("publish").sub = `${plural(+m[1], "tag")} to move`;
+      row("publish").sub = `would move ${plural(+m[1], "tag")}`;
+    } else if ((m = /^(\d+) tag\(s\) now point at the rewritten commits/.exec(msg))) {
+      counts.tags = +m[1];
+      row("publish").sub = `moving ${plural(+m[1], "tag")}`;
+    } else if (/^moved tag /.test(msg)) {
+      counts.pushed += 1;
+      row("publish").sub = `pushing ${plural(Math.max(counts.tags, counts.pushed), "tag")}`;
     } else if ((m = /^updated (\d+) tag\(s\) on origin/.exec(msg))) {
-      row("publish").sub = `${plural(+m[1], "tag")} moved`;
+      row("publish").sub = `pushed ${plural(+m[1], "tag")}`;
     } else if ((m = /^--no-tags set: (\d+) tag\(s\) still name/.exec(msg))) {
-      row("publish").sub = `${plural(+m[1], "tag")} not moved`;
+      row("publish").sub = `${plural(+m[1], "tag")} not pushed`;
     }
   }
 
   function resetPhases() {
     state.phases = PHASES.map((p) => ({ ...p, state: "idle", lines: 0, start: 0, end: 0 }));
     state.phase = "prepare";
-    state.counts = { checks: {}, dry: false };
+    state.counts = { checks: {}, dry: false, tags: 0, pushed: 0 };
     $("phases").replaceChildren(...state.phases.map((p) =>
       el("li", { class: "phase", "data-phase": p.id, "data-state": "idle" },
         el("div", { class: "phase-head" },
@@ -1576,9 +1582,6 @@
     for (const p of state.phases) {
       if (p.state === "run") p.state = p === last && !ok && !cancelled ? "fail" : "done";
       if (p.state === "idle") p.state = "skip";
-      if (p.id === "publish" && p.state === "done" && !p.sub) {
-        p.sub = state.counts.dry ? "0 tags to move" : "0 tags moved";
-      }
       paintPhase(p);
     }
   }

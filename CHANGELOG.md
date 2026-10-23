@@ -15,7 +15,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - The phase rows of the run card show counts instead of hint texts: the checks
-  and how many still run, the commits signed, and the tags moved.
+  passed of the total, the commits collected, signing, and signed, and the tags
+  moving, pushing, and pushed. The Publish row is named Push.
 
 ## [0.2.3] - 2026-10-23
 
