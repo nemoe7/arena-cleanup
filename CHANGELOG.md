@@ -41,6 +41,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Six buttons carry a Lucide glyph. Reload is `refresh-cw` alone with an accessible name. Re-check and Retry lead with `refresh-cw`, Copy log and Copy public key with `copy`, Browse with `folder-tree`. Show log carries the fold caret.
 - The page matches its design record after an audit. Every banner leads with its glyph. Pointer targets are at least 24 px: Browse, the chip X, the tree select, the check rows, and the slider. The version chip weighs 520 and bold runs 600. A dead brand size rule goes, and two paddings sit on the scale.
 - The repo wireframe board grows its blocks with their text, and its marks are glyphs instead of font symbols.
+- The Docker workflow starts only for CI on main, so other branches no longer record a skipped run.
 - Log rows show the clock of the browser. The engine stamps each line in the server zone.
 - Remove on a card deletes its URL clone from the volume. A path repo is only forgotten.
 - `POST /api/repos/<id>/reset`: fetch, check out the default branch, and reset it hard. Untracked files stay.
