@@ -269,6 +269,35 @@ def test_add_by_clone_url(ui: UI, world: World, ids: dict[str, str]) -> None:
   assert ui.status("GET", "/api/repos/deadbeef1234") == 404
 
 
+def test_a_second_add_of_the_same_url_reuses_the_clone(
+  ui: UI, world: World, ids: dict[str, str]
+) -> None:
+  bare = world.root / "work.git"
+  clones = Path(ids["clone_path"]).parent
+  # the same repo again, spelled without `.git`: the same card, no second clone
+  again = ui.post("/api/repos", {"source": f"file://{world.root / 'work'}"})
+  assert again["id"] == ids["clone"]
+  assert again["path"] == ids["clone_path"]
+  assert len(ui.get("/api/repos")) == 2
+  # a forgotten card leaves its directory behind: the next add picks it up
+  ui.post(f"/api/repos/{ids['clone']}/remove", {"delete": False})
+  assert Path(ids["clone_path"]).is_dir()
+  back = ui.post("/api/repos", {"source": f"file://{bare}"})
+  assert back["id"] == ids["clone"]
+  assert back["path"] == ids["clone_path"]
+  # another repo with the same name still gets its own directory
+  other = world.root / "other" / "work.git"
+  other.parent.mkdir(exist_ok=True)
+  world.git("clone", "-q", "--bare", str(world.work), str(other), cwd=world.root)
+  second = ui.post("/api/repos", {"source": f"file://{other}"})
+  assert second["id"] != ids["clone"]
+  assert Path(second["path"]) == clones / "work-2"
+  ui.post(f"/api/repos/{second['id']}/remove", {"delete": True})
+  assert not Path(second["path"]).exists()
+  assert sorted(p.name for p in clones.iterdir()) == ["work"]
+  assert len(ui.get("/api/repos")) == 2
+
+
 def test_a_run_resets_a_managed_clone(
   ui: UI, world: World, ids: dict[str, str]
 ) -> None:

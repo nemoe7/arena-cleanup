@@ -202,11 +202,19 @@ def repo_name(source: str) -> str:
   return tail or "repo"
 
 
+def remote_key(url: str) -> str:
+  """One key for every spelling of a clone URL: page address, `.git` suffix, or trailing slash."""
+  return normalize_source(url).rstrip("/").removesuffix(".git")
+
+
 def clone_url(url: str, reg: Registry) -> tuple[dict[str, Any] | None, str]:
-  """Clone into the managed directory. Returns (entry, error)."""
+  """Clone into the managed directory, or reuse the clone that already has this origin."""
   name = repo_name(url)
   target = reg.clones / name
   if target.exists():
+    origin = git("remote", "get-url", "origin", cwd=str(target))
+    if origin and remote_key(origin) == remote_key(url):
+      return register_path(str(target), reg, source=url, managed=True)
     suffix = 2
     while (reg.clones / f"{name}-{suffix}").exists():
       suffix += 1

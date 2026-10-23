@@ -47,6 +47,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `AGENTS.md` carries the shared agent rules of the repo template, with the nuu and nemoizer sections below them.
 - Log rows show the clock of the browser. The engine stamps each line in the server zone.
 - Remove on a card deletes its URL clone from the volume. A path repo is only forgotten.
+- A repeat add of a URL reuses the clone that already has that origin, `.git` or not. One repo keeps one card and one directory. A different repo with the same name still gets its own `-2` directory.
 - `POST /api/repos/<id>/reset`: fetch, check out the default branch, and reset it hard. Untracked files stay.
 - The repo page runs the full flow only. The Rewrite locally switch is gone, and `strip` stays a CLI command.
 - The card Remove X sits top right as a bare glyph. A red frame comes on hover, on press, and while armed.
