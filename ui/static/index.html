@@ -1076,8 +1076,9 @@
         el("span", { class: "ico" }, icon("triangle-alert")),
         el("div", { style: "flex:1" },
           el("b", {}, "Cannot reach the server."),
-          " Every button here changes a git repo, so nothing is cached. Check that the container is running, then ",
-          el("button", { class: "btn ghost", style: "padding:2px 8px;margin-left:4px", onclick: () => loadRepos() }, "retry"), ".")));
+          " Every button here changes a git repo, so nothing is cached. Check that the container is running, then retry.",
+          el("div", { style: "margin-top:8px" },
+            el("button", { class: "btn ghost", id: "retry", onclick: () => loadRepos() }, "Retry")))));
     }
   }
 
