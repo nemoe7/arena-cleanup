@@ -19,37 +19,21 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 from annotate import annotate_image
+from measure import (
+  DEFAULT_SCALE,
+  DEFAULT_SHEET,
+  check_density,
+  parse_sheet,
+  point,
+)
 from measure import check as check_measurements
-from measure import parse_sheet
+from measure import main as measure_main
 
 VERSION = "0.1.4"
 HOME = Path(__file__).resolve().parent.parent
 CATALOG = HOME / "data" / "vendor" / "ui-ux-pro-max"
 WIDTHS = (1280, 360)
 SKIP = {".git", ".venv", "node_modules", "dist", "build", "__pycache__"}
-MODES = {
-  "critique": ("hierarchy", "alignment", "task clarity", "evidence for each judgment"),
-  "polish": ("spacing", "type", "icons", "focus", "state consistency"),
-  "harden": ("validation", "failure", "retry", "offline", "long content"),
-  "normalize": ("active design authority", "token drift", "component variants"),
-  "animate": ("motion purpose", "timing", "interruption", "reduced motion"),
-  "delight": ("useful feedback", "task relevance", "motion preference"),
-  "distill": ("primary task", "redundant controls", "retained facts and recovery"),
-  "onboard": ("first task", "empty state", "contextual help", "return path"),
-}
-RECORD_SECTIONS = (
-  "Purpose and status",
-  "Users, tasks, and language",
-  "Journeys and information architecture",
-  "Screens and states",
-  "Design system and tokens",
-  "Components and contracts",
-  "Accessibility and inclusion",
-  "Content and assets",
-  "Behavior and data",
-  "Evidence and handoff",
-  "Decisions and history",
-)
 
 
 def load(path):
@@ -275,80 +259,6 @@ def lint(root):
   }
 
 
-def brief(args):
-  result = load(args.input) if args.input else {}
-  if not isinstance(result, dict):
-    raise TypeError("brief must be a JSON object")
-  for name in ("audience", "task", "goal", "stack"):
-    supplied = getattr(args, name, None)
-    if supplied:
-      result[name] = supplied
-    result.setdefault(name, "unknown")
-  result.setdefault("constraints", [])
-  result.setdefault("acceptance", [])
-  result.setdefault("unknowns", [])
-  if not isinstance(result["unknowns"], list):
-    raise TypeError("brief unknowns must be an array")
-  for name in ("audience", "task", "goal", "stack"):
-    if result[name] == "unknown" and name not in result["unknowns"]:
-      result["unknowns"].append(name)
-  return result
-
-
-def system(root, source):
-  context = load(source)
-  if not isinstance(context, dict):
-    raise TypeError("brief must be a JSON object")
-  query = " ".join(str(context.get(name, "")) for name in ("task", "goal", "audience"))
-  existing = extract(root)
-  return {
-    "status": "proposed",
-    "brief": context,
-    "existing_authority": existing,
-    "recommendations": {
-      name: search(query, name, context.get("stack"), 3)
-      for name in ("styles", "colors", "typography", "products", "ui-reasoning")
-    },
-    "writes": [],
-    "unknowns": context.get("unknowns", []),
-  }
-
-
-def teach(root, record, create=False):
-  destination = contained(root, record or "docs/design.md")
-  if destination.exists():
-    text = destination.read_text(encoding="utf-8")
-    return {
-      "status": "existing",
-      "authority": str(destination),
-      "writes": [],
-      "headings": re.findall(r"^#{1,6}\s+(.+)$", text, re.MULTILINE),
-      "mapping_required": list(RECORD_SECTIONS),
-    }
-  template = (HOME / "references/design-document.md").read_text(encoding="utf-8")
-  fields = re.findall(
-    r"^\d+\. \*\*(.+?)\*\*:\s*(?:Record|Link) (.+)$", template, re.MULTILINE
-  )
-  text = (
-    "# Design record\n\n"
-    + "\n\n".join(
-      f"## {heading}\n\n- Fields: {description}\n- Status: unknown.\n- Evidence: not run."
-      for heading, description in fields
-    )
-    + "\n"
-  )
-  if create:
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    with destination.open("x", encoding="utf-8") as stream:
-      stream.write(text)
-  return {
-    "status": "created" if create else "proposed",
-    "authority": str(destination),
-    "markdown": text,
-    "writes": [str(destination)] if create else [],
-  }
-
-
 def assets(root, manifest):
   rows = load(manifest)
   if not isinstance(rows, list):
@@ -476,103 +386,34 @@ def browser(args):
       capture["house_measurements"] = check_measurements(
         capture.get("measurements", {}), sheet
       )
+      capture["density_findings"] = check_density(capture.get("measurements", {}))
+      location = {
+        "width": capture["width"],
+        "scheme": capture["scheme"],
+        "motion": capture["motion"],
+      }
       result.setdefault("findings", []).extend(
         {
           "rule": "UIX201",
           "severity": "review",
           "evidence": finding,
-          "location": {
-            "width": capture["width"],
-            "scheme": capture["scheme"],
-            "motion": capture["motion"],
-          },
+          "location": location,
         }
         for finding in capture["house_measurements"]
+      )
+      result.setdefault("findings", []).extend(
+        {
+          "rule": row["rule"],
+          "severity": "review",
+          "selector": row["selector"],
+          "evidence": row["evidence"],
+          "location": location,
+        }
+        for row in capture["density_findings"]
       )
     if result.get("findings"):
       result["status"] = "findings"
   return result
-
-
-def mode_report(root, mode, evidence):
-  rendered = load(evidence) if evidence else {}
-  if not isinstance(rendered, dict):
-    raise TypeError("evidence must be a JSON report object")
-  nested = rendered.get("rendered", {})
-  if not isinstance(nested, dict):
-    raise TypeError("rendered evidence must be an object")
-  captures = rendered.get("captures", nested.get("captures", []))
-  if not isinstance(captures, list) or any(
-    not isinstance(row, dict) for row in captures
-  ):
-    raise ValueError("evidence captures must be an array of objects")
-  properties = {}
-  actions, motion = [], []
-  for capture in captures:
-    if not isinstance(capture.get("flow", {}), dict) or not isinstance(
-      capture.get("measurements", {}), dict
-    ):
-      raise TypeError("capture flow and measurements must be objects")
-    steps = capture.get("flow", {}).get("steps", [])
-    elements = capture.get("measurements", {}).get("elements", [])
-    if not isinstance(steps, list) or any(not isinstance(step, dict) for step in steps):
-      raise TypeError("flow steps must be an array of objects")
-    if not isinstance(elements, list) or any(
-      not isinstance(element, dict) for element in elements
-    ):
-      raise TypeError("measured elements must be an array of objects")
-    actions.extend(steps)
-    for element in elements:
-      values = element.get("values", {})
-      if not isinstance(values, dict):
-        raise TypeError("computed values must be an object")
-      for name, value in values.items():
-        properties.setdefault(name, Counter())[str(value)] += 1
-        if (
-          mode == "animate"
-          and capture.get("motion") == "reduce"
-          and name in {"animation-duration", "transition-duration"}
-          and any(float(part) > 0 for part in re.findall(r"[\d.]+", str(value)))
-        ):
-          motion.append(
-            {
-              "selector": element["selector"],
-              "property": name,
-              "value": value,
-              "status": "review",
-            }
-          )
-  summary = {
-    "status": "measured"
-    if any(row.get("measurements") for row in captures)
-    else "not_checked",
-    "captures": [
-      {
-        "width": row.get("width"),
-        "scheme": row.get("scheme"),
-        "motion": row.get("motion"),
-        "status": row.get("status"),
-      }
-      for row in captures
-    ],
-    "values": {name: dict(counts) for name, counts in properties.items()},
-    "actions": actions,
-    "reduced_motion_candidates": motion,
-  }
-  source = lint(root)
-  return {
-    "mode": mode,
-    "source": source,
-    "findings": source["findings"],
-    "design": extract(root),
-    "rendered_evidence": summary,
-    "review_dimensions": [
-      {"name": name, "status": "needs_contextual_review"} for name in MODES[mode]
-    ],
-    "writes": [],
-    "visual_judgment": "not_run",
-    "real_device": "not_run",
-  }
 
 
 def doctor(root, manifest=None, config=None):
@@ -638,13 +479,13 @@ def doctor(root, manifest=None, config=None):
 
 
 def main(argv=None):
+  raw_args = list(sys.argv[1:] if argv is None else argv)
+  if raw_args and raw_args[0] in {"check", "ruler", "density"}:
+    return measure_main(raw_args)
   parser = argparse.ArgumentParser(description=__doc__)
   commands = parser.add_subparsers(dest="command", required=True)
   for name in (
-    "brief",
     "search",
-    "system",
-    "teach",
     "assets",
     "lint",
     "extract",
@@ -655,74 +496,76 @@ def main(argv=None):
     "audit",
     "a11y",
     "live",
-    *MODES,
+    "check",
+    "density",
+    "ruler",
   ):
     command = commands.add_parser(name)
-    command.add_argument("--project", type=Path, default=Path.cwd())
-    command.add_argument("--output", type=Path, required=name == "annotate")
+    if name == "check":
+      command.add_argument("report", type=Path)
+      command.add_argument("-s", "--sheet", type=Path, default=DEFAULT_SHEET)
+      command.add_argument("-k", "--scale", type=float, default=DEFAULT_SCALE)
+      command.add_argument("-d", "--density", action="store_true")
+      continue
+    if name == "density":
+      command.add_argument("report", type=Path)
+      continue
+    if name == "ruler":
+      command.add_argument("-f", "--from", dest="start", type=point, required=True)
+      command.add_argument("-t", "--to", dest="end", type=point, required=True)
+      command.add_argument("-s", "--sheet", type=Path, default=DEFAULT_SHEET)
+      command.add_argument("-k", "--scale", type=float, default=DEFAULT_SCALE)
+      continue
+    command.add_argument("-p", "--project", type=Path, default=Path.cwd())
+    command.add_argument("-o", "--output", type=Path, required=name == "annotate")
     if name == "annotate":
-      command.add_argument("--input", type=Path, required=True)
-      command.add_argument("--box", action="append", default=[])
-      command.add_argument("--label", action="append", default=[])
-      command.add_argument("--arrow", action="append", default=[])
-      command.add_argument("--callout", action="append", default=[])
-      command.add_argument("--spec", type=Path)
-    if name == "brief":
-      command.add_argument("--input", type=Path)
-      for field in ("audience", "task", "goal", "stack"):
-        command.add_argument(f"--{field}")
+      command.add_argument("-i", "--input", type=Path, required=True)
+      command.add_argument("-b", "--box", action="append", default=[])
+      command.add_argument("-l", "--label", action="append", default=[])
+      command.add_argument("-a", "--arrow", action="append", default=[])
+      command.add_argument("-c", "--callout", action="append", default=[])
+      command.add_argument("-s", "--spec", type=Path)
     if name == "search":
       command.add_argument("query")
-      command.add_argument("--dataset")
-      command.add_argument("--stack")
-      command.add_argument("--limit", type=int, default=10)
-    if name in MODES:
-      command.add_argument("--evidence", type=Path)
-    if name == "system":
-      command.add_argument("--brief", type=Path, required=True)
-    if name == "teach":
-      command.add_argument("--record")
-      command.add_argument("--create", action="store_true")
+      command.add_argument("-d", "--dataset")
+      command.add_argument("-s", "--stack")
+      command.add_argument("-l", "--limit", type=int, default=10)
     if name == "doctor":
-      command.add_argument("--manifest", type=Path)
-      command.add_argument("--config", type=Path)
+      command.add_argument("-m", "--manifest", type=Path)
+      command.add_argument("-c", "--config", type=Path)
     if name == "assets":
-      command.add_argument("--manifest", type=Path)
-      command.add_argument("--fetch")
-      command.add_argument("--destination")
-      command.add_argument("--authorize-fetch", action="store_true")
+      command.add_argument("-m", "--manifest", type=Path)
+      command.add_argument("-f", "--fetch")
+      command.add_argument("-d", "--destination")
+      command.add_argument("-A", "--authorize-fetch", action="store_true")
     if name in {"inspect", "flow", "audit", "a11y", "live"}:
-      command.add_argument("--url", required=name != "audit")
-      command.add_argument("--artifacts", default="ui-evidence")
-      command.add_argument("--widths", nargs="*", type=int, default=[])
+      command.add_argument("-u", "--url", required=name != "audit")
+      command.add_argument("-d", "--artifacts", default="ui-evidence")
+      command.add_argument("-w", "--widths", nargs="*", type=int, default=[])
       command.add_argument(
-        "--selector", default="button,input,textarea,select,a,h1,h2,img,main"
+        "-s", "--selector", default="button,input,textarea,select,a,h1,h2,img,main"
       )
-      command.add_argument("--ready")
-      command.add_argument("--a11y", action="store_true")
-      command.add_argument("--engine", default="auto")
-      command.add_argument("--executable")
-      command.add_argument("--timeout", type=int, default=20)
-      command.add_argument("--flow", type=Path, required=name == "flow")
-      command.add_argument("--profile", choices=("project", "house"), default="project")
-      command.add_argument("--edit", type=Path)
-      command.add_argument("--authorize-edit", action="store_true")
-      command.add_argument("--overlaps", action="store_true")
-  args = parser.parse_args(argv)
+      command.add_argument("-r", "--ready")
+      command.add_argument("-a", "--a11y", action="store_true")
+      command.add_argument("-e", "--engine", default="auto")
+      command.add_argument("-x", "--executable")
+      command.add_argument("-t", "--timeout", type=int, default=20)
+      command.add_argument("-f", "--flow", type=Path, required=name == "flow")
+      command.add_argument(
+        "-P", "--profile", choices=("project", "house"), default="project"
+      )
+      command.add_argument("-E", "--edit", type=Path)
+      command.add_argument("-A", "--authorize-edit", action="store_true")
+      command.add_argument("-O", "--overlaps", action="store_true")
+  args = parser.parse_args(raw_args)
   root = args.project.resolve()
   if not root.is_dir():
     parser.error("project directory does not exist")
   try:
-    if args.command == "brief":
-      result = brief(args)
-    elif args.command == "search":
+    if args.command == "search":
       if not 0 < args.limit <= 100:
         raise ValueError("limit must be from 1 through 100")
       result = search(args.query, args.dataset, args.stack, args.limit)
-    elif args.command == "system":
-      result = system(root, args.brief)
-    elif args.command == "teach":
-      result = teach(root, args.record, args.create)
     elif args.command == "assets":
       if args.fetch:
         if not args.destination:
@@ -753,7 +596,7 @@ def main(argv=None):
       if args.timeout <= 0 or any(width <= 0 for width in args.widths):
         raise ValueError("timeout and widths must be positive")
       result = browser(args)
-    elif args.command == "audit":
+    else:
       result = {
         "source": lint(root),
         "design": extract(root),
@@ -764,8 +607,6 @@ def main(argv=None):
         "participant_research": "not_run",
         "real_device": "not_run",
       }
-    else:
-      result = mode_report(root, args.command, args.evidence)
     if args.command == "audit":
       result["findings"] = result["source"]["findings"] + result["rendered"].get(
         "findings", []

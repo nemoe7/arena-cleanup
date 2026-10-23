@@ -22,7 +22,7 @@
 
   /* Type: one family, three weights, a short ramp */
   --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-mono: "Monaspace Neon", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --size-12: 12px;
   --size-13: 13px;
   --size-14: 14px;

@@ -47,9 +47,8 @@
 - NEVER count filename, receipt, summary, remembered rule, or partial read (head/tail/grep) as current full text.
 - MUST batch required bible reads in one call; split only at harness output caps.
 - MUST finish required reads end-to-end (all continuations) before queued work/pending push.
-- Run arena-skill questionnaire immediately after initial visibility response, before first inbox poll, and after compaction/summary/context replacement, before queued work.
+- Run arena-skill survey immediately after initial visibility response, before first inbox poll, and after compaction/summary/context replacement, before queued work.
 - Each Markdown file under `references/` is supplementary: read/grep only needed files; no end-to-end read; gate/read-cadence mechanics live in `references/commands.md` and `references/cadence.md`. Installation template copies are supplementary too.
-- Each new user chat message's first reply MUST state `Reasoning: on` or `Reasoning: off` once, after any owed 10-4 line. Tool results, steering notes, compaction/summary, continuations start no new turn.
 - In saved context, state the start sequence and full missing-context bible reads before queued work; no verbatim ARENA.md copy required.
 - After bible changes (incl. rebase/`main` update), MUST read full diff from last-read version before next work; unavailable/unclear → read full file.
 - Before non-setup tools: finish initial setup, await visibility answer, then first inbox call = `arena-preview poll`.
@@ -68,7 +67,7 @@
 - NEVER silently restore ntfy.
 - Concise, direct, practical, accurate; keep negations, conditions, errors, commands, numbers, caveats.
 - Follow repo docs, conventions and patterns.
-- MUST use ASD-STE100 for all human-facing text: responses, comments, docs.
+- MUST use `nemoizer` for all human-facing text (responses, comments, docs), falling back to ASD-STE100 and Humanizer when unavailable.
 - Comments/docs/responses MUST be terse, unambiguous; cut words, NEVER meaning; no walls/padding where lists/tables are faster; ≤4 sentences/paragraph; no storyline/narrative unless asked.
 - Maintain changelogs per [Keep a Changelog](https://keepachangelog.com/) unless the repo uses another format.
 - Open on the substance, NEVER preamble or postamble.
@@ -149,7 +148,7 @@
 
 ## Style
 
-- `nemoe7` repos: 2-space indent beats formatter defaults; Markdown: markdownlint defaults + MD060, MD013 off; Python: Ruff defaults in project `pyproject.toml` when suitable, else `ruff.toml`, with only AGENTS.md conventions until flagged; create missing config exactly before gates; gates `ruff check`/`ruff format`, no CLI overrides.
+- `nemoe7` repos: 2-space indent beats formatter defaults; Markdown: markdownlint defaults + MD060, MD013 off; Python: Ruff defaults in project `pyproject.toml` when suitable, else `ruff.toml`, with only AGENTS.md conventions until flagged; create missing config exactly before gates; run `ruff format` before other local gates, and gates `ruff check`/`ruff format` with no CLI overrides.
 - Add code/config comments ONLY when method complexity needs them.
 
 ## Git
@@ -196,7 +195,7 @@
 - Keep working; next bash/`arena-preview` call prints verdict once (`run <name> done: exit N`), one status line/call until then.
 - Read the verdict line before any push.
 - Snapshot limits are best-effort (~128 MB/10,000 files): stay well below both, dropping large or temp artifacts.
-- Keep durable work in plain files.
+- Keep durable work in plain files; `bash` starts at repo root, so `cd` into it is redundant.
 
 ## Deliverables
 

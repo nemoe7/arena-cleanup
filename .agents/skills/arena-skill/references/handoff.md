@@ -6,4 +6,4 @@
 - State explicit boundaries under `## Limits`: what the change checks, what it skips, and what requires external or human verification.
 - End with `## Acceptance tests` (numbered runnable scenarios with expected inputs, findings, and exit codes) and `## Reference numbers` (pinned package versions, viewports, thresholds, and rule IDs).
 - When the handoff changes rule or skill clauses in this repository, pair it with an amendment proposal table per changed clause (`Location | Current | Proposed` + `Decision on the amended line:`).
-- Omit questionnaire answers, answer keys, agent keys, and proxy URLs from every handoff.
+- Omit survey answers, answer keys, agent keys, and proxy URLs from every handoff.

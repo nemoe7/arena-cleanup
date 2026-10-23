@@ -128,13 +128,65 @@ async function metrics(page, selector) {
     const elements = [...document.querySelectorAll(selector)].map(element => {
       const style = getComputedStyle(element);
       const box = element.getBoundingClientRect();
+      const intervals = [];
+      if (typeof document.createRange === 'function' && typeof document.createTreeWalker === 'function') {
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+          if (!node.nodeValue || !node.nodeValue.trim()) continue;
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          for (const rect of range.getClientRects()) {
+            if (rect.width > 0 && rect.height > 0) {
+              intervals.push([Math.max(box.x, rect.x), Math.min(box.x + box.width, rect.x + rect.width)]);
+            }
+          }
+        }
+      }
+      for (const child of element.querySelectorAll('button, input, select, textarea, img, svg, progress, [role="button"]')) {
+        const rect = child.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          intervals.push([Math.max(box.x, rect.x), Math.min(box.x + box.width, rect.x + rect.width)]);
+        }
+      }
+      intervals.sort((a, b) => a[0] - b[0]);
+      let inkWidth = 0;
+      let curStart = null, curEnd = null;
+      for (const [start, end] of intervals) {
+        if (end <= start) continue;
+        if (curStart === null) { curStart = start; curEnd = end; }
+        else if (start <= curEnd) { curEnd = Math.max(curEnd, end); }
+        else { inkWidth += curEnd - curStart; curStart = start; curEnd = end; }
+      }
+      if (curStart !== null) inkWidth += curEnd - curStart;
+      const hasInkContent = intervals.length > 0;
+      const inkRatio = box.width > 0 && hasInkContent ? Number((inkWidth / box.width).toFixed(4)) : null;
+      const childBoxes = [...(element.children || [])].map(child => {
+        const cs = getComputedStyle(child);
+        if (cs.display === 'none' || cs.visibility === 'hidden') return null;
+        const r = child.getBoundingClientRect();
+        return r.width > 0 && r.height > 0 ? r : null;
+      }).filter(Boolean).sort((a, b) => a.x - b.x);
+      let maxSiblingGap = 0;
+      for (let i = 1; i < childBoxes.length; i++) {
+        const prev = childBoxes[i - 1], curr = childBoxes[i];
+        const verticalOverlap = Math.min(prev.y + prev.height, curr.y + curr.height) - Math.max(prev.y, curr.y);
+        if (verticalOverlap > 0) {
+          const gap = curr.x - (prev.x + prev.width);
+          if (gap > maxSiblingGap) maxSiblingGap = Number(gap.toFixed(2));
+        }
+      }
+      const tag = element.tagName.toLowerCase();
+      const inputType = tag === 'input' ? (element.getAttribute('type') || 'text').toLowerCase() : null;
       return {selector: selectorFor(element),
-        tag: element.tagName.toLowerCase(), role: element.getAttribute('role'),
+        tag, inputType, role: element.getAttribute('role'),
         label: element.getAttribute('aria-label'),
         labelledBy: element.getAttribute('aria-labelledby'),
         labels: element.labels ? [...element.labels].map(label => label.textContent) : [],
         text: ['INPUT', 'TEXTAREA'].includes(element.tagName) ? null : element.textContent.slice(0, 200),
         bounds: {x: box.x, y: box.y, width: box.width, height: box.height},
+        ...(inkRatio !== null ? {inkWidth: Number(inkWidth.toFixed(2)), inkRatio} : {}),
+        maxSiblingGap,
         values: Object.fromEntries(properties.map(name => [name, style.getPropertyValue(name)]))};
     });
     return {width: innerWidth, height: innerHeight, elements,

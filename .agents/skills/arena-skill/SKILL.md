@@ -15,25 +15,25 @@ Use this guide and its Markdown references for instructions. Do not read shipped
 
 1. Run `<skill>/scripts/install.sh` from repo root at session start and after skill source changes, and restart running preview server after source changes, before next CLI call/preview start.
 2. Start the preview as Setup step 3 describes.
-3. After initial visibility response, read references/questionnaire.json and submit fresh answers via arena-preview questionnaire '<json>'. Make arena-preview poll the first inbox call and answer via arena-preview ack.
+3. After initial visibility response, read references/survey.json and submit fresh answers via arena-preview survey '<json>'. Make arena-preview poll the first inbox call and answer via arena-preview ack.
 4. When a call needs the recorded key after a 401 or an owner question, run `arena-preview key` to print the key, host, and stamp. With no live preview server, it fails with the restart line.
 5. Try `fetch_page` on the actual source URL first; use [proxy routes](#proxy-access) via `fetch_page` only if that call cannot return needed data.
 
-6. After context replacement, finish required reads and pending inbox acks. Read references/questionnaire.json and submit fresh answers via arena-preview questionnaire '<json>' before queued work.
+6. After context replacement, finish required reads and pending inbox acks. Read references/survey.json and submit fresh answers via arena-preview survey '<json>' before queued work.
 
-## Questionnaire
+## Survey
 
 Answer from existing knowledge only: NEVER research answers, open other files, run code, ask another system, reuse earlier responses, or inspect the answer key.
 
 Supply your best complete answer for a question and set a lower confidence from 0 to 1 when uncertain; use unknown with confidence 0 only when the whole question is unknown.
 
-Omit questionnaire answers and answer-key details from summaries and handoffs.
+Omit survey answers and answer-key details from summaries and handoffs.
 
 ## Setup
 
 1. Find this skill's actual path; installed and source paths differ. Report missing installed files; do not install or repair them without authorization.
 2. Use an ignored, persisted state directory, default `arena-state`. Verify `core.excludesFile` with `git check-ignore`; never add it to the repository `.gitignore`, put it in a cache/build folder, or commit/push its state and reports.
-3. Use `arena-preview <command>` for CLI calls, never the full script path. Start the server with Arena's long-lived process tool, named `<repo> - Steering`, not a timed shell; that tool MUST host `serve` alone. Run `read`, `ack`, `task set`, `report publish` and every other command as one-shot shell calls. Send a long command the gate does not start detached through `arena-preview run start <name> -- <command>`; its verdict prints on a later call:
+3. Use `arena-preview <command>` for CLI calls, never the full script path; `bash` starts at the repo root, so `cd` into it is redundant. Start the server with Arena's long-lived process tool, named `<repo> - Steering`, not a timed shell; that tool MUST host `serve` alone. Run `read`, `ack`, `task set`, `report publish` and every other command as one-shot shell calls. Send a long command the gate does not start detached through `arena-preview run start <name> -- <command>`; its verdict prints on a later call:
 
    ```bash
    arena-preview serve --port 8000

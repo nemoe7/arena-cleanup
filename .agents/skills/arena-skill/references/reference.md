@@ -14,4 +14,4 @@ Use this index to jump directly to the topic file a task needs instead of readin
 | [pr-rest.md](pr-rest.md) | Pull-request title and body REST PATCH recipe (`jq --rawfile` + `gh api`) |
 | [github-job-logs.md](github-job-logs.md) | GitHub Actions job-log `Location` redirect + `fetch_page` recipe |
 | [handoff.md](handoff.md) | Cross-session and cross-agent handoff document recipe |
-| [questionnaire.json](questionnaire.json) | Context-check questionnaire schema and questions |
+| [survey.json](survey.json) | Context-check survey schema and questions |

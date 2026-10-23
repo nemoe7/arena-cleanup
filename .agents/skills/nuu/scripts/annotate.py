@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import math
 import struct
+import sys
 import zlib
 from pathlib import Path
 
@@ -461,3 +463,34 @@ def annotate_image(
     "findings": [],
     "writes": [str(dst)],
   }
+
+
+def main(argv: list[str] | None = None) -> int:
+  parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+  parser.add_argument("-i", "--input", type=Path, required=True)
+  parser.add_argument("-o", "--output", type=Path, required=True)
+  parser.add_argument("-b", "--box", action="append", default=[])
+  parser.add_argument("-l", "--label", action="append", default=[])
+  parser.add_argument("-a", "--arrow", action="append", default=[])
+  parser.add_argument("-c", "--callout", action="append", default=[])
+  parser.add_argument("-s", "--spec", type=Path)
+  args = parser.parse_args(argv)
+  try:
+    result = annotate_image(
+      args.input,
+      args.output,
+      boxes=args.box,
+      labels=args.label,
+      arrows=args.arrow,
+      callouts=args.callout,
+      spec_path=args.spec,
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+  except (OSError, ValueError, TypeError) as error:
+    print(json.dumps({"tool": "annotate", "status": "error", "error": str(error)}))
+    return 2
+
+
+if __name__ == "__main__":
+  sys.exit(main())

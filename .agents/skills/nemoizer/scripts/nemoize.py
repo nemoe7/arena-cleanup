@@ -1047,6 +1047,10 @@ def prose_review(path, text, context, paragraph_cap):
 
 def source_prose(path, text, context, paragraph_cap):
   """Check extracted code prose while retaining physical source locations."""
+  if context == "unknown" and (
+    path.name in {"README.md", "CHANGELOG.md", "INSTALL.md"} or "docs" in path.parts
+  ):
+    context = "description"
   if path.suffix in COMMENT_SUFFIXES or path.name in SPECIAL_CODE_NAMES:
     spans = prose_spans(path, text)
   elif path.suffix in {".json", ".csv", ".lock"}:
@@ -1490,7 +1494,7 @@ def main(argv=None):
     return prose_main(argv[1:])
   if argv[:1] == ["review-tests"]:
     return review_tests_main(argv[1:])
-  if argv[:1] == ["audit"]:
+  if argv[:1] in (["audit"], ["collect"]):
     argv = ["--audit", *argv[1:]]
   parser = argparse.ArgumentParser(description="Check Nemoizer prose and test domains.")
   parser.add_argument("targets", nargs="*", default=["."])
@@ -1512,11 +1516,21 @@ def main(argv=None):
     "--format", action="store_true", help="apply the rotations in place"
   )
   parser.add_argument(
+    "--selftest", action="store_true", help="run built-in self-tests and exit"
+  )
+  parser.add_argument(
     "--context", choices=[*SENTENCE_CAPS, "unknown"], default="unknown"
   )
   parser.add_argument("--paragraph-cap", type=int, default=PARAGRAPH_CAP)
   parser.add_argument("--test-helper", action="append", type=Path, default=[])
   arguments = parser.parse_args(argv)
+  if arguments.selftest:
+    assert rotate("Transmit the kind.") == "Send the type."
+    sample = prose_review(
+      Path("sample.md"), "Start; stop.\n", "description", PARAGRAPH_CAP
+    )
+    assert any(row["rule"] == "STE100" for row in sample)
+    return 0
   if not 0 < arguments.paragraph_cap <= PARAGRAPH_CAP:
     parser.error(f"--paragraph-cap must be between 1 and {PARAGRAPH_CAP}")
   for helper in arguments.test_helper:
