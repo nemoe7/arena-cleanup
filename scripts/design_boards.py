@@ -121,6 +121,10 @@ BOARD_CSS = """
   color: var(--muted); padding: 6px 8px; }
 .wf .blk.lbl.hi { color: #fff; }
 .wf .bar { display: flex; gap: 6px; align-items: center; }
+.wf .wbox { display: inline-flex; width: 12px; height: 12px; margin-right: 6px; align-items: center;
+  justify-content: center; border: 1px solid var(--line-2); border-radius: 3px; font-size: 10px; }
+.wf .wbox.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.wf .down { transform: rotate(90deg); }
 .wf .arrow { align-self: center; color: var(--dim); font-size: var(--fs-1); display: flex; flex-direction: column;
   align-items: center; gap: 4px; padding: 0 4px; width: 92px; text-align: center; }
 .wf .arrow b { font-size: 18px; color: var(--muted); }
@@ -209,10 +213,17 @@ def block(
   )
   style = ";".join(
     s
-    for s in (f"height:{height}px" if height else "", f"width:{width}" if width else "")
+    for s in (
+      f"min-height:{height}px" if height else "",
+      f"width:{width}" if width else "",
+    )
     if s
   )
   return f'<div class="{cls}" style="{style}">{label}</div>'
+
+
+def wbox(on: bool) -> str:
+  return f'<span class="wbox{" on" if on else ""}">{icon("check") if on else ""}</span>'
 
 
 def frame(title: str, sub: str, body: str) -> str:
@@ -312,7 +323,12 @@ def flow_board(_: dict[str, bytes]) -> str:
 def wireframe_board(_: dict[str, bytes]) -> str:
   column = '<div class="col" style="flex:1;gap:8px;align-items:stretch">'
   options = (
-    block("Options ▾ — main (default) · defaults", height=28)
+    block(
+      "Options "
+      + icon("chevron-right", "ico-svg down")
+      + " — main (default) · defaults",
+      height=28,
+    )
     + '<div class="bar" style="align-items:flex-start;gap:10px">'
     + column
     + block("Target branch | main (default)", height=28)
@@ -324,20 +340,20 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     + block("PR check timeout | slider, 0 to 120 min | 15 min", height=28)
     + '<div class="bar" style="flex-wrap:wrap">'
     + "".join(
-      block(t, height=24, width="auto")
-      for t in (
-        "☐ Dry Run",
-        "☐ Ignore PR Checks",
-        "☐ Keep Empty Commits",
-        "☑ Update Tags",
-        "☐ Force Push",
+      block(wbox(on) + t, height=24, width="auto")
+      for t, on in (
+        ("Dry Run", False),
+        ("Ignore PR Checks", False),
+        ("Keep Empty Commits", False),
+        ("Update Tags", True),
+        ("Force Push", False),
       )
     )
     + "</div></div></div>"
   )
   run = (
     '<div class="bar">'
-    + block("● idle", width="60px")
+    + block(icon("circle-small") + "&nbsp;idle", width="60px")
     + '<div class="grow"></div>'
     + block("Clean & Push", hi=True, width="120px")
     + block("Cancel", width="60px")
