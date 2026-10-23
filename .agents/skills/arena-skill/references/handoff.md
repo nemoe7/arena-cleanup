@@ -1,9 +1,29 @@
-# Recipe: Agent handoff
+# Handoff: <subject>
 
-- Open with `# Handoff: <subject>` and a `## Why` or `## Problem` section stating the concrete gap, failure mode, or goal in 1–3 sentences.
-- Group each deliverable under a numbered `## Piece N — <title>` or `## Recipe` section that names the exact repository file paths, CLI flags, exit codes, and output schema or rule IDs.
-- Include the exact command, code, or configuration snippet the receiving agent needs, with no session-local IDs or local-only paths.
-- State explicit boundaries under `## Limits`: what the change checks, what it skips, and what requires external or human verification.
-- End with `## Acceptance tests` (numbered runnable scenarios with expected inputs, findings, and exit codes) and `## Reference numbers` (pinned package versions, viewports, thresholds, and rule IDs).
-- When the handoff changes rule or skill clauses in this repository, pair it with an amendment proposal table per changed clause (`Location | Current | Proposed` + `Decision on the amended line:`).
-- Omit survey answers, answer keys, agent keys, and proxy URLs from every handoff.
+## Problem
+
+<State the concrete gap, failure mode, or goal in 1 to 3 sentences.>
+
+## Piece 1 - <deliverable title>
+
+- **Files:** `<repo-relative-path>`
+- **CLI / Interface:** `<command, flags, exit codes, and output schema or rule IDs>`
+
+```<lang>
+<exact command, code, or configuration snippet>
+```
+
+## Limits
+
+- **Checked:** `<what the change checks>`
+- **Skipped:** `<what the change skips>`
+- **External / Human verification:** `<what requires external or human verification>`
+
+## Acceptance tests
+
+1. `<runnable scenario with expected inputs, findings, and exit codes>`
+
+## Reference numbers
+
+- **Versions:** `<pinned package versions>`
+- **Thresholds / IDs:** `<viewports, thresholds, and rule IDs>`

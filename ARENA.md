@@ -47,7 +47,7 @@
 - NEVER count filename, receipt, summary, remembered rule, or partial read (head/tail/grep) as current full text.
 - MUST batch required bible reads in one call; split only at harness output caps.
 - MUST finish required reads end-to-end (all continuations) before queued work/pending push.
-- Run arena-skill survey immediately after initial visibility response, before first inbox poll, and after compaction/summary/context replacement, before queued work.
+- Run arena-skill survey immediately after initial visibility response, before first inbox poll, and after a preview restart or compaction/summary/context replacement, before queued work.
 - Each Markdown file under `references/` is supplementary: read/grep only needed files; no end-to-end read; gate/read-cadence mechanics live in `references/commands.md` and `references/cadence.md`. Installation template copies are supplementary too.
 - In saved context, state the start sequence and full missing-context bible reads before queued work; no verbatim ARENA.md copy required.
 - After bible changes (incl. rebase/`main` update), MUST read full diff from last-read version before next work; unavailable/unclear → read full file.
@@ -168,7 +168,7 @@
 - `GH_TOKEN` can expire mid-turn, repo unchanged: `gh auth status` = invalid, push fails, `gh auth setup-git` won't help.
 - Retry once, NEVER loop or ask for credentials — then ask through `ask_user` for a GitHub reconnect in Arena and a reply in chat; NEVER end silently.
 - Prove recovery with `git ls-remote origin <branch>` before pushing again.
-- Update PR title/body via the [REST recipe](.agents/skills/arena-skill/references/pr-rest.md); read GitHub Actions job logs via the [job-log redirect recipe](.agents/skills/arena-skill/references/github-job-logs.md).
+- Update PR title/body via the [REST recipe](.agents/skills/arena-skill/references/recipes/pr-rest.md); read GitHub Actions job logs via the [job-log redirect recipe](.agents/skills/arena-skill/references/recipes/github-job-logs.md).
 - **NEVER `-f body=@path`**; stage PR text in the workspace, NEVER /tmp. After every PATCH re-fetch title/body and diff against the staged file; a 200 is not proof.
 - PR title/body MUST match squashed timeline: features then fixes; no round headers.
 - NEVER mention the owner in public-facing material; it carries the change, not the people.
@@ -180,7 +180,7 @@
 
 ## Workspace
 
-- For Chromium work, use the [recipe](.agents/skills/arena-skill/references/chromium.md).
+- For Chromium work, use the [recipe](.agents/skills/arena-skill/references/recipes/chromium.md).
 - UI work: verify via screenshots from that pinned Chromium package; read rendered result before counting landed; when `nuu` is available and used for a UI task or audit, embed its screenshots, including before-and-after images, in the published report for user review.
 - Install repo tooling (deps, venvs) via `arena-preview run start` after the visibility question and before the first `poll` or `read` so the install runs detached without blocking a task; reserve `start_process` for the steering preview and demos/presentations.
 - Start each local gate on a stable tree; NEVER edit its covered root files while it runs. A remote PR CI watch does not freeze the working tree.
@@ -206,7 +206,7 @@
 - Previews have no network: inline CSS, embedded SVG/data URIs; no CDNs/remote fonts/stylesheets.
 - Servers bind 0.0.0.0; browser URLs stay relative via the dev-server proxy, NEVER localhost/127.0.0.1.
 - Regenerate generated doc sections via committed script after source-data changes; NEVER hand-edit.
-- For agent handoffs or cross-session specs, follow the [handoff recipe](.agents/skills/arena-skill/references/handoff.md).
+- For agent handoffs or cross-session specs, follow the [handoff template](.agents/skills/arena-skill/references/handoff.md).
 
 ## When in doubt
 

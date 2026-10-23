@@ -3,11 +3,18 @@
 import ast
 import io
 import json
+import re
 import subprocess
 import tokenize
 from functools import lru_cache
 from pathlib import Path
 
+COMMENT_BLOCK_CAP = 2
+DIRECTIVE_MARKER = re.compile(
+  r"^\s*(?:#|//)\s*(?:arena-preview-[\w-]+|case:\s*[\w-]+|shellcheck\s+disable=\S+|"
+  r"nonemo:\s*[A-Za-z0-9_-]+|noqa(?::.*)?|type:\s*ignore(?:\[.*\])?|pragma:\s*no cover|region|endregion)\s*$",
+  re.IGNORECASE,
+)
 USERSCRIPT_SUFFIX = ".user.js"
 USERSCRIPT_HEADER_START = "==UserScript=="
 USERSCRIPT_HEADER_END = "==/UserScript=="
@@ -303,6 +310,45 @@ def comment_lines(path: Path, source: str) -> set[int]:
     if spans is not None
     else set()
   )
+
+
+def directive_marker_lines(source: str, path: Path | None = None) -> set[int]:
+  """Return comment lines that carry required tool directives."""
+  numbers = {
+    number
+    for number, line in enumerate(source.splitlines(), start=1)
+    if DIRECTIVE_MARKER.match(line)
+  }
+  if path is not None:
+    comments = (
+      python_comments(source)
+      if path.suffix == ".py"
+      else span_comments(path, source) or []
+    )
+    numbers.update(
+      first
+      for text, first, last in comments
+      if first == last and DIRECTIVE_MARKER.fullmatch("# " + text)
+    )
+  return numbers
+
+
+def comment_blocks(path: Path, source: str) -> list[tuple[int, int]]:
+  """Return (start_line, line_count) for contiguous non-directive code comment blocks."""
+  blocks: list[tuple[int, int]] = []
+  start = None
+  previous = None
+  numbers = sorted(comment_lines(path, source) - directive_marker_lines(source, path))
+  for number in [*numbers, None]:
+    if number is not None and (previous is None or number == previous + 1):
+      start = number if start is None else start
+      previous = number
+      continue
+    if start is not None and previous is not None:
+      blocks.append((start, previous - start + 1))
+    start = number
+    previous = number
+  return blocks
 
 
 def prose_spans(path: Path, source: str) -> list[tuple[str, int, int]]:

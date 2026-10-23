@@ -525,6 +525,7 @@ def main(argv=None):
       command.add_argument("-a", "--arrow", action="append", default=[])
       command.add_argument("-c", "--callout", action="append", default=[])
       command.add_argument("-s", "--spec", type=Path)
+      command.add_argument("-S", "--scale", type=int)
     if name == "search":
       command.add_argument("query")
       command.add_argument("-d", "--dataset")
@@ -588,6 +589,7 @@ def main(argv=None):
         arrows=args.arrow,
         callouts=args.callout,
         spec_path=args.spec,
+        scale=args.scale,
       )
       args.output = None
     elif args.command == "doctor":

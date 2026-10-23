@@ -279,43 +279,56 @@ def draw_text(rgba, width, height, x, y, text, color, scale=1):
     cursor += 6 * scale
 
 
-def draw_label(rgba, width, height, x, y, text, color):
+def draw_label(rgba, width, height, x, y, text, color, scale=2):
   label = str(text).strip()
   if not label:
     raise ValueError("label text must not be empty")
-  pad = 4
-  box_w = len(label) * 6 + pad * 2
-  box_h = 7 + pad * 2
+  pad = 3 * scale + 1
+  box_w = (len(label) * 6 - 1) * scale + pad * 2
+  box_h = 7 * scale + pad * 2
   fill_rect(rgba, width, height, x, y, box_w, box_h, (17, 24, 39, 230))
-  draw_box(rgba, width, height, x, y, box_w, box_h, color, thickness=1)
-  draw_text(rgba, width, height, x + pad, y + pad, label, COLORS["white"], scale=1)
+  draw_box(rgba, width, height, x, y, box_w, box_h, color, thickness=max(1, scale // 2))
+  draw_text(rgba, width, height, x + pad, y + pad, label, COLORS["white"], scale=scale)
 
 
-def draw_callout(rgba, width, height, x, y, number, color, label=None):
+def draw_callout(rgba, width, height, x, y, number, color, label=None, scale=2):
   badge = str(number).strip()
   if not badge:
     raise ValueError("callout number must not be empty")
-  radius = 10
-  for dy in range(-radius - 1, radius + 2):
-    for dx in range(-radius - 1, radius + 2):
+  radius = 7 * scale + 3
+  border = max(2, scale)
+  for dy in range(-radius - border, radius + border + 1):
+    for dx in range(-radius - border, radius + border + 1):
       dist = math.hypot(dx, dy)
       if dist <= radius - 1:
         blend_pixel(rgba, width, height, x + dx, y + dy, color)
-      elif dist <= radius + 1:
+      elif dist <= radius + border - 1:
         blend_pixel(rgba, width, height, x + dx, y + dy, COLORS["white"])
-  text_w = len(badge) * 6 - 1
+  text_w = (len(badge) * 6 - 1) * scale
+  text_h = 7 * scale
   draw_text(
     rgba,
     width,
     height,
     x - text_w // 2,
-    y - 3,
+    y - text_h // 2,
     badge,
     COLORS["white"],
-    scale=1,
+    scale=scale,
   )
   if label:
-    draw_label(rgba, width, height, x + radius + 4, y - 7, label, color)
+    pad = 3 * scale + 1
+    box_h = 7 * scale + pad * 2
+    draw_label(
+      rgba,
+      width,
+      height,
+      x + radius + 4 * scale,
+      y - box_h // 2,
+      label,
+      color,
+      scale=scale,
+    )
 
 
 def parse_box(item):
@@ -408,6 +421,7 @@ def annotate_image(
   arrows=(),
   callouts=(),
   spec_path: Path | None = None,
+  scale: int | None = None,
 ):
   src = Path(input_path).resolve()
   dst = Path(output_path).resolve()
@@ -423,6 +437,9 @@ def annotate_image(
     if not isinstance(loaded, dict):
       raise TypeError("annotate spec must be a JSON object")
     spec = loaded
+  resolved_scale = int(scale if scale is not None else spec.get("scale", 2))
+  if not 1 <= resolved_scale <= 6:
+    raise ValueError("annotate scale must be between 1 and 6")
   all_boxes = [parse_box(item) for item in [*(spec.get("boxes") or []), *(boxes or [])]]
   all_labels = [
     parse_label(item) for item in [*(spec.get("labels") or []), *(labels or [])]
@@ -437,13 +454,13 @@ def annotate_image(
     raise ValueError("annotate requires at least one box, label, arrow, or callout")
   width, height, rgba = decode_png(src.read_bytes())
   for x, y, w, h, color in all_boxes:
-    draw_box(rgba, width, height, x, y, w, h, color)
+    draw_box(rgba, width, height, x, y, w, h, color, thickness=max(2, resolved_scale))
   for x1, y1, x2, y2, color in all_arrows:
     draw_arrow(rgba, width, height, x1, y1, x2, y2, color)
   for x, y, text, color in all_labels:
-    draw_label(rgba, width, height, x, y, text, color)
+    draw_label(rgba, width, height, x, y, text, color, scale=resolved_scale)
   for x, y, number, color, label in all_callouts:
-    draw_callout(rgba, width, height, x, y, number, color, label)
+    draw_callout(rgba, width, height, x, y, number, color, label, scale=resolved_scale)
   encoded = encode_png(width, height, rgba)
   dst.parent.mkdir(parents=True, exist_ok=True)
   with dst.open("xb") as stream:
@@ -454,6 +471,7 @@ def annotate_image(
     "output": str(dst),
     "width": width,
     "height": height,
+    "scale": resolved_scale,
     "annotations": {
       "boxes": len(all_boxes),
       "labels": len(all_labels),
@@ -474,6 +492,7 @@ def main(argv: list[str] | None = None) -> int:
   parser.add_argument("-a", "--arrow", action="append", default=[])
   parser.add_argument("-c", "--callout", action="append", default=[])
   parser.add_argument("-s", "--spec", type=Path)
+  parser.add_argument("-S", "--scale", type=int)
   args = parser.parse_args(argv)
   try:
     result = annotate_image(
@@ -484,6 +503,7 @@ def main(argv: list[str] | None = None) -> int:
       arrows=args.arrow,
       callouts=args.callout,
       spec_path=args.spec,
+      scale=args.scale,
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0

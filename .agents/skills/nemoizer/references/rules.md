@@ -1,4 +1,4 @@
-<!-- nonemo: NMO100; nonemo: NMO901; nonemo: NMO003; nonemo: STE001; nonemo: STE100; nonemo: STE200; nonemo: STE300; nonemo: STE901; nonemo: STE902; nonemo: STE903; nonemo: STE904; nonemo: STE905; nonemo: STE906; nonemo: STE908; nonemo: HMN100; nonemo: HMN200; nonemo: HMN300; nonemo: HMN400; nonemo: HMN500; nonemo: HMN600; nonemo: HMN901; nonemo: HMN902; nonemo: HMN903; nonemo: HMN904; nonemo: HMN905; nonemo: HMN906; nonemo: HMN907; nonemo: HMN908; nonemo: HMN909; nonemo: HMN910; nonemo: NMP100; nonemo: NMT100; nonemo: NMT200 -->
+<!-- nonemo: NMO100; nonemo: NMO901; nonemo: NMO003; nonemo: STE001; nonemo: STE100; nonemo: STE200; nonemo: STE300; nonemo: STE400; nonemo: STE401; nonemo: STE901; nonemo: STE902; nonemo: STE903; nonemo: STE904; nonemo: STE905; nonemo: STE906; nonemo: STE908; nonemo: STE909; nonemo: STE910; nonemo: HMN100; nonemo: HMN200; nonemo: HMN300; nonemo: HMN400; nonemo: HMN500; nonemo: HMN600; nonemo: HMN901; nonemo: HMN902; nonemo: HMN903; nonemo: HMN904; nonemo: HMN905; nonemo: HMN906; nonemo: HMN907; nonemo: HMN908; nonemo: HMN909; nonemo: HMN910; nonemo: NMP100; nonemo: NMT100; nonemo: NMT200 -->
 # Rules
 
 This document describes the rules enforced by `nemoizer`. Each rule also has a standalone reference file (`<id>.md`) in this directory.
@@ -42,16 +42,16 @@ Aliases: `soft-rotation`
 
 Fixable: Some violations can be fixed by tooling
 
-This rule triggers for manual review when text uses `pick` (`select`, or `picker` -> `selector`) or `repository` (`repo`, `repositories` -> `repos`).
+This rule triggers for manual review when text uses `pick` (`select`, or `picker` -> `selector`), `repository` (`repo`, `repositories` -> `repos`), or `pull request` (`PR`, `pull requests` -> `PRs`).
 
 ```text
-Pick a file from the repository.
+Pick a file from the repository and open a pull request.
 ```
 
 To fix this issue, rewrite the text as follows:
 
 ```text
-Select a file from the repo.
+Select a file from the repo and open a PR.
 ```
 
 Note: Default checks report `NMO901` as `(manual review)` with exit code `0`; `nemoizer format` rewrites unsuppressed matches in place.
@@ -165,6 +165,46 @@ Decide after you validate the input.
 ```
 
 Rationale: Direct verbs are shorter and state the action immediately.
+
+## `STE400` - Wordy prepositional and modal phrases
+
+Tags: `ste`, `plain-language`, `blocking`
+
+Aliases: `wordy-phrase`
+
+This rule triggers when prose uses a multi-word circumlocution such as `in order to`, `prior to`, `due to the fact that`, or `is able to`.
+
+```text
+Save the file prior to closing the window in order to keep your work.
+```
+
+To fix this issue, rewrite the text as follows:
+
+```text
+Save the file before closing the window to keep your work.
+```
+
+Rationale: Single plain words replace multi-word prepositional and modal phrases without losing meaning.
+
+## `STE401` - Archaic and legalistic connectors
+
+Tags: `ste`, `plain-language`, `blocking`
+
+Aliases: `archaic-connector`
+
+This rule triggers when prose uses an archaic or legalistic connector such as `heretofore`, `herein`, `thereof`, `thereby`, `whereby`, `aforementioned`, `pursuant to`, or `inter alia`.
+
+```text
+Update the aforementioned config and the keys therein.
+```
+
+To fix this issue, rewrite the text as follows:
+
+```text
+Update that config and its keys.
+```
+
+Rationale: Everyday connectors keep technical prose direct and understandable.
 
 ## `STE901` - Passive voice
 
@@ -305,6 +345,46 @@ The job finishes before the check starts.
 ```
 
 Rationale: Simple tenses keep timelines direct and easy to follow.
+
+## `STE909` - Inline numbered or lettered lists in prose
+
+Tags: `ste`, `plain-language`, `lists`, `advisory`
+
+Aliases: `inline-list`
+
+This rule triggers for manual review when a single prose line embeds an inline `(1) ... (2) ... (3)` or `(a) ... (b) ... (c)` list.
+
+```text
+The runner checks (1) formatting, (2) lint rules, and (3) unit tests.
+```
+
+To fix this issue, rewrite the text as follows:
+
+```text
+The runner checks formatting, lint rules, and unit tests.
+```
+
+Rationale: Vertical lists or simple serial lists scan faster than parenthesized inline numbering.
+
+## `STE910` - Double negatives and litotes
+
+Tags: `ste`, `plain-language`, `advisory`
+
+Aliases: `double-negative`
+
+This rule triggers for manual review when prose pairs `not` with a negated adjective (`not uncommon`, `not impossible`, `not insignificant`) or uses `never fails to`.
+
+```text
+Timeouts are not uncommon when the network is slow.
+```
+
+To fix this issue, rewrite the text as follows:
+
+```text
+Timeouts are common when the network is slow.
+```
+
+Rationale: Positive statements express conditions directly without mental inversion.
 
 ## `HMN100` - Staged opener or closer phrases
 
@@ -655,6 +735,32 @@ Fifth sentence.
 ```
 
 Rationale: Capping paragraphs at four sentences prevents walls of text.
+
+## `NMP101` - Comment block line count
+
+Tags: `length`, `comments`, `blocking`
+
+Aliases: `comment-block-length`
+
+Parameters:
+
+- `comment_block_cap`: maximum physical lines per contiguous comment block (`2` by default)
+
+This rule triggers when a contiguous block of non-directive code comments exceeds two lines.
+
+```python
+# First line of the comment.
+# Second line of the comment.
+# Third line of the comment.
+```
+
+To fix this issue, rewrite the text as follows:
+
+```python
+# Keep only the essential explanation within two lines.
+```
+
+Rationale: Capping code comment blocks at two lines keeps comments concise and discourages narrative blocks in source files.
 
 ## `NMT100` - Prose-literal output assertion in tests
 

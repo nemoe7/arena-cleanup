@@ -72,7 +72,14 @@ except ImportError:
     ]
 
 
-from prose import COMMENT_SUFFIXES, SPECIAL_CODE_NAMES, prose_spans
+from prose import (
+  COMMENT_BLOCK_CAP,
+  COMMENT_SUFFIXES,
+  SPECIAL_CODE_NAMES,
+  comment_blocks,
+  prose_spans,
+  slash_comments,
+)
 
 # (name, avoided pattern, plain word).
 # A stem word that takes its own plain word.
@@ -80,18 +87,22 @@ EXCEPTIONS = {
   "picker": "selector",
   "pickers": "selectors",
   "repositories": "repos",
+  "pull request": "PR",
+  "pull requests": "PRs",
 }
 ROTATIONS = (
   ("pick", r"(?<![A-Za-z0-9])pick\w*(?![A-Za-z0-9])", "select"),
   ("transmit", r"(?<![A-Za-z0-9])transmit\w*(?![A-Za-z0-9])", "send"),
   ("kind", r"(?<![A-Za-z0-9])kinds?(?![A-Za-z0-9])", "type"),
   ("repository", r"(?<![A-Za-z0-9])repositor(?:y|ies)(?![A-Za-z0-9])", "repo"),
+  ("pull request", r"(?<![A-Za-z0-9])pull[ \t]+requests?(?![A-Za-z0-9])", "PR"),
 )
 RULE_IDS = {
   "transmit": "NMO100",
   "pick": "NMO901",
   "kind": "NMO100",
   "repository": "NMO901",
+  "pull request": "NMO901",
 }
 ADVISORY_RULE_IDS = {
   "NMO901",
@@ -102,6 +113,8 @@ ADVISORY_RULE_IDS = {
   "STE905",
   "STE906",
   "STE908",
+  "STE909",
+  "STE910",
   "HMN901",
   "HMN902",
   "HMN903",
@@ -120,6 +133,8 @@ PROSE_RULE_IDS = {
   "semicolon": "STE100",
   "sentence": "STE200",
   "nominalization": "STE300",
+  "wordy_phrase": "STE400",
+  "archaic_connector": "STE401",
   "passive": "STE901",
   "phrasal": "STE902",
   "ellipsis": "STE903",
@@ -127,6 +142,8 @@ PROSE_RULE_IDS = {
   "noun_cluster": "STE905",
   "synonym_cluster": "STE906",
   "compound_tense": "STE908",
+  "inline_list": "STE909",
+  "double_negative": "STE910",
   "staged_frame": "HMN100",
   "stacked_qualifier": "HMN200",
   "ai_vocabulary": "HMN300",
@@ -144,8 +161,57 @@ PROSE_RULE_IDS = {
   "consecutive_emoji": "HMN909",
   "self_narration": "HMN910",
   "paragraph": "NMP100",
+  "comment_block": "NMP101",
   "serial_comma": "NMO003",
 }
+RULE_DESCRIPTIONS = {
+  "STE001": "dangling conjunction",
+  "STE100": "semicolon in prose",
+  "STE200": "sentence has {count} words (cap {cap})",
+  "STE300": "nominalized verb",
+  "STE400": "wordy phrase",
+  "STE401": "archaic or legalistic connector",
+  "STE901": "passive voice",
+  "STE902": "phrasal verb",
+  "STE903": "omitted passive auxiliary",
+  "STE904": "compound instruction",
+  "STE905": "noun cluster",
+  "STE906": "synonym cluster",
+  "STE908": "compound tense",
+  "STE909": "inline list in prose",
+  "STE910": "double negative",
+  "HMN100": "staged frame",
+  "HMN200": "stacked qualifier",
+  "HMN300": "AI vocabulary",
+  "HMN400": "arrow in prose",
+  "HMN500": "chatbot courtesy",
+  "HMN600": "curly quotation mark",
+  "HMN901": "negative contrast",
+  "HMN902": "aphorism or importance claim",
+  "HMN903": "rhetorical setup",
+  "HMN904": "repeated sentence opener",
+  "HMN905": "em or en dash in prose",
+  "HMN906": "vague attribution",
+  "HMN907": "copula avoidance",
+  "HMN908": "bold-label bullet",
+  "HMN909": "consecutive emojis",
+  "HMN910": "self-narration",
+  "NMP100": "paragraph has {count} sentences (cap {cap})",
+  "NMP101": "comment block has {count} lines (cap {cap})",
+  "NMO003": "missing Oxford comma",
+}
+
+
+def describe_finding(row):
+  """Format a human-readable violation description for one prose or comment finding."""
+  template = RULE_DESCRIPTIONS.get(row["rule"], "{count} (cap {cap})")
+  if "{count}" in template:
+    return template.format(count=row["count"], cap=row["cap"])
+  if row["count"] > 1:
+    return f"{template} ({row['count']} matches)"
+  return template
+
+
 TEST_RULE_IDS = {"output_text": "NMT100", "measurement": "NMT200"}
 RESERVED_RULE_IDS = {"HMN000"}
 KNOWN_RULE_IDS = {
@@ -173,6 +239,21 @@ SKIP_PATHS = (
   ".agents/skills",
   "arena-state",
 )
+SKIP_SUFFIXES = {
+  ".json",
+  ".webmanifest",
+}
+LICENSE_FILE_RE = re.compile(
+  r"^(?:(?:un)?licen[cs]e(?:[-._].*)?|.*\.licen[cs]e|copying(?:[-._].*)?|"
+  r"notice(?:[-._].*)?|(?:thirdparty|copyright)notices?(?:\..*)?|"
+  r"patents?(?:[-._].*)?)$",
+  re.IGNORECASE,
+)
+
+
+def is_license_file(path):
+  """True when a path has a common license, copying, or notice filename."""
+  return bool(LICENSE_FILE_RE.match(Path(path).name))
 
 
 def text_file(path):
@@ -191,6 +272,8 @@ def text_file(path):
 
 def skipped(path, root, ignores):
   """True when a path sits under a skipped directory or an ignored prefix."""
+  if path.suffix.lower() in SKIP_SUFFIXES or is_license_file(path):
+    return True
   try:
     relative = path.resolve().relative_to(root.resolve())
   except ValueError:
@@ -208,7 +291,8 @@ def walk(targets, ignores):
   for target in targets:
     path = Path(target)
     if path.is_file():
-      yield path
+      if path.suffix.lower() not in SKIP_SUFFIXES and not is_license_file(path):
+        yield path
       continue
     root = path if path.is_dir() else Path(".")
     for candidate in sorted(root.rglob("*")):
@@ -233,7 +317,8 @@ def suppressed(code, ids, name=None):
 
 def plain(word, name, use):
   """Give the matched word its plain word, and keep the old word's case."""
-  form = EXCEPTIONS.get(word.lower()) or re.sub(
+  normalized = " ".join(word.lower().split())
+  form = EXCEPTIONS.get(normalized) or re.sub(
     re.escape(name), use, word, flags=re.IGNORECASE
   )
   if word.isupper():
@@ -269,7 +354,17 @@ def scan(targets, ignores):
     lines = text.splitlines()
     file_ids, line_ids, found = exclusions(path, lines)
     marks.extend(found)
-    for number, line in enumerate(lines, 1):
+    if path.suffix.lower() == ".jsonc":
+      comment_map = {}
+      for comment_text, first, _ in slash_comments(text):
+        for offset, comment_line in enumerate(comment_text.splitlines()):
+          comment_map.setdefault(first + offset, []).append(comment_line)
+      line_pairs = sorted(
+        (number, "\n".join(parts)) for number, parts in comment_map.items()
+      )
+    else:
+      line_pairs = list(enumerate(lines, 1))
+    for number, line in line_pairs:
       if TABLE_ROW.match(line.strip()):
         continue
       excluded = file_ids | line_ids[number - 1]
@@ -801,6 +896,28 @@ SELF_NARRATION_RE = re.compile(
   r"in\s+this\s+(?:document|section|guide),\s+we\s+will)\b",
   re.IGNORECASE,
 )
+WORDY_PHRASE_RE = re.compile(
+  r"\b(?:in\s+order\s+to\s+[a-z]{2,}|prior\s+to|subsequent\s+to|"
+  r"due\s+to\s+the\s+fact\s+that|in\s+the\s+event\s+that|by\s+means\s+of|"
+  r"at\s+this\s+point\s+in\s+time|at\s+the\s+present\s+time|"
+  r"(?:is|are|was|were)\s+(?:able\s+to|capable\s+of))\b",
+  re.IGNORECASE,
+)
+ARCHAIC_CONNECTOR_RE = re.compile(
+  r"\b(?:heretofore|herein(?:after)?|there(?:of|in|by)|where(?:by|in|of)|"
+  r"aforementioned|pursuant\s+to|inter\s+alia)\b",
+  re.IGNORECASE,
+)
+INLINE_LIST_RE = re.compile(
+  r"(?:(?<!\w)\(1\)\s+\S.*?\s+\(2\)\s+\S.*?\s+\(3\)\s+\S|"
+  r"(?<!\w)\(a\)\s+\S.*?\s+\(b\)\s+\S.*?\s+\(c\)\s+\S)",
+  re.IGNORECASE,
+)
+DOUBLE_NEGATIVE_RE = re.compile(
+  r"\b(?:not\s+(?:uncommon|unlikely|impossible|insignificant|unreasonable|"
+  r"infrequent(?:ly)?|unavailable|unlike|unaware)|never\s+fails\s+to)\b",
+  re.IGNORECASE,
+)
 
 
 def prose_dangling_conjunctions(text):
@@ -811,6 +928,31 @@ def prose_dangling_conjunctions(text):
 
 def prose_nominalizations(text):
   return prose_line_matches(text, lambda clean: list(NOMINALIZATION_RE.finditer(clean)))
+
+
+def prose_wordy_phrases(text):
+  return prose_line_matches(
+    text,
+    lambda clean: (
+      [] if clean.lstrip().startswith(">") else list(WORDY_PHRASE_RE.finditer(clean))
+    ),
+  )
+
+
+def prose_archaic_connectors(text):
+  return prose_line_matches(
+    text, lambda clean: list(ARCHAIC_CONNECTOR_RE.finditer(clean))
+  )
+
+
+def prose_inline_lists(text):
+  return prose_line_matches(text, lambda clean: list(INLINE_LIST_RE.finditer(clean)))
+
+
+def prose_double_negatives(text):
+  return prose_line_matches(
+    text, lambda clean: list(DOUBLE_NEGATIVE_RE.finditer(clean))
+  )
 
 
 def prose_compound_instructions(text):
@@ -986,6 +1128,8 @@ def prose_review(path, text, context, paragraph_cap):
   for key, detector in (
     ("dangling_conjunction", prose_dangling_conjunctions),
     ("nominalization", prose_nominalizations),
+    ("wordy_phrase", prose_wordy_phrases),
+    ("archaic_connector", prose_archaic_connectors),
     ("passive", prose_passives),
     ("phrasal", prose_phrasal_verbs),
     ("ellipsis", prose_ellipsis),
@@ -993,6 +1137,8 @@ def prose_review(path, text, context, paragraph_cap):
     ("noun_cluster", prose_noun_clusters),
     ("synonym_cluster", prose_synonym_clusters),
     ("compound_tense", prose_compound_tenses),
+    ("inline_list", prose_inline_lists),
+    ("double_negative", prose_double_negatives),
     ("staged_frame", prose_staged_frames),
     ("stacked_qualifier", prose_stacked_qualifiers),
     ("ai_vocabulary", prose_ai_vocabulary),
@@ -1053,13 +1199,31 @@ def source_prose(path, text, context, paragraph_cap):
     context = "description"
   if path.suffix in COMMENT_SUFFIXES or path.name in SPECIAL_CODE_NAMES:
     spans = prose_spans(path, text)
-  elif path.suffix in {".json", ".csv", ".lock"}:
+  elif path.suffix in {".json", ".webmanifest", ".csv", ".lock"}:
     spans = []
   else:
     spans = [(text, 1, len(text.splitlines()))]
   lines = text.splitlines()
   file_ids, line_ids, _ = exclusions(path, lines)
   findings = []
+  if path.suffix in COMMENT_SUFFIXES or path.name in SPECIAL_CODE_NAMES:
+    code = PROSE_RULE_IDS["comment_block"]
+    if not suppressed(code, file_ids):
+      for start, count in comment_blocks(path, text):
+        if count > COMMENT_BLOCK_CAP and not suppressed(
+          code, set().union(*line_ids[start - 1 : start - 1 + count])
+        ):
+          findings.append(
+            {
+              "rule": code,
+              "path": str(path),
+              "line": start,
+              "column": 1,
+              "count": count,
+              "cap": COMMENT_BLOCK_CAP,
+              "status": "review",
+            }
+          )
   for value, first, last in spans:
     for row in prose_review(
       path,
@@ -1568,7 +1732,7 @@ def main(argv=None):
       errors.append(f"{path}: {type(error).__name__}: {error}")
       continue
     findings.extend(
-      f"{row['path']}:{row['line']}: {row['rule']} {row['count']} -> {row['cap']}"
+      f"{row['path']}:{row['line']}: {row['rule']} {describe_finding(row)}"
       + (" (manual review)" if row["rule"] in ADVISORY_RULE_IDS else "")
       for row in rows
     )

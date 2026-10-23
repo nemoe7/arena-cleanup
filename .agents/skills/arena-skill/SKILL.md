@@ -16,10 +16,10 @@ Use this guide and its Markdown references for instructions. Do not read shipped
 1. Run `<skill>/scripts/install.sh` from repo root at session start and after skill source changes, and restart running preview server after source changes, before next CLI call/preview start.
 2. Start the preview as Setup step 3 describes.
 3. After initial visibility response, read references/survey.json and submit fresh answers via arena-preview survey '<json>'. Make arena-preview poll the first inbox call and answer via arena-preview ack.
-4. When a call needs the recorded key after a 401 or an owner question, run `arena-preview key` to print the key, host, and stamp. With no live preview server, it fails with the restart line.
+4. Before a proxy `fetch_page` call, after a 401, or on an owner question, run `arena-preview key` and check that its stamp is not expired. With no live preview server, it fails with the restart line.
 5. Try `fetch_page` on the actual source URL first; use [proxy routes](#proxy-access) via `fetch_page` only if that call cannot return needed data.
 
-6. After context replacement, finish required reads and pending inbox acks. Read references/survey.json and submit fresh answers via arena-preview survey '<json>' before queued work.
+6. After a preview restart or context replacement, finish required reads and pending inbox acks. Read references/survey.json and submit fresh answers via arena-preview survey '<json>' before queued work.
 
 ## Survey
 
@@ -108,7 +108,7 @@ When a task creates a commit, MUST append its landed subject and short hash to t
 
 ## Publish reports and forms
 
-Report carriage always goes through this skill: a short answer goes in the `ack` reply; a long answer or a question goes in a fielded report. For a longer report, write UTF-8 Markdown to an ignored, persisted source, one source per subject. Report actual findings, changes, checks, limits and decisions. Publish in Reports with `arena-preview report publish`; require its stored-revision and rendered-report checks to pass before announcing publication. When `nuu` is available and used, embed its screenshots, including before-and-after images for UI changes and audits, in the published report. Structure agent handoffs with the [handoff recipe](references/handoff.md).
+Report carriage always goes through this skill: a short answer goes in the `ack` reply; a long answer or a question goes in a fielded report. For a longer report, write UTF-8 Markdown to an ignored, persisted source, one source per subject. Report actual findings, changes, checks, limits and decisions. Publish in Reports with `arena-preview report publish`; require its stored-revision and rendered-report checks to pass before announcing publication. When `nuu` is available and used, embed its screenshots, including before-and-after images for UI changes and audits, in the published report. Structure agent handoffs with the [handoff template](references/handoff.md) and pair clause changes with amendment tables.
 
 ```bash
 arena-preview report publish <source.md> --id <id> --title <title>
@@ -132,7 +132,7 @@ Keep `state.sqlite3`, `saved-state.ndjson`, report sources and saved file bytes 
 
 ## Proxy access
 
-The backend answers over one public HTTPS URL. An Arena session reads it through `fetch_page`, with a key in the URL. To read a GitHub Actions job log without triggering the proxy-HTTP gate, follow the [job-log redirect recipe](references/github-job-logs.md).
+The backend answers over one public HTTPS URL. An Arena session reads it through `fetch_page`, with a key in the URL. To read a GitHub Actions job log without triggering the proxy-HTTP gate, follow the [job-log redirect recipe](references/recipes/github-job-logs.md).
 
 - Read-only data that neither the sandbox nor its token can reach: code scanning alerts, secret scanning alerts, workflow run logs, run artifacts, or another service the owner fronts.
 - A binary file, a page, or a signed URL, as text the session can carry.

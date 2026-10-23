@@ -41,6 +41,7 @@ Do not rewrite exclusion markers or the rotation table; apply only unsuppressed 
 - Use any comment syntax for `nonemo: <id>`; scanning reads text, not syntax.
 - Apply an exclusion only to a known matching rule ID.
 - With `nemoizer collect` or `--ignores`, print every nonemo marker: path, line, rule ID, scope, and text; with `nemoizer audit` or `--audit`, print every `nonemo` marker and manual-review finding.
+- Format audit reports with the [audit report template](references/audit-report.md), omit empty sections, and state 0 in Counts.
 
 
 Run rotations and serial-comma checks (`NMO`), semicolon/sentence/nominalization/manual-review style checks (`STE`), human-prose checks (`HMN`), paragraph checks (`NMP`), and test reviews (`NMT`) by default.
@@ -71,7 +72,7 @@ Limit sentences to 20 words for unclassified prose, 25 for explicit description 
 - State missing source facts without inventing plausible replacements or hiding relevant knowledge limits.
 - Remove sentences that repeat their headings only if they add no information.
 - Remove redundant document narration while retaining useful source credits, action-changing caveats, and change history.
-- Lead contextual replies with their decisions, retaining required evidence and reasoning that can change those decisions.
+- Lead with the direct answer, omit question restatement, and order needed explanations as conclusion, reason, and action.
 - Limit instructions to 20 words and descriptions to 25 unless preserving meaning requires more.
 - Put one instruction per sentence unless simultaneous actions require one sentence.
 - Rewrite noun clusters over three words when the technical term and its meaning survive.
@@ -80,6 +81,9 @@ Limit sentences to 20 words for unclassified prose, 25 for explicit description 
 - List three or more steps or conditions, preserving their order and grouping.
 - Define uncommon technical terms when needed, and use them consistently.
 - Prefer simple tenses unless compound forms carry confidence or current relevance that must survive.
+- Comment code only for non-obvious logic, and cap each comment block at two lines.
+- Match length and structure to task complexity, omitting unrequested examples, sections, tables, background, and follow-ups.
+- Provide requested finished text without meta commentary.
 
 ## Test assertions
 
