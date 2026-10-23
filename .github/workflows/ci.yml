@@ -54,13 +54,19 @@ jobs:
         with:
           globs: "**/*.md"
       # The browser download is the slow step. A warm cache leaves only the OS
-      # packages to install. The key follows the Playwright pin in uv.lock.
+      # packages to install. The key follows the Playwright version in the
+      # synced environment, so a release bump keeps the cache.
+      - name: Read the Playwright version
+        id: playwright
+        run: |
+          v=$(uv run --no-sync python -c "from importlib.metadata import version; print(version('playwright'))")
+          echo "version=$v" >> "$GITHUB_OUTPUT"
       - name: Cache Chromium
         id: chromium
         uses: actions/cache@v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: chromium-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          key: chromium-${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
       - if: steps.chromium.outputs.cache-hit != 'true'
         run: uv run --no-sync playwright install --with-deps chromium
       - if: steps.chromium.outputs.cache-hit == 'true'
