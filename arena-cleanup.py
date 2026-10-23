@@ -40,6 +40,7 @@ import tempfile
 import time
 from collections.abc import Sequence
 from datetime import UTC, datetime
+from typing import Any
 
 # the one version of this file. pyproject.toml carries the same number for the
 # web app, and tests/test_cli.py keeps the two equal.
@@ -918,31 +919,18 @@ class CheckRun:
     return 'check "{}": {}{}'.format(self.name, self.state or "in progress", note)
 
 
-def read_checks(pr: int) -> CheckSummary:
+def collapse_rollup(rollup: Sequence[dict[str, Any]]) -> CheckSummary:
   """
-  Read a PR's status rollup, collapsing repeats of the same check name.
+  Collapse a status rollup to one entry per check name.
 
   GitHub keeps superseded runs in the rollup. When a workflow is re-run, the
   old attempt (often CANCELLED) can still be listed next to the new SUCCESS
   one. Taking the rollup literally then reports "cancelled" for a PR the web
   UI shows as green. So per name, a pass wins over a stale cancelled/failed
   attempt, and whatever was ignored is named in the log.
-  """
-  res = gh("pr", "view", str(pr), "--json", "statusCheckRollup")
-  try:
-    data = json.loads(res.text or "{}") or {}
-  except ValueError:
-    raise Fail(f"could not parse `gh pr view {pr}` output")
-  # gh prints an object here. A wrapper or a stray line can hand back a list.
-  # An AttributeError from that is not a useful thing to show a user
-  if not isinstance(data, dict):
-    raise Fail(f"`gh pr view {pr}` printed a {type(data).__name__}, not a JSON object")
-  rollup = data.get("statusCheckRollup") or []
-  if not isinstance(rollup, list):
-    raise Fail(
-      f"`gh pr view {pr}` returned a {type(rollup).__name__} for the check rollup"
-    )
 
+  The web UI counts the same result for its PR pill.
+  """
   grouped: dict[str, list[str]] = {}
   order: list[str] = []
   for item in rollup:
@@ -968,6 +956,25 @@ def read_checks(pr: int) -> CheckSummary:
       superseded = [st for st in states if st != chosen]
     runs.append(CheckRun(name, chosen, superseded))
   return CheckSummary(runs)
+
+
+def read_checks(pr: int) -> CheckSummary:
+  """Read a PR's status rollup and collapse it per check name."""
+  res = gh("pr", "view", str(pr), "--json", "statusCheckRollup")
+  try:
+    data = json.loads(res.text or "{}") or {}
+  except ValueError:
+    raise Fail(f"could not parse `gh pr view {pr}` output")
+  # gh prints an object here. A wrapper or a stray line can hand back a list.
+  # An AttributeError from that is not a useful thing to show a user
+  if not isinstance(data, dict):
+    raise Fail(f"`gh pr view {pr}` printed a {type(data).__name__}, not a JSON object")
+  rollup = data.get("statusCheckRollup") or []
+  if not isinstance(rollup, list):
+    raise Fail(
+      f"`gh pr view {pr}` returned a {type(rollup).__name__} for the check rollup"
+    )
+  return collapse_rollup(rollup)
 
 
 def log_checks(log: Log, summary: CheckSummary, seen: dict[str, str]) -> None:

@@ -17,7 +17,7 @@ from typing import Any
 
 import pytest
 
-from .conftest import ME_EMAIL, ROOT, World, project_version
+from .conftest import ME_EMAIL, ROLLUPS, ROOT, World, project_version
 
 SERVER = ROOT / "ui" / "server.py"
 STARTUP_SECONDS = 15
@@ -333,6 +333,33 @@ def test_one_fetch_runs_at_a_time_and_the_rest_wait_for_it(
   assert len(calls) == 3
   time.sleep(1.0)
   assert gate.run([]) is True, "after the debounce the tick fetches again"
+
+
+def test_the_pill_counts_checks_by_the_engine_rule(
+  monkeypatch: pytest.MonkeyPatch,
+) -> None:
+  """A superseded CANCELLED attempt next to the new SUCCESS of the same name
+  does not make the pill red. The engine already reads the rollup that way."""
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  rollups = iter([ROLLUPS["superseded"], ROLLUPS["superseded-failing"]])
+
+  def fake_gh(argv: list[str], **_: Any) -> tuple[int, str, str]:
+    assert argv[:3] == ["gh", "pr", "list"]
+    pr = {"number": 7, "title": "t", "url": "u", "statusCheckRollup": next(rollups)}
+    return 0, json.dumps([pr]), ""
+
+  monkeypatch.setattr(server, "run_cmd", fake_gh)
+  monkeypatch.setattr(server.shutil, "which", lambda name: "/usr/bin/gh")
+  green = server.pr_checks("arena/x", str(ROOT))
+  assert green is not None
+  assert (green["total"], green["passed"], green["failed"]) == (2, 2, 0)
+  assert green["state"] == "passing"
+  red = server.pr_checks("arena/x", str(ROOT))
+  assert red is not None
+  assert (red["total"], red["passed"], red["failed"]) == (2, 1, 1)
+  assert red["state"] == "failing"
 
 
 def test_the_fetch_clock_is_aligned_and_ticks(

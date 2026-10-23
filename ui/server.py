@@ -403,37 +403,23 @@ def pr_checks(branch: str, cwd: str) -> dict[str, Any] | None:
   if not isinstance(prs, list) or not prs:
     return None
   pr = prs[0]
-  runs = pr.get("statusCheckRollup") or []
-  passed = failed = running = 0
-  for run in runs:
-    state = (run.get("state") or run.get("conclusion") or "").upper()
-    status = (run.get("status") or "").upper()
-    if status in {"IN_PROGRESS", "QUEUED", "PENDING", ""} and state not in {
-      "SUCCESS",
-      "FAILURE",
-      "ERROR",
-      "CANCELLED",
-      "SKIPPED",
-      "NEUTRAL",
-    }:
-      running += 1
-    elif state in {"SUCCESS", "SKIPPED", "NEUTRAL"}:
-      passed += 1
-    elif state in {"FAILURE", "ERROR", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED"}:
-      failed += 1
-    else:
-      running += 1
+  # the engine's rule: one entry per check name, a pass wins over a
+  # superseded failed or cancelled attempt. So the pill agrees with the run.
+  summary = engine.collapse_rollup(pr.get("statusCheckRollup") or [])
+  passed = sum(1 for run in summary.runs if run.passed)
+  failed = len(summary.failed)
+  running = len(summary.running)
   return {
     "number": pr.get("number"),
     "title": pr.get("title", ""),
     "url": pr.get("url", ""),
-    "total": len(runs),
+    "total": len(summary.runs),
     "passed": passed,
     "failed": failed,
     "running": running,
     "state": "failing"
     if failed
-    else ("running" if running else ("passing" if runs else "none")),
+    else ("running" if running else ("passing" if summary.runs else "none")),
   }
 
 

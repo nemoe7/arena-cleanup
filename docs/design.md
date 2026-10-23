@@ -162,3 +162,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: the ahead counts read origin as it is now. The server fetches at the top of each clock minute. A page load fetches once, and a dashboard Reload button fetches on demand.
 - Accepted 2026-10-23: the repo view reattaches to the latest run. The server saves each finished run per repo, so the log survives a return to the view and a restart.
 - Accepted 2026-10-23: one fetch of every origin at a time, with a ten second debounce that the Reload button skips. Fresh statuses swap into the cache after the fetch, and the dashboard reads `Loading repos…` until the first answer.
+- Accepted 2026-10-23: the PR pill counts checks by the engine rule, one entry per check name, a pass over a superseded attempt. The rule lives in the engine, and the server calls it.
