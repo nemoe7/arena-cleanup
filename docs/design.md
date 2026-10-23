@@ -167,3 +167,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: Clean & Push and Cancel are one button with two states, in the options card head. The options card no longer folds, and its chevron is gone.
 - Accepted 2026-10-23: the primary button is flat. Its inset top highlight and drop shadow read as a bevel, so both are gone.
 - Accepted 2026-10-23: the log clock takes `dim`, 5.1:1 on the card. Its own grey read at 2.55:1, under the 4.5:1 floor.
+- Accepted 2026-10-23: the run card and the options card stretch to one height. The options body has no vertical padding and no rule under its last row, so its rows sit like the phase rows.

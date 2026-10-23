@@ -360,7 +360,8 @@
      left, and it is the one thing that scrolls. */
   .main-col { padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; height: calc(100vh - 56px); overflow: auto; scrollbar-gutter: stable; }
   /* the run card and the options card share a row above 1200 px */
-  .work { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; flex: none; }
+  /* both cards stretch to the row, so their bottoms meet */
+  .work { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; flex: none; }
   .detail-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .detail-head h1 { font-size: var(--fs-4); margin: 0; }
   .detail-head .sub { color: var(--dim); font-size: var(--fs-1); font-family: var(--mono); }
@@ -373,8 +374,10 @@
   .card-head .hint { color: var(--dim); font-size: var(--fs-1); }
   .card-body { padding: 16px; }
 
-  /* one column: the card shares its row with the run card */
-  .options { display: grid; grid-template-columns: 1fr; }
+  /* one column: the card shares its row with the run card. No vertical padding
+     and no rule under the last row, so the rows sit like the phase rows */
+  .options { display: grid; grid-template-columns: 1fr; padding: 0 16px; }
+  .options .opt:last-child { border-bottom: 0; }
   .opt { padding: 8px 2px; border-bottom: 1px solid var(--line); min-width: 0; }
   .opt[hidden] { display: none; }
   /* the settings page labels its token field with a label and a short note */

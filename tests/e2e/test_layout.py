@@ -22,6 +22,9 @@ PROBE = """() => {
     run: box('#run-card'), options: box('#options-card'), log: box('#log'),
     logOverflow: q('#log').scrollHeight - q('#log').clientHeight,
     height: innerHeight,
+    runHead: box('#run-card .card-head'), optionsHead: box('#options-card .card-head'),
+    phases: box('#phases'), optionsBody: box('#options'), firstOption: box('#opt-branch'),
+    lastRule: parseFloat(getComputedStyle(q('#checks')).borderBottomWidth),
   };
 }"""
 
@@ -54,6 +57,15 @@ def test_a_short_desktop_window_scrolls_the_log_alone(browser: Any, demo: Demo) 
   )
   assert seen["log"][3] <= seen["height"], "the log ends inside the window"
   assert seen["logOverflow"] > 0, "a run log longer than its box scrolls inside it"
+
+
+def test_the_two_cards_align_head_to_foot(browser: Any, demo: Demo) -> None:
+  seen = open_with_a_run(browser, demo, 1568, 775)
+  assert seen["run"][3] == seen["options"][3], "the card bottoms meet"
+  assert seen["runHead"][3] == seen["optionsHead"][3], "the heads share one height"
+  assert seen["firstOption"][1] == seen["optionsBody"][1], "no gap above the first row"
+  assert seen["phases"][1] == seen["optionsBody"][1], "the first rows share one line"
+  assert seen["lastRule"] == 0, "no rule under the last option row"
 
 
 def test_the_log_keeps_its_floor_and_the_page_still_stays_put(
