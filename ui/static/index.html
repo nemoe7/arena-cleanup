@@ -317,6 +317,7 @@
   .card-actions { display: flex; gap: 8px; align-items: center; margin-top: auto; }
   .card-actions .btn { height: 30px; font-size: var(--fs-2); padding: 0 12px; }
 
+  .loading-line { margin: 20px 0 0; color: var(--dim); font-size: var(--fs-2); }
   .empty-state {
     border: 1px dashed var(--line-2); border-radius: 12px; padding: 32px 20px;
     text-align: center; color: var(--dim); margin-top: 20px; display: grid; gap: 6px; justify-items: center;
@@ -738,6 +739,7 @@
       </div>
       <p class="field-error" id="add-error" role="alert" hidden></p>
 
+      <p class="loading-line" id="repo-loading" role="status">Loading repos…</p>
       <div class="grid" id="repo-grid"></div>
       <div class="empty-state" id="repo-empty" hidden>
         <strong>No repos yet</strong>
@@ -1111,10 +1113,15 @@
 
   // fresh: ask the server to fetch every origin first. The dashboard Reload
   // button and a page load do that, the 20 s clock reads the cached status.
+  // fresh: false reads the cached statuses, true fetches every origin first
+  // (the server skips a fetch that follows another within seconds), "force"
+  // is the Reload button, which fetches regardless.
   async function loadRepos(fresh = false) {
     if (!state.auth) await refreshAuth();
     try {
-      state.repos = fresh ? await post("/api/fetch") : await api("/api/repos");
+      state.repos = fresh
+        ? await post("/api/fetch", { force: fresh === "force" })
+        : await api("/api/repos");
       state.unreachable = false;
     } catch (err) {
       // "no repos" and "cannot ask the server" look identical on screen
@@ -1122,6 +1129,7 @@
       state.repos = [];
       state.unreachable = true;
     }
+    $("repo-loading").hidden = true;
     const grid = $("repo-grid");
     grid.replaceChildren(...state.repos.map(repoCard));
     $("repo-empty").hidden = state.unreachable || state.repos.length > 0;
@@ -2213,7 +2221,7 @@
     const btn = $("repos-refresh");
     btn.disabled = true;
     try {
-      await loadRepos(true);
+      await loadRepos("force");
     } finally {
       btn.disabled = false;
     }

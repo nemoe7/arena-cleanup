@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import re
+import time
 from collections.abc import Iterator
+from typing import Any
 
 import pytest
 
@@ -11,6 +13,7 @@ from scripts.walk import Walker
 
 # the two calls that fill the dashboard: the plain read and the fetch-first read
 REPOS_API = re.compile(r"/api/(repos|fetch)$")
+REPOS_LIST = re.compile(r"/api/repos$")
 
 
 @pytest.fixture
@@ -23,6 +26,7 @@ def offline(desktop: Walker) -> Iterator[Walker]:
 def test_the_offline_banner_puts_retry_on_its_own_line(offline: Walker) -> None:
   offline.goto(800)
   assert offline.visible("#offline-banner #retry")
+  assert not offline.visible("#repo-loading"), "the loading line made way"
   lines = offline.text("#offline-banner").strip().splitlines()
   assert lines[0].endswith("then retry.") and lines[-1] == "Retry"
   lead = offline.page.eval_on_selector(
@@ -30,6 +34,26 @@ def test_the_offline_banner_puts_retry_on_its_own_line(offline: Walker) -> None:
   )
   button = offline.page.eval_on_selector("#retry", "e => e.getBoundingClientRect().top")
   assert button >= lead, "the button shares a line with the text"
+
+
+def test_the_dashboard_says_loading_until_the_first_answer(desktop: Walker) -> None:
+  held: list[Any] = []
+  desktop.page.route(REPOS_LIST, lambda route: held.append(route))
+  try:
+    desktop.page.goto(desktop.url)
+    desktop.page.wait_for_selector("#repo-loading", state="visible")
+    assert desktop.count(".repo-card") == 0, "no cards before the first answer"
+    assert not desktop.visible("#repo-empty"), "and no empty state either"
+    deadline = time.monotonic() + 5
+    while not held and time.monotonic() < deadline:
+      desktop.page.wait_for_timeout(50)
+    assert held, "the page asked for its repos"
+    for route in held:
+      route.continue_()
+    desktop.page.wait_for_selector(".repo-card")
+    assert not desktop.visible("#repo-loading"), "the line goes once cards show"
+  finally:
+    desktop.page.unroute(REPOS_LIST)
 
 
 def test_a_failed_pr_check_fails_the_pr_phase_alone(desktop: Walker) -> None:

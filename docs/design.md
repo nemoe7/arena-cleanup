@@ -103,6 +103,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Validation: the add bar accepts a clone URL, a GitHub page address, or a path. Another shape gets an error line under the field, with `aria-invalid` and `aria-describedby` on the field until the next keystroke. The server answers errors as text the banner shows.
 - Retries: none automatic. Re-check and Reload buttons repeat a read.
 - Fetch: the server runs `git fetch --prune origin` in every repo at the top of each clock minute. The timer aligns to the wall clock, so it never drifts. A page load fetches once, and the dashboard Reload button fetches now. A repo with a run in flight waits for the next tick.
+- One fetch at a time: a fetch that arrives while one runs waits for it and skips its own. A fetch within ten seconds of the last one is skipped, except from the Reload button. A fetch swaps fresh statuses into the cache, it never empties it. The dashboard shows `Loading repos…` until the first answer.
 
 ## Evidence and handoff
 
@@ -160,3 +161,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: Monaspace Neon replaces JetBrains Mono for monospace, Inter stays for prose. Both load by the offline fonts recipe: one subset variable file each, preloaded, `font-display: block`, and a metric-matched local fallback face.
 - Accepted 2026-10-23: the ahead counts read origin as it is now. The server fetches at the top of each clock minute. A page load fetches once, and a dashboard Reload button fetches on demand.
 - Accepted 2026-10-23: the repo view reattaches to the latest run. The server saves each finished run per repo, so the log survives a return to the view and a restart.
+- Accepted 2026-10-23: one fetch of every origin at a time, with a ten second debounce that the Reload button skips. Fresh statuses swap into the cache after the fetch, and the dashboard reads `Loading repos…` until the first answer.

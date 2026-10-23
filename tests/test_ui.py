@@ -8,6 +8,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -286,10 +287,52 @@ def test_a_fetch_on_demand_sees_a_new_remote_branch(
   world.git(f"--git-dir={bare}", "update-ref", "refs/heads/arena/ui-late", "main")
   before = ui.get(f"/api/repos/{ids['clone']}")["status"]["arena"]
   assert "arena/ui-late" not in before, "nothing fetched yet"
-  after = ui.post("/api/fetch", {})
+  after = ui.post("/api/fetch", {"force": True})
   clone = next(r for r in after if r["id"] == ids["clone"])
   assert "arena/ui-late" in clone["status"]["arena"]
   assert "arena/ui-late" in ui.get(f"/api/repos/{ids['clone']}")["status"]["arena"]
+  # a second branch right after: the unforced fetch is skipped, the Reload one
+  # is not
+  world.git(f"--git-dir={bare}", "update-ref", "refs/heads/arena/ui-later", "main")
+  skipped = ui.post("/api/fetch", {})
+  clone = next(r for r in skipped if r["id"] == ids["clone"])
+  assert "arena/ui-later" not in clone["status"]["arena"], "debounced"
+  forced = ui.post("/api/fetch", {"force": True})
+  clone = next(r for r in forced if r["id"] == ids["clone"])
+  assert "arena/ui-later" in clone["status"]["arena"]
+
+
+def test_one_fetch_runs_at_a_time_and_the_rest_wait_for_it(
+  monkeypatch: pytest.MonkeyPatch,
+) -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  calls: list[float] = []
+
+  def slow_fetch(repos: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    calls.append(time.monotonic())
+    time.sleep(0.5)
+    return repos
+
+  monkeypatch.setattr(server, "fetch_all", slow_fetch)
+  gate = server.FetchGate(debounce=1.0)
+  assert gate.run([]) is True, "the first call fetches"
+  assert gate.run([]) is False, "within the debounce: skipped"
+  assert gate.run([], force=True) is True, "Reload skips the debounce"
+  results: list[bool] = []
+  threads = [
+    threading.Thread(target=lambda: results.append(gate.run([], force=True)))
+    for _ in range(6)
+  ]
+  for thread in threads:
+    thread.start()
+  for thread in threads:
+    thread.join()
+  assert results.count(True) == 1, "six Reload clicks at once: one fetch"
+  assert len(calls) == 3
+  time.sleep(1.0)
+  assert gate.run([]) is True, "after the debounce the tick fetches again"
 
 
 def test_the_fetch_clock_is_aligned_and_ticks(

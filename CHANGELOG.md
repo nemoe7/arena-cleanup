@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-10-23
+
+### Fixed
+
+- The server runs one fetch of every origin at a time. A fetch within ten seconds of the last one is skipped, except from the Reload button. A Reload during a running fetch waits for it and skips its own. Each fetch swaps fresh statuses into the cache instead of clearing it. A dashboard that asks in the meantime gets cards instead of a gap.
+- The dashboard shows a Loading repos line until the first answer from the server. Before, the page opened on an empty space.
+
 ## [0.2.0] - 2026-10-23
 
 ### Added

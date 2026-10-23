@@ -66,8 +66,9 @@ LOG = logging.getLogger("arena-ui")
 COMMANDS = {"run"}
 MAX_LINES = 4000
 LATEST = ["jobs", "latest"]  # the route tail of the latest run.
-STATUS_TTL = 8.0  # seconds a repo status is reused before asking git again
-FETCH_PERIOD = 60.0  # every repo fetches origin when the clock hits a multiple
+STATUS_TTL = 8.0  # seconds a repo status is reused before asking git again.
+FETCH_PERIOD = 60.0  # every repo fetches origin when the clock hits a multiple.
+FETCH_DEBOUNCE = 10.0  # seconds in which a later unforced fetch is skipped.
 FETCH_TIMEOUT = 120
 STARTED = time.time()  # when this process came up, for /healthz
 GIT_TIMEOUT = 20
@@ -283,6 +284,19 @@ class StatusCache:
     with self._lock:
       self._cache.clear()
 
+  def refresh(self, repos: list[dict[str, Any]]) -> None:
+    """Read fresh statuses for `repos`, then swap them in together.
+
+    The old entries stay readable while git works. A dashboard that asks in
+    the meantime gets cards instead of a gap.
+    """
+    with ThreadPoolExecutor(max_workers=4) as pool:
+      values = list(pool.map(repo_status, repos))
+    now = time.time()
+    with self._lock:
+      for repo, value in zip(repos, values):
+        self._cache[repo["id"] + ":" + repo["path"]] = (now, value)
+
 
 STATUS = StatusCache()
 
@@ -300,14 +314,42 @@ def fetch_origin(repo: dict[str, Any]) -> bool:
 
 
 def fetch_all(repos: list[dict[str, Any]]) -> list[dict[str, Any]]:
-  """Fetch every repo without a run in flight, then forget the cached statuses."""
+  """Fetch every repo without a run in flight, then refresh their statuses."""
   with JOBS_LOCK:
     busy = {job.repo["id"] for job in JOBS.values() if job.exit is None}
   idle = [repo for repo in repos if repo["id"] not in busy]
   with ThreadPoolExecutor(max_workers=4) as pool:
     list(pool.map(fetch_origin, idle))
-  STATUS.clear()
+  STATUS.refresh(idle)
   return idle
+
+
+class FetchGate:
+  """One fetch of every origin at a time, and not more often than the debounce.
+
+  A call that arrives while a fetch runs waits for it and then skips its own.
+  The statuses it reads afterwards are already fresh. `force` is the Reload
+  button, which skips the debounce but still waits its turn.
+  """
+
+  def __init__(self, debounce: float = FETCH_DEBOUNCE) -> None:
+    self.debounce = debounce
+    self.last = 0.0  # monotonic time the last fetch finished
+    self._lock = threading.Lock()
+
+  def run(self, repos: list[dict[str, Any]], force: bool = False) -> bool:
+    """Fetch now, or return False when a fetch just did the work."""
+    arrived = time.monotonic()
+    with self._lock:
+      waited = self.last >= arrived
+      if waited or (not force and arrived - self.last < self.debounce):
+        return False
+      fetch_all(repos)
+      self.last = time.monotonic()
+    return True
+
+
+GATE = FetchGate()
 
 
 def seconds_to_next_tick(now: float, period: float = FETCH_PERIOD) -> float:
@@ -327,9 +369,8 @@ class Fetcher(threading.Thread):
   def run(self) -> None:
     while not self.stop.wait(seconds_to_next_tick(time.time(), self.period)):
       repos = self.reg.all()
-      if repos:
-        done = fetch_all(repos)
-        LOG.debug("fetched %d of %d repos", len(done), len(repos))
+      if repos and GATE.run(repos):
+        LOG.debug("fetched %d repos on the tick", len(repos))
 
 
 def pr_checks(branch: str, cwd: str) -> dict[str, Any] | None:
@@ -1354,7 +1395,7 @@ class Handler(BaseHTTPRequestHandler):
     parts = [p for p in path.split("/") if p]
     try:
       if path == "/api/fetch":
-        fetch_all(self.reg.all())
+        GATE.run(self.reg.all(), force=bool(self._body().get("force")))
         self._json(self._repos())
       elif path == "/api/repos":
         body = self._body()

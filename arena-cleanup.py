@@ -43,7 +43,7 @@ from datetime import UTC, datetime
 
 # the one version of this file. pyproject.toml carries the same number for the
 # web app, and tests/test_cli.py keeps the two equal.
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 PROG = "arena-cleanup"
 
 # =============================================================================
