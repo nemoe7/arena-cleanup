@@ -1,5 +1,5 @@
-# nonemo: NMO001
-# nonemo: NMO002
+# nonemo: NMO100
+# nonemo: NMO901
 """Check prose and test candidates, rotate words, and collect exclusions."""
 
 import argparse
@@ -30,24 +30,24 @@ ROTATIONS = (
   ("repository", r"(?<![A-Za-z0-9])repositor(?:y|ies)(?![A-Za-z0-9])", "repo"),
 )
 RULE_IDS = {
-  "transmit": "NMO001",
-  "pick": "NMO002",
-  "kind": "NMO001",
-  "repository": "NMO002",
+  "transmit": "NMO100",
+  "pick": "NMO901",
+  "kind": "NMO100",
+  "repository": "NMO901",
 }
-ADVISORY_RULE_IDS = {"NMO002", "NMO003", "STE003", "STE004", "STE005"}
+ADVISORY_RULE_IDS = {"NMO901", "STE901", "STE902", "STE903"}
 SENTENCE_CAPS = {"instruction": 20, "description": 25}
 PARAGRAPH_CAP = 4
 PROSE_RULE_IDS = {
-  "semicolon": "STE001",
-  "sentence": "STE002",
-  "passive": "STE003",
-  "phrasal": "STE004",
-  "ellipsis": "STE005",
-  "paragraph": "NMP001",
+  "semicolon": "STE100",
+  "sentence": "STE200",
+  "passive": "STE901",
+  "phrasal": "STE902",
+  "ellipsis": "STE903",
+  "paragraph": "NMP100",
   "serial_comma": "NMO003",
 }
-TEST_RULE_IDS = {"output_text": "NMT001", "measurement": "NMT002"}
+TEST_RULE_IDS = {"output_text": "NMT100", "measurement": "NMT200"}
 RESERVED_RULE_IDS = {"HMN000"}
 KNOWN_RULE_IDS = {
   *RULE_IDS.values(),
@@ -196,7 +196,7 @@ def scan(targets, ignores):
         if suppressed(code, excluded, name):
           continue
         for word in sorted(set(re.findall(pattern, visible, flags=re.IGNORECASE))):
-          suffix = " (advisory)" if code in ADVISORY_RULE_IDS else ""
+          suffix = " (manual review)" if code in ADVISORY_RULE_IDS else ""
           findings.append(f"{path}:{number}: {code} {word} -> {use}{suffix}")
   return findings, marks
 
@@ -462,9 +462,8 @@ ELLIPSIS_RE = re.compile(
   re.IGNORECASE,
 )
 SERIAL_COMMA_RE = re.compile(
-  r"\b([A-Za-z0-9_`'-]+(?:\s+[A-Za-z0-9_`'-]+){0,2}),\s+"
-  r"([A-Za-z0-9_`'-]+(?:\s+[A-Za-z0-9_`'-]+){0,2})\s+(?:and|or)\s+"
-  r"([A-Za-z0-9_`'-]+(?:\s+[A-Za-z0-9_`'-]+){0,2})(?=[.!?:;)]|\s|$)"
+  r"\b([A-Za-z0-9_'-]+), ([A-Za-z0-9_'-]+) (?:and|or) "
+  r"([A-Za-z0-9_'-]+)(?=[.!?:;)]|\s|$)"
 )
 CLAUSE_OPENERS = {
   "when",
@@ -488,6 +487,38 @@ CLAUSE_OPENERS = {
   "to",
   "under",
   "during",
+  "and",
+  "or",
+  "not",
+  "the",
+  "a",
+  "an",
+  "that",
+  "which",
+  "who",
+  "whose",
+  "whether",
+  "never",
+  "always",
+  "only",
+  "also",
+  "either",
+  "neither",
+  "both",
+  "such",
+  "as",
+  "so",
+  "yet",
+  "but",
+  "nor",
+  "then",
+  "thus",
+  "instead",
+  "rather",
+  "directly",
+  "indented",
+  "all",
+  "them",
 }
 
 
@@ -531,8 +562,14 @@ def prose_serial_commas(text):
     text,
     lambda clean: [
       match
-      for match in SERIAL_COMMA_RE.finditer(clean)
-      if match.group(1).split()[0].lower() not in CLAUSE_OPENERS
+      for match in SERIAL_COMMA_RE.finditer(
+        re.sub(r"\[[^\]]*\]\([^)]*\)", lambda item: " " * len(item[0]), clean)
+      )
+      if not (
+        {match.group(1).lower(), match.group(2).lower(), match.group(3).lower()}
+        & CLAUSE_OPENERS
+      )
+      and not clean[: match.start()].rstrip().lower().endswith("to")
     ],
   )
 
@@ -612,6 +649,7 @@ def prose_review(path, text, context, paragraph_cap):
     ("serial_comma", prose_serial_commas),
   ):
     code = PROSE_RULE_IDS[key]
+    status = "manual_review" if code in ADVISORY_RULE_IDS else "review"
     if not suppressed(code, file_ids):
       for number, column, count in detector(text):
         if not suppressed(code, line_ids[number - 1]):
@@ -623,7 +661,7 @@ def prose_review(path, text, context, paragraph_cap):
               "column": column,
               "count": count,
               "cap": 0,
-              "status": "advisory",
+              "status": status,
             }
           )
   code = PROSE_RULE_IDS["paragraph"]
@@ -1126,7 +1164,7 @@ def main(argv=None):
       continue
     findings.extend(
       f"{row['path']}:{row['line']}: {row['rule']} {row['count']} -> {row['cap']}"
-      + (" (advisory)" if row["rule"] in ADVISORY_RULE_IDS else "")
+      + (" (manual review)" if row["rule"] in ADVISORY_RULE_IDS else "")
       for row in rows
     )
   result = review_tests(tests)

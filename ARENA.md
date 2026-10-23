@@ -164,7 +164,7 @@
 - Review the final commit list and diff before pushing.
 - Follow project convention first; else Conventional Commits: `<type>[optional scope]: <description>`, imperative, specific, lowercase after colon, no period, <=72 chars, no body, `!` = breaking. Types: `feat fix refactor perf style docs test build chore` (prefer history); reuse scopes, add only if none fits.
 - Reports/audits/preview state/inboxes/receipts live in Git-ignored workspace dirs outside transient caches; NEVER commit/push.
-- NEVER cite session-local IDs (note/report/submission/task/session-minted) in repo files; strip on sight; cite CHANGELOG/report source/commit instead.
+- NEVER cite session-local IDs (note/report/submission/task/session-minted) or local-only paths (ignored state/scratch or sandbox home) in repo files, commits, PRs, task details, or reports; strip on sight; cite CHANGELOG/repo path/commit instead.
 - Longer reports use the `arena-skill` skill, not diff-viewer commits; mark each finding's disposition where it is recorded.
 - `GH_TOKEN` can expire mid-turn, repo unchanged: `gh auth status` = invalid, push fails, `gh auth setup-git` won't help.
 - Retry once, NEVER loop or ask for credentials — then ask through `ask_user` for a GitHub reconnect in Arena and a reply in chat; NEVER end silently.

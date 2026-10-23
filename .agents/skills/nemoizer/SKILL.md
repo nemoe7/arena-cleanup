@@ -24,7 +24,7 @@ python3 skills/nemoizer/scripts/nemoize.py --ignores .
 python skills/nemoizer/scripts/nemoizer collect .
 ```
 
-Print each finding as `path:line: ID word -> use`; exit 1 only for non-advisory findings. Vendored and generated
+Print each finding as `path:line: ID word -> use`; exit 1 only for mandatory findings, and mark advisory findings for manual review by agent or user. Vendored and generated
 trees are skipped, and `--ignore` adds a directory or file.
 
 `--format` rewrites the tree and prints each changed line as it was and as it
@@ -43,7 +43,7 @@ Do not rewrite exclusion markers or the rotation table; apply only unsuppressed 
 - With `nemoizer collect` or `--ignores`, print every nonemo marker: path, line, rule ID, scope, and text.
 
 
-Run rotations (`NMO`), semicolon/sentence/advisory passive-voice, phrasal-verb, and ellipsis checks (`STE`), paragraph checks (`NMP`), and test reviews (`NMT`) by default.
+Run rotations and serial-comma checks (`NMO`), semicolon/sentence/manual-review style checks (`STE`), paragraph checks (`NMP`), and test reviews (`NMT`) by default.
 Limit sentences to 20 words for unclassified prose, 25 for explicit description scope.
 
 ## Prose review

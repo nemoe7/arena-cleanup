@@ -1,10 +1,10 @@
-<!-- nonemo: NMO001; nonemo: NMO002; nonemo: STE001 -->
+<!-- nonemo: NMO100; nonemo: NMO901; nonemo: STE100 -->
 # Nemoizer rules
 
 | ID | Avoid | Use |
 | --- | --- | --- |
-| `NMO001` | `transmit`, `kind` | send, type |
-| `NMO002` | `pick`, `repository` | select, repo (advisory) |
+| `NMO100` | `transmit`, `kind` | send, type |
+| `NMO901` | `pick`, `repository` | select, repo (manual review) |
 
 ## Rotations
 
@@ -24,26 +24,26 @@ A row replaces its word as plain text, in lower, capital, and upper case. Stem e
 - Print every nonemo marker with its path, line, rule ID, scope, and text when `nemoizer collect` or `--ignores` is used.
 
 ```python
-value = "kind"  # nonemo: NMO001
+value = "kind"  # nonemo: NMO100
 ```
 
 ```markdown
-<!-- nonemo: NMO002 -->
+<!-- nonemo: NMO901 -->
 ```
 
 ## Prose measurements
 
 | ID | Metric | Cap |
 | --- | --- | --- |
-| `STE001` | Semicolons per covered prose line | 0 |
-| `STE002` | Words per covered sentence | Instruction or unclassified: 20; explicit description: 25 |
-| `STE003` | Passive-voice constructions per covered sentence | 0 (advisory) |
-| `STE004` | Phrasal verbs per covered sentence | 0 (advisory) |
-| `STE005` | Ellipsis (omitted subject, verb, or article) per covered sentence | 0 (advisory) |
-| `NMP001` | Sentences per covered paragraph | General: 4; stricter project override |
-| `NMO003` | Missing serial comma in a three-item list | 0 (advisory) |
+| `STE100` | Semicolons per covered prose line | 0 |
+| `STE200` | Words per covered sentence | Instruction or unclassified: 20; explicit description: 25 |
+| `STE901` | Passive-voice constructions per covered sentence | 0 (manual review) |
+| `STE902` | Phrasal verbs per covered sentence | 0 (manual review) |
+| `STE903` | Ellipsis (omitted subject, verb, or article) per covered sentence | 0 (manual review) |
+| `NMP100` | Sentences per covered paragraph | General: 4; stricter project override |
+| `NMO003` | Missing serial comma in a three-item list | 0 |
 
-Default scans run rotations, `STE001` semicolon checks, `STE002` sentence checks, `STE003` advisory passive-voice checks, `STE004` advisory phrasal-verb checks, `STE005` advisory ellipsis checks, and `NMP001` paragraph checks. `--context description` selects 25 words; other contexts use 20.
+Default scans run `NMO100` and `NMO901` rotations, `NMO003` serial-comma checks, `STE100` semicolon checks, `STE200` sentence checks, `STE901` passive-voice checks, `STE902` phrasal-verb checks, `STE903` ellipsis checks, and `NMP100` paragraph checks. `--context description` selects 25 words; other contexts use 20.
 
 `nemoizer prose --context instruction --paragraph-cap 4 <paths>` retains the JSON-only measurement interface. Paths are required.
 
@@ -59,10 +59,10 @@ Existing exclusions apply at the reported source line, or at file scope. Unknown
 
 | ID | Candidate |
 | --- | --- |
-| `NMT001` | Direct prose-literal comparison or membership check against a named output channel |
-| `NMT002` | Literal equality-style assertion against a known measurement name |
+| `NMT100` | Direct prose-literal comparison or membership check against a named output channel |
+| `NMT200` | Literal equality-style assertion against a known measurement name |
 
-Default scans apply `NMT001` and `NMT002` to discovered tests and recognized helpers. Discovery reads pytest.ini, test names, and test declarations.
+Default scans apply `NMT100` and `NMT200` to discovered tests and recognized helpers. Discovery reads pytest.ini, test names, and test declarations.
 
 `--test-helper <path>` includes another helper and can repeat. Imports alone do not classify production files as tests.
 
