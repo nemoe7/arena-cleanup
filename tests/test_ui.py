@@ -845,6 +845,14 @@ def test_the_primary_button_fill_reads_under_white() -> None:
   assert luminance(tokens["accent-deep-hi"]) < luminance(tokens["accent-deep"])
 
 
+def test_the_log_clock_reads_on_the_card() -> None:
+  page = PAGE.read_text(encoding="utf-8")
+  tokens = dict(re.findall(r"--([a-z0-9-]+): (#[0-9a-f]{6});", page))
+  assert ".log-row .t { color: var(--dim); }" in page
+  ratio = (luminance(tokens["dim"]) + 0.05) / (luminance(tokens["surface"]) + 0.05)
+  assert ratio >= TEXT_CONTRAST, f"--dim on --surface gives {ratio:.2f}:1"
+
+
 ICON_KEY_RE = re.compile(r'^    "?([a-z-]+)"?: svg\(', re.MULTILINE)
 GLYPH_ONLY = {"commits-refresh": "Reload commits", "copy": "Copy log"}
 GLYPH_BUTTONS = {

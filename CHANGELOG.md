@@ -12,6 +12,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The repo view puts the run card left and the options card right, with the log below both at full width. The main column is pinned to the window. The log takes the height that is left, down to a 160 px floor, so only the log scrolls. At 1200 px and below the two cards stack, options first.
 - Clean & Push and Cancel are one button with two states, in the options card head. It reads Cancel while a run is live. The options card no longer folds, and the options sit in one column at every width.
 - The primary button is flat. Its inset top highlight and its drop shadow, which read as a bevel, are gone.
+- The clock column of the log rows takes the dim grey of the level column, 5.1:1 on the card. Before, it read at 2.55:1.
 
 ### Fixed
 

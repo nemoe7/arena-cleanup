@@ -38,7 +38,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ### Colour
 
 - Roles: `bg`, `surface`, `surface-2`, `surface-3`, `line`, `line-2`, `text`, `muted`, `dim`, `accent`, `accent-hi`, `accent-deep`, `accent-deep-hi`, `accent-soft`, `ok`, `warn`, `err`, `info`.
-- One dark theme, `color-scheme: dark`. Contrast checks: white on the primary button 5.3:1 at rest and 5.9:1 on hover. `accent` itself gives 3.9:1 under white, so it fills checked boxes and marks rows, never a text button.
+- One dark theme, `color-scheme: dark`. Contrast checks: white on the primary button 5.3:1 at rest and 5.9:1 on hover, and `dim` text 5.1:1 on a card. `accent` itself gives 3.9:1 under white, so it fills checked boxes and marks rows, never a text button.
 
 ### Type
 
@@ -166,3 +166,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: the run card sits left and the options card right, the log card below both at full width. The main column pins to the window and the log fills the rest with a 160 px floor, so the page never scrolls. 1200 px stacks the two cards, options first.
 - Accepted 2026-10-23: Clean & Push and Cancel are one button with two states, in the options card head. The options card no longer folds, and its chevron is gone.
 - Accepted 2026-10-23: the primary button is flat. Its inset top highlight and drop shadow read as a bevel, so both are gone.
+- Accepted 2026-10-23: the log clock takes `dim`, 5.1:1 on the card. Its own grey read at 2.55:1, under the 4.5:1 floor.
