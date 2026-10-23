@@ -51,11 +51,12 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ### Icons
 
 - Lucide 1.61.0, vendored one glyph at a time into the `ICONS` map in `index.html`. Each glyph keeps its 24 px grid and its 2 px stroke in the text color.
-- Three size tokens set the glyph box per place at every width. `--ico-s` is 14 px for inline glyphs: the commit check, the stand-in for a missing author picture, the chip X, and the pill arrow. `--ico-m` is 16 px for buttons, phase rows, tree rows, and banners. `--ico-l` is 18 px for icon buttons and the card mark. A glyph in running text stays at 1 em.
+- Three size tokens set the glyph box per place at every width. `--ico-s` is 14 px for inline glyphs: the commit check, the stand-in for a missing author picture, the chip X, and the pill arrow. `--ico-m` is 16 px for buttons, phase rows, tree rows, and banners. `--ico-l` is 18 px for icon buttons, the card mark, and the brand mark. A glyph in running text stays at 1 em.
 - Navigation and file glyphs in use: arrow-left, settings, arrow-up, arrow-down, chevron-right, folder, folder-tree, file, and plus.
-- State and action glyphs in use: check, x, triangle-alert, minus, circle-small, loader-circle, git-branch, refresh-cw, and copy.
+- State and action glyphs in use: check, x, triangle-alert, minus, circle-small, loader-circle, git-branch, refresh-cw, copy, user, and broom-sparkles.
 - Buttons with a glyph: Reload is `refresh-cw` alone, named `Reload commits` in `aria-label` and `title`. Copy log is `copy` alone, named `Copy log` the same way. Re-check and Retry lead with `refresh-cw`, Copy public key with `copy`, and Browse with `folder-tree`. Every other button keeps its word alone.
-- Static slots carry `data-icon="<name>"`, and the boot fills them. The brand mark is the project logo, not a glyph.
+- Static slots carry `data-icon="<name>"`, and the boot fills them. The brand mark is `broom-sparkles` in the accent, the same glyph as the app icon.
+- App icon: `scripts/app_icon.py` draws `ui/static/icons/*.png` from the `broom-sparkles` paths. The favicon and the regular PWA pictures carry the accent glyph alone on a transparent ground. The maskable picture and the Apple touch icon add the `--surface` background, full bleed, with the glyph inside the safe zone.
 - No text glyphs stand in for icons. The licence sits beside the page in `ui/static/LICENSE-lucide.txt`.
 
 ### Layout
@@ -173,3 +174,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: the phase rows lose their hint texts. A row shows a count once the engine reports one: checks and how many still run, commits signed of the total, and tags moved.
 - Accepted 2026-10-23: the counts read `passed/total` for the checks, `collecting`, `signing X/Y`, and `signed X commits` for the rewrite, and `moving`, `pushing`, and `pushed X tags` for the push. The Publish row is named Push, and a run without tags leaves it empty.
 - Accepted 2026-10-23: the commit rows show the author's GitHub picture for every author. The server caches one picture per address for 30 days after its last use and prunes the rest.
+- Accepted 2026-10-23: the app icon and the brand mark are the Lucide `broom-sparkles` glyph in the accent. The regular pictures are the glyph alone, the maskable picture and the Apple touch icon get the dark ground.

@@ -6,6 +6,7 @@ import json
 import re
 import shutil
 import socket
+import struct
 import subprocess
 import sys
 import threading
@@ -17,6 +18,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+
+from scripts import app_icon
 
 from .conftest import ME_EMAIL, ROLLUPS, ROOT, World, project_version
 
@@ -710,6 +713,15 @@ def test_a_cancelled_job_is_marked_cancelled() -> None:
   assert snap["exit"] != 0
 
 
+def test_the_brand_mark_and_the_app_icon_share_one_glyph(ui: UI) -> None:
+  page = ui.text("/")
+  assert 'class="brand" href="#/"' in page
+  assert '<span class="ico-svg" data-icon="broom-sparkles" aria-hidden="true">' in page
+  entry = re.search(r'"broom-sparkles": svg\(paths\((.*?)\)\),', page)
+  assert entry
+  assert tuple(json.loads(f"[{entry.group(1)}]")) == app_icon.GLYPH
+
+
 def test_pwa_assets(ui: UI) -> None:
   manifest = ui.get("/manifest.webmanifest")
   assert manifest["display"] == "standalone"
@@ -722,9 +734,10 @@ def test_pwa_assets(ui: UI) -> None:
   )
   page = ui.text("/")
   assert page.count('rel="manifest"') == 1
-  for icon in ("icon-192.png", "icon-512.png", "apple-touch-icon.png"):
+  for icon, (side, _, _) in app_icon.PICTURES.items():
     code, _, raw = ui.request("GET", f"/icons/{icon}")
     assert code == 200 and raw[:4] == PNG_MAGIC, icon
+    assert struct.unpack(">II", raw[16:24]) == (side, side), icon
   code, headers, raw = ui.request("GET", "/sw.js")
   assert headers["content-type"] == "application/javascript; charset=utf-8"
   assert "no-store" in headers["cache-control"]

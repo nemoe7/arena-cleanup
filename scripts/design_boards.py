@@ -152,6 +152,11 @@ def icon_script() -> str:
   return match.group(1)
 
 
+def icon_names() -> list[str]:
+  """The glyph names of the ICONS table, in page order."""
+  return re.findall(r'^    "?([a-z-]+)"?: svg\(', icon_script(), re.MULTILINE)
+
+
 def icon(name: str, cls: str = "ico-svg") -> str:
   return f'<span class="{cls}" data-icon="{name}" aria-hidden="true"></span>'
 
@@ -649,27 +654,16 @@ def style_board(_: dict[str, bytes]) -> str:
     )
     + '</table><p class="cap">The even scale, plus 1 px for borders. Margins over 48 px are layout, not tokens.</p>'
   )
+  names = icon_names()
   glyphs = (
-    '<div class="row" style="gap:14px;font-size:20px;color:var(--muted)">'
+    '<div class="row" style="gap:14px;font-size:20px;color:var(--muted);flex-wrap:wrap">'
     + "".join(
       f'<span class="col" style="gap:4px;align-items:center">{icon(name)}'
       f'<span class="mono" style="font-size:10px">{name}</span></span>'
-      for name in (
-        "arrow-left",
-        "arrow-up",
-        "arrow-down",
-        "chevron-right",
-        "check",
-        "x",
-        "triangle-alert",
-        "minus",
-        "circle-small",
-        "loader-circle",
-        "git-branch",
-        "settings",
-      )
+      for name in names
     )
-    + '</div><p class="cap">Lucide glyphs inlined in index.html, drawn at 1 em in the text colour.</p>'
+    + '</div><p class="cap">Lucide glyphs inlined in index.html, drawn at 1 em in the text colour.'
+    + " broom-sparkles is also the app icon.</p>"
   )
   body = (
     '<div class="row">'
@@ -682,7 +676,7 @@ def style_board(_: dict[str, bytes]) -> str:
     + frame("Spacing", "Padding, margin, and gap values.", spacing)
     + "</div>"
     + '<div class="row" style="margin-top:24px">'
-    + frame("Icons", "The thirteen glyphs the page ships.", glyphs)
+    + frame("Icons", f"The {len(names)} glyphs the page ships.", glyphs)
     + "</div>"
   )
   return board(

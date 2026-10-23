@@ -5,7 +5,7 @@ your identity, signs the commits, and publishes the result to your default
 branch. Paste a repo URL once. The dashboard then shows each repo's arena
 branch, its distance from origin, and its pull request checks.
 
-![The dashboard: three remembered repos, each with its arena branch and PR check rollup](docs/ui-overview.png)
+![The dashboard: five remembered repos, each with its arena branches and PR check counts](docs/ui-overview.png)
 
 One click runs the pipeline:
 

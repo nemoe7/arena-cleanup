@@ -12,6 +12,7 @@ INLINE = 14.0
 BUTTON = 16.0
 ICON_BUTTON = 18.0
 GLYPHS = {
+  ".brand .ico-svg": ICON_BUTTON,
   "#back .ico-svg": BUTTON,
   "#copy .ico-svg": ICON_BUTTON,
   ".phase-ico .ico-svg": BUTTON,
