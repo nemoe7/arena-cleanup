@@ -243,7 +243,7 @@
     transition: border-color .12s, background .12s, transform .12s;
   }
   .repo-card:hover { border-color: #2c333c; background: #0f1216; }
-  .repo-card:hover .repo-name, .repo-card:focus-visible .repo-name { text-decoration: underline; text-underline-offset: 3px; }
+  .repo-card:hover .repo-name, .repo-name:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
   .repo-card:active { transform: translateY(1px); }
   .repo-head { display: flex; align-items: flex-start; gap: 10px; }
   .repo-ico {
@@ -252,7 +252,10 @@
     display: grid; place-items: center; background: var(--surface-3);
     border: 1px solid var(--line-2); color: var(--muted);
   }
-  .repo-name { font-weight: 600; font-size: var(--fs-3); letter-spacing: -.01em; overflow-wrap: anywhere; }
+  /* the name is the control that opens the repo; the card body forwards a click */
+  .repo-name { display: block; max-width: 100%; min-height: 24px; margin: 0; padding: 0; border: 0; background: none;
+    color: inherit; font: inherit; font-weight: 600; font-size: var(--fs-3); letter-spacing: -.01em; text-align: left;
+    overflow-wrap: anywhere; cursor: pointer; }
   .repo-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .pill {
     --ico: var(--ico-s);
@@ -1039,7 +1042,8 @@
     const head = el("div", { class: "repo-head" },
       el("span", { class: "repo-ico", "aria-hidden": "true" }, icon("git-branch")),
       el("div", { style: "min-width:0" },
-        el("div", { class: "repo-name" }, repo.name)),
+        el("button", { type: "button", class: "repo-name", title: "Open the repo",
+          onclick: (e) => { e.stopPropagation(); openRepo(repo.id); } }, repo.name)),
       removeButton(repo));
 
     const meta = el("div", { class: "repo-meta" });
@@ -1075,9 +1079,7 @@
     const actions = el("div", { class: "card-actions" },
       el("button", { class: "btn primary", onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, "Clean & Push"));
 
-    return el("div", { class: "repo-card", role: "button", tabindex: "0",
-        onclick: () => openRepo(repo.id),
-        onkeydown: (e) => { if (e.key === "Enter") openRepo(repo.id); } },
+    return el("div", { class: "repo-card", onclick: () => openRepo(repo.id) },
       head, meta, arena, actions);
   }
 

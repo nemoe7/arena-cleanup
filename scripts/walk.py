@@ -252,7 +252,7 @@ def open_repo_from_its_card(w: Walker, demo: Demo) -> None:
 
 @step("desktop")
 def keyboard_enter_on_a_card(w: Walker, demo: Demo) -> None:
-  w.page.focus(".repo-card")
+  w.page.focus(".repo-card .repo-name")
   w.page.keyboard.press("Enter")
   w.page.wait_for_timeout(600)
   assert w.visible("#view-repo")
