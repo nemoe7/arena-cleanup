@@ -413,13 +413,21 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
     ).splitlines()
     if b.startswith("origin/arena/")
   ]
-  # Commits each arena branch carries beyond the default branch: the work a
-  # run rewrites and publishes. The clone's own drift is the engine's business.
+  # Net commits per arena branch: its commits beyond the default branch, minus
+  # the default branch's commits beyond it. Absorbed work reads 0, and a
+  # default branch that moved on reads below 0.
   ahead: dict[str, int] = {}
   if default:
     for name in arena:
-      count = git("rev-list", "--count", f"origin/{default}..origin/{name}", cwd=cwd)
-      ahead[name] = int(count or 0)
+      counts = git(
+        "rev-list",
+        "--left-right",
+        "--count",
+        f"origin/{default}...origin/{name}",
+        cwd=cwd,
+      ).split()
+      behind, own = (int(n) for n in counts) if len(counts) == 2 else (0, 0)
+      ahead[name] = own - behind
   # The commit time of each tip. The page offers the newest branch first.
   activity = {
     name: int(git("log", "-1", "--format=%ct", f"origin/{name}", cwd=cwd) or 0)

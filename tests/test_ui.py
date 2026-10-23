@@ -246,7 +246,7 @@ def test_github_page_addresses_normalize_to_clone_urls() -> None:
 def test_add_by_clone_url(ui: UI, world: World, ids: dict[str, str]) -> None:
   bare = world.root / "work.git"
   world.git("clone", "-q", "--bare", str(world.work), str(bare), cwd=world.root)
-  # give the bare repo two arena branches: one level with main, one a commit ahead
+  # three arena branches: level with main, a commit ahead, and one main moved past
 
   def git_bare(*args: str) -> str:
     return world.git(f"--git-dir={bare}", *args, cwd=world.root)
@@ -255,6 +255,7 @@ def test_add_by_clone_url(ui: UI, world: World, ids: dict[str, str]) -> None:
   tree = git_bare("rev-parse", "main^{tree}")
   ahead_tip = git_bare("commit-tree", tree, "-p", "main", "-m", "one more")
   git_bare("update-ref", "refs/heads/arena/ui-ahead", ahead_tip)
+  git_bare("update-ref", "refs/heads/arena/ui-behind", "refs/heads/main^")
   clone = ui.post("/api/repos", {"source": f"file://{bare}"})
   ids["clone"] = clone["id"]
   ids["clone_path"] = clone["path"]
@@ -264,6 +265,7 @@ def test_add_by_clone_url(ui: UI, world: World, ids: dict[str, str]) -> None:
   assert any(b.startswith("arena/") for b in clone["status"]["arena"])
   assert clone["status"]["ahead"]["arena/ui-test"] == 0
   assert clone["status"]["ahead"]["arena/ui-ahead"] == 1, "commits beyond main"
+  assert clone["status"]["ahead"]["arena/ui-behind"] == -1, "main moved past it"
   assert len(ui.get("/api/repos")) == 2
   assert ui.status("POST", "/api/repos", {"source": "/nope/nope"}) == 400
   assert ui.status("POST", "/api/repos", {"source": "  "}) == 400

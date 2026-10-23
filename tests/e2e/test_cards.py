@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from scripts import demo
 from scripts.walk import Walker
 
 pytestmark = pytest.mark.e2e
@@ -30,6 +31,12 @@ def test_the_desktop_card_row_puts_the_pills_under_the_name(desktop: Walker) -> 
   assert tail_left == name_left
   assert desktop.count(f"{CARD} .arena-row .dot") == 0
   assert desktop.count(f"{CARD} .arena-tail .pill") >= 2
+  # infra-tools shares the arena history with shop-web, and its main moved on
+  # by MAIN_LATER: the chip shows the net count
+  shop = int(desktop.text(f"{CARD} .ahead .n"))
+  infra = int(desktop.text(".repo-card:has-text('infra-tools') .ahead .n"))
+  assert shop >= 1
+  assert infra == shop - len(demo.MAIN_LATER)
 
 
 def test_the_phone_card_row_keeps_the_two_lines(phone: Walker) -> None:

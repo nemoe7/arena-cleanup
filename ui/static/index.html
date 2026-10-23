@@ -983,9 +983,12 @@
 
   // -------------------------------------------------------------- dashboard
   // the commits an arena branch carries beyond the default branch
+  // the net count: the branch's own commits minus what origin/<default> holds
+  // beyond it. Absorbed work reads 0, and a chip below 1 says nothing useful.
   function aheadPill(n, base, cls = "pill mono ahead") {
     const count = Number(n ?? 0);
-    const title = `${count} commit${count === 1 ? "" : "s"} ahead of origin/${base}`;
+    if (count < 1) return null;
+    const title = `${count} net commit${count === 1 ? "" : "s"} ahead of origin/${base}`;
     return el("span", { class: cls, title }, icon("arrow-up"), el("span", { class: "n" }, String(count)));
   }
 
