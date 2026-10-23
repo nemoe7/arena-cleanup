@@ -48,3 +48,4 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Target branch lists the default branch first and never an `arena/*` branch. The page API answers 400 for one.
 - Browse under Remove paths opens the HEAD tree of the clone, one level per request. A click on a row or its plus adds the path chip. `GET /api/repos/<id>/tree?path=` serves the level.
 - The demo histories keep tests under `tests/` and the workflow under `.github/workflows/`, so the tree has folders to open.
+- The tab title reads `arena-cleanup | <page>`: Repos, the repo name, Settings, or Offline. One setter runs on every view change.

@@ -78,7 +78,7 @@ self.addEventListener("fetch", (event) => {
 
 function offline() {
   const html = `<!doctype html><meta charset="utf-8"><meta name="color-scheme" content="dark">
-<title>arena-cleanup · offline</title>
+<title>arena-cleanup | Offline</title>
 <style>
   html,body{height:100%;margin:0;background:#08090b;color:#c9cdd4;
     font:15px/1.55 ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;

@@ -52,3 +52,27 @@ def test_the_in_app_back_pops_the_entry(desktop: Walker) -> None:
   desktop.click(".repo-card", 800)
   assert pushed(desktop)
   assert length(desktop) == top
+
+
+def test_the_tab_title_names_the_page(desktop: Walker) -> None:
+  desktop.goto(1200)
+  assert desktop.page.title() == "arena-cleanup | Repos"
+
+  desktop.click(".repo-card", 800)
+  name = desktop.text("#repo-title").strip()
+  assert name
+  assert desktop.page.title() == f"arena-cleanup | {name}"
+
+  desktop.click("#settings-btn", 800)
+  assert desktop.page.title() == "arena-cleanup | Settings"
+
+  # the in-app Back returns to the repo, and the title follows
+  desktop.click("#settings-back", 800)
+  assert desktop.visible("#view-repo")
+  assert desktop.page.title() == f"arena-cleanup | {name}"
+
+  # the browser Back pops to the dashboard, the root entry
+  desktop.page.go_back()
+  desktop.page.wait_for_timeout(SETTLE_MS)
+  assert desktop.visible("#view-dashboard")
+  assert desktop.page.title() == "arena-cleanup | Repos"

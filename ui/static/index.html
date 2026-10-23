@@ -15,7 +15,7 @@
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<title>arena-cleanup</title>
+<title>arena-cleanup | Repos</title>
 <style>
   /* Spacing scale: 1 (optical nudge) then every even step - 2 4 6 8 10 12 16
      20 24 32 40. Every padding, margin, and gap in this file lands on it;
@@ -867,9 +867,15 @@
     return { dashboard: "#/", settings: "#/settings" }[view] || "#/";
   }
 
+  // The tab reads "arena-cleanup | <page>". One setter, called from every path
+  // that changes the view or the open repo, so no transition skips it.
   function titleFor(view) {
-    if (view === "repo" && state.repo) return `${state.repo.name}, arena-cleanup`;
-    return view === "settings" ? "Settings, arena-cleanup" : "arena-cleanup";
+    const page = view === "repo" && state.repo ? state.repo.name : view === "settings" ? "Settings" : "Repos";
+    return `arena-cleanup | ${page}`;
+  }
+
+  function syncTitle() {
+    document.title = titleFor(state.view);
   }
 
   function show(view) {
@@ -879,7 +885,7 @@
     // remember where we are, so a sub-view can send you back to the place you
     // actually came from instead of guessing from whatever was open last
     state.view = view;
-    document.title = titleFor(view);
+    syncTitle();
     navigate(hashFor(view));
     window.scrollTo(0, 0);
     // keyboard and screen-reader users land on the new screen, not back at
@@ -921,7 +927,8 @@
 
   // Back from a sub-view: return to the screen that opened it.
   function goBack() {
-    show(state.returnTo || "dashboard");
+    // a repo closed behind the settings view cannot be returned to
+    show(state.returnTo === "repo" && state.repo ? "repo" : "dashboard");
   }
 
   // -------------------------------------------------------------- dashboard
@@ -1194,6 +1201,7 @@
       }
       if (!$("view-repo").hidden) {
         $("repo-title").textContent = repo.name;
+        syncTitle();
         renderBranchSelect();
         renderArenaSelect();
         renderSidebar();
@@ -2021,7 +2029,7 @@
 
   window.addEventListener("hashchange", () => {
     // a pop this page asked for already shows its screen
-    if ((location.hash || "#/") === hashFor(state.view)) return;
+    if ((location.hash || "#/") === hashFor(state.view)) return syncTitle();
     applyHash();
   });
 
