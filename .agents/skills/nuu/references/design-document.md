@@ -108,7 +108,7 @@ Visual-reference template: [design-visuals.md](design-visuals.md).
 
 - Decision status: proposed example. Context, evidence, tradeoffs, and implementation links: <decision context; supporting evidence; tradeoffs; implementation links>.
 - Historical example entry:
-- 2026-03-04: inspector width at 1200 px set to 320 px.
+- 2026-03-04: inspector width at 75em set to 320 px.
 ```
 
 ## Rules for an entry

@@ -42,7 +42,7 @@ Correct: every gap on the 8 px scale, a 40 px row, a 10 px radius, no shadow, a 
 
 ## 7. Three named breakpoints
 
-Correct: 1200, 900, and 640 with one deliberate change each. Incorrect: a 742 px width with its own behaviour, and a table that overflows at 360 px.
+Correct: 75em, 56.25em, and 40em with one deliberate change each. Incorrect: a 742 px width with its own behaviour, and a table that overflows at 360 px.
 
 ![Clause 7](examples/three-named-breakpoints.png)
 

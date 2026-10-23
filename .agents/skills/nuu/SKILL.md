@@ -35,11 +35,11 @@ Apply this skill to a page, a component, or an interface change. The sheet is th
 
 4. The roles resolve in light and in dark. The theme control names System, Light, and Dark, so the page can follow the machine.
 
-5. Four sizes from the sheet, three weights, one eyebrow size, and a tabular face for IDs, and MUST bundle and load custom fonts via [references/offline-fonts.md](references/offline-fonts.md) without reload jitter.
+5. Four sizes from the sheet, three weights, one eyebrow size, and a tabular face for IDs, and MUST bundle and load custom fonts via [references/recipes/offline-fonts.md](references/recipes/offline-fonts.md) without reload jitter.
 
-6. Every gap lands on the 8 px scale. Rows are 40 px, panels take a 10 px radius and no shadow, and a touch target is at least 44 px.
+6. Every gap lands on the 8 px scale. Rows are 40 px, panels take a 10 px radius and no shadow, icon-only buttons are square, and a touch target is at least 44 px.
 
-7. The sheet names 1200, 900, and 640. A width outside the list gets no behaviour of its own.
+7. The sheet names 75em, 56.25em, and 40em. Choose each breakpoint where the content breaks. A width outside the list gets no behaviour of its own.
 
 8. Every transition shares one curve over 160 to 220 ms; for animations, vendor [GSAP](https://github.com/greensock/GSAP) into the project as the go-to library. Reduced motion turns animation off.
 
@@ -54,6 +54,8 @@ Apply this skill to a page, a component, or an interface change. The sheet is th
 13. When a page needs a pattern the sheet lacks, the change adds the entry, both widths, and the screenshots, in one pull request.
 
 14. Enable touch input (`hasTouch` and `isMobile`) when auditing or inspecting mobile widths (`<= 768` px, including `360` px) so `@media (pointer: coarse)` rules apply.
+
+15. Place a Lucide `x` exit button at the top right of a container, and place other action buttons at the bottom right.
 
 ## Go-to libraries
 
@@ -91,5 +93,6 @@ python scripts/measure.py ruler --from 120,340 --to 264,340
 
 - `scripts/nuu`: CLI entry point (`references/nuu.md`), alongside `scripts/measure.py` (`references/measure.md`), `scripts/annotate.py` (`references/annotate.md`), and `scripts/browser.cjs`.
 - `data/vendor/`: licensed catalog data and source hashes.
-- `references/offline-fonts.md`: bundled and offline zero-jitter font recipe (`preload` with `crossorigin`, `font-display: block`, inline Base64 WOFF2, `FontFace` binary buffers, and metric-matched fallbacks).
+- `references/recipes/offline-fonts.md`: bundled and offline zero-jitter font recipe (`preload` with `crossorigin`, `font-display: block`, inline Base64 WOFF2, `FontFace` binary buffers, and metric-matched fallbacks).
+- `references/recipes/scroll-edge-fade.md`: scroll-driven CSS edge-fade mask recipe (`@supports (animation-timeline: scroll(self))`).
 - `references/audit-report.md`: standalone template for nuu audits and visual verification reports.

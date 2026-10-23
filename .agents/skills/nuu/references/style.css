@@ -165,26 +165,27 @@ body {
   font-size: var(--size-13);
 }
 
-/* Layout: one column, one gutter, three named breakpoints */
+/* Breakpoints: em, so layouts follow the reader's browser font size.
+   40em = 640px, 56.25em = 900px, 75em = 1200px at a 16px initial size. */
 .page {
   max-width: var(--column);
   margin: 0 auto;
   padding: 0 var(--gutter);
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 75em) {
   .page {
     padding: 0 var(--space-3);
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 56.25em) {
   .page {
     padding: 0 var(--space-2);
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 40em) {
   .page {
     padding: 0 var(--space-2);
   }
@@ -209,6 +210,23 @@ body {
   color: var(--text);
   font: inherit;
   font-weight: var(--weight-medium);
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch);
+  height: var(--touch);
+  min-width: var(--touch);
+  min-height: var(--touch);
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--field);
+  color: var(--text);
   transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
 }
 

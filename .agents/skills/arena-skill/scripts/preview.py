@@ -1803,6 +1803,121 @@ def render_report(markdown):
 			if item.strip():parts.append(render_report_block(item))
 		else:parts.append(field_html(item))
 	return''.join(parts),questions
+SLASH_COMMAND_RE=re.compile('^/(nuu|nemoizer)(?:\\s+([\\s\\S]*))?$',re.IGNORECASE)
+NEMOIZER_COLLECT_IGNORES='arena-state','.git','node_modules','LICENSE.md','skills/arena-skill/assets/markdown-it.min.js','skills/refs/arena-skill/assets/markdown-it.min.js','skills/amending-violations/LICENSE.txt','skills/refs/amending-violations/LICENSE.txt','skills/squash/LICENSE.txt','skills/refs/squash/LICENSE.txt','skills/arena-skill/assets/lucide.LICENSE','skills/refs/arena-skill/assets/lucide.LICENSE','skills/arena-skill/assets/markdown-it.LICENSE','skills/refs/arena-skill/assets/markdown-it.LICENSE','skills/arena-skill/assets/sortable.LICENSE','skills/refs/arena-skill/assets/sortable.LICENSE','skills/nuu/data/vendor','skills/refs/nuu/data/vendor'
+def _find_skill_dir(root,name):
+	roots=[Path(root)];here=Path(__file__).resolve();roots.extend(here.parents);cwd=Path.cwd().resolve();roots.append(cwd);roots.extend(cwd.parents)
+	for base in roots:
+		for candidate in(base/'skills'/'refs'/name,base/'skills'/name,base/'.agents'/'skills'/name):
+			if candidate.is_dir():return candidate
+	return Path(root)/'skills'/'refs'/name
+def _extract_clauses(skill_md):
+	if not skill_md.is_file():return''
+	text=skill_md.read_text(encoding='utf-8')
+	if'## Clauses'not in text:return''
+	after=text.split('## Clauses',1)[1];section=after.split('\n## ',1)[0].strip();lines=[line.strip()for line in section.splitlines()if re.match('^\\d+\\.',line.strip())];return'\n'.join(lines)
+def _recipe_summary_line(content):
+	for raw in content.splitlines():
+		line=raw.strip()
+		if not line or line.startswith(('#','```')):continue
+		if line.startswith('- '):line=line[2:].strip()
+		return line.split('. ',1)[0].rstrip('.')+'.'
+	return'Reusable UI/UX implementation pattern.'
+def _collect_nuu_recipes(nuu_dir):
+	recipes={};recipes_dir=nuu_dir/'references'/'recipes'
+	if recipes_dir.is_dir():
+		for path in sorted(recipes_dir.glob('*.md')):recipes[path.stem]=path.read_text(encoding='utf-8').strip()
+	legacy_fonts=nuu_dir/'references'/'offline-fonts.md'
+	if'offline-fonts'not in recipes and legacy_fonts.is_file():recipes['offline-fonts']=legacy_fonts.read_text(encoding='utf-8').strip()
+	nuu_ref=nuu_dir/'references'/'nuu.md'
+	if'scroll-edge-fade'not in recipes and nuu_ref.is_file():
+		text=nuu_ref.read_text(encoding='utf-8')
+		if'## Optional Recipes'in text:recipes['scroll-edge-fade']='# Recipe: Scroll-edge fade\n\n'+text.split('## Optional Recipes',1)[1].strip()
+	return recipes
+def _concise_rule_doc(markdown):
+	lines=[];in_fence=False
+	for raw in markdown.splitlines():
+		stripped=raw.strip()
+		if stripped.startswith('```'):in_fence=not in_fence;continue
+		if in_fence or stripped.startswith(('Rationale:','Note:')):continue
+		if stripped:lines.append(stripped)
+	return'\n\n'.join(lines[:5])
+def _skill_exists(root,name):
+	roots=[Path(root or resolve_repo_root()).resolve()];here=Path(__file__).resolve();roots.extend(here.parents);cwd=Path.cwd().resolve();roots.append(cwd);roots.extend(cwd.parents)
+	for base in roots:
+		for candidate in(base/'skills'/'refs'/name,base/'skills'/name,base/'.agents'/'skills'/name):
+			if(candidate/'SKILL.md').is_file():return candidate
+	return None
+def discover_slash_commands(root=None):
+	commands=[];nuu_dir=_skill_exists(root,'nuu')
+	if nuu_dir is not None:
+		commands.extend([{'cmd':'/nuu audit','desc':'Send agent note: run a full nuu audit'},{'cmd':'/nuu help','desc':'Show nuu commands and clauses (modal)'},{'cmd':'/nuu recipes','desc':'List nuu UI recipes (modal)'},{'cmd':'/nuu search ','desc':'Search the nuu UI/UX catalog (modal)'}])
+		for name in sorted(_collect_nuu_recipes(nuu_dir)):commands.append({'cmd':f"/nuu recipe {name}",'desc':f"Send agent note: apply {name} recipe"})
+	nemo_dir=_skill_exists(root,'nemoizer')
+	if nemo_dir is not None:commands.extend([{'cmd':'/nemoizer audit','desc':'Send agent note: run a nemoizer audit and report'},{'cmd':'/nemoizer collect','desc':'Scan prose and code for nemoizer findings (modal)'},{'cmd':'/nemoizer help','desc':'Show nemoizer commands and clauses (modal)'},{'cmd':'/nemoizer recipes','desc':'Browse nemoizer templates and references (modal)'},{'cmd':'/nemoizer rules','desc':'Browse nemoizer rules or /nemoizer rules <id> (modal)'}])
+	commands.sort(key=lambda item:item['cmd'].strip());return commands
+def resolve_slash_command(text,root=None):
+	if not isinstance(text,str):return None
+	stripped=text.strip();match=SLASH_COMMAND_RE.match(stripped)
+	if not match:return None
+	skill=match.group(1).lower();rest=(match.group(2)or'').strip();lines=rest.splitlines()if rest else[];first_line=lines[0].strip()if lines else'';extra_lines='\n'.join(lines[1:]).strip()if len(lines)>1 else'';parts=first_line.split(None,1);sub=parts[0].lower()if parts else'';arg=parts[1].strip()if len(parts)>1 else'';trailing='\n\n'.join(part for part in(arg,extra_lines)if part).strip();repo_root=Path(root or resolve_repo_root()).resolve()
+	if skill=='nuu':
+		nuu_dir=_find_skill_dir(repo_root,'nuu')
+		if sub in{'','help'}:
+			clauses=_extract_clauses(nuu_dir/'SKILL.md');sections=['| Composer Command | Type | Action |\n| --- | --- | --- |\n| `/nuu audit [target]` | Agent note | Run a full `nuu` audit and publish the report |\n| `/nuu help` | Modal | Show `nuu` composer commands and clauses |\n| `/nuu recipe <name> [target]` | Agent note | Apply a `nuu` recipe to the target |\n| `/nuu recipes` | Modal | List available `nuu` recipes and summaries |\n| `/nuu search <query>` | Modal | Search the `nuu` UI/UX catalog |']
+			if clauses:sections.append(f"### Clauses\n\n{clauses}")
+			return{'mode':'query','command':'/nuu help','title':'nuu · Quick Reference','markdown':'\n\n'.join(sections)}
+		if sub=='recipes'or sub=='recipe'and not arg:
+			recipes=_collect_nuu_recipes(nuu_dir);rows=['| Recipe | Summary | Composer Command |','| --- | --- | --- |']
+			for(name,content)in sorted(recipes.items()):rows.append(f"| `{name}` | {_recipe_summary_line(content)} | `/nuu recipe {name} [target]` |")
+			return{'mode':'query','command':'/nuu recipes','title':'nuu · Recipes','markdown':'\n'.join(rows)}
+		if sub=='search':
+			if not arg:return{'mode':'query','command':'/nuu search','title':'nuu search','markdown':'Usage: `/nuu search <query>`'}
+			try:tokens=shlex.split(arg)
+			except ValueError as err:return{'mode':'query','command':'/nuu search','title':'nuu search','markdown':f"Invalid search arguments: `{err}`"}
+			proc=subprocess.run([sys.executable,str(nuu_dir/'scripts'/'uiux.py'),'search',*tokens],cwd=str(repo_root),capture_output=True,text=True,timeout=15,check=False);out=(proc.stdout or proc.stderr or'No results.').strip();return{'mode':'query','command':f"/nuu search {arg}",'title':f"nuu search · {arg}",'markdown':f"```text\n{out}\n```"}
+		if sub=='audit':
+			note_text='Run a full `nuu` UI/UX audit (`1280` px and `360` px viewports, `a11y`, `density`, and `annotate`) and publish the audit report using `skills/refs/nuu/references/audit-report.md`.'
+			if trailing:note_text=f"{note_text}\n\n{trailing}"
+			return{'mode':'note','command':'/nuu audit','text':note_text}
+		if sub=='recipe':
+			recipe_parts=arg.split(None,1);recipe_name=re.sub('[^a-zA-Z0-9_-]','',recipe_parts[0]).lower();recipe_rest=recipe_parts[1].strip()if len(recipe_parts)>1 else'';recipe_trailing='\n\n'.join(part for part in(recipe_rest,extra_lines)if part).strip();recipe_rel=f"skills/refs/nuu/references/recipes/{recipe_name}.md";note_text=f"Apply the `nuu` recipe `{recipe_name}` (`{recipe_rel}`)."
+			if recipe_trailing:note_text=f"{note_text}\n\n{recipe_trailing}"
+			return{'mode':'note','command':f"/nuu recipe {recipe_name}",'text':note_text}
+		return{'mode':'query','command':f"/nuu {sub}",'title':'nuu · Unknown Command','markdown':f"Unknown `/nuu` subcommand `{sub}`. Try `/nuu help`, `/nuu recipes`, `/nuu search <query>`, `/nuu audit [target]`, or `/nuu recipe <name> [target]`."}
+	nemo_dir=_find_skill_dir(repo_root,'nemoizer')
+	if sub in{'','help'}:
+		clauses=_extract_clauses(nemo_dir/'SKILL.md');sections=['| Composer Command | Type | Action |\n| --- | --- | --- |\n| `/nemoizer audit [paths...]` | Agent note | Run a `nemoizer` audit, fix violations, and publish the report |\n| `/nemoizer collect [paths...]` | Modal | Scan prose and code and summarize `nemoizer` findings |\n| `/nemoizer help` | Modal | Show `nemoizer` composer commands and clauses |\n| `/nemoizer recipes` | Modal | List `nemoizer` workflow references and templates |\n| `/nemoizer rules [id]` | Modal | List STE, NMO, NMP, and NMT rules or view a rule summary |']
+		if clauses:sections.append(f"### Clauses\n\n{clauses}")
+		return{'mode':'query','command':'/nemoizer help','title':'nemoizer · Quick Reference','markdown':'\n\n'.join(sections)}
+	if sub in{'recipes','recipe'}:return{'mode':'query','command':'/nemoizer recipes','title':'nemoizer · Templates & Workflows','markdown':'| Reference | Purpose | Composer Command |\n| --- | --- | --- |\n| `references/audit-report.md` | Standalone audit report template | `/nemoizer audit [paths...]` |\n| `references/rules.md` | Index of STE, NMO, NMP, and NMT rules | `/nemoizer rules [id]` |\n| Audit findings scan | Group suppressions, violations, and review items | `/nemoizer collect [paths...]` |'}
+	if sub in{'rules','rule'}:
+		refs_dir=nemo_dir/'references'
+		if arg and refs_dir.is_dir():
+			slug=re.sub('[^a-zA-Z0-9_-]','',arg.split()[0]).lower()
+			for item in sorted(refs_dir.glob('*.md')):
+				if item.stem.lower()==slug:return{'mode':'query','command':f"/nemoizer {sub} {slug}",'title':f"nemoizer · {slug.upper()}",'markdown':_concise_rule_doc(item.read_text(encoding='utf-8'))}
+		rules_file=refs_dir/'rules.md'if(refs_dir/'rules.md').is_file()else refs_dir/'Rules.md';body=rules_file.read_text(encoding='utf-8').strip()if rules_file.is_file()else'No rules file found.';return{'mode':'query','command':f"/nemoizer {sub}",'title':'nemoizer · Rules','markdown':body}
+	if sub in{'collect','check'}:
+		target_args=[]
+		if arg:
+			try:
+				for token in shlex.split(arg):
+					if token.startswith('-'):continue
+					resolved=(repo_root/token).resolve()
+					if resolved==repo_root or repo_root in resolved.parents:target_args.append(str(resolved.relative_to(repo_root)))
+			except ValueError:pass
+		ignore_args=[]
+		if not target_args:
+			for item in NEMOIZER_COLLECT_IGNORES:ignore_args.extend(['--ignore',item])
+		try:proc=subprocess.run([sys.executable,str(nemo_dir/'scripts'/'nemoize.py'),'--audit',*ignore_args,*target_args],cwd=str(repo_root),capture_output=True,text=True,timeout=25,check=False);out=(proc.stdout or proc.stderr or'').strip()
+		except subprocess.TimeoutExpired:return{'mode':'query','command':f"/nemoizer {sub}",'title':'nemoizer collect · Timeout','markdown':'Scan timed out. Pass a narrower path (e.g. `/nemoizer collect docs/ README.md`).'}
+		finding_lines=[line for line in out.splitlines()if line.strip()];summary=f"Found **{len(finding_lines)}** output line(s).\n\n```text\n{out}\n```"if finding_lines else'No findings.';return{'mode':'query','command':f"/nemoizer {sub}"+(f" {arg}"if arg else''),'title':'nemoizer collect · Audit Findings','markdown':summary}
+	if sub=='audit':
+		note_text='Run `nemoizer` in audit mode (`python3 skills/refs/nemoizer/scripts/nemoize.py --audit`), fix blocking violations, and publish an audit report using `skills/refs/nemoizer/references/audit-report.md`.'
+		if trailing:note_text=f"{note_text}\n\n{trailing}"
+		return{'mode':'note','command':'/nemoizer audit','text':note_text}
+	return{'mode':'query','command':f"/nemoizer {sub}",'title':'nemoizer · Unknown Command','markdown':f"Unknown `/nemoizer` subcommand `{sub}`. Try `/nemoizer help`, `/nemoizer rules [id]`, `/nemoizer recipes`, `/nemoizer collect [paths...]`, or `/nemoizer audit [paths...]`."}
 class ReportChanged(ValueError):pass
 class FetchChanged(ValueError):pass
 class ReportHeld(ValueError):pass
@@ -3060,7 +3175,7 @@ def handler(store):
 					self.reply(200,body);return
 				if path=='/api/userscript-autosave':self.reply(200,json.dumps(store.userscript_snapshot(),ensure_ascii=False));return
 				if path=='/api/state':
-					state=store.state()
+					state=store.state();state['slash_commands']=discover_slash_commands()
 					try:
 						for item in state['notes']+[ack for report in state['reports']for ack in report['acknowledgements']]:
 							if'text'in item:item['html']=render(item['text'])
@@ -3085,7 +3200,7 @@ def handler(store):
 			except(OSError,sqlite_api().Error,RuntimeError)as error:self.problem(503,error)
 		def do_POST(self):
 			path=urlsplit(self.path).path;autosave_post=path in{'/api/userscript-autosave','/api/userscript-autosave/compare'};report_submit=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/submit',path);report_seen=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/seen',path);report_ack_seen=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/ack-seen',path);report_view=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/view',path);message_replies_seen=re.fullmatch('/api/messages/([a-zA-Z0-9_-]{1,80})/replies/seen',path);report_unpublish=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/unpublish',path);fetch_post=re.fullmatch('/api/fetch-jobs/([a-zA-Z0-9_-]{1,80})/(renew|result|fail|retry|approve|deny|drop)',path);note_upload=path=='/api/notes/with-file';staged_upload=path=='/api/uploads';upload_drop=re.fullmatch('/api/uploads/([a-zA-Z0-9_-]{1,80})/drop',path);agent_key_post=path=='/api/key';skip_poll_post=path=='/api/skip-poll';interrupt_post=path=='/api/agent-interrupt';task_order_post=path=='/api/tasks/order';fetch_result=bool(fetch_post and fetch_post.group(2)=='result')
-			if path not in{'/api/notes','/api/markdown','/api/fetch-jobs','/api/fetch-jobs/claim','/api/survey','/api/survey/request'}and not report_submit and not report_seen and not report_ack_seen and not report_view and not message_replies_seen and not report_unpublish and not note_upload and not staged_upload and not upload_drop and not fetch_post and not agent_key_post and not skip_poll_post and not interrupt_post and not task_order_post and not autosave_post:self.problem(404,'Not found');return
+			if path not in{'/api/notes','/api/markdown','/api/slash','/api/fetch-jobs','/api/fetch-jobs/claim','/api/survey','/api/survey/request'}and not report_submit and not report_seen and not report_ack_seen and not report_view and not message_replies_seen and not report_unpublish and not note_upload and not staged_upload and not upload_drop and not fetch_post and not agent_key_post and not skip_poll_post and not interrupt_post and not task_order_post and not autosave_post:self.problem(404,'Not found');return
 			content_type=self.headers.get('Content-Type','')
 			if note_upload or staged_upload:
 				if not content_type.lower().startswith('multipart/form-data;'):self.problem(415,'Expected multipart/form-data');return
@@ -3157,6 +3272,13 @@ def handler(store):
 					else:record=store.retry_fetch(job_id)
 					self.reply(200,json.dumps(record,ensure_ascii=False));return
 				if path=='/api/markdown':self.reply(200,render(owner_text(payload.get('text')),breaks=True),'text/html; charset=utf-8');return
+				if path=='/api/slash':
+					raw_slash=owner_text(payload.get('text'));resolved=resolve_slash_command(raw_slash,store.repository_root())
+					if resolved is None:resolved={'mode':'passthrough','text':raw_slash}
+					elif resolved.get('mode')=='query':
+						try:resolved['html']=render(resolved['markdown'])
+						except RuntimeError:pass
+					self.reply(200,json.dumps(resolved,ensure_ascii=False));return
 				if report_seen:
 					report=store.mark_report_seen(report_seen.group(1))
 					for key in('updated_at','seen_at'):report[key]=clip_stamp(report[key])
@@ -3173,8 +3295,12 @@ def handler(store):
 					for key in('at','acknowledged_at','ack_edited_at','seen_at'):note[key]=clip_stamp(note[key])
 					self.reply(201,json.dumps(note,ensure_ascii=False));return
 				if upload_drop:self.reply(200,json.dumps(store.drop_staged(upload_drop.group(1)),ensure_ascii=False));return
-				if payload.get('upload_ids')is not None:note=store.note_with_staged(payload.get('id'),payload.get('text'),payload.get('upload_ids'))
-				else:note=store.note(payload.get('id'),payload.get('text'),quiet=bool(payload.get('quiet')))
+				raw_note_text=payload.get('text')
+				if isinstance(raw_note_text,str):
+					slash_note=resolve_slash_command(raw_note_text,store.repository_root())
+					if slash_note and slash_note.get('mode')=='note':raw_note_text=slash_note['text']
+				if payload.get('upload_ids')is not None:note=store.note_with_staged(payload.get('id'),raw_note_text,payload.get('upload_ids'))
+				else:note=store.note(payload.get('id'),raw_note_text,quiet=bool(payload.get('quiet')))
 				for key in('at','acknowledged_at','ack_edited_at','seen_at'):note[key]=clip_stamp(note[key])
 				self.reply(201,json.dumps(note,ensure_ascii=False))
 			except(ReportChanged,FetchChanged,ReportHeld)as error:self.problem(409,error)

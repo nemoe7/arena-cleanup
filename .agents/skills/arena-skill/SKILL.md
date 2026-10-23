@@ -21,6 +21,8 @@ Use this guide and its Markdown references for instructions. Do not read shipped
 
 6. After a preview restart or context replacement, finish required reads and pending inbox acks. Read references/survey.json and submit fresh answers via arena-preview survey '<json>' before queued work.
 
+- On the first tool call after any session summary or preview restart—and at every 10-call checkpoint—if any bible file's full text is absent from active context (a session summary NEVER counts), MUST read ARENA.md, all AGENTS.md, and this SKILL.md in full via read_file before any other tool call.
+
 ## Survey
 
 Answer from existing knowledge only: NEVER research answers, call `web_search`, `fetch_page`, or `image_search`, open other files, run code, ask another system, reuse earlier responses, or inspect the answer key.
@@ -87,7 +89,7 @@ arena-preview ack <id> '<Markdown>'
 
 If the preview is not visible, acknowledge a delivered note in chat with literal `ACK:` and your interpretation. Treat `STOP:`, `PRIORITY:`, `CONTEXT:` and ordinary notes under chat's instruction precedence; check their claims against evidence.
 
-- On a rule violation, MUST read only paths in the bible whose current full text is absent from context before continuing.
+- On any format-violation, bash-violation, or session summary: read ARENA.md, all AGENTS.md, and this SKILL.md in full via read_file BEFORE any other tool call; ack violations with ONLY file:ln: clause (single line, no prose/ranges).
 
 ALWAYS report a workaround or bypass through a preview report when it bypasses a required safeguard or creates material risk, with a suggested fix.
 

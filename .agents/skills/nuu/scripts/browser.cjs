@@ -3,7 +3,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const VERSION = '0.1.3';
+const VERSION = '0.1.4';
 const request = JSON.parse(fs.readFileSync(0, 'utf8'));
 
 function emit(value) {
@@ -303,6 +303,20 @@ async function a11yChecks(page) {
           selector: selectorFor(control),
           evidence: `Interactive <${control.tagName.toLowerCase()}> has no accessible name`,
         });
+      }
+      if ((control.tagName === 'BUTTON' || control.getAttribute('role') === 'button')
+          && !(control.textContent || '').trim()
+          && (control.querySelector('svg, img') || control.classList.contains('icon-button'))) {
+        const box = control.getBoundingClientRect();
+        if (box.width > 0 && box.height > 0 && Math.abs(box.width - box.height) > 1) {
+          findings.push({
+            rule: 'UIX208',
+            severity: 'review',
+            criterion: '2.5.8',
+            selector: selectorFor(control),
+            evidence: `Icon-only button ${selectorFor(control)} is ${Math.round(box.width)}x${Math.round(box.height)} px (not square)`,
+          });
+        }
       }
       const nested = control.querySelector(interactiveSelector);
       if (nested && isVisible(nested)) {

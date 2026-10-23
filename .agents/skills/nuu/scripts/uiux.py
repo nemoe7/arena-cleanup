@@ -29,7 +29,12 @@ from measure import (
 from measure import check as check_measurements
 from measure import main as measure_main
 
-VERSION = "0.1.4"
+VERSION = "0.1.6"
+NAMED_BREAKPOINTS = ("75em", "56.25em", "40em")
+MEDIA_BREAKPOINT_RE = re.compile(
+  r"@media\b[^{]*?\(\s*(?:min|max)-width\s*:\s*([0-9.]+(?:em|rem|px))\s*\)",
+  re.IGNORECASE,
+)
 HOME = Path(__file__).resolve().parent.parent
 CATALOG = HOME / "data" / "vendor" / "ui-ux-pro-max"
 WIDTHS = (1280, 360)
@@ -110,7 +115,7 @@ def search(query, dataset=None, stack=None, limit=10):
 
 
 def extract(root):
-  tokens, components = [], []
+  tokens, components, breakpoints = [], [], []
   for path in files(root, {".css", ".html"}):
     text = path.read_text(encoding="utf-8")
     for match in re.finditer(r"(--[\w-]+)\s*:\s*([^;{}]+)", text):
@@ -122,6 +127,15 @@ def extract(root):
           "line": text.count("\n", 0, match.start()) + 1,
         }
       )
+    if path.suffix.lower() == ".css":
+      for match in MEDIA_BREAKPOINT_RE.finditer(text):
+        breakpoints.append(
+          {
+            "value": match[1],
+            "path": str(path),
+            "line": text.count("\n", 0, match.start()) + 1,
+          }
+        )
     if path.suffix.lower() == ".html":
       for match in re.finditer(r'<([\w-]+)\b[^>]*\bclass=["\']([^"\']+)', text):
         components.append(
@@ -134,9 +148,14 @@ def extract(root):
         )
   return {
     "tokens": tokens,
+    "breakpoints": breakpoints,
     "components": components,
     "coverage": {
-      "formats": ["CSS custom properties", "HTML class patterns"],
+      "formats": [
+        "CSS custom properties",
+        "CSS media breakpoints",
+        "HTML class patterns",
+      ],
       "dynamic_styles": "not_checked",
     },
     "status": "proposal",

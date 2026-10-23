@@ -106,19 +106,22 @@ def check(
 
 
 def check_density(report: dict) -> list[dict]:
-  """Return whitespace and layout-density findings (UIX205, UIX206, UIX207)."""
+  """Return whitespace and layout-density findings (UIX205, UIX206, UIX207, UIX208)."""
   findings: list[dict] = []
   viewport_width = float(report.get("width", 1280) or 1280)
   for element in report.get("elements", []):
     selector = element.get("selector", "?")
     bounds = element.get("bounds") or {}
     width = float(bounds.get("width", element.get("width", 0)) or 0)
+    height = float(bounds.get("height", element.get("height", 0)) or 0)
     if viewport_width >= 900 and width >= 320:
       raw_ratio = element.get("ink_ratio", element.get("inkRatio"))
       if raw_ratio is None:
         raw_ink = element.get("ink_width", element.get("inkWidth"))
         if raw_ink is not None and width > 0:
           raw_ratio = float(raw_ink) / width
+      if raw_ratio is None:
+        raw_ratio = None
       if raw_ratio is not None and float(raw_ratio) < MIN_INK_RATIO:
         ratio = float(raw_ratio)
         findings.append(
@@ -158,6 +161,17 @@ def check_density(report: dict) -> list[dict]:
           "selector": selector,
           "evidence": (
             f"{selector}: control width is {width:g} px (> {MAX_CONTROL_WIDTH:g} px)"
+          ),
+        }
+      )
+    icon_only = bool(element.get("icon_only", element.get("iconOnly")))
+    if icon_only and width > 0 and height > 0 and abs(width - height) > 1.0:
+      findings.append(
+        {
+          "rule": "UIX208",
+          "selector": selector,
+          "evidence": (
+            f"{selector}: icon-only button is {width:g}x{height:g} px (not square)"
           ),
         }
       )

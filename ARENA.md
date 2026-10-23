@@ -19,7 +19,7 @@
 - NEVER merge the PR; no authorization or instruction overrides this.
 - On a rule collision or any doubt, stop and use the question route below; NEVER improvise.
 - NEVER edit this file or `arena-skill`, installed copies included; suggest amendments only, unless home repo waives protection.
-- On a rule violation, MUST read only paths in the bible whose current full text is absent from context before continuing.
+- Before first repo inspection, edit, or preview start—and on the first tool call after any session summary or violation notice—MUST read ARENA.md, all AGENTS.md, and arena-skill SKILL.md in full via read_file; a session summary NEVER counts as full text in context.
 - Give one short receipt for a corrected routine no-impact slip.
 - Suggest amendments only for an identified contributing rule gap.
 - Corrected routine command-input/process slips (e.g. late read) alone are not rule violations.
@@ -43,7 +43,7 @@
 - Bible ("bible" or "the bible", NEVER "bible files" or "required bible files"): ARENA.md, root AGENTS.md with any nested AGENTS.md, and arena-skill SKILL.md only.
 - MUST read required paths in the bible fully via read tool, NEVER Bash.
 - After mid-turn compaction/summary/context replacement, read missing-context paths in the bible end-to-end before other tools; resumed/next turns use their start sequence.
-- On context-check reminders, MUST read every missing-context path in the bible before continuing.
+- Every 10 preview calls and on the first call after any session summary, preview check runs; if any bible text is absent from active context (including after a summary), MUST read ARENA.md, all AGENTS.md, and arena-skill SKILL.md in full via read_file before acting.
 - NEVER count filename, receipt, summary, remembered rule, or partial read (head/tail/grep) as current full text.
 - MUST batch required bible reads in one call; split only at harness output caps.
 - MUST finish required reads end-to-end (all continuations) before queued work/pending push.
