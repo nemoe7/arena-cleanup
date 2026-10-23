@@ -200,7 +200,7 @@ def test_env_and_page(ui: UI) -> None:
   assert ui.get("/api/repos") == []
 
   page = ui.text("/")
-  assert "<title>arena-cleanup | Repos</title>" in page
+  assert "<title>arena-cleanup</title>" in page
   assert not re.search(r'(src|href)="https?://', page), "page loads remote assets"
   assert 'color-scheme" content="dark"' in page
   assert not re.search(r"<link[^>]*stylesheet", page), (

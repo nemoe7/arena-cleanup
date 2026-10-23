@@ -56,7 +56,7 @@ def test_the_in_app_back_pops_the_entry(desktop: Walker) -> None:
 
 def test_the_tab_title_names_the_page(desktop: Walker) -> None:
   desktop.goto(1200)
-  assert desktop.page.title() == "arena-cleanup | Repos"
+  assert desktop.page.title() == "arena-cleanup"
 
   desktop.click(".repo-card", 800)
   name = desktop.text("#repo-title").strip()
@@ -75,4 +75,4 @@ def test_the_tab_title_names_the_page(desktop: Walker) -> None:
   desktop.page.go_back()
   desktop.page.wait_for_timeout(SETTLE_MS)
   assert desktop.visible("#view-dashboard")
-  assert desktop.page.title() == "arena-cleanup | Repos"
+  assert desktop.page.title() == "arena-cleanup"

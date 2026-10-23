@@ -15,7 +15,7 @@
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<title>arena-cleanup | Repos</title>
+<title>arena-cleanup</title>
 <style>
   /* Spacing scale: 1 (optical nudge) then every even step - 2 4 6 8 10 12 16
      20 24 32 40. Every padding, margin, and gap in this file lands on it;
@@ -867,11 +867,11 @@
     return { dashboard: "#/", settings: "#/settings" }[view] || "#/";
   }
 
-  // The tab reads "arena-cleanup | <page>". One setter, called from every path
-  // that changes the view or the open repo, so no transition skips it.
+  // The dashboard tab reads "arena-cleanup", the other pages "arena-cleanup | <page>".
+  // One setter, called from every path that changes the view or the open repo.
   function titleFor(view) {
-    const page = view === "repo" && state.repo ? state.repo.name : view === "settings" ? "Settings" : "Repos";
-    return `arena-cleanup | ${page}`;
+    const page = view === "repo" && state.repo ? state.repo.name : view === "settings" ? "Settings" : "";
+    return page ? `arena-cleanup | ${page}` : "arena-cleanup";
   }
 
   function syncTitle() {
