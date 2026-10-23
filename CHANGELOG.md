@@ -29,6 +29,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Every Clean & Push button carries the broom glyph before its words, and its
   sparkles appear on hover and focus.
 - A dashboard card puts Clean & Push bottom right and drops the branch chip.
+  The icon, the name, and Remove share one centre line on top.
   The rows keep the chip.
 - Above 1200 px the dashboard shows one full-width row per repo: the name, the
   branch, the arena rows across the free width, then Clean and Remove at the

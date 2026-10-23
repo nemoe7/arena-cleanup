@@ -41,6 +41,7 @@ PROBE = """(card) => {
     arenaRight: box(card.querySelector('.arena-list')).right,
     removeTop: box(card.querySelector('.rm')).top,
     icoTop: box(card.querySelector('.repo-ico')).top,
+    headMids: ['.repo-ico', '.repo-name', '.rm'].map((s) => mid(card.querySelector(s)).y),
     cardRight: box(card).right,
   };
 }"""
@@ -86,4 +87,9 @@ def test_at_1200_the_repos_are_cards(browser: Any, demo: Demo) -> None:
   assert card["cardRight"] - card["actionsRight"] <= 17
   assert card["actionsLeft"] > card["nameLeft"]
   assert card["icoLeft"] < card["nameLeft"] < card["removeLeft"]
-  assert card["removeTop"] == card["icoTop"], "remove sits top right"
+  assert card["removeTop"] <= card["icoTop"], "remove sits top right"
+  assert max(card["headMids"]) - min(card["headMids"]) <= 1, "one centre line on top"
+  phone = probe(browser, demo, 360)
+  assert max(phone["headMids"]) - min(phone["headMids"]) <= 1, (
+    "44 px remove, same centre"
+  )
