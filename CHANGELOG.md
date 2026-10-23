@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-10-23
+
+### Added
+
+- The container log stamps every line in the zone of `TZ`. It names the start and the end of each job, each repo add and remove, and each failed request. `-v` adds every request and every engine line.
+- A commit subject wraps to two lines, then an ellipsis. A tap on the row shows the whole subject.
+
+### Fixed
+
+- A repeat add of a URL reuses the clone that already has that origin, `.git` or not. One repo keeps one card and one directory. A different repo with the same name still gets its own `-2` directory.
+
 ## [0.1.0] - 2026-10-22
 
 ### Added
@@ -42,14 +53,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The page matches its design record after an audit. Every banner leads with its glyph. Pointer targets are at least 24 px: Browse, the chip X, the tree select, the check rows, and the slider. The version chip weighs 520 and bold runs 600. A dead brand size rule goes, and two paddings sit on the scale.
 - The repo wireframe board grows its blocks with their text, and its marks are glyphs instead of font symbols.
 - The Docker workflow starts only for CI on main, so other branches no longer record a skipped run.
-- The container log stamps every line in the zone of `TZ`. It names the start and the end of each job, each repo add and remove, and each failed request. `-v` adds every request and every engine line.
-- A commit subject wraps to two lines, then an ellipsis. A tap on the row shows the whole subject.
 - The test suite runs on every CPU core through pytest-xdist. Each file stays on one worker, so the web app story in `tests/test_ui.py` keeps its order.
 - The config files follow the repo template. Git normalizes line endings to LF, and GitHub prefills a pull request body with its three sections. The project metadata names the README and the licence.
 - `AGENTS.md` carries the shared agent rules of the repo template, with the nuu and nemoizer sections below them.
 - Log rows show the clock of the browser. The engine stamps each line in the server zone.
 - Remove on a card deletes its URL clone from the volume. A path repo is only forgotten.
-- A repeat add of a URL reuses the clone that already has that origin, `.git` or not. One repo keeps one card and one directory. A different repo with the same name still gets its own `-2` directory.
 - `POST /api/repos/<id>/reset`: fetch, check out the default branch, and reset it hard. Untracked files stay.
 - The repo page runs the full flow only. The Rewrite locally switch is gone, and `strip` stays a CLI command.
 - The card Remove X sits top right as a bare glyph. A red frame comes on hover, on press, and while armed.
