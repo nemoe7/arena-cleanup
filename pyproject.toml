@@ -2,7 +2,9 @@
 name = "arena-cleanup"
 version = "0.1.0"
 description = "Web app that cleans an Arena agent branch, rewrites its history, signs it, and publishes it"
+readme = "README.md"
 requires-python = ">=3.11"
+license = { file = "LICENSE.md" }
 dependencies = []
 
 [dependency-groups]

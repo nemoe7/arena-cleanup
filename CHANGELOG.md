@@ -43,6 +43,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The repo wireframe board grows its blocks with their text, and its marks are glyphs instead of font symbols.
 - The Docker workflow starts only for CI on main, so other branches no longer record a skipped run.
 - The test suite runs on every CPU core through pytest-xdist. Each file stays on one worker, so the web app story in `tests/test_ui.py` keeps its order.
+- The config files follow the repo template. Git normalizes line endings to LF, and GitHub prefills a pull request body with its three sections. The project metadata names the README and the licence.
 - Log rows show the clock of the browser. The engine stamps each line in the server zone.
 - Remove on a card deletes its URL clone from the volume. A path repo is only forgotten.
 - `POST /api/repos/<id>/reset`: fetch, check out the default branch, and reset it hard. Untracked files stay.
