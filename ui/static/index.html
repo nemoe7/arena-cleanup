@@ -349,7 +349,24 @@
   .readout { font: var(--fs-1) var(--mono); color: var(--muted); min-width: 6ch; text-align: right; }
   .checks { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 10px 2px; }
   .check { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: var(--fs-2); cursor: pointer; }
-  .check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+  /* the box is drawn here, not by the browser: Lucide check, house radius, accent fill */
+  .check input {
+    appearance: none; width: 16px; height: 16px; margin: 0; flex: none; display: inline-grid; place-content: center;
+    border: 1px solid #3d4655; border-radius: 4px; background: var(--surface-2); cursor: pointer;
+    transition: background .12s, border-color .12s;
+  }
+  .check input::after {
+    content: ""; width: 12px; height: 12px; background: #fff; opacity: 0; transition: opacity .12s;
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>") center / contain no-repeat;
+    mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>") center / contain no-repeat;
+  }
+  .check:hover input:not(:checked):not(:disabled) { border-color: #525c6b; }
+  .check input:checked { background: var(--accent); border-color: var(--accent); }
+  .check input:checked::after { opacity: 1; }
+  .check.danger input:checked { background: var(--warn); border-color: var(--warn); }
+  .check.danger input:checked::after { background: #0f1217; }
+  .check input:disabled { opacity: .45; cursor: not-allowed; }
+  .check:has(input:disabled) { cursor: not-allowed; }
   .check:has(input:checked) { color: var(--text); }
   .check.danger:has(input:checked) { color: var(--warn); }
 
@@ -598,6 +615,7 @@
     .field, select.field { height: 44px; }
     .check { min-height: 44px; }
     .check input { width: 20px; height: 20px; }
+    .check input::after { width: 15px; height: 15px; }
     .opt.row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; }
     .slider { height: 44px; }
     .row-btn.select { min-height: 44px; }

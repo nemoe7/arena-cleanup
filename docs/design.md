@@ -71,7 +71,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - `pill`: dot and word, 999 px radius, `ok`, `warn`, `mono` variants.
 - `commit`: grid `auto minmax(0, 1fr)`, the subject truncated by an ellipsis, the metadata on a second row.
 - `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`. The selected row carries a 2 px accent bar and the text colour. The name reads `Pull from <branch>`. Rows and the timeout slider are 44 px high on a phone.
-- `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout. `check`: a label with a native checkbox. `danger` colours a checked destructive option. On a phone the checkboxes form a grid with 160 px columns. Browse and the fold head are 44 px high there.
+- `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout. `check`: a label with a drawn checkbox. The box is 16 px with a 4 px radius and the surface-2 fill. Checked, it takes the accent fill and a white Lucide check. `danger` fills a checked destructive option with the warn colour and a dark check. On a phone the checkboxes form a grid with 160 px columns. Browse and the fold head are 44 px high there.
 - `repo-card`: a flex column. The actions sit at the bottom, so the buttons line up across a grid row.
 - `sign-row`: label column of 120 px and a value column. On a phone the label takes a full row.
 - `sign-fields`: name and e-mail side by side, one column on a phone.
@@ -139,4 +139,5 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-22: the card and the sidebar show how far each arena branch is ahead of the default branch. The clone's own drift stays out of sight. Nobody commits in the container, and the engine handles that divergence itself.
 - Accepted 2026-10-22: the primary button reads Clean & Push. The phase list keeps Publish for the push, tags, and cleanup step.
 - Accepted 2026-10-22: a tree selector for Remove paths. It reads `git ls-tree` of HEAD in the clone, so it works for path repos and never calls GitHub. File contents stay out. A path only old commits carried stays a typed chip.
+- Accepted 2026-10-23: the page draws the checkboxes. `appearance: none` drops the browser box, so the boxes match the select and the fields in every browser.
 - Accepted 2026-10-22: the card Remove X moves from the action row to the top right corner. At rest it is a bare glyph, so the primary button stands alone. The red frame returns on hover, on press, and while armed.
