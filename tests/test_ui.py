@@ -291,8 +291,8 @@ def test_a_fetch_on_demand_sees_a_new_remote_branch(
   clone = next(r for r in after if r["id"] == ids["clone"])
   assert "arena/ui-late" in clone["status"]["arena"]
   assert "arena/ui-late" in ui.get(f"/api/repos/{ids['clone']}")["status"]["arena"]
-  # a second branch right after: the unforced fetch is skipped, the Reload one
-  # is not
+  # a second branch right after: the server skips the unforced fetch, not the
+  # Reload one
   world.git(f"--git-dir={bare}", "update-ref", "refs/heads/arena/ui-later", "main")
   skipped = ui.post("/api/fetch", {})
   clone = next(r for r in skipped if r["id"] == ids["clone"])
@@ -402,7 +402,7 @@ def test_a_second_add_of_the_same_url_reuses_the_clone(
   assert again["id"] == ids["clone"]
   assert again["path"] == ids["clone_path"]
   assert len(ui.get("/api/repos")) == 2
-  # a forgotten card leaves its directory behind: the next add picks it up
+  # a forgotten card leaves its directory behind: the next add reuses it
   ui.post(f"/api/repos/{ids['clone']}/remove", {"delete": False})
   assert Path(ids["clone_path"]).is_dir()
   back = ui.post("/api/repos", {"source": f"file://{bare}"})

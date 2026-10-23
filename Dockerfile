@@ -7,8 +7,8 @@
 # Runtime needs four tools. git 2.36+ supports --force-with-lease=<ref>:<expect>.
 # gh reads PR checks and the GPG keys on your account.
 #
-# git-filter-repo removes paths. gnupg signs commits. All four are installed
-# here, so the image is the whole environment. Nothing has to exist on the host.
+# git-filter-repo removes paths. gnupg signs commits. This stage installs all
+# four, so the image is the whole environment. Nothing has to exist on the host.
 
 FROM debian:13-slim AS base
 
@@ -70,8 +70,8 @@ EXPOSE 8080
 USER arena
 
 # /healthz is the purpose-built probe: cheap, no git, no gh, and it 200s only
-# when the server is actually serving. urllib raises on any non-2xx, so the
-# container is marked unhealthy instead of flapping.
+# when the server is actually serving. urllib raises on any non-2xx, so
+# Docker marks the container unhealthy instead of flapping.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
   CMD python3 -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:%s/healthz' % os.environ.get('ARENA_PORT','8080'), timeout=4)"
 

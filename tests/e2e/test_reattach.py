@@ -1,4 +1,4 @@
-"""The repo view shows the latest run again: live it streams on, done it is painted."""
+"""The repo view shows the latest run again: live it streams on, done it paints at once."""
 
 from __future__ import annotations
 

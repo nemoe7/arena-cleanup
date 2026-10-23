@@ -5,8 +5,8 @@
 # variables below from that file. Nothing needs exporting in your shell.
 # `docker compose config` prints the result without starting anything.
 #
-# The app is UI-only: paste a repo URL in the dashboard and it is cloned into
-# the arena-home volume.
+# The app is UI-only: paste a repo URL in the dashboard, and the server clones
+# it into the arena-home volume.
 #
 # TLS: `tailscale serve` gives it a real HTTPS name on your tailnet. That is
 # what makes it installable as a PWA from a phone. A PWA needs a secure

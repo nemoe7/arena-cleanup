@@ -66,9 +66,9 @@ LOG = logging.getLogger("arena-ui")
 COMMANDS = {"run"}
 MAX_LINES = 4000
 LATEST = ["jobs", "latest"]  # the route tail of the latest run.
-STATUS_TTL = 8.0  # seconds a repo status is reused before asking git again.
+STATUS_TTL = 8.0  # seconds a repo status lives before the server asks git again.
 FETCH_PERIOD = 60.0  # every repo fetches origin when the clock hits a multiple.
-FETCH_DEBOUNCE = 10.0  # seconds in which a later unforced fetch is skipped.
+FETCH_DEBOUNCE = 10.0  # seconds in which the server skips a later unforced fetch.
 FETCH_TIMEOUT = 120
 STARTED = time.time()  # when this process came up, for /healthz
 GIT_TIMEOUT = 20
@@ -1047,7 +1047,7 @@ def auth_report(force: bool = False) -> dict[str, Any]:
 
 
 def auth_invalidate() -> None:
-  """Forget the auth answer - and every status that was computed under it."""
+  """Forget the auth answer - and every status computed under it."""
   with AUTH_LOCK:
     AUTH_CACHE["at"] = 0.0
     AUTH_CACHE["value"] = None
@@ -1096,9 +1096,9 @@ def build_argv(body: dict[str, Any], repo: dict[str, Any]) -> list[str]:
   Turn a JSON body into an argv, from a whitelist.
 
   Nothing the browser sends is ever interpolated into a shell string. Each
-  option becomes its own list element, and unknown keys are rejected loudly.
+  option becomes its own list element, and unknown keys fail loudly.
   `action: "clean"` is the one-click path: the full run with the defaults the
-  dashboard promises. They are spelled out here so the argv preview can show
+  dashboard promises. This list spells them out so the argv preview can show
   them.
   """
   action = body.get("action", "run")
@@ -1256,7 +1256,7 @@ class Handler(BaseHTTPRequestHandler):
       "Content-Type", CONTENT_TYPES.get(target.suffix, "application/octet-stream")
     )
     self.send_header("Content-Length", str(len(data)))
-    # the worker has to be revalidated on every load. Otherwise a new version
+    # the browser has to revalidate the worker on every load. Otherwise a new version
     # of the app can never take over from the old cached shell
     no_store = target.suffix == ".html" or target.name == "sw.js"
     self.send_header(

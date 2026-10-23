@@ -1,8 +1,8 @@
 /*
  * arena-cleanup service worker.
  *
- * The app shell is cached so the icon opens instantly and works on a flaky
- * connection. Nothing else is: every /api/ request goes straight to the
+ * The worker caches the app shell so the icon opens instantly and works on a flaky
+ * connection. Nothing else: every /api/ request goes straight to the
  * network. A cached repo status would be a lie about someone's git
  * state. If the network is gone, the shell still opens and says so.
  */

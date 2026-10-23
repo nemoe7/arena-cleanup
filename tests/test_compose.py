@@ -18,7 +18,7 @@ NODE_NAME = "arena-cleanup"
 
 
 def test_every_compose_variable_is_offered_in_env_example() -> None:
-  # every ${VAR} the compose file substitutes has to be documented. Without it
+  # the example has to document every ${VAR} the compose file substitutes. Without it
   # `up` runs with an empty name and the engine refuses the first rewrite.
   names = sorted(set(re.findall(r"\$\{([A-Z_][A-Z_0-9]*)", COMPOSE)))
   missing = [
@@ -67,7 +67,7 @@ def test_env_files_stay_local() -> None:
 
 
 def test_the_sidecar_dials_a_dedicated_app_name() -> None:
-  # the sidecar is hostnamed arena-cleanup for the MagicDNS name. Inside it
+  # the sidecar carries the hostname arena-cleanup for the MagicDNS name. Inside it
   # `arena-cleanup` is itself, so the proxy dials a name only the app answers.
   serve = json.loads((ROOT / "docker" / "tailscale-serve.json").read_text())
   proxies = re.findall(r'"Proxy": "http://([^:"]*):', json.dumps(serve, indent=1))

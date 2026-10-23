@@ -42,8 +42,8 @@ jobs:
           - arch: arm64
             runner: ubuntu-24.04-arm
     steps:
-      # main is a fixed, trusted ref. The commit CI tested is compared, never
-      # checked out, so no ref from the event reaches the checkout.
+      # main is a fixed, trusted ref. The job compares the commit CI tested, never
+      # checks it out, so no ref from the event reaches the checkout.
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
@@ -152,8 +152,8 @@ jobs:
           docker buildx imagetools inspect "${IMAGE}:latest"
 
       # latest moves, so each build leaves untagged versions behind: the two
-      # platform images and the old manifest list. Storage on a private
-      # package is metered, so the leftovers go.
+      # platform images and the old manifest list. A private package
+      # pays for its storage, so the leftovers go.
       - name: Prune untagged versions
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

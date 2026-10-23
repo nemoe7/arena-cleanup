@@ -1197,7 +1197,7 @@
     $("logmeta").textContent = "";
     $("jump").classList.remove("show");
     // a run followed from another repo keeps going on the server; this view
-    // lets go of it and picks up the latest run of the repo it shows
+    // lets go of it and attaches to the latest run of the repo it shows
     if (state.es) { state.es.close(); state.es = null; }
     state.job = null;
     setRunButton("idle");

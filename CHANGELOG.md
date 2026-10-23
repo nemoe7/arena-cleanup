@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to this project are documented in this file.
+This file documents all notable changes to this project.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -15,14 +15,14 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- The repo view puts the run card left and the options card right, with the log below both at full width. The main column is pinned to the window. The log takes the height that is left, down to a 160 px floor, so only the log scrolls. At 1200 px and below the two cards stack, options first.
+- The repo view puts the run card left and the options card right, with the log below both at full width. The main column pins to the window. The log takes the height that is left, down to a 160 px floor, so only the log scrolls. At 1200 px and below the two cards stack, options first.
 - Clean & Push and Cancel are one button with two states, in the options card head. It reads Cancel while a run is live. The options card no longer folds, and the options sit in one column at every width.
 - The primary button is flat. Its inset top highlight and its drop shadow, which read as a bevel, are gone.
 - The clock column of the log rows takes the dim grey of the level column, 5.1:1 on the card. Before, it read at 2.55:1.
 
 ### Fixed
 
-- The server runs one fetch of every origin at a time. A fetch within ten seconds of the last one is skipped, except from the Reload button. A Reload during a running fetch waits for it and skips its own. Each fetch swaps fresh statuses into the cache instead of clearing it. A dashboard that asks in the meantime gets cards instead of a gap.
+- The server runs one fetch of every origin at a time. The server skips a fetch within ten seconds of the last one, except from the Reload button. A Reload during a running fetch waits for it and skips its own. Each fetch swaps fresh statuses into the cache instead of clearing it. A dashboard that asks in the meantime gets cards instead of a gap.
 - The dashboard shows a Loading repos line until the first answer from the server. Before, the page opened on an empty space.
 - The repo view no longer scrolls the page on a desktop window. The cards and a 340 px log were taller than a 775 px window.
 - The PR pill counts the checks the way the engine reads them. One entry per check name, and a pass wins over a superseded failed or cancelled attempt. Before, a cancelled older run of a check kept the pill red while the run passed.
@@ -44,7 +44,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The arena row on a repo card is two lines at every width. The branch name sits on the first line, the ahead chip and the PR pill on the second. The dots before the name and in the PR pill are gone.
 - The ahead chip shows the net count. That is its commits beyond the default branch, minus the default branch's commits beyond it. The chip hides below 1.
 - On a repo card the name is the button that opens the repo. The card has no button role any more, so the controls inside it stand on their own for assistive technology.
-- Monaspace Neon replaces JetBrains Mono for paths, hashes, commands, and the log. Both fonts are preloaded and painted with block, and each has a metric-matched local fallback face.
+- Monaspace Neon replaces JetBrains Mono for paths, hashes, commands, and the log. The page preloads both fonts and paints them with block, and each has a metric-matched local fallback face.
 
 ### Fixed
 
@@ -91,7 +91,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The config files follow the repo template. Git normalizes line endings to LF, and GitHub prefills a pull request body with its three sections. The project metadata names the README and the licence.
 - `AGENTS.md` carries the shared agent rules of the repo template, with the nuu and nemoizer sections below them.
 - Log rows show the clock of the browser. The engine stamps each line in the server zone.
-- Remove on a card deletes its URL clone from the volume. A path repo is only forgotten.
+- Remove on a card deletes its URL clone from the volume. A path repo only leaves the list.
 - `POST /api/repos/<id>/reset`: fetch, check out the default branch, and reset it hard. Untracked files stay.
 - The repo page runs the full flow only. The Rewrite locally switch is gone, and `strip` stays a CLI command.
 - The card Remove X sits top right as a bare glyph. A red frame comes on hover, on press, and while armed.

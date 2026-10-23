@@ -107,7 +107,7 @@ run in flight. Exit codes: `0` success, `1` error or cancelled, `2` usage, `7`
 a check found commits to rewrite, `130` interrupted.
 
 Path removal is `git-filter-repo --invert-paths` over every ref. Commits left
-empty are dropped unless **Keep empty commits** is on. Signatures do not
+empty go unless **Keep empty commits** is on. Signatures do not
 survive it, so the publish pass re-signs the branch it pushes.
 
 Tags that pointed into rewritten commits move with them, force-pushed with a
@@ -138,7 +138,7 @@ constants.
 health check polls it, and compose gates the sidecar on that check.
 
 The app has no authentication of its own. Keep it on `127.0.0.1` and behind
-the tailnet or an SSH tunnel. Every option from the browser is validated
+the tailnet or an SSH tunnel. The server checks every option from the browser
 against a whitelist before it becomes an argv. There is no shell.
 
 ## Development

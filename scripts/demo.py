@@ -11,7 +11,7 @@ The fixture holds:
 - a stub `gh` that answers from files, signed in as the configured identity
 - a git identity that matches the engine's constants, with the credential
   helper `gh auth setup-git` would write
-- a throwaway GPG key when `gpg` is installed
+- a throwaway GPG key when `gpg` is on PATH
 
 Nothing touches the host's git, gh, or gpg state. The server runs with HOME,
 GIT_CONFIG_GLOBAL, and GNUPGHOME inside the demo root, and without the host's

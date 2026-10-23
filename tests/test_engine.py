@@ -517,7 +517,7 @@ def test_help_screen_and_shorthands(world: World) -> None:
   assert any(line.startswith("$ ") for line in res.lines)
   assert world.cleanup("strip", "-c").rc in STRIP_CHECK_CODES
 
-  # flags that belong to one command are rejected on another, with a clear message
+  # another command rejects flags that belong to one, with a clear message
   res = world.cleanup("strip", "-b", "main")
   assert res.rc == USAGE_ERROR
   assert re.search(r"only applies to .run.", res.text), res.text
@@ -685,7 +685,7 @@ def test_uncommitted_changes(world: World) -> None:
   assert re.search(r"would be overwritten|local changes", res.text, re.IGNORECASE)
   assert res.says("git switch arena/conflict")
 
-  # cleaning the default branch in place moves nothing, so it is allowed
+  # cleaning the default branch in place moves nothing, so the tool allows it
   world.git("checkout", "-q", "--", "conflict.txt")
   world.git("clean", "-qfd")
   with conflict.open("a") as fh:
@@ -841,7 +841,7 @@ def test_divergence_prompt_answered_by_hand(world: World) -> None:
     world.git("rev-list", "--count", "arena/div-prompt..origin/arena/div-prompt") == "1"
   )
 
-  # answer "keep local": local history wins, the remote-only commit is not published
+  # answer "keep local": local history wins, the remote-only commit stays unpublished
   res = world.interactive("arena-cleanup -K -f", "2\n")
   assert res.rc == 0
   assert res.says("have diverged"), res.text
@@ -850,7 +850,7 @@ def test_divergence_prompt_answered_by_hand(world: World) -> None:
   assert world.git("show", "origin/main:shared.txt") == "local version"
   assert world.git_rc("cat-file", "-e", "origin/main:local-only.txt") == 0
 
-  # answer "overwrite local": local is replaced by the remote copy, and that is published
+  # answer "overwrite local": the remote copy replaces local, and that gets published
   world.git("checkout", "-q", "arena/div-prompt")
   (world.work / "shared.txt").write_text("second local change\n")
   world.git("add", "shared.txt")

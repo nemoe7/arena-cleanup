@@ -1,5 +1,5 @@
 #!/bin/sh
-# The container has exactly one surface: the web UI. Any argument is passed
+# The container has exactly one surface: the web UI. Every argument goes
 # through to the UI server (--host, --port, --data).
 set -eu
 
@@ -13,7 +13,7 @@ if [ -n "${GIT_AUTHOR_EMAIL:-}" ] && [ -z "$(git config --global user.email || t
   git config --global user.email "$GIT_AUTHOR_EMAIL"
 fi
 
-# gnupg wants its home to be private. The volume may be created by Docker root.
+# gnupg wants its home to be private. Docker root may create the volume.
 if [ -d "${HOME:-/home/arena}/.gnupg" ]; then
   chmod 700 "${HOME:-/home/arena}/.gnupg" 2>/dev/null || true
 fi

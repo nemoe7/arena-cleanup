@@ -1,6 +1,6 @@
 """Spacing and type audit over the computed styles of every visible element.
 
-The stylesheet is built on an even scale with a single 1 px allowance. It has
+The stylesheet follows an even scale with a single 1 px allowance. It has
 one type ramp per width class (docs/design.md). Anything else is a value nobody
 chose on purpose.
 """
