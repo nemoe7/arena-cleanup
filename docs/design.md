@@ -71,7 +71,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 ## Components and contracts
 
-- `btn`: 34 px high, 12 px side padding, 8 px radius, and 44 px high on a phone. Variants: `primary`, `ghost`, and `icon-btn`.
+- `btn`: 34 px high, 12 px side padding, 8 px radius, and 44 px high on a phone. Variants: `primary`, `ghost`, and `icon-btn`. All of them are flat: a fill and a 1 px border, no highlight, and no shadow.
 - `pill`: dot and word, 999 px radius, `ok`, `warn`, `mono` variants.
 - `commit`: grid `auto minmax(0, 1fr)`, the subject clamped to two lines with an ellipsis, the metadata on a second row. The row is a button with `aria-expanded`, and a tap shows the whole subject.
 - `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`. The selected row carries a 2 px accent bar and the text colour. The name reads `Pull from <branch>`. Rows and the timeout slider are 44 px high on a phone.
@@ -165,3 +165,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: the PR pill counts checks by the engine rule, one entry per check name, a pass over a superseded attempt. The rule lives in the engine, and the server calls it.
 - Accepted 2026-10-23: the run card sits left and the options card right, the log card below both at full width. The main column pins to the window and the log fills the rest with a 160 px floor, so the page never scrolls. 1200 px stacks the two cards, options first.
 - Accepted 2026-10-23: Clean & Push and Cancel are one button with two states, in the options card head. The options card no longer folds, and its chevron is gone.
+- Accepted 2026-10-23: the primary button is flat. Its inset top highlight and drop shadow read as a bevel, so both are gone.
