@@ -1,6 +1,6 @@
 # Agents
 
-Rules for agents that work in this repository. `ARENA.md` governs the session. This file governs the work.
+Rules for agents that work in this repo. `ARENA.md` governs the session. This file governs the work.
 
 ## UI work
 

@@ -23,7 +23,7 @@ services:
     image: arena-cleanup:latest
     container_name: arena-cleanup
     environment:
-      # gh token; alternatively run `docker compose exec arena-cleanup gh auth login`
+      # gh token. The alternative is `docker compose exec arena-cleanup gh auth login`
       GH_TOKEN: ${GH_TOKEN:-}
       # git identity - the engine refuses to rewrite commits without one
       GIT_AUTHOR_NAME: ${GIT_AUTHOR_NAME:-}

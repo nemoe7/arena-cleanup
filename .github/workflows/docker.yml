@@ -1,3 +1,4 @@
+# nonemo: NMO002 (GitHub context names)
 name: Docker
 
 on:
@@ -86,7 +87,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          # The CLI prints its own version; an image that lost the file fails here.
+          # The CLI prints its own version. An image that lost the file fails here.
           docker run --rm --entrypoint python3 "${IMAGE}@${DIGEST}" /app/arena-cleanup.py -V
       - name: Export the digest
         env:

@@ -2,7 +2,7 @@
 """
 arena-ui - the web front end for arena-cleanup.
 
-Serves a dashboard of remembered repositories and runs the CLI against them.
+Serves a dashboard of remembered repos and runs the CLI against them.
 Every button press becomes an argv, never a shell string. The process output
 streams straight back to the browser. Nothing about the rewrite logic lives
 here: arena-cleanup.py stays the only thing that touches git.
@@ -121,13 +121,13 @@ def git(*args: str, cwd: str | None = None, timeout: int = GIT_TIMEOUT) -> str:
 
 
 # --------------------------------------------------------------------------- #
-# Registry - the repositories this instance remembers
+# Registry - the repos this instance remembers
 # --------------------------------------------------------------------------- #
 
 
 class Registry:
   """
-  A JSON file of known repositories, written atomically.
+  A JSON file of known repos, written atomically.
 
   Small enough that a lock around every operation is cheaper than reasoning
   about interleavings. It is read on every request.
@@ -188,7 +188,7 @@ def repo_id(path: str) -> str:
 
 
 def normalize_source(source: str) -> str:
-  """Turn a pasted GitHub page address into its clone URL; leave anything else alone."""
+  """Turn a pasted GitHub page address into its clone URL. Leave anything else alone."""
   match = GITHUB_WEB_RE.match(source.strip())
   if not match:
     return source.strip()
@@ -203,7 +203,7 @@ def repo_name(source: str) -> str:
 
 
 def clone_url(url: str, reg: Registry) -> tuple[dict[str, Any] | None, str]:
-  """Clone into the managed directory; returns (entry, error)."""
+  """Clone into the managed directory. Returns (entry, error)."""
   name = repo_name(url)
   target = reg.clones / name
   if target.exists():
@@ -350,7 +350,7 @@ def default_branch(cwd: str) -> str:
 
 
 def reset_to_origin(repo: dict[str, Any]) -> str:
-  """Put the clone back on the default branch at origin's tip; untracked files stay."""
+  """Put the clone back on the default branch at origin's tip. Untracked files stay."""
   cwd = repo["path"]
   for job in JOBS.values():
     if job.repo["id"] == repo["id"] and job.exit is None:
@@ -410,7 +410,7 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
     for name in arena:
       count = git("rev-list", "--count", f"origin/{default}..origin/{name}", cwd=cwd)
       ahead[name] = int(count or 0)
-  # The commit time of each tip; the page offers the newest branch first.
+  # The commit time of each tip. The page offers the newest branch first.
   activity = {
     name: int(git("log", "-1", "--format=%ct", f"origin/{name}", cwd=cwd) or 0)
     for name in arena
@@ -515,7 +515,7 @@ def global_config(key: str) -> str:
 
 
 def global_config_all(key: str) -> list[str]:
-  """Every value of a multi-valued global key, in order; empty when unset."""
+  """Every value of a multi-valued global key, in order. Empty when unset."""
   text = git("config", "--global", "--get-all", key)
   return [line.strip() for line in text.splitlines() if line.strip()]
 
@@ -600,8 +600,8 @@ def commits_report(repo: dict[str, Any], limit: int = 30) -> dict[str, Any]:
 def tree_report(repo: dict[str, Any], rel: str) -> dict[str, Any] | None:
   """One level of the HEAD tree under `rel`, directories first.
 
-  The path tree reads the clone, not GitHub, so a path repository works
-  too. HEAD is the tree the owner sees; a path that only old commits carried
+  The path tree reads the clone, not GitHub, so a path repo works
+  too. HEAD is the tree the owner sees. A path that only old commits carried
   stays a typed chip. None means git knows no such directory.
   """
   parts = [part for part in rel.split("/") if part]
@@ -928,7 +928,7 @@ def gh_login_with_token(token: str) -> tuple[bool, str]:
   )
   if rc != 0:
     return False, err or out or "gh rejected the token"
-  # a token does not configure git; without this an https push still fails
+  # a token does not configure git. Without this an https push still fails
   run_cmd(["gh", "auth", "setup-git"], timeout=30)
   auth_invalidate()
   return True, ""
@@ -1005,11 +1005,11 @@ def build_argv(body: dict[str, Any], repo: dict[str, Any]) -> list[str]:
     if branch.startswith("-") or "\0" in branch:
       raise BadRequest(f"invalid branch {branch!r}")
     # The page cleans a long-lived branch in place or lets the run find the
-    # arena branch itself. It never aims -b at arena/*; the CLI still can.
+    # arena branch itself. It never aims -b at arena/*. The CLI still can.
     if branch.startswith(engine.ARENA_PREFIX):
       raise BadRequest(f"the page does not target {engine.ARENA_PREFIX}* branches")
     argv += ["--branch", branch]
-  # With several arena branches the page selects one; the engine would ask.
+  # With several arena branches the page selects one. The engine would ask.
   arena = str(body.get("arena") or "").strip()
   if arena:
     bad = arena.startswith("-") or "\0" in arena

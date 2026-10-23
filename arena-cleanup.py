@@ -51,7 +51,7 @@ PROG = "arena-cleanup"
 # =============================================================================
 
 # The claim rules. `git config --global --add arena.claim-email <email>` and
-# `--add arena.claim-name <name>` replace these; each constant applies only
+# `--add arena.claim-name <name>` replace these. Each constant applies only
 # while its key is unset. The identity is `git config user.name/user.email`.
 
 # Emails that were yours (space separated). The configured user.email is
@@ -59,7 +59,7 @@ PROG = "arena-cleanup"
 CLAIM_EMAILS = "60245796+nemoe7@users.noreply.github.com"
 
 # Commits authored/committed by these names get claimed and rewritten
-# (space separated; matched against both author and committer name).
+# (space separated, matched against both author and committer name).
 CLAIM_NAMES = "arena-ai-coding-agent[bot] arena-agent arena"
 
 # Only branches under this prefix are scanned for cleanup.
@@ -132,7 +132,7 @@ class Log:
     self.verbose = verbose
     self._status = ""
     self.tty = bool(getattr(sys.stdout, "isatty", lambda: False)())
-    # NO_COLOR is honored from the environment; there is no flag for it
+    # NO_COLOR is honored from the environment. There is no flag for it
     self.color = os.environ.get("NO_COLOR") is None and (
       self.tty or bool(os.environ.get("FORCE_COLOR"))
     )
@@ -212,7 +212,7 @@ class Fail(Exception):
 
 
 class ToolError(Exception):
-  """A git/gh invocation failed; carries the captured output for dumping."""
+  """A git/gh invocation failed. Carries the captured output for dumping."""
 
   def __init__(
     self, argv: Sequence[str], rc: int, out: bytes, err: bytes, context: str = ""
@@ -249,7 +249,7 @@ class Result:
     return [ln for ln in self.text.splitlines() if ln.strip()]
 
 
-_log: Log | None = None  # set in main(); used by run() for verbose streaming
+_log: Log | None = None  # set in main(), used by run() for verbose streaming
 
 
 def run(
@@ -349,13 +349,14 @@ def require_repo() -> None:
   if which("git") is None:
     return  # require_tools() reports this better
   if git("rev-parse", "--is-inside-work-tree", check=False).text != "true":
-    raise Fail("not inside a git repository (run me from one)")
-  if git("rev-parse", "--is-bare-repository", check=False).text == "true":
-    raise Fail("this is a bare repository; run me from a working tree")
+    raise Fail("not inside a git repo (run me from one)")
+  bare = git("rev-parse", "--is-bare-repository", check=False).text  # nonemo: NMO002
+  if bare == "true":
+    raise Fail("this is a bare repo, run me from a working tree")
 
 
 def require_tools(log: Log, *, gh_required: bool = False) -> None:
-  """git is always needed; only the full `run` flow needs the GitHub CLI."""
+  """git is always needed. Only the full `run` flow needs the GitHub CLI."""
   needed = ["git"] + (["gh"] if gh_required else [])
   missing = [t for t in needed if not which(t)]
   if missing:
@@ -932,7 +933,7 @@ def read_checks(pr: int) -> CheckSummary:
     data = json.loads(res.text or "{}") or {}
   except ValueError:
     raise Fail(f"could not parse `gh pr view {pr}` output")
-  # gh prints an object here; a wrapper or a stray line can hand back a list.
+  # gh prints an object here. A wrapper or a stray line can hand back a list.
   # An AttributeError from that is not a useful thing to show a user
   if not isinstance(data, dict):
     raise Fail(f"`gh pr view {pr}` printed a {type(data).__name__}, not a JSON object")
@@ -1121,16 +1122,16 @@ def _normalize_path(raw: str) -> str:
   """
   Make a user-typed path match what git records.
 
-  Windows users type `uploads\\2024`; git stores `uploads/2024`. An absolute
-  path is accepted as long as it points inside the repository. Paths are
-  always relative to the repository root, never to the current directory.
+  Windows users type `uploads\\2024`, and git stores `uploads/2024`. An absolute
+  path is accepted as long as it points inside the repo. Paths are
+  always relative to the repo root, never to the current directory.
   """
   typed = raw.replace("\\", "/")
   if os.path.isabs(typed):
     root = git("rev-parse", "--show-toplevel").text
     path = os.path.relpath(os.path.normpath(typed), root).replace("\\", "/")
     if path.startswith("../"):
-      raise Fail(f"{raw} is outside the repository ({root})")
+      raise Fail(f"{raw} is outside the repo ({root})")
     return path
   path = typed.strip()
   while path.startswith("./"):
@@ -1212,8 +1213,8 @@ def filter_paths(log: Log, cfg: Settings, *, apply: bool) -> PathStats:
 
   filter-repo rewrites all refs, not just the branch being cleaned. That is
   what "remove this from history" has to mean: content left on another branch
-  or tag is still fetchable. filter-repo re-points tags itself; annotated ones
-  become new tag objects with the original tagger and message. This stage
+  or tag is still fetchable. filter-repo re-points tags itself, and annotated
+  ones become new tag objects with the original tagger and message. This stage
   therefore only restores the remotes and re-fetches, leaving
   `origin/<default>` resolvable for the push.
 
@@ -1228,7 +1229,7 @@ def filter_paths(log: Log, cfg: Settings, *, apply: bool) -> PathStats:
     if not git("log", "--all", "--format=%H", "--", path, check=False).text.split():
       raise Fail(
         f"nothing in this repo's history matches {path!r} "
-        "(paths are matched from the repository root)"
+        "(paths are matched from the repo root)"
       )
   stats.commits, stats.files = path_touches(stats.paths)
   listed = ", ".join(stats.paths)
@@ -1280,7 +1281,7 @@ def filter_paths(log: Log, cfg: Settings, *, apply: bool) -> PathStats:
 
 
 def write_backup(log: Log, label: str) -> str:
-  """Bundle every ref before an irreversible rewrite; return the path."""
+  """Bundle every ref before an irreversible rewrite, and return the path."""
   stamp = datetime.now(UTC).astimezone().strftime("%Y%m%dT%H%M%S")
   path = os.path.join(tempfile.gettempdir(), f"git-pre-{label}-{stamp}.bundle")
   log.info("creating backup bundle")
@@ -1598,7 +1599,7 @@ def retarget_tags(log: Log, mapping: dict[str, str]) -> int:
   names the old value, so a tag that moved underneath us aborts the run
   instead of being clobbered.
 
-  Only tags whose target commit moved are touched; every other tag keeps its
+  Only tags whose target commit moved are touched. Every other tag keeps its
   exact object, sha included.
   """
   moved = 0
@@ -1822,7 +1823,7 @@ class Progress:
 
 
 def delete_local_branch(log: Log, name: str, default: str, dry_run: bool) -> None:
-  """Drop the local copy; the upstream branch is untouched by this."""
+  """Drop the local copy. The upstream branch is untouched by this."""
   if not branch_exists(f"refs/heads/{name}"):
     return
   if dry_run:
@@ -1947,7 +1948,7 @@ def guard_dirty_tree(
   A dirty tree either makes the branch switch fail or lets it through. In the
   first case the log shows git's own error in full. In the second case the
   `git reset --hard` at the end of the run throws the changes away. Both are
-  surprises; the second one loses work.
+  surprises, and the second one loses work.
 
   Cleaning the default branch in place is fine, because nothing moves. That is
   what `will_switch` distinguishes.
@@ -2118,7 +2119,7 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
 
   # ------------------------------------------------------------------ target
   # Two ways to choose what gets cleaned:
-  #   * --branch NAME  clean that branch directly (usually `main`); no arena
+  #   * --branch NAME  clean that branch directly (usually `main`): no arena
   #     discovery, no switching dance, no PR required.
   #   * default        if we are on the default branch, hop onto the single
   #     origin/arena/* branch first.
@@ -2331,7 +2332,7 @@ def cmd_doctor(args: argparse.Namespace, log: Log) -> int:
     inside = git("rev-parse", "--is-inside-work-tree", check=False).text
     if inside == "true":
       branch = current_branch() or "(detached HEAD)"
-      log.ok("repository: {}".format(git("rev-parse", "--show-toplevel").text))
+      log.ok("repo: {}".format(git("rev-parse", "--show-toplevel").text))
       log.info(f"branch: {branch}  head: {head_short()}")
       log.info(
         "git identity: {} <{}>".format(
@@ -2356,7 +2357,7 @@ def cmd_doctor(args: argparse.Namespace, log: Log) -> int:
         else:
           log.ok("gpg present; user.signingkey=%s" % (signing_key or "(default key)"))
     else:
-      log.warning("not inside a git repository (run me from one)")
+      log.warning("not inside a git repo (run me from one)")
 
   if which("git-filter-repo"):
     version = git("filter-repo", "--version", check=False).text.splitlines()
@@ -2379,7 +2380,7 @@ def cmd_doctor(args: argparse.Namespace, log: Log) -> int:
       )
       log.block(auth.err or auth.out)
       rc = 1
-    # signing in to gh does not configure git; an https remote needs this.
+    # signing in to gh does not configure git. An https remote needs this.
     # gh writes a host-scoped helper, not a bare credential.helper
     helpers = " ".join(
       git("config", "--global", "--get-all", key, check=False).text

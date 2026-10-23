@@ -1,7 +1,7 @@
 """Shared fixtures: a bare origin, a work clone, a fake gh, and the engine CLI.
 
 The engine tests share one scratch world and run in file order. Each test
-builds on the repository state the earlier tests left behind, as the original
+builds on the repo state the earlier tests left behind, as the original
 end-to-end suite did. Log assertions use the key tokens of a message (branch,
 sha, count, flag, check name), not full sentences.
 """
@@ -28,7 +28,7 @@ SEED_COMMITS = 5
 LOG_LINE = re.compile(
   r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2} (INFO|OK|WARN|ERROR) "
 )
-# a verbatim dump line, a blank line, or a timestamped line; anything else is stray noise
+# a verbatim dump line, a blank line, or a timestamped line. Anything else is stray noise
 EXPECTED_LINE = re.compile(r"^(\d{4}-\d{2}-\d{2}T|  \| | *$)")
 
 

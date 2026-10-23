@@ -10,11 +10,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Web app, rewrite engine, Docker image, and test suite from the off-GitHub project.
-- The CLI is one standard-library file, `arena-cleanup.py`, with the Windows launcher `arena-cleanup.cmd`. It runs on a PC with Python 3.11, `git`, and `gh`; the image runs the same file. It carries its own version, `pyproject.toml` carries the web app's, and a test keeps the two equal.
+- The CLI is one standard-library file, `arena-cleanup.py`, with the Windows launcher `arena-cleanup.cmd`. It runs on a PC with Python 3.11, `git`, and `gh`. The image runs the same file. It carries its own version, `pyproject.toml` carries the web app's, and a test keeps the two equal.
 - uv-managed tool chain: `uv sync` installs Ruff, shfmt, pytest, and `git-filter-repo` from `uv.lock`.
 - GitHub workflows: CI (lint, format, Markdown, suite), the pull request contract, and an advisory container scan.
 - Image publishing: a green CI run on `main` pushes `ghcr.io/nemoe7/arena-cleanup:latest` for amd64 and arm64, the only tag.
-- `scripts/demo.py`: a throwaway fixture served by the UI for demos and the QA tools. It holds five repositories, a stub `gh`, an identity, and a GPG key. Each repository has 14 commits on main and nine on the arena branch. In `infra-tools` main moved on by two commits after the session, and `data-pipeline` keeps two arena branches. The origins answer to `https://github.com/demo/<name>`, so the page shows live-looking remotes. The fixture clones them by URL under its data directory. The stub `gh` is signed in as the configured identity, the credential helper is set, and the host's tokens are gone.
+- `scripts/demo.py`: a throwaway fixture served by the UI for demos and the QA tools. It holds five repos, a stub `gh`, an identity, and a GPG key. Each repo has 14 commits on main and nine on the arena branch. In `infra-tools` main moved on by two commits after the session, and `data-pipeline` keeps two arena branches. The origins answer to `https://github.com/demo/<name>`, so the page shows live-looking remotes. The fixture clones them by URL under its data directory. The stub `gh` is signed in as the configured identity, the credential helper is set, and the host's tokens are gone.
 - `docs/design.md`: the design record with the type ramp, spacing scale, breakpoints, and accepted decisions.
 - Prose rules for comments, docstrings, and docs: sentences of 20 words or fewer, paragraphs of four sentences or fewer.
 - `/api/access` storage rows that name their origin under `source`.
@@ -24,27 +24,27 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The spacing audit as a Playwright test in `tests/e2e/`, run by the CI job with a cached Chromium. The browser walk `scripts/walk.py`, run by hand, saves its screenshots where you point it.
 - A minimal README: install, use, settings, and development.
 - An add bar that takes a GitHub page address: `github.com/owner/repo`, with or without `https://`, `.git`, or a page suffix.
-- Cards and the repository title show the name only.
+- Cards and the repo title show the name only.
 - Design boards in `docs/design/`, rendered by `scripts/design_boards.py` and embedded in `docs/design.md`.
-- The repository card meta drops the tag count; it shows the branch and the tree state.
+- The repo card meta drops the tag count. It shows the branch and the tree state.
 - Arena rows on the card and in the sidebar show `↑ N` with a tooltip. N counts the commits beyond the default branch.
-- `run -a/--arena NAME` answers the arena branch menu without a prompt. The page shows that select, newest tip first, when a repository has two or more arena branches. The card button uses the newest.
-- The repository sidebar is 320 px wide. It lists the commits below the repo facts and the arena rows. The HEAD block is gone. Below 980 px it stacks under the run card, and the commit list grows with the page.
+- `run -a/--arena NAME` answers the arena branch menu without a prompt. The page shows that select, newest tip first, when a repo has two or more arena branches. The card button uses the newest.
+- The repo sidebar is 320 px wide. It lists the commits below the repo facts and the arena rows. The HEAD block is gone. Below 980 px it stacks under the run card, and the commit list grows with the page.
 - A shallow history: one Back leaves a sub-view, the next one leaves the page.
 - A click on a sidebar arena row selects the arena branch the run pulls from. The Arena branch select and the row follow each other.
 - The options card: one row per option, no hint texts, no task note. Checkboxes Dry Run, Ignore PR Checks, Keep Empty Commits, Update Tags (on by default), and Force Push replace the switches. Keep arena branch is gone. PR check timeout is a slider with ten stops and a readout.
-- A managed clone resets to origin before every run. The server fetches, checks out the default branch, resets hard, and drops local `arena/*` copies. The page has no Reset button, dirty chip, or On divergence control; `--on-divergence` stays a CLI flag.
+- A managed clone resets to origin before every run. The server fetches, checks out the default branch, resets hard, and drops local `arena/*` copies. The page has no Reset button, dirty chip, or On divergence control, and `--on-divergence` stays a CLI flag.
 - The app copy says repo and repos.
-- The claim rules come from the global git config keys `arena.claim-email` and `arena.claim-name`; the constants are the fallback. The container seeds the identity only while git config is empty.
+- The claim rules come from the global git config keys `arena.claim-email` and `arena.claim-name`. The constants are the fallback. The container seeds the identity only while git config is empty.
 - One Settings page behind the gear icon: Identity, GitHub access, Commit signing, and Claimed commits, then About.
-- The options card keeps two columns above 980 px; four columns overflowed between 981 and 1179 px.
+- The options card keeps two columns above 980 px. Four columns overflowed between 981 and 1179 px.
 - Log rows show the clock of the browser. The engine stamps each line in the server zone.
-- Remove on a card deletes its URL clone from the volume; a path repo is only forgotten.
+- Remove on a card deletes its URL clone from the volume. A path repo is only forgotten.
 - `POST /api/repos/<id>/reset`: fetch, check out the default branch, and reset it hard. Untracked files stay.
-- The repository page runs the full flow only. The Rewrite locally switch is gone, and `strip` stays a CLI command.
+- The repo page runs the full flow only. The Rewrite locally switch is gone, and `strip` stays a CLI command.
 - The card Remove X sits top right as a bare glyph. A red frame comes on hover, on press, and while armed.
 - The primary button reads Clean & Push on the card, the run card, and the phone bar.
 - The options card folds from its head. Closed, the head shows the branch pill and what differs from the defaults.
-- Target branch lists the default branch first and never an `arena/*` branch; the page API answers 400 for one.
-- Browse under Remove paths opens the HEAD tree of the clone, one level per request. A click on a row or its plus adds the path chip; `GET /api/repos/<id>/tree?path=` serves the level.
+- Target branch lists the default branch first and never an `arena/*` branch. The page API answers 400 for one.
+- Browse under Remove paths opens the HEAD tree of the clone, one level per request. A click on a row or its plus adds the path chip. `GET /api/repos/<id>/tree?path=` serves the level.
 - The demo histories keep tests under `tests/` and the workflow under `.github/workflows/`, so the tree has folders to open.

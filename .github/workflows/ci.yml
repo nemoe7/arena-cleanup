@@ -31,7 +31,7 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@v10.3.1
         with:
-          # The newest uv in the action's version manifest; a newer release
+          # The newest uv in the action's version manifest. A newer release
           # fails the step until the manifest lists it.
           version: "0.13.4"
           # The image runtime: Debian 13 ships Python 3.13.
@@ -45,7 +45,7 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v24.2.0
         with:
           globs: "**/*.md"
-      # The browser download is the slow step; a warm cache leaves only the OS
+      # The browser download is the slow step. A warm cache leaves only the OS
       # packages to install. The key follows the Playwright pin in uv.lock.
       - name: Cache Chromium
         id: chromium
@@ -58,5 +58,5 @@ jobs:
       - if: steps.chromium.outputs.cache-hit == 'true'
         run: uv run --no-sync playwright install-deps chromium
       # The suite needs git, gpg, git-filter-repo, and Chromium. The runner has
-      # the first two; `uv run` puts the third on PATH; the steps above the last.
+      # the first two. `uv run` puts the third on PATH, and the steps above the last.
       - run: uv run --no-sync pytest

@@ -282,12 +282,10 @@ def flow_board(_: dict[str, bytes]) -> str:
 
   body = (
     '<div class="wf"><div class="row" style="align-items:center">'
-    + frame(
-      "Dashboard", "Entry at /. Every remembered repository is one card.", dashboard
-    )
+    + frame("Dashboard", "Entry at /. Every remembered repo is one card.", dashboard)
     + arrow("card click or Enter")
     + frame(
-      "Repository",
+      "Repo",
       "Options, the run, and the commits. Back returns to the dashboard.",
       repo,
     )
@@ -385,7 +383,7 @@ def wireframe_board(_: dict[str, bytes]) -> str:
   body = (
     '<div class="wf"><div class="row">'
     + frame(
-      "Repository view",
+      "Repo view",
       "Deep dive: the one view where a run happens. The sidebar holds the facts and the "
       "commits; the run card is the story, the raw log is one click away.",
       screen,
@@ -393,9 +391,7 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     + frame("Key actions", "What the view promises.", actions)
     + "</div></div>"
   )
-  return board(
-    "Repository view", "Deep-dive wireframe of the view a run lives in.", body
-  )
+  return board("Repo view", "Deep-dive wireframe of the view a run lives in.", body)
 
 
 def views_board(shots: dict[str, bytes]) -> str:
@@ -403,7 +399,7 @@ def views_board(shots: dict[str, bytes]) -> str:
     '<div class="row">'
     + frame(
       "Default view",
-      "Five remembered repositories, the add bar focused, the tool dots green.",
+      "Five remembered repos, the add bar focused, the tool dots green.",
       img(shots, "dashboard", 460),
     )
     + frame(

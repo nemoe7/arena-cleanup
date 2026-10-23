@@ -18,7 +18,7 @@ pytestmark = pytest.mark.e2e
 GRID = 2
 MICRO = {1.0}
 LAYOUT_MARGIN_PX = (
-  48  # margin:auto computes to a pixel length; that is layout, not a token
+  48  # margin:auto computes to a pixel length. That is layout, not a token
 )
 DESKTOP_RAMP = {12.0, 13.0, 14.0, 16.0, 20.0}
 PHONE_RAMP = {12.0, 13.0, 14.0, 15.0, 16.0, 19.0}

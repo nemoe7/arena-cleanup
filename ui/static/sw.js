@@ -3,7 +3,7 @@
  *
  * The app shell is cached so the icon opens instantly and works on a flaky
  * connection. Nothing else is: every /api/ request goes straight to the
- * network. A cached repository status would be a lie about someone's git
+ * network. A cached repo status would be a lie about someone's git
  * state. If the network is gone, the shell still opens and says so.
  */
 
@@ -87,7 +87,7 @@ function offline() {
   p{margin:0;color:#7c8590;max-width:34em}
 </style>
 <h1>The server is not reachable</h1>
-<p>Every request here changes a git repository, so this app refuses to work
+<p>Every request here changes a git repo, so this app refuses to work
 from a cache. Check that the container is running, then reload.</p>`;
   return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
 }

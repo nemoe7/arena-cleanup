@@ -4,10 +4,10 @@ Build a throwaway demo of the UI and serve it.
 
 The fixture holds:
 
-- five repositories, cloned by URL like a live install: an arena branch each,
+- five repos, cloned by URL like a live install: an arena branch each,
   one with two, and one whose default branch moved on after the session
 - origins that answer to `https://github.com/demo/<name>`, mapped onto the local
-  bare repositories with `url.<path>.insteadOf`
+  bare repos with `url.<path>.insteadOf`
 - a stub `gh` that answers from files, signed in as the configured identity
 - a git identity that matches the engine's constants, with the credential
   helper `gh auth setup-git` would write
@@ -22,7 +22,7 @@ GH_TOKEN or GITHUB_TOKEN.
 
 The stub gh reads the demo root's gh/ directory:
 
-  gh/signed-in   present = `gh auth status` succeeds; `gh auth login` creates it.
+  gh/signed-in   present = `gh auth status` succeeds, `gh auth login` creates it.
   gh/slow        present = every branch has a PR whose check never finishes.
   gh/prs.json    the open PR and check rollup for each arena branch.
   gh/gpg-keys    key ids `gh api user/gpg_keys` reports.
@@ -181,7 +181,7 @@ SECOND_HISTORY = [
   ("test: retry policy\n\ngenerated cases", "tests/test_retry.py", BOT),
 ]
 SESSIONS = [BRANCH_HISTORY, SECOND_HISTORY]
-# what main gains after the session, when the repository asks for it
+# what main gains after the session, when the repo asks for it
 MAIN_LATER = [
   ("fix: quoting in the deploy script", "deploy.sh", OTHER),
   ("docs: release notes", "README.md", ME),
@@ -324,7 +324,7 @@ def write_gitconfig(path: Path, key_id: str) -> None:
 
 
 def make_key(gnupghome: Path) -> str:
-  """A throwaway signing key; "" when gpg is missing or refuses."""
+  """A throwaway signing key, or "" when gpg is missing or refuses."""
   if not shutil.which("gpg"):
     return ""
   gnupghome.mkdir(parents=True, exist_ok=True)
@@ -374,7 +374,7 @@ def make_origin(
   run("git", "init", "--bare", "--quiet", "-b", "main", str(origin), env=env)
   run("git", "clone", "--quiet", str(origin), str(work), env=env)
   # every clone names the GitHub URL, as a live install does. git rewrites it
-  # to the bare repository for every fetch and push.
+  # to the bare repo for every fetch and push.
   page = f"{PAGE_BASE}/{name}"
   run("git", "remote", "set-url", "origin", page, cwd=work, env=env)
   run("git", "config", "--global", f"url.{origin}.insteadOf", page, env=env)
@@ -429,7 +429,7 @@ def clone_repo(name: str, later: bool, registry: Registry, env: dict[str, str]) 
 
 
 def build(root: Path) -> dict[str, str]:
-  """Create the fixture under root; return the environment the server needs."""
+  """Create the fixture under root, and return the environment the server needs."""
   home = root / "home"
   bin_dir = root / "bin"
   gh_state = root / "gh"
@@ -467,7 +467,7 @@ def build(root: Path) -> dict[str, str]:
     env["GNUPGHOME"] = str(root / "gnupg")
   else:
     env.pop("GNUPGHOME", None)
-  # a token of the host would show up in the GitHub card; the stub needs none
+  # a token of the host would show up in the GitHub card. The stub needs none
   env.pop("GH_TOKEN", None)
   env.pop("GITHUB_TOKEN", None)
 

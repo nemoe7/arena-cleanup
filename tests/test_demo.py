@@ -1,4 +1,4 @@
-"""The demo fixture holds the repository states the dashboard has to show."""
+"""The demo fixture holds the repo states the dashboard has to show."""
 
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ def arena_branches(work: Path, env: dict[str, str]) -> list[str]:
   return [ref for ref in refs.splitlines() if ref.startswith("origin/arena/")]
 
 
-def test_the_repositories_are_url_clones_under_data(
+def test_the_repos_are_url_clones_under_data(
   entries: dict[str, dict[str, object]], env: dict[str, str]
 ) -> None:
   assert sorted(entries) == sorted(name for name, _branches, _later in demo.REPOS)
@@ -95,7 +95,7 @@ def test_one_default_branch_moved_on_after_its_session(
   assert behind == ahead  # the clone has not pulled, so the card shows the drift
 
 
-def test_one_repository_keeps_two_arena_branches(
+def test_one_repo_keeps_two_arena_branches(
   repos: dict[str, Path], env: dict[str, str]
 ) -> None:
   counts = {name: len(arena_branches(work, env)) for name, work in repos.items()}

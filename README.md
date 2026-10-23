@@ -2,15 +2,15 @@
 
 A small web app that cleans an Arena agent branch. It rewrites the history to
 your identity, signs the commits, and publishes the result to your default
-branch. Paste a repository URL once. The dashboard then shows each repo's arena
+branch. Paste a repo URL once. The dashboard then shows each repo's arena
 branch, its distance from origin, and its pull request checks.
 
-![The dashboard: three remembered repositories, each with its arena branch and PR check rollup](docs/ui-overview.png)
+![The dashboard: three remembered repos, each with its arena branch and PR check rollup](docs/ui-overview.png)
 
 One click runs the pipeline:
 
 1. Fetch and prune, select the arena branch, and reconcile it with upstream.
-2. Wait for the pull request checks; failing ones stop the run.
+2. Wait for the pull request checks. Failing ones stop the run.
 3. Remove the named paths from every commit, when asked.
 4. Rewrite the commits to your identity, sign them, and move the tags.
 5. `git push --force-with-lease` to the default branch, then delete the local
@@ -40,7 +40,7 @@ Compose runs two containers: `arena-cleanup` on `127.0.0.1:8080` and
 `arena-cleanup-tailscale`, which serves it to your tailnet as
 `https://arena-cleanup.<tailnet>.ts.net`. That HTTPS name is what makes the
 app installable on a phone. `docker/tailscale-serve.json` holds the proxy
-config; `tailscale serve` only, never `funnel`.
+config. `tailscale serve` only, never `funnel`.
 
 Without compose:
 
@@ -73,8 +73,8 @@ python3 ui/server.py
 
 `arena-cleanup.py` is the whole tool in one standard-library file. Copy it and
 `arena-cleanup.cmd` somewhere on `PATH`, then run `arena-cleanup` inside a
-clone. It needs Python 3.11+, `git`, and a signed-in `gh`; `--path` needs
-`git-filter-repo`, and signing needs `gpg`. `arena-cleanup -h` lists the
+clone. It needs Python 3.11+, `git`, and a signed-in `gh`, plus
+`git-filter-repo` for `--path` and `gpg` for signing. `arena-cleanup -h` lists the
 flags, and `arena-cleanup doctor` checks the setup.
 
 ## Use
@@ -85,7 +85,7 @@ flags, and `arena-cleanup doctor` checks the setup.
    - **Identity**: the `git config` name and e-mail every claimed commit gets.
    - **GitHub**: `gh` sign-in (`GH_TOKEN`, `gh auth login`, or a pasted
      token), its scopes, and **Set up git credentials** for HTTPS clones. The
-     token needs `repo`; SSH URLs need a mounted key instead.
+     token needs `repo`. SSH URLs need a mounted key instead.
    - **Signing**: the active GPG key, whether GitHub has it, and **Create
      key** when there is none. Add the public key at GitHub → Settings → GPG
      keys with a verified e-mail, then **Re-check**.
@@ -135,7 +135,7 @@ health check polls it, and compose gates the sidecar on that check.
 
 The app has no authentication of its own. Keep it on `127.0.0.1` and behind
 the tailnet or an SSH tunnel. Every option from the browser is validated
-against a whitelist before it becomes an argv; there is no shell.
+against a whitelist before it becomes an argv. There is no shell.
 
 ## Development
 
@@ -155,12 +155,12 @@ a throwaway GPG key. Path and signing tests skip when `git-filter-repo` or
 `gpg` is missing.
 
 `uv run scripts/demo.py --port 8080` serves the UI on a throwaway fixture. It
-holds five URL-cloned repositories with a short history each, an identity, and
+holds five URL-cloned repos with a short history each, an identity, and
 a key. Its stub `gh` answers from files under the demo root's `gh/` directory.
 `--no-serve`
 builds it and prints the environment.
 
-One default branch moved on after its session, and one repository keeps two
+One default branch moved on after its session, and one repo keeps two
 arena branches.
 
 Browser checks need Playwright: `uv sync --group qa`, then `uv run playwright

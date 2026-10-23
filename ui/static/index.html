@@ -1028,7 +1028,7 @@
       state.repos = await api("/api/repos");
       state.unreachable = false;
     } catch (err) {
-      // "no repositories" and "cannot ask the server" look identical on screen
+      // "no repos" and "cannot ask the server" look identical on screen
       // unless we keep them apart - and an empty dashboard here would be a lie
       state.repos = [];
       state.unreachable = true;
@@ -1220,7 +1220,7 @@
     }
   }
 
-  // -- Path tree: the HEAD tree of the open repository, one level per request
+  // -- Path tree: the HEAD tree of the open repo, one level per request
   function closeTree() {
     $("tree").hidden = true;
     $("tree").replaceChildren();

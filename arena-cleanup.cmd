@@ -1,7 +1,7 @@
 @echo off
 :: arena-cleanup - Windows launcher. nonemo:P002
 :: Put this file next to arena-cleanup.py, both somewhere on PATH, then run
-:: arena-cleanup. Every argument passes straight through, and the exit code is
+:: arena-cleanup. Every argument passes straight through. The exit code is
 :: the script's: 0 ok, 1 error, 7 strip --check found work to do.
 setlocal
 

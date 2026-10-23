@@ -1,7 +1,7 @@
 """End-to-end tests for the rewrite engine against throwaway repos and a fake gh.
 
 The tests run in file order and share the `world` fixture. Each one starts
-from the repository state the previous one left behind.
+from the repo state the previous one left behind.
 """
 
 from __future__ import annotations
@@ -203,7 +203,7 @@ def test_verbose_output(world: World) -> None:
   # -v must not cost us the captured output: lots of code parses it
   res = world.cleanup("strip", "-n", "-v")
   assert res.rc == 0
-  assert not res.says("not inside a git repository"), "-v lost the parsed output"
+  assert not res.says("not inside a git repo"), "-v lost the parsed output"
   assert any(line.startswith("  | ") for line in res.lines)
 
 

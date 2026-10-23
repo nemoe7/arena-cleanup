@@ -39,7 +39,7 @@ def test_the_app_mounts_only_its_home_volume() -> None:
 
 def test_the_registry_lives_on_the_home_volume() -> None:
   # repos.json and the clones sit under ARENA_DATA. Inside the named volume
-  # they survive `up --build`; only `down -v` drops them.
+  # they survive `up --build`. Only `down -v` drops them.
   data_dir = re.search(r"^\s*ARENA_DATA=(\S+)", DOCKERFILE, re.MULTILINE).group(1)
   app = COMPOSE.split("  arena-cleanup-tailscale:")[0]
   volume, target = re.findall(r"^\s+- (.+):(/.+)$", app, re.MULTILINE)[0]

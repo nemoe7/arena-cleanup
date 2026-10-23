@@ -319,7 +319,7 @@ def back_from_signing(w: Walker, demo: Demo) -> None:
 @step("desktop")
 def arena_select_lists_the_newest_first(w: Walker, demo: Demo) -> None:
   w.goto(1000)
-  assert not w.visible("#opt-arena"), "the select waits for the repository page"
+  assert not w.visible("#opt-arena"), "the select waits for the repo page"
   w.click(".repo-card >> nth=0", 800)
   assert not w.visible("#opt-arena"), "one arena branch needs no select"
   w.goto(1000)
@@ -472,7 +472,7 @@ def start_a_dry_run_and_watch_it_finish(w: Walker, demo: Demo) -> None:
   w.click("#start", 0)
   status = w.wait_status("exit")
   assert "exit 0" in status
-  # the run card is the story; the raw log is one click away
+  # the run card is the story. The raw log is one click away
   assert w.log_hidden()
   assert w.text("#logtoggle") == "Show log"
   w.click("#logtoggle", 300)
