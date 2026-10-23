@@ -58,7 +58,7 @@ def test_the_dashboard_says_loading_until_the_first_answer(desktop: Walker) -> N
 
 def test_a_failed_pr_check_fails_the_pr_phase_alone(desktop: Walker) -> None:
   desktop.goto(1200)
-  desktop.click(".repo-card:has-text('billing-api')", 800)
+  desktop.click(".repo-card:has-text('billing-api') .repo-name", 800)
   desktop.click('input[data-opt="dry_run"]', 0)
   desktop.click("#start", 0)
   assert "exit 0" not in desktop.wait_status("exit")
@@ -90,7 +90,7 @@ def test_the_add_bar_reports_a_bad_source_under_the_field(desktop: Walker) -> No
 
 def test_the_log_stays_open_and_copy_is_a_glyph(desktop: Walker) -> None:
   desktop.goto(1200)
-  desktop.click(".repo-card", 800)
+  desktop.click(".repo-card .repo-name", 800)
   page = desktop.page
   assert page.get_by_role("button", name="Reload commits").count() == 1
   assert page.inner_text("#commits-refresh") == ""
@@ -113,7 +113,7 @@ LONG_SUBJECT = ".commit:has-text('fixed sleep in the flaky config timing test')"
 
 def test_a_long_subject_clamps_to_two_lines_until_a_tap(phone: Walker) -> None:
   phone.goto(1200)
-  phone.click(".repo-card", 800)
+  phone.click(".repo-card .repo-name", 800)
   page = phone.page
   subject = f"{LONG_SUBJECT} .subject"
   line = page.eval_on_selector(

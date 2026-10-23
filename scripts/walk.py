@@ -243,7 +243,7 @@ def typing_into_the_add_box(w: Walker, demo: Demo) -> None:
 @step("desktop")
 def open_repo_from_its_card(w: Walker, demo: Demo) -> None:
   w.goto()
-  w.click(".repo-card", 800)
+  w.click(".repo-card .repo-name", 800)
   assert w.visible("#view-repo")
   assert "shop-web" in w.text("#repo-title")
   w.click("#back", 600)
@@ -313,10 +313,10 @@ def back_from_signing(w: Walker, demo: Demo) -> None:
 def arena_select_lists_the_newest_first(w: Walker, demo: Demo) -> None:
   w.goto(1000)
   assert not w.visible("#opt-arena"), "the select waits for the repo page"
-  w.click(".repo-card >> nth=0", 800)
+  w.click(".repo-card >> nth=0 >> .repo-name", 800)
   assert not w.visible("#opt-arena"), "one arena branch needs no select"
   w.goto(1000)
-  w.click(".repo-card >> nth=4", 800)
+  w.click(".repo-card >> nth=4 >> .repo-name", 800)
   assert w.visible("#opt-arena")
   name = w.text("#repo-title").strip()
   repo = next(r for r in demo.api("/api/repos") if r["name"] == name)
@@ -345,7 +345,7 @@ def arena_select_lists_the_newest_first(w: Walker, demo: Demo) -> None:
 @step("desktop")
 def sidebar_and_branch_selector(w: Walker, demo: Demo) -> None:
   w.goto(1000)
-  w.click(".repo-card", 800)
+  w.click(".repo-card .repo-name", 800)
   sidebar = w.text("#sidebar")
   assert "Repo" in sidebar
   assert "arena/session-3" in sidebar
@@ -460,7 +460,7 @@ def start_a_dry_run_and_watch_it_finish(w: Walker, demo: Demo) -> None:
 @step("desktop")
 def cancel_a_run_in_flight(w: Walker, demo: Demo) -> None:
   w.click("#back")
-  w.click(".repo-card >> nth=2", 900)
+  w.click(".repo-card >> nth=2 >> .repo-name", 900)
   assert "docs-site" in w.text("#repo-title")
   # The demo fixtures finish in a fraction of a second. The stub gh reports a check that
   # never finishes, so the run parks at the PR gate. Only there Cancel meets a live process.
@@ -488,7 +488,7 @@ def cancel_a_run_in_flight(w: Walker, demo: Demo) -> None:
 @step("desktop")
 def copy_the_log(w: Walker, demo: Demo) -> None:
   w.click("#back")
-  w.click(".repo-card >> nth=0", 800)
+  w.click(".repo-card >> nth=0 >> .repo-name", 800)
   w.click('input[data-opt="dry_run"]', 0)
   w.click("#start", 0)
   w.wait_status("exit")
@@ -613,7 +613,7 @@ def phone_loads(w: Walker, demo: Demo) -> None:
 
 @step("phone")
 def phone_tab_bar_in_the_repo_view(w: Walker, demo: Demo) -> None:
-  w.click(".repo-card", 700)
+  w.click(".repo-card .repo-name", 700)
   assert w.visible("#tabbar")
 
 
@@ -641,7 +641,7 @@ def phone_paste_box_is_a_tap_target(w: Walker, demo: Demo) -> None:
 
 @step("phone")
 def phone_clean_and_push_runs(w: Walker, demo: Demo) -> None:
-  w.click(".repo-card", 700)
+  w.click(".repo-card .repo-name", 700)
   w.click("#start-mobile", 4000)
   assert w.status_text().strip()
 

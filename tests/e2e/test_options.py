@@ -13,7 +13,7 @@ BOX = "e => { const b = e.getBoundingClientRect(); return [b.width, b.height]; }
 
 def test_the_path_field_and_browse_are_tap_targets(phone: Walker) -> None:
   phone.goto(400)
-  phone.click(".repo-card", 800)
+  phone.click(".repo-card .repo-name", 800)
   width, height = phone.page.eval_on_selector("#pathin", BOX)
   assert height >= TAP_TARGET_PX
   assert width > TAP_TARGET_PX
@@ -27,7 +27,7 @@ def test_the_path_field_and_browse_are_tap_targets(phone: Walker) -> None:
 
 def test_the_arena_option_shows_the_branch_and_the_day(desktop: Walker) -> None:
   desktop.goto(1200)
-  desktop.click(".repo-card:has-text('data-pipeline')", 800)
+  desktop.click(".repo-card:has-text('data-pipeline') .repo-name", 800)
   assert desktop.visible("#opt-arena")
   options = desktop.page.eval_on_selector_all(
     "#arena option", "els => els.map((o) => [o.value, o.textContent, o.title])"
@@ -40,7 +40,7 @@ def test_the_arena_option_shows_the_branch_and_the_day(desktop: Walker) -> None:
 
 def test_the_option_rows_stack_in_one_column(desktop: Walker) -> None:
   desktop.goto(1200)
-  desktop.click(".repo-card", 800)
+  desktop.click(".repo-card .repo-name", 800)
   edges = "e => { const b = e.getBoundingClientRect(); return [b.top, b.bottom]; }"
   rows = [
     desktop.page.eval_on_selector(f"#{name}", edges)
@@ -55,7 +55,7 @@ POINTER_TARGET_PX = 24
 
 def test_the_option_controls_are_pointer_targets(desktop: Walker) -> None:
   desktop.goto(1200)
-  desktop.click(".repo-card", 800)
+  desktop.click(".repo-card .repo-name", 800)
   desktop.click("#browse", 600)
   desktop.click(".tree-select", 300)
   sizes = desktop.page.eval_on_selector_all(

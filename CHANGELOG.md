@@ -18,6 +18,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Every Clean & Push button carries the broom glyph, and its sparkles appear on
   hover and focus. The dashboard card button is the glyph alone, named in
   `aria-label` and `title`. The repo view button leads with the glyph.
+- Above 1200 px the dashboard shows one full-width row per repo: the name, the
+  branch, the arena rows across the free width, then Clean and Remove at the
+  right edge. An arena row is one line there and the rows stack. At 1200 px
+  and below the repos stay cards with two-line arena rows.
+- The Remove button carries the trash glyph in place of the X.
 - Human-facing text says push, not publish, and PR, not pull request: the
   page, the engine log lines, the CLI help, the README, and the design record.
   Identifiers, API fields, and past entries keep their words.

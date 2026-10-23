@@ -28,7 +28,7 @@ def phase_states(walker: Walker) -> list[str]:
 
 def test_a_finished_run_comes_back_after_a_page_reload(desktop: Walker) -> None:
   desktop.goto(1200)
-  desktop.click(".repo-card:has-text('shop-web')", 800)
+  desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
   desktop.click('input[data-opt="dry_run"]', 0)
   desktop.click("#start", 0)
   status = desktop.wait_status("exit")
@@ -36,7 +36,7 @@ def test_a_finished_run_comes_back_after_a_page_reload(desktop: Walker) -> None:
   assert rows > 0
 
   desktop.goto(1200)
-  desktop.click(".repo-card:has-text('shop-web')", 800)
+  desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
   desktop.page.wait_for_function(
     f"() => document.querySelectorAll('{ROWS}').length === {rows}", timeout=WAIT_MS
   )
@@ -49,7 +49,7 @@ def test_a_live_run_streams_on_after_a_return_to_the_repo(
   desktop: Walker, demo: Demo
 ) -> None:
   desktop.goto(1200)
-  desktop.click(".repo-card:has-text('docs-site')", 800)
+  desktop.click(".repo-card:has-text('docs-site') .repo-name", 800)
   demo.slow_checks(True)
   try:
     box = 'input[data-opt="dry_run"]'
@@ -60,7 +60,7 @@ def test_a_live_run_streams_on_after_a_return_to_the_repo(
 
     desktop.click("#back", 600)
     assert desktop.visible("#view-dashboard")
-    desktop.click(".repo-card:has-text('docs-site')", 800)
+    desktop.click(".repo-card:has-text('docs-site') .repo-name", 800)
     assert desktop.wait_status("running") == "running"
     log_includes(desktop, PARKED)
     assert desktop.text("#start") == "Cancel", "one button, in its running state"

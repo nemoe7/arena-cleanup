@@ -26,7 +26,7 @@ CARD_CLEAN = ".repo-card .btn.icon.clean"
 
 def glyph_widths(walker: Walker) -> dict[str, float]:
   walker.goto(1200)
-  walker.click(".repo-card:has-text('shop-web')", 800)
+  walker.click(".repo-card:has-text('shop-web') .repo-name", 800)
   walker.page.wait_for_selector(".commit .sig .ico-svg")
   return {sel: walker.page.eval_on_selector(sel, BOX) for sel in GLYPHS}
 
@@ -55,6 +55,6 @@ def test_clean_buttons_carry_the_broom_and_sparkle_on_hover(desktop: Walker) -> 
     page.eval_on_selector(CARD_CLEAN, "e => e.getAttribute('aria-label')")
     == "Clean & Push"
   )
-  desktop.click(".repo-card:has-text('shop-web')", 800)
+  desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
   assert page.eval_on_selector("#start .ico-svg", BOX) == BUTTON
   assert page.eval_on_selector("#start .sparkles", OPACITY) == 0

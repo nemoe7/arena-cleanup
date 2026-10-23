@@ -826,7 +826,7 @@ def capture_views(walker: Walker, demo: Demo) -> dict[str, bytes]:
   demo.sign_in(True)
   demo.wait_until_checked(True)
   walker.goto(2000)
-  walker.click(".repo-card", 800)
+  walker.click(".repo-card .repo-name", 800)
   walker.click('input[data-opt="dry_run"]', 0)
   walker.click("#start", 0)
   walker.wait_status("exit")

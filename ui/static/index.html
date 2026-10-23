@@ -275,20 +275,27 @@
   .mono-field { font-family: var(--mono); font-size: var(--fs-2); }
   select.field { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--dim) 50%), linear-gradient(135deg, var(--dim) 50%, transparent 50%); background-position: right 12px center, right 8px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 24px; }
 
-  .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); margin-top: 20px; }
-
+  /* above 1200 a repo is one row on shared columns: the icon, the name, its branch, the arena rows, the Clean
+     button, and Remove. Content sizes the first columns, the arena area takes the free width */
+  .grid {
+    display: grid; gap: 12px; margin-top: 20px;
+    grid-template-columns: auto minmax(0, max-content) minmax(0, max-content) minmax(0, 1fr) auto auto;
+  }
   .repo-card {
-    display: flex; flex-direction: column; gap: 12px;
+    grid-column: 1 / -1; display: grid; grid-template-columns: subgrid;
+    grid-template-areas: "ico name meta arena actions rm"; align-items: center;
     border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
-    padding: 16px; text-align: left; cursor: pointer; color: inherit;
+    padding: 12px 16px; text-align: left; cursor: pointer; color: inherit;
     transition: border-color .12s, background .12s, transform .12s;
   }
   .repo-card:hover { border-color: #2c333c; background: #0f1216; }
   .repo-card:hover .repo-name, .repo-name:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
   .repo-card:active { transform: translateY(1px); }
-  .repo-head { display: flex; align-items: flex-start; gap: 10px; }
+  .repo-head { display: contents; }
+  .repo-head > div { grid-area: name; max-width: 280px; }
+  .repo-card > .rm { grid-area: rm; }
   .repo-ico {
-    --ico: var(--ico-l);
+    --ico: var(--ico-l); grid-area: ico;
     width: 30px; height: 30px; border-radius: 8px; flex: none; font-size: 16px;
     display: grid; place-items: center; background: var(--surface-3);
     border: 1px solid var(--line-2); color: var(--muted);
@@ -297,7 +304,8 @@
   .repo-name { display: block; max-width: 100%; min-height: 24px; margin: 0; padding: 0; border: 0; background: none;
     color: inherit; font: inherit; font-weight: 600; font-size: var(--fs-3); letter-spacing: -.01em; text-align: left;
     overflow-wrap: anywhere; cursor: pointer; }
-  .repo-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .repo-meta { grid-area: meta; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .repo-meta .pill { max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
   .pill {
     --ico: var(--ico-s);
     display: inline-flex; align-items: center; gap: 6px;
@@ -314,9 +322,9 @@
   .pill.mono { font-family: var(--mono); font-size: var(--fs-1); }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
 
-  .arena-list { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--line); padding-top: 12px; }
-  /* two lines at every width: the name, then the ahead chip and the PR pill */
-  .arena-row { display: flex; flex-direction: column; align-items: stretch; gap: 4px; font-size: var(--fs-2); min-width: 0; }
+  .arena-list { grid-area: arena; align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 6px; border-left: 1px solid var(--line); padding-left: 16px; }
+  /* one line in a row: the name, the ahead chip, and the PR pill. A card breaks it after the name */
+  .arena-row { flex: none; display: flex; align-items: center; gap: 8px; font-size: var(--fs-2); min-width: 0; }
   .arena-row .bname { min-width: 0; font-family: var(--mono); font-size: var(--fs-1); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .arena-tail { display: flex; align-items: center; gap: 8px; min-width: 0; }
   /* the checks pill is the link: one control, no orphan "Pull request" label */
@@ -331,7 +339,7 @@
 
   /* what the selected task will do, in one sentence */
   /* pinned to the card bottom, so the buttons line up across a grid row */
-  .card-actions { display: flex; gap: 8px; align-items: center; margin-top: auto; }
+  .card-actions { grid-area: actions; display: flex; gap: 8px; align-items: center; }
   .card-actions .btn { height: 30px; font-size: var(--fs-2); padding: 0 12px; }
   .card-actions .btn.icon { width: 30px; padding: 0; }
 
@@ -607,11 +615,24 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  /* Three named widths, one change each: 1200 stacks the options over the run card, 900 stacks the page, 640 is the phone. */
+  /* Three named widths, one change each: 1200 stacks the options over the run card and folds the repo rows into
+     cards, 900 stacks the page, 640 is the phone. */
   @media (max-width: 1200px) {
     :root { --pad: 16px; }
     .work { grid-template-columns: 1fr; }
     #options-card { order: -1; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); }
+    /* a card: the icon, the name, and Remove on top, then the branch, the arena rows, and the buttons at the bottom */
+    .repo-card {
+      grid-column: auto; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto 1fr auto;
+      grid-template-areas: "ico name rm" "meta meta meta" "arena arena arena" "actions actions actions";
+      gap: 12px 10px; align-items: start; padding: 16px;
+    }
+    .repo-head > div { max-width: none; }
+    .repo-meta .pill { max-width: 100%; }
+    .arena-list { justify-content: flex-start; border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 12px; }
+    .arena-row { flex-direction: column; align-items: stretch; gap: 4px; }
+    .card-actions { align-self: end; }
   }
   @media (max-width: 900px) {
     /* One column: the run first, then the sidebar with the facts and the commits. */
@@ -911,6 +932,7 @@
     plus: svg(paths("M5 12h14", "M12 5v14")),
     check: svg(paths("M20 6 9 17l-5-5")),
     x: svg(paths("M18 6 6 18", "m6 6 12 12")),
+    "trash-2": svg(paths("M10 11v6", "M14 11v6", "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", "M3 6h18", "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2")),
     "triangle-alert": svg(paths("m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3", "M12 9v4", "M12 17h.01")),
     minus: svg(paths("M5 12h14")),
     "circle-small": svg('<circle cx="12" cy="12" r="6"/>'),
@@ -1052,7 +1074,7 @@
   // button; the second confirms. No browser modal, and it works on a phone.
   function removeButton(repo) {
     let timer = 0;
-    const disarm = () => { btn.classList.remove("armed"); btn.replaceChildren(icon("x")); btn.setAttribute("aria-label", `Remove ${repo.name}`); };
+    const disarm = () => { btn.classList.remove("armed"); btn.replaceChildren(icon("trash-2")); btn.setAttribute("aria-label", `Remove ${repo.name}`); };
     const btn = el("button", {
       class: "btn ghost rm", title: "Remove this repo", "aria-label": `Remove ${repo.name}`,
       onclick: async (e) => {
@@ -1071,7 +1093,7 @@
           loadRepos();
         } catch (err) { toast(err.message); disarm(); }
       },
-    }, icon("x"));
+    }, icon("trash-2"));
     return btn;
   }
 
@@ -1082,7 +1104,7 @@
       el("div", { style: "min-width:0" },
         el("button", { type: "button", class: "repo-name", title: "Open the repo",
           onclick: (e) => { e.stopPropagation(); openRepo(repo.id); } }, repo.name)),
-      removeButton(repo));
+    );
 
     const meta = el("div", { class: "repo-meta" });
     if (!s.ok) {
@@ -1118,7 +1140,7 @@
       el("button", { class: "btn primary icon clean", "aria-label": "Clean & Push", title: "Clean & Push", onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, icon("broom-sparkles")));
 
     return el("div", { class: "repo-card", onclick: () => openRepo(repo.id) },
-      head, meta, arena, actions);
+      head, meta, arena, actions, removeButton(repo));
   }
 
   // fresh: ask the server to fetch every origin first. The dashboard Reload

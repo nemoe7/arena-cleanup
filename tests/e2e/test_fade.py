@@ -17,7 +17,7 @@ EDGE_END = "e => parseFloat(getComputedStyle(e).getPropertyValue('--edge-end'))"
 
 def test_the_scroll_panels_fade_at_their_edges(desktop: Walker) -> None:
   desktop.goto(1200)
-  desktop.click(".repo-card:has-text('shop-web')", 800)
+  desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
   page = desktop.page
   page.wait_for_selector("#commits .commit")
   for sel in PANELS:

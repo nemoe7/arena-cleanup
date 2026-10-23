@@ -1,4 +1,4 @@
-"""The arena row on a repo card: two lines at every width, no dots (docs/design.md)."""
+"""The arena row: one line in a dashboard row, two lines on a card, no dots (docs/design.md)."""
 
 from __future__ import annotations
 
@@ -24,11 +24,11 @@ def row_geometry(walker: Walker) -> tuple[float, float, float, float]:
   return name_top, tail_top, name_left, tail_left
 
 
-def test_the_desktop_card_row_puts_the_pills_under_the_name(desktop: Walker) -> None:
+def test_the_desktop_row_puts_the_pills_beside_the_name(desktop: Walker) -> None:
   desktop.goto(1200)
   name_top, tail_top, name_left, tail_left = row_geometry(desktop)
-  assert tail_top > name_top
-  assert tail_left == name_left
+  assert abs(tail_top - name_top) < 8, "one line"
+  assert tail_left > name_left
   assert desktop.count(f"{CARD} .arena-row .dot") == 0
   assert desktop.count(f"{CARD} .arena-tail .pill") >= 2
   # infra-tools shares the arena history with shop-web, and its main moved on
