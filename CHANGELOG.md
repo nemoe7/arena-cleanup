@@ -11,6 +11,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The container log stamps every line in the zone of `TZ`. It names the start and the end of each job, each repo add and remove, and each failed request. `-v` adds every request and every engine line.
 - A commit subject wraps to two lines, then an ellipsis. A tap on the row shows the whole subject.
+- The PR check reads the version in `pyproject.toml` at the head and at the base branch. The head must be exactly one step above the base: the next patch, minor, or major.
 
 ### Fixed
 
