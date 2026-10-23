@@ -218,6 +218,7 @@
   /* the bar is the control: one ring on the bar, none on the borderless field */
   .addbar .field:focus-visible { outline: none; }
   .addbar:has(.field:focus-visible) { border-color: var(--accent-hi); }
+  .field-error { margin: 8px 0 0; color: var(--err); font-size: var(--fs-1); }
   .field {
     width: 100%; height: 34px; background: var(--surface-2); border: 1px solid var(--line-2);
     border-radius: 8px; padding: 0 10px; color: var(--text); font-size: var(--fs-2); min-width: 0;
@@ -688,6 +689,7 @@
                placeholder="Paste a repo URL…" aria-label="Repo URL">
         <button class="btn primary" id="add-btn">Add repo</button>
       </div>
+      <p class="field-error" id="add-error" role="alert" hidden></p>
 
       <div class="grid" id="repo-grid"></div>
       <div class="empty-state" id="repo-empty" hidden>
@@ -1081,12 +1083,27 @@
     }
   }
 
+  // the add bar reports a bad source under the field, not in a toast
+  function addError(message) {
+    const input = $("add-source");
+    const note = $("add-error");
+    note.textContent = message;
+    note.hidden = !message;
+    if (message) {
+      input.setAttribute("aria-invalid", "true");
+      input.setAttribute("aria-describedby", "add-error");
+    } else {
+      input.removeAttribute("aria-invalid");
+      input.removeAttribute("aria-describedby");
+    }
+  }
+
   async function addRepo() {
     const input = $("add-source");
     const source = input.value.trim();
     if (!source) return;
     if (!/^(git@|ssh:|git:|https?:|(www\.)?github\.com\/)/i.test(source)) {
-      toast("Use a git URL: https://host/owner/repo.git, git@host:owner/repo.git, or github.com/owner/repo");
+      addError("Use a git URL: https://host/owner/repo.git, git@host:owner/repo.git, or github.com/owner/repo");
       input.focus();
       return;
     }
@@ -2049,6 +2066,7 @@
   // ---------------------------------------------------------------- wiring
   $("add-btn").onclick = addRepo;
   $("add-source").onkeydown = (ev) => { if (ev.key === "Enter") addRepo(); };
+  $("add-source").oninput = () => addError("");
   $("back").onclick = () => {
     state.repo = null;  // don't let a closed repo come back as a "return" target
     show("dashboard");

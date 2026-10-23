@@ -46,3 +46,17 @@ def test_a_failed_pr_check_fails_the_pr_phase_alone(desktop: Walker) -> None:
     "publish": "skip",
     "sync": "skip",
   }
+
+
+def test_the_add_bar_reports_a_bad_source_under_the_field(desktop: Walker) -> None:
+  desktop.goto(1200)
+  page = desktop.page
+  page.fill("#add-source", "not a url")
+  desktop.click("#add-btn", 200)
+  assert page.is_visible("#add-error")
+  assert page.get_attribute("#add-source", "aria-invalid") == "true"
+  assert page.get_attribute("#add-source", "aria-describedby") == "add-error"
+  assert page.eval_on_selector("#toast", "e => e.classList.contains('show')") is False
+  page.type("#add-source", "x")
+  assert page.is_hidden("#add-error")
+  assert page.get_attribute("#add-source", "aria-invalid") is None

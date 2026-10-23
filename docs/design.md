@@ -95,7 +95,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - The repo registry and settings live on the server under `ARENA_DATA`. The page keeps no state beyond the open view.
 - Defaults: PR check timeout 15 minutes, dry run off.
-- Validation: the add bar accepts a clone URL, a GitHub page address, or a path. The server answers errors as text the banner shows.
+- Validation: the add bar accepts a clone URL, a GitHub page address, or a path. Another shape gets an error line under the field, with `aria-invalid` and `aria-describedby` on the field until the next keystroke. The server answers errors as text the banner shows.
 - Retries: none automatic. Re-check and Reload buttons repeat a read.
 
 ## Evidence and handoff
