@@ -29,6 +29,7 @@ import tomllib
 import urllib.parse
 import uuid
 from collections import deque
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -64,6 +65,7 @@ LOG = logging.getLogger("arena-ui")
 
 COMMANDS = {"run"}
 MAX_LINES = 4000
+LATEST = ["jobs", "latest"]  # the route tail of the latest run.
 STATUS_TTL = 8.0  # seconds a repo status is reused before asking git again
 FETCH_PERIOD = 60.0  # every repo fetches origin when the clock hits a multiple
 FETCH_TIMEOUT = 120
@@ -141,6 +143,7 @@ class Registry:
     self.data = data_dir
     self.path = data_dir / "repos.json"
     self.clones = data_dir / "repos"
+    self.jobs = data_dir / "jobs"
     self.clones.mkdir(parents=True, exist_ok=True)
     self._lock = threading.Lock()
 
@@ -767,11 +770,18 @@ def generate_key(name: str, email: str) -> tuple[str, str]:
 class Job:
   """One CLI invocation, with its output kept for replay and follow-along."""
 
-  def __init__(self, argv: list[str], cwd: str, repo: dict[str, Any]) -> None:
+  def __init__(
+    self,
+    argv: list[str],
+    cwd: str,
+    repo: dict[str, Any],
+    on_done: Callable[[Job], None] | None = None,
+  ) -> None:
     self.id = uuid.uuid4().hex[:12]
     self.argv = argv
     self.cwd = cwd
     self.repo = {"id": repo["id"], "name": repo["name"]}
+    self.on_done = on_done
     self.started = time.time()
     self.finished: float | None = None
     self.exit: int | None = None
@@ -815,6 +825,11 @@ class Job:
       self.exit,
       self.finished - self.started,
     )
+    if self.on_done:
+      try:
+        self.on_done(self)
+      except OSError as exc:
+        LOG.warning("job %s could not be saved: %s", self.id, exc)
 
   def cancel(self) -> bool:
     proc = self._proc
@@ -856,8 +871,30 @@ JOBS: dict[str, Job] = {}
 JOBS_LOCK = threading.Lock()
 
 
-def new_job(argv: list[str], repo: dict[str, Any]) -> Job:
-  job = Job(argv, repo["path"], repo)
+def save_job(job: Job, jobs_dir: Path) -> None:
+  """Keep the finished run on disk, so a restart still shows the latest log."""
+  jobs_dir.mkdir(parents=True, exist_ok=True)
+  path = jobs_dir / f"{job.repo['id']}.json"
+  tmp = path.with_suffix(".tmp")
+  tmp.write_text(json.dumps(job.snapshot()), encoding="utf-8")
+  tmp.replace(path)
+
+
+def latest_job(repo_id_: str, jobs_dir: Path) -> dict[str, Any] | None:
+  """The newest run of a repo: from memory first, else the saved one, else None."""
+  with JOBS_LOCK:
+    own = [job for job in JOBS.values() if job.repo["id"] == repo_id_]
+  if own:
+    return max(own, key=lambda job: job.started).snapshot()
+  path = jobs_dir / f"{repo_id_}.json"
+  try:
+    return json.loads(path.read_text(encoding="utf-8"))
+  except (OSError, ValueError):
+    return None
+
+
+def new_job(argv: list[str], repo: dict[str, Any], jobs_dir: Path) -> Job:
+  job = Job(argv, repo["path"], repo, lambda done: save_job(done, jobs_dir))
   with JOBS_LOCK:
     JOBS[job.id] = job
   job.start()
@@ -1279,6 +1316,13 @@ class Handler(BaseHTTPRequestHandler):
         self._json(signing_report())
       elif path == "/api/settings":
         self._json(settings_report())
+      elif len(parts) == 5 and parts[:2] == ["api", "repos"] and parts[3:] == LATEST:
+        repo = self._repo(parts[2])
+        snap = latest_job(repo["id"], self.reg.jobs)
+        if snap is None:
+          self._error("no run yet", 404)
+        else:
+          self._json(snap)
       elif len(parts) == 3 and parts[0] == "api" and parts[1] == "jobs":
         job = JOBS.get(parts[2])
         if not job:
@@ -1337,6 +1381,7 @@ class Handler(BaseHTTPRequestHandler):
           self._error("no such repo", 404)
           return
         STATUS.drop(parts[2])
+        (self.reg.jobs / f"{parts[2]}.json").unlink(missing_ok=True)
         body = self._body()
         delete = bool(
           body.get("delete")
@@ -1353,7 +1398,7 @@ class Handler(BaseHTTPRequestHandler):
         argv = build_argv(body, repo)
         if repo.get("managed"):
           prepare_managed_clone(repo)
-        job = new_job(argv, repo)
+        job = new_job(argv, repo, self.reg.jobs)
         STATUS.drop(repo["id"])
         self._json({"id": job.id, "argv": argv[2:]}, 201)
       elif path == "/api/auth":

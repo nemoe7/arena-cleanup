@@ -402,6 +402,17 @@ def test_one_click_dry_run_job(ui: UI, world: World, ids: dict[str, str]) -> Non
   assert "data: " in ui.event_stream(f"/api/jobs/{job['id']}/events")
 
 
+def test_the_latest_run_of_a_repo_is_kept(ui: UI, ids: dict[str, str]) -> None:
+  latest = ui.get(f"/api/repos/{ids['repo']}/jobs/latest")
+  assert latest["id"] == ids["job"]
+  assert latest["status"] == "done"
+  assert len(latest["lines"]) > MIN_LOG_LINES, "the whole log, not a tail"
+  saved = json.loads((ui.data / "jobs" / f"{ids['repo']}.json").read_text())
+  assert saved["id"] == ids["job"]
+  assert saved["lines"] == latest["lines"]
+  assert ui.status("GET", "/api/repos/deadbeef1234/jobs/latest") == 404
+
+
 def test_reset_to_origin(ui: UI, world: World, ids: dict[str, str]) -> None:
   world.git("checkout", "-q", "main")
   world.commit("someone", "someone@example.com", "2024-02-01T10:00:00+08:00", "wip")
@@ -619,15 +630,22 @@ def test_the_icon_licence_ships_beside_the_page(ui: UI) -> None:
 def test_repos_survive_a_restart_and_can_be_forgotten(
   ui: UI, ids: dict[str, str]
 ) -> None:
+  newest = ui.get(f"/api/repos/{ids['repo']}/jobs/latest")["id"]
   ui.stop()
   ui.start()
   repos = ui.get("/api/repos")
   assert len(repos) == 2
   assert repos[0]["status"]["ok"] is True
+  latest = ui.get(f"/api/repos/{ids['repo']}/jobs/latest")
+  assert latest["id"] == newest, "the saved run outlives a restart"
+  assert latest["status"] == "done"
+  assert ui.get(f"/api/repos/{ids['clone']}/jobs/latest")["status"] == "done"
   removed = ui.post(f"/api/repos/{ids['clone']}/remove", {"delete": True})
   assert removed["removed"] == ids["clone"]
   assert len(ui.get("/api/repos")) == 1
   assert not Path(ids["clone_path"]).exists()
+  assert not (ui.data / "jobs" / f"{ids['clone']}.json").exists()
+  assert ui.status("GET", f"/api/repos/{ids['clone']}/jobs/latest") == 404
 
 
 LOG_LINE = re.compile(

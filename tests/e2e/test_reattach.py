@@ -1,0 +1,73 @@
+"""The repo view shows the latest run again: live it streams on, done it is painted."""
+
+from __future__ import annotations
+
+import pytest
+
+from scripts.walk import Demo, Walker
+
+pytestmark = pytest.mark.e2e
+
+ROWS = "#log .log-row"
+PARKED = "still running, waiting up to"
+WAIT_MS = 30000
+
+
+def log_includes(walker: Walker, token: str) -> None:
+  walker.page.wait_for_function(
+    f"() => document.querySelector('#log').innerText.includes({token!r})",
+    timeout=WAIT_MS,
+  )
+
+
+def phase_states(walker: Walker) -> list[str]:
+  return walker.page.eval_on_selector_all(
+    ".phase", "els => els.map((e) => e.dataset.state)"
+  )
+
+
+def test_a_finished_run_comes_back_after_a_page_reload(desktop: Walker) -> None:
+  desktop.goto(1200)
+  desktop.click(".repo-card:has-text('shop-web')", 800)
+  desktop.click('input[data-opt="dry_run"]', 0)
+  desktop.click("#start", 0)
+  status = desktop.wait_status("exit")
+  rows = desktop.count(ROWS)
+  assert rows > 0
+
+  desktop.goto(1200)
+  desktop.click(".repo-card:has-text('shop-web')", 800)
+  desktop.page.wait_for_function(
+    f"() => document.querySelectorAll('{ROWS}').length === {rows}", timeout=WAIT_MS
+  )
+  assert desktop.status_text() == status
+  assert "idle" not in phase_states(desktop)
+  assert not desktop.page.eval_on_selector("#start", "e => e.disabled")
+
+
+def test_a_live_run_streams_on_after_a_return_to_the_repo(
+  desktop: Walker, demo: Demo
+) -> None:
+  desktop.goto(1200)
+  desktop.click(".repo-card:has-text('docs-site')", 800)
+  demo.slow_checks(True)
+  try:
+    box = 'input[data-opt="dry_run"]'
+    if desktop.page.is_checked(box):
+      desktop.click(box, 150)
+    desktop.click("#start", 0)
+    log_includes(desktop, PARKED)
+
+    desktop.click("#back", 600)
+    assert desktop.visible("#view-dashboard")
+    desktop.click(".repo-card:has-text('docs-site')", 800)
+    assert desktop.wait_status("running") == "running"
+    log_includes(desktop, PARKED)
+    assert desktop.page.eval_on_selector("#start", "e => e.disabled")
+    assert "run" in phase_states(desktop)
+
+    desktop.click("#cancel", 0)
+    assert "cancelled" in desktop.wait_status("cancelled")
+  finally:
+    demo.slow_checks(False)
+  assert not desktop.page.eval_on_selector("#start", "e => e.disabled")

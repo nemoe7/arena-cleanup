@@ -881,6 +881,7 @@
     arena: "",
     job: null,
     es: null,
+    opened: 0,
     phases: [],
     phase: null,
     signing: null,
@@ -1198,9 +1199,36 @@
     $("log").replaceChildren();
     $("logmeta").textContent = "";
     $("jump").classList.remove("show");
+    // a run followed from another repo keeps going on the server; this view
+    // lets go of it and picks up the latest run of the repo it shows
+    if (state.es) { state.es.close(); state.es = null; }
+    state.job = null;
+    setStartEnabled(true);
     show("repo");
     refreshStatus();
     loadCommits();
+    reattach(repo.id, ++state.opened);
+  }
+
+  // The latest run of a repo: a live one streams on, a finished one is
+  // painted from its saved lines. A newer open or start wins over the answer.
+  async function reattach(repoId, opened) {
+    let snap;
+    try {
+      snap = await api(`/api/repos/${repoId}/jobs/latest`);
+    } catch {
+      return;
+    }
+    if (opened !== state.opened) return;
+    if (snap.status === "running") {
+      state.job = snap.id;
+      setStatus("running", "running");
+      setStartEnabled(false);
+      follow(snap.id);
+    } else {
+      appendLines(snap.lines || []);
+      paintDone(snap);
+    }
   }
 
   function dotFor(pr) {
@@ -1587,6 +1615,7 @@
 
   async function startJob(body) {
     if (state.job || !state.repo) return;
+    state.opened += 1;
     $("log").replaceChildren();
     $("jump").classList.remove("show");
     resetPhases();
@@ -1620,20 +1649,24 @@
     await startJob(state.arena ? { action: "clean", arena: state.arena } : { action: "clean" });
   }
 
+  function paintDone(snap) {
+    const secs = (snap.elapsed ?? 0).toFixed(1) + "s";
+    const cancelled = !!snap.cancelled;
+    const ok = snap.exit === 0;
+    finishPhases(ok, cancelled);
+    // a run you stopped yourself is not a failure, and -15 is not a word
+    setStatus(
+      cancelled ? "" : ok ? "ok" : "fail",
+      cancelled ? `cancelled in ${secs}` : `exit ${snap.exit} in ${secs}`,
+    );
+  }
+
   function follow(id) {
     const es = new EventSource(`/api/jobs/${id}/events`);
     state.es = es;
     const finish = (snap) => {
-      const secs = (snap.elapsed ?? 0).toFixed(1) + "s";
       state.job = null;
-      const cancelled = !!snap.cancelled;
-      const ok = snap.exit === 0;
-      finishPhases(ok, cancelled);
-      // a run you stopped yourself is not a failure, and -15 is not a word
-      setStatus(
-        cancelled ? "" : ok ? "ok" : "fail",
-        cancelled ? `cancelled in ${secs}` : `exit ${snap.exit} in ${secs}`,
-      );
+      paintDone(snap);
       setStartEnabled(true);
       refreshStatus();
       loadRepos();
