@@ -271,6 +271,8 @@ def test_add_by_path(ui: UI, world: World, ids: dict[str, str]) -> None:
   added = ui.post("/api/repos", {"source": str(world.work)})
   ids["repo"] = added["id"]
   assert added["id"]
+  code, _headers, body = ui.request("GET", f"/api/repos/{added['id']}/jobs/latest")
+  assert (code, body) == (204, b""), "no run yet is not an error"
   assert ui.post("/api/repos", {"source": str(world.work)})["id"] == added["id"]
   assert len(ui.get("/api/repos")) == 1
   assert added["status"]["ok"] is True, added

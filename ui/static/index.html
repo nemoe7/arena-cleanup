@@ -1220,7 +1220,7 @@
     } catch {
       return;
     }
-    if (opened !== state.opened) return;
+    if (opened !== state.opened || !snap.status) return; // a newer view, or no run yet
     if (snap.status === "running") {
       state.job = snap.id;
       setStatus("running", "running");

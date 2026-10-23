@@ -1368,6 +1368,11 @@ class Handler(BaseHTTPRequestHandler):
     self.end_headers()
     self.wfile.write(raw)
 
+  def _no_content(self) -> None:
+    self.send_response(204)
+    self.send_header("Cache-Control", "no-store")
+    self.end_headers()
+
   def _error(self, message: str, status: int = 400) -> None:
     if status < 500:
       LOG.warning("%s %s -> %s %s", self.command, self.path, status, message)
@@ -1507,7 +1512,7 @@ class Handler(BaseHTTPRequestHandler):
         repo = self._repo(parts[2])
         snap = latest_job(repo["id"], self.reg.jobs)
         if snap is None:
-          self._error("no run yet", 404)
+          self._no_content()  # a repo without runs is not an error
         else:
           self._json(snap)
       elif len(parts) == 3 and parts[0] == "api" and parts[1] == "jobs":

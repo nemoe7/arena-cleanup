@@ -14,6 +14,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The latest-run lookup of a repo without runs answers 204 with no body, so the
+  browser console stays clean on a fresh repo view.
 - The phase rows of the run card show counts instead of hint texts: the checks
   passed of the total, the commits collected, signing, and signed, and the tags
   moving, pushing, and pushed. The Publish row is named Push.
