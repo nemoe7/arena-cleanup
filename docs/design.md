@@ -42,7 +42,8 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 ### Type
 
-- Inter (variable) for text, JetBrains Mono for paths, hashes, and commands. Both ship as woff2 under `ui/static/fonts/`.
+- Inter (variable) for text, Monaspace Neon (variable) for paths, hashes, commands, and the log. Both ship as Latin subset woff2 files under `ui/static/fonts/`.
+- Both files are preloaded at the top of the head and painted with `font-display: block`. A reload never flashes a fallback face. Each pairs with a metric-matched local fallback face, Arial for Inter and Courier New for Monaspace Neon. Line boxes hold if a file fails to load.
 - Desktop ramp: `--fs-1` 12 px for metadata and mono details, `--fs-2` 13 px for controls and labels. `--fs-3` 14 px for body, names, and buttons, `--fs-4` 16 px for a view title, `--fs-5` 20 px for the page title.
 - Phone ramp at 640 px and below: body 12 to 15 px, fields 16 px, and title 19 px. The 16 px fields keep iOS from zooming.
 - Weights: 400, 520 to 640 for labels and names, 600 for headings and bold runs.
@@ -92,7 +93,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - Copy follows ASD-STE100: short sentences, one action per banner, no jargon beyond git and GitHub terms.
 - Locale: English only. Dates use the browser locale.
-- Fonts: Inter and JetBrains Mono, SIL Open Font License 1.1, see `ui/static/fonts/LICENSE.txt`. Icons: Lucide, ISC, see `ui/static/LICENSE-lucide.txt`.
+- Fonts: Inter and Monaspace Neon, SIL Open Font License 1.1, see `ui/static/fonts/LICENSE.txt`. Icons: Lucide, ISC, see `ui/static/LICENSE-lucide.txt`.
 
 ## Behavior and data
 
@@ -154,3 +155,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: the arena row on a card is two lines at every width, the name first. The dots before the name and in the PR pill are gone, the pill colour is the signal.
 - Accepted 2026-10-23: the ahead chip shows the net count and hides below 1. Absorbed commits read 0, and a default branch that moved on reads below 0.
 - Accepted 2026-10-23: the repo name is the control that opens the repo. The card lost its button role, so Remove and Clean & Push no longer sit inside a control.
+- Accepted 2026-10-23: Monaspace Neon replaces JetBrains Mono for monospace, Inter stays for prose. Both load by the offline fonts recipe: one subset variable file each, preloaded, `font-display: block`, and a metric-matched local fallback face.

@@ -20,6 +20,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The arena row on a repo card is two lines at every width. The branch name sits on the first line, the ahead chip and the PR pill on the second. The dots before the name and in the PR pill are gone.
 - The ahead chip shows the net count. That is its commits beyond the default branch, minus the default branch's commits beyond it. The chip hides below 1.
 - On a repo card the name is the button that opens the repo. The card has no button role any more, so the controls inside it stand on their own for assistive technology.
+- Monaspace Neon replaces JetBrains Mono for paths, hashes, commands, and the log. Both fonts are preloaded and painted with block, and each has a metric-matched local fallback face.
 
 ### Fixed
 

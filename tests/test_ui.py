@@ -207,11 +207,16 @@ def test_env_and_page(ui: UI) -> None:
   assert not re.search(r"<link[^>]*stylesheet", page), (
     "page needs an external stylesheet"
   )
-  assert "fonts/inter.woff2" in page
-  code, headers, font = ui.request("GET", "/fonts/inter.woff2")
-  assert code == 200
-  assert headers["content-type"] == "font/woff2"
-  assert len(font) > MIN_FONT_BYTES
+  for name in ("inter", "monaspace-neon"):
+    path = f"fonts/{name}.woff2"
+    assert f'<link rel="preload" href="{path}" as="font"' in page
+    assert page.index(f'href="{path}"') < page.index("<style>")
+    code, headers, font = ui.request("GET", "/" + path)
+    assert code == 200
+    assert headers["content-type"] == "font/woff2"
+    assert len(font) > MIN_FONT_BYTES
+  assert "font-display: swap" not in page
+  assert "Fallback" in page
   assert 'id="view-settings"' in page
   assert 'id="view-dashboard"' in page
 

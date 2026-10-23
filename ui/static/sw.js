@@ -7,7 +7,7 @@
  * state. If the network is gone, the shell still opens and says so.
  */
 
-const SHELL = "arena-shell-v1";
+const SHELL = "arena-shell-v2";
 const SHELL_FILES = [
   "/",
   "/manifest.webmanifest",
@@ -15,7 +15,7 @@ const SHELL_FILES = [
   "/icons/icon-512.png",
   "/icons/apple-touch-icon.png",
   "/fonts/inter.woff2",
-  "/fonts/jetbrains-mono.woff2",
+  "/fonts/monaspace-neon.woff2",
 ];
 
 self.addEventListener("install", (event) => {

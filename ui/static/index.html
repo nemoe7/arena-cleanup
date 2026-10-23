@@ -11,6 +11,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="arena">
 <meta name="application-name" content="arena-cleanup">
+<link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/monaspace-neon.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/icons/icon-192.png" sizes="192x192" type="image/png">
@@ -20,17 +22,39 @@
   /* Spacing scale: 1 (optical nudge) then every even step - 2 4 6 8 10 12 16
      20 24 32 40. Every padding, margin, and gap in this file lands on it;
      tools/measure.py fails the build when one drifts off. */
+  /* Bundled fonts: one subset variable file per family, preloaded in
+     the head, and painted with block so a reload never flashes a fallback.
+     Each face pairs with a metric-matched local fallback, so line boxes and
+     widths hold if a file fails to load. */
   @font-face {
     font-family: "Inter";
     src: url("fonts/inter.woff2") format("woff2");
     font-weight: 100 900;
-    font-display: swap;
+    font-style: normal;
+    font-display: block;
   }
   @font-face {
-    font-family: "JetBrains Mono";
-    src: url("fonts/jetbrains-mono.woff2") format("woff2");
-    font-weight: 100 800;
-    font-display: swap;
+    font-family: "Inter Fallback";
+    src: local("Arial"), local("Liberation Sans");
+    size-adjust: 107.64%;
+    ascent-override: 90.49%;
+    descent-override: 22.48%;
+    line-gap-override: 0%;
+  }
+  @font-face {
+    font-family: "Monaspace Neon";
+    src: url("fonts/monaspace-neon.woff2") format("woff2");
+    font-weight: 200 800;
+    font-style: normal;
+    font-display: block;
+  }
+  @font-face {
+    font-family: "Monaspace Neon Fallback";
+    src: local("Courier New"), local("Liberation Mono");
+    size-adjust: 103.32%;
+    ascent-override: 91.46%;
+    descent-override: 19.36%;
+    line-gap-override: 9.68%;
   }
 
   :root {
@@ -52,8 +76,8 @@
     --warn: #d6a032;
     --err: #f0574f;
     --info: #5aa2f7;
-    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: "Inter", "Inter Fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --mono: "Monaspace Neon", "Monaspace Neon Fallback", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     --pad: 20px;
     --fs-1: 12px;
     --fs-2: 13px;
