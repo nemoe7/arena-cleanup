@@ -77,6 +77,31 @@ def test_the_log_toggle_turns_its_caret(desktop: Walker) -> None:
   assert page.eval_on_selector(caret, "e => getComputedStyle(e).transform") != "none"
 
 
+LONG_SUBJECT = ".commit:has-text('fixed sleep in the flaky config timing test')"
+
+
+def test_a_long_subject_clamps_to_two_lines_until_a_tap(phone: Walker) -> None:
+  phone.goto(1200)
+  phone.click(".repo-card", 800)
+  page = phone.page
+  subject = f"{LONG_SUBJECT} .subject"
+  line = page.eval_on_selector(
+    subject, "e => parseFloat(getComputedStyle(e).lineHeight)"
+  )
+  shown = page.eval_on_selector(subject, "e => e.getBoundingClientRect().height")
+  assert line < shown <= 2 * line + 1, (line, shown)
+  assert page.get_attribute(LONG_SUBJECT, "aria-expanded") == "false"
+  phone.click(LONG_SUBJECT, 200)
+  assert page.get_attribute(LONG_SUBJECT, "aria-expanded") == "true"
+  whole = page.eval_on_selector(subject, "e => e.getBoundingClientRect().height")
+  assert whole > 2 * line + 1, (line, whole)  # the clamp did cut a third line
+  phone.click(LONG_SUBJECT, 200)
+  assert page.get_attribute(LONG_SUBJECT, "aria-expanded") == "false"
+  assert (
+    page.eval_on_selector(subject, "e => e.getBoundingClientRect().height") == shown
+  )
+
+
 SIGNING_API = "**/api/signing"
 
 

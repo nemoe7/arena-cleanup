@@ -471,11 +471,17 @@
   .commits { display: flex; flex-direction: column; }
   .commit {
     display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 8px;
-    align-items: center; padding: 8px 6px; border-top: 1px solid var(--line); font-size: var(--fs-2);
+    align-items: baseline; padding: 8px 6px; border-top: 1px solid var(--line); font-size: var(--fs-2);
+    cursor: pointer;
   }
   .commit:first-child { border-top: 0; }
   .commit .sha { font: var(--fs-1) var(--mono); color: var(--dim); }
-  .commit .subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* two lines, then an ellipsis; a tap on the row shows the whole subject */
+  .commit .subject {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+    overflow: hidden; overflow-wrap: anywhere;
+  }
+  .commit[aria-expanded="true"] .subject { display: block; }
   .commit .meta {
     grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; color: var(--dim);
     font-size: var(--fs-1); white-space: nowrap; flex-wrap: wrap;
@@ -1652,15 +1658,19 @@
         box.replaceChildren(el("div", { class: "hint", style: "padding:8px 6px" }, "This branch has no commits yet."));
         return;
       }
-      box.replaceChildren(...data.commits.map((c) =>
-        el("div", { class: "commit" },
+      box.replaceChildren(...data.commits.map((c) => {
+        const row = el("div", { class: "commit", role: "button", tabindex: "0", "aria-expanded": "false",
+          onclick: () => row.setAttribute("aria-expanded", String(row.getAttribute("aria-expanded") !== "true")),
+          onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); row.click(); } } },
           el("span", { class: "sha" }, c.short),
           el("span", { class: "subject", title: c.subject }, c.subject),
           el("span", { class: "meta" },
             el("span", { class: c.signed ? "sig" : "sig none", title: c.signed ? "Signed commit" : "Unsigned commit" },
               icon(c.signed ? "check" : "dash")),
             el("span", {}, c.author),
-            el("span", {}, when(c.date))))));
+            el("span", {}, when(c.date))));
+        return row;
+      }));
     } catch (err) {
       $("commits-hint").textContent = "";
       box.replaceChildren(el("div", { class: "hint", style: "padding:8px 6px" }, err.message));

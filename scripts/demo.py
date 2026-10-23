@@ -160,7 +160,11 @@ MAIN_HISTORY = [
   ("feat: structured logging", "log.py", OTHER),
   ("docs: configuration reference", "README.md", OTHER),
   ("chore: bump the dependencies", "pyproject.toml", OTHER),
-  ("fix: flaky timing test", "tests/test_config.py", ME),
+  (
+    "fix(tests): wait for the clock instead of a fixed sleep in the flaky config timing test on slow runners",
+    "tests/test_config.py",
+    ME,
+  ),
 ]
 # the arena branch: one session of mixed authorship, with bodies to trim
 BRANCH_HISTORY = [
