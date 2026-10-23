@@ -412,19 +412,6 @@ def keyboard_backspace_removes_a_chip(w: Walker, demo: Demo) -> None:
 
 
 @step("desktop")
-def options_card_folds_as_a_whole(w: Walker, demo: Demo) -> None:
-  assert w.page.is_visible("#options")
-  assert w.page.is_hidden("#options-sum")
-  w.click("#options-fold", 300)
-  assert w.page.is_hidden("#options")
-  assert w.page.is_visible("#options-sum")
-  assert w.page.is_visible("#branch-now")
-  assert w.page.get_attribute("#options-fold", "aria-expanded") == "false"
-  w.click("#options-fold", 300)
-  assert w.page.is_visible("#options")
-
-
-@step("desktop")
 def tree_selector_adds_a_folder_chip(w: Walker, demo: Demo) -> None:
   w.click("#browse", 500)
   assert w.count("#tree .tree-row") > 0
@@ -488,8 +475,8 @@ def cancel_a_run_in_flight(w: Walker, demo: Demo) -> None:
       "() => document.querySelector('#log').innerText.includes('still running, waiting up to')",
       timeout=30000,
     )
-    assert w.visible("#cancel")
-    w.click("#cancel", 0)
+    assert w.text("#start") == "Cancel", "the one button turned into Cancel"
+    w.click("#start", 0)
     status = w.wait_status("cancelled", timeout=20000)
   finally:
     demo.slow_checks(False)

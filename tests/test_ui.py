@@ -811,9 +811,14 @@ def test_the_tree_route_lists_one_level_of_head(
   page = ui.text("/")
   assert 'id="browse"' in page
   assert 'id="tree" role="tree"' in page
-  assert 'id="options-fold" aria-expanded="true" aria-controls="options"' in page
-  assert 'id="options-sum"' in page
-  assert not re.search(r"branch-opt|opt-sum|<details", page), "the branch-only fold"
+  assert 'id="start" data-state="idle"' in page, "one run button with two states"
+  assert not re.search(r"options-fold|options-sum|fold-head|<details", page), (
+    "the options card does not fold"
+  )
+  cards = [
+    page.index(f'id="{c}"') for c in ("run-card", "options-card", "console-card")
+  ]
+  assert cards == sorted(cards), "run card, options card, then the log card"
 
 
 PAGE = ROOT / "ui" / "static" / "index.html"

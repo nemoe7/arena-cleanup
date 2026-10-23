@@ -7,10 +7,16 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.2.1] - 2026-10-23
 
+### Changed
+
+- The repo view puts the run card left and the options card right, with the log below both at full width. The main column is pinned to the window. The log takes the height that is left, down to a 160 px floor, so only the log scrolls. At 1200 px and below the two cards stack, options first.
+- Clean & Push and Cancel are one button with two states, in the options card head. It reads Cancel while a run is live. The options card no longer folds, and the options sit in one column at every width.
+
 ### Fixed
 
 - The server runs one fetch of every origin at a time. A fetch within ten seconds of the last one is skipped, except from the Reload button. A Reload during a running fetch waits for it and skips its own. Each fetch swaps fresh statuses into the cache instead of clearing it. A dashboard that asks in the meantime gets cards instead of a gap.
 - The dashboard shows a Loading repos line until the first answer from the server. Before, the page opened on an empty space.
+- The repo view no longer scrolls the page on a desktop window. The cards and a 340 px log were taller than a 775 px window.
 - The PR pill counts the checks the way the engine reads them. One entry per check name, and a pass wins over a superseded failed or cancelled attempt. Before, a cancelled older run of a check kept the pill red while the run passed.
 
 ## [0.2.0] - 2026-10-23

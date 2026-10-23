@@ -1,4 +1,4 @@
-"""Three named widths, one change each: 1200 folds the options, 900 stacks the page, 640 is the phone."""
+"""Three named widths, one change each: 1200 stacks the cards, 900 stacks the page, 640 is the phone."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ PAGE = ROOT / "ui" / "static" / "index.html"
 PROBE = """() => {
   const cols = (s) => getComputedStyle(document.querySelector(s)).gridTemplateColumns.split(' ').length;
   return {
+    workColumns: cols('.work'),
     optionColumns: cols('#options'),
     detailColumns: cols('.detail'),
     pad: getComputedStyle(document.documentElement).getPropertyValue('--pad').trim(),
@@ -49,13 +50,14 @@ def test_each_named_width_carries_one_change(
 ) -> None:
   above = probe(browser, demo, width + 1)
   at = probe(browser, demo, width)
+  assert above["optionColumns"] == at["optionColumns"] == 1, "one column of options"
   if width == 1200:
-    assert (above["optionColumns"], at["optionColumns"]) == (2, 1)
+    assert (above["workColumns"], at["workColumns"]) == (2, 1)
     assert (above["pad"], at["pad"]) == ("20px", "16px")
     assert above["detailColumns"] == at["detailColumns"] == 2
   if width == 900:
     assert (above["detailColumns"], at["detailColumns"]) == (2, 1)
-    assert above["optionColumns"] == at["optionColumns"] == 1
+    assert above["workColumns"] == at["workColumns"] == 1
     assert above["body"] == at["body"]
   if width == 640:
     assert (above["body"], at["body"]) == ("14px", "15px")

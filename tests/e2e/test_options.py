@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from itertools import pairwise
+
 from scripts.walk import Walker
 
 TAP_TARGET_PX = 44
@@ -36,17 +38,16 @@ def test_the_arena_option_shows_the_branch_and_the_day(desktop: Walker) -> None:
     assert title.startswith(value) and ":" in title, title
 
 
-def test_the_option_rows_share_their_lines(desktop: Walker) -> None:
+def test_the_option_rows_stack_in_one_column(desktop: Walker) -> None:
   desktop.goto(1200)
   desktop.click(".repo-card", 800)
   edges = "e => { const b = e.getBoundingClientRect(); return [b.top, b.bottom]; }"
-  rows = {
-    name: desktop.page.eval_on_selector(f"#{name}", edges)
+  rows = [
+    desktop.page.eval_on_selector(f"#{name}", edges)
     for name in ("opt-branch", "opt-paths", "opt-timeout", "checks")
-  }
-  assert rows["opt-timeout"] == rows["opt-branch"]
-  assert rows["checks"] == rows["opt-paths"]
-  assert rows["opt-paths"][0] == rows["opt-branch"][1]
+  ]
+  for above, below in pairwise(rows):
+    assert below[0] == above[1], "each row starts on the line the one above ends"
 
 
 POINTER_TARGET_PX = 24

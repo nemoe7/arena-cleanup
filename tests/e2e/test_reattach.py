@@ -63,11 +63,12 @@ def test_a_live_run_streams_on_after_a_return_to_the_repo(
     desktop.click(".repo-card:has-text('docs-site')", 800)
     assert desktop.wait_status("running") == "running"
     log_includes(desktop, PARKED)
-    assert desktop.page.eval_on_selector("#start", "e => e.disabled")
+    assert desktop.text("#start") == "Cancel", "one button, in its running state"
     assert "run" in phase_states(desktop)
 
-    desktop.click("#cancel", 0)
+    desktop.click("#start", 0)
     assert "cancelled" in desktop.wait_status("cancelled")
   finally:
     demo.slow_checks(False)
+  assert desktop.text("#start") == "Clean & Push"
   assert not desktop.page.eval_on_selector("#start", "e => e.disabled")

@@ -272,8 +272,11 @@ def flow_board(_: dict[str, bytes]) -> str:
     + '<div class="bar" style="align-items:flex-start">'
     + block("facts · arena branches · commits", height=150, width="110px")
     + '<div class="col" style="gap:8px;flex:1">'
-    + block("options card", height=60, width="300px")
-    + block("run card: 5 phases, log", hi=True, height=56, width="300px")
+    + '<div class="bar" style="gap:8px">'
+    + block("run card: 5 phases", hi=True, height=56, width="146px")
+    + block("options card", height=56, width="146px")
+    + "</div>"
+    + block("log of the latest run", height=40, width="300px")
     + "</div></div></div>"
   )
   settings = (
@@ -321,22 +324,16 @@ def flow_board(_: dict[str, bytes]) -> str:
 
 
 def wireframe_board(_: dict[str, bytes]) -> str:
-  column = '<div class="col" style="flex:1;gap:8px;align-items:stretch">'
   options = (
-    block(
-      "Options "
-      + icon("chevron-right", "ico-svg down")
-      + " — main (default) · defaults",
-      height=28,
-    )
-    + '<div class="bar" style="align-items:flex-start;gap:10px">'
-    + column
+    '<div class="bar">'
+    + block("Options", width="70px")
+    + '<div class="grow"></div>'
+    + block("Clean & Push | Cancel while a run is live", hi=True, width="auto")
+    + "</div>"
     + block("Target branch | main (default)", height=28)
     + block("Arena branch | newest first, with two or more", height=28)
     + block("Remove paths | one chip per path | Browse", height=28)
     + block("HEAD tree — folders first, a click adds the chip", height=28)
-    + "</div>"
-    + column
     + block("PR check timeout | slider, 0 to 120 min | 15 min", height=28)
     + '<div class="bar" style="flex-wrap:wrap">'
     + "".join(
@@ -349,14 +346,11 @@ def wireframe_board(_: dict[str, bytes]) -> str:
         ("Force Push", False),
       )
     )
-    + "</div></div></div>"
+    + "</div>"
   )
   run = (
     '<div class="bar">'
     + block(icon("circle-small") + "&nbsp;idle", width="60px")
-    + '<div class="grow"></div>'
-    + block("Clean & Push", hi=True, width="120px")
-    + block("Cancel", width="60px")
     + "</div>"
     + "".join(
       block(f"{n} — {s}", height=24)
@@ -368,11 +362,14 @@ def wireframe_board(_: dict[str, bytes]) -> str:
         ("Finish", "back to the default branch"),
       )
     )
-    + '<div class="bar">'
+  )
+  log = (
+    '<div class="bar">'
     + block("n lines", width="56px")
     + '<div class="grow"></div>'
     + block("copy", width="36px")
     + "</div>"
+    + block("the log of the latest run, fills the height that is left", height=40)
   )
   sidebar = (
     block("Repo — branch · default", height=24)
@@ -389,17 +386,20 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     + '<div class="bar" style="align-items:flex-start">'
     + f'<div class="scr" style="width:220px">{sidebar}</div>'
     + '<div class="col" style="gap:8px;flex:1">'
-    + f'<div class="scr" style="width:auto">{options}</div>'
-    + f'<div class="scr" style="width:auto">{run}</div>'
+    + '<div class="bar" style="align-items:flex-start;gap:8px">'
+    + f'<div class="scr" style="width:auto;flex:1">{run}</div>'
+    + f'<div class="scr" style="width:auto;flex:1">{options}</div>'
+    + "</div>"
+    + f'<div class="scr" style="width:auto">{log}</div>'
     + "</div></div></div>"
   )
   actions = (
     '<table class="sheet"><tr><td class="mono">Clean &amp; Push</td>'
-    "<td>starts the run with the options shown</td></tr>"
-    '<tr><td class="mono">Cancel</td><td>terminates the child process, the log says cancelled</td></tr>'
+    "<td>starts the run with the options shown, in the options card head</td></tr>"
+    '<tr><td class="mono">Cancel</td><td>the same button while a run is live, terminates the child process</td></tr>'
     '<tr><td class="mono">Copy log</td><td>a glyph button, puts the whole log on the clipboard</td></tr>'
     '<tr><td class="mono">Ctrl + Enter</td><td>starts the run from anywhere</td></tr>'
-    '<tr><td class="mono">1200 px</td><td>the options fold to one column</td></tr>'
+    '<tr><td class="mono">1200 px</td><td>the options card stacks over the run card</td></tr>'
     '<tr><td class="mono">900 px</td><td>the sidebar stacks below the run card</td></tr>'
     '<tr><td class="mono">640 px</td><td>primary actions stick to the bottom, one column</td></tr></table>'
   )
@@ -454,9 +454,9 @@ def states_board(_: dict[str, bytes]) -> str:
   run_states = (
     '<table class="sheet">'
     f"<tr><td>{status('', 'idle')}</td><td>before Start, the phase list is grey</td></tr>"
-    f"<tr><td>{status('running', 'running')}</td><td>the LED pulses, Cancel is enabled</td></tr>"
-    f"<tr><td>{status('ok', 'exit 0')}</td><td>every phase done, the log stays folded</td></tr>"
-    f"<tr><td>{status('fail', 'exit 1')}</td><td>the failing phase is red, the log opens</td></tr>"
+    f"<tr><td>{status('running', 'running')}</td><td>the LED pulses, the button reads Cancel</td></tr>"
+    f"<tr><td>{status('ok', 'exit 0')}</td><td>every phase done, the log below holds the run</td></tr>"
+    f"<tr><td>{status('fail', 'exit 1')}</td><td>the failing phase is red, the log shows the error</td></tr>"
     f"<tr><td>{status('fail', 'cancelled')}</td><td>Cancel pressed, distinct from a crash</td></tr>"
     "</table>"
   )
