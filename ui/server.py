@@ -795,18 +795,24 @@ class Avatars:
 
 
 def commits_report(
-  repo: dict[str, Any], limit: int = 30, avatars: Avatars | None = None
+  repo: dict[str, Any],
+  limit: int = 30,
+  avatars: Avatars | None = None,
+  before: str | None = None,
 ) -> dict[str, Any]:
   """The most recent commits on HEAD, with their signature state and picture.
 
   The run card shows which commits a cleanup produced. This is the git answer,
-  read after the run rather than parsed out of the log.
+  read after the run rather than parsed out of the log. `before` names the
+  last commit of the page the caller has, so the answer is the next older page.
+  `next` is the cursor for the page after this one, or None at the end.
   """
   cwd = repo["path"]
   branch = git("rev-parse", "--abbrev-ref", "HEAD", cwd=cwd) or "(detached)"
   total = git("rev-list", "--count", "HEAD", cwd=cwd).strip()
   fmt = "%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%aI%x1f%G?"
-  out = git("log", f"-{limit}", f"--format={fmt}", "HEAD", cwd=cwd)
+  count = limit + 1 if before else limit
+  out = git("log", f"-{count}", f"--format={fmt}", before or "HEAD", cwd=cwd)
   commits = []
   emails: dict[str, str] = {}
   for line in out.splitlines():
@@ -814,6 +820,8 @@ def commits_report(
     if len(fields) != 7:
       continue
     sha, short, subject, author, email, date, sig = fields
+    if before and not commits and sha.startswith(before):
+      continue
     emails.setdefault(email, sha)
     commits.append(
       {
@@ -829,10 +837,12 @@ def commits_report(
   pictures = avatars.resolve(emails, lambda: github_slug(repo)) if avatars else {}
   for commit in commits:
     commit["avatar"] = pictures.get(commit.pop("email"))
+  commits = commits[:limit]
   return {
     "branch": branch,
     "total": int(total) if total.isdigit() else len(commits),
     "shown": len(commits),
+    "next": commits[-1]["sha"] if len(commits) == limit else None,
     "commits": commits,
   }
 
@@ -1466,7 +1476,11 @@ class Handler(BaseHTTPRequestHandler):
           limit = max(1, min(100, int(query.get("limit", ["30"])[0])))
         except ValueError:
           limit = 30
-        self._json(commits_report(repo, limit, self.reg.avatars))
+        before = query.get("before", [None])[0]
+        if before is not None and not re.fullmatch(r"[0-9a-f]{7,40}", before):
+          self._error("bad cursor", 400)
+          return
+        self._json(commits_report(repo, limit, self.reg.avatars, before))
       elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "tree":
         repo = self._repo(parts[2])
         query = urllib.parse.parse_qs(

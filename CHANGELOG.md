@@ -12,12 +12,17 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The dashboard sorts the repos: newest arena activity first, name A to Z,
   or PR state with failures first. The select sits beside Reload and the
   browser keeps the choice.
+- The commit list pages 30 at a time. A scroll near the end loads the older
+  page through a `before` cursor on the commits API, which answers `next`.
+  Reload restarts at the first page.
 - The commit list and the log fade 12 px at a scrolled edge, the nuu
   scroll-edge fade. It needs scroll-driven animations and no reduced-motion
   preference, and a panel that does not scroll stays unmasked.
 
 ### Changed
 
+- The commit hint reads the commit count alone, with thousands separators,
+  in place of `shown of total on branch`.
 - Every Clean & Push button carries the broom glyph, and its sparkles appear on
   hover and focus. The dashboard card button is the glyph alone, named in
   `aria-label` and `title`. The repo view button leads with the glyph.

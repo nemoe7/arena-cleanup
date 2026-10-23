@@ -1836,37 +1836,61 @@
     return d.toLocaleString(undefined, parts);
   }
 
+  const COMMITS_PAGE = 30;
+  function commitRow(c) {
+    const row = el("div", { class: "commit", role: "button", tabindex: "0", "aria-expanded": "false",
+      onclick: () => row.setAttribute("aria-expanded", String(row.getAttribute("aria-expanded") !== "true")),
+      onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); row.click(); } } },
+      el("span", { class: "sha" }, c.short),
+      el("span", { class: "subject", title: c.subject }, c.subject),
+      el("span", { class: "meta" },
+        el("span", { class: c.signed ? "sig" : "sig none", title: c.signed ? "Signed commit" : "Unsigned commit" },
+          icon(c.signed ? "check" : "dash")),
+        c.avatar
+          ? el("img", { class: "avatar", src: `/api/avatars/${c.avatar}`, alt: "", width: "20", height: "20", loading: "lazy" })
+          : el("span", { class: "avatar none", "aria-hidden": "true" }, icon("user")),
+        el("span", {}, c.author),
+        el("span", {}, when(c.date))));
+    return row;
+  }
+
+  // the first page; a scroll near the end of the list appends the older pages
   async function loadCommits() {
     if (!state.repo) return;
     const box = $("commits");
+    state.commitsNext = null;
     try {
-      const data = await api(`/api/repos/${state.repo.id}/commits?limit=20`);
-      $("commits-hint").textContent = data.total
-        ? `${data.shown} of ${data.total} on ${data.branch}`
-        : `nothing on ${data.branch}`;
+      const data = await api(`/api/repos/${state.repo.id}/commits?limit=${COMMITS_PAGE}`);
+      $("commits-hint").textContent = data.total.toLocaleString();
       if (!data.commits.length) {
         box.replaceChildren(el("div", { class: "hint", style: "padding:8px 6px" }, "This branch has no commits yet."));
         return;
       }
-      box.replaceChildren(...data.commits.map((c) => {
-        const row = el("div", { class: "commit", role: "button", tabindex: "0", "aria-expanded": "false",
-          onclick: () => row.setAttribute("aria-expanded", String(row.getAttribute("aria-expanded") !== "true")),
-          onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); row.click(); } } },
-          el("span", { class: "sha" }, c.short),
-          el("span", { class: "subject", title: c.subject }, c.subject),
-          el("span", { class: "meta" },
-            el("span", { class: c.signed ? "sig" : "sig none", title: c.signed ? "Signed commit" : "Unsigned commit" },
-              icon(c.signed ? "check" : "dash")),
-            c.avatar
-              ? el("img", { class: "avatar", src: `/api/avatars/${c.avatar}`, alt: "", width: "20", height: "20", loading: "lazy" })
-              : el("span", { class: "avatar none", "aria-hidden": "true" }, icon("user")),
-            el("span", {}, c.author),
-            el("span", {}, when(c.date))));
-        return row;
-      }));
+      box.replaceChildren(...data.commits.map(commitRow));
+      box.scrollTop = 0;
+      state.commitsNext = data.next;
     } catch (err) {
       $("commits-hint").textContent = "";
       box.replaceChildren(el("div", { class: "hint", style: "padding:8px 6px" }, err.message));
+    }
+  }
+
+  async function loadOlderCommits() {
+    const box = $("commits");
+    const next = state.commitsNext;
+    if (!next || state.commitsLoading) return;
+    if (box.scrollTop + box.clientHeight < box.scrollHeight - 160) return;
+    state.commitsLoading = true;
+    try {
+      const data = await api(`/api/repos/${state.repo.id}/commits?limit=${COMMITS_PAGE}&before=${next}`);
+      // a reload or another repo meanwhile: that list owns the box now
+      if (state.commitsNext !== next) return;
+      box.append(...data.commits.map(commitRow));
+      state.commitsNext = data.next;
+    } catch (err) {
+      toast(err.message);
+    } finally {
+      state.commitsLoading = false;
     }
   }
 
@@ -2338,6 +2362,7 @@
     loadCommits();
     toast("reloaded");
   };
+  $("commits").onscroll = loadOlderCommits;
 
   $("repos-refresh").onclick = async () => {
     const btn = $("repos-refresh");

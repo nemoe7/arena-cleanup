@@ -819,6 +819,20 @@ def test_the_commit_list_and_the_page_shell(ui: UI, ids: dict[str, str]) -> None
   assert ui.status("GET", f"/api/repos/{repo}/commits?limit=100000") == 200
   assert ui.status("GET", f"/api/repos/{repo}/commits?limit=abc") == 200
   assert ui.status("GET", "/api/repos/deadbeef1234/commits") == 404
+  # paging: `next` names the last commit of a full page, `before` continues after it
+  first = ui.get(f"/api/repos/{repo}/commits?limit=1")
+  assert first["next"] == first["commits"][0]["sha"]
+  second = ui.get(f"/api/repos/{repo}/commits?limit=1&before={first['next']}")
+  assert [c["sha"] for c in second["commits"]] == [commits["commits"][1]["sha"]]
+  assert second["total"] == first["total"]
+  everything = ui.get(f"/api/repos/{repo}/commits?limit=100")
+  assert everything["next"] is None, "the last page carries no cursor"
+  tail = ui.get(
+    f"/api/repos/{repo}/commits?limit=100&before={everything['commits'][-1]['sha']}"
+  )
+  assert tail["commits"] == [] and tail["next"] is None
+  assert ui.status("GET", f"/api/repos/{repo}/commits?before=nope") == 400
+  assert ui.get(f"/api/repos/{repo}/commits?before={'0' * 40}")["commits"] == []
 
   page = ui.text("/")
   assert 'id="commits"' in page
