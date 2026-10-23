@@ -337,8 +337,10 @@
   .card-body { padding: 16px; }
 
   /* two columns: a field with its description needs about 360 px, which four cells never give */
-  .options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
-  .opt-col { min-width: 0; }
+  /* one grid, so the rows of both columns share their heights and lines */
+  .options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: row dense; gap: 0 20px; }
+  #opt-branch, #opt-arena, #opt-paths { grid-column: 1; }
+  #opt-timeout, #checks { grid-column: 2; }
   .opt { padding: 8px 2px; border-bottom: 1px solid var(--line); min-width: 0; }
   .opt[hidden] { display: none; }
   /* the settings page labels its token field with a label and a short note */
@@ -350,7 +352,7 @@
   .opt.row .tree { grid-column: 1 / -1; }
   .slider { width: 100%; margin: 0; accent-color: var(--accent); }
   .readout { font: var(--fs-1) var(--mono); color: var(--muted); min-width: 6ch; text-align: right; }
-  .checks { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 10px 2px; }
+  .checks { display: flex; flex-wrap: wrap; align-content: start; gap: 8px 20px; padding: 10px 2px; }
   .check { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: var(--fs-2); cursor: pointer; }
   /* the box is drawn here, not by the browser: Lucide check, house radius, accent fill */
   .check input {
@@ -552,7 +554,8 @@
     .detail { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: start; }
     .sidebar { order: 2; position: static; height: auto; overflow: visible; border-right: 0; border-top: 1px solid var(--line); }
     .side-commits .commits { overflow: visible; min-height: 0; }  /* one scroll: the page */
-    .options { grid-template-columns: 1fr; }
+    .options { grid-template-columns: 1fr; grid-auto-flow: row; }
+    #opt-branch, #opt-arena, #opt-paths, #opt-timeout, #checks { grid-column: auto; }
     .grid { grid-template-columns: 1fr; }
   }
   @media (max-width: 720px) {
@@ -722,37 +725,33 @@
             <span class="caret"><span class="ico-svg" data-icon="chevron-right" aria-hidden="true"></span></span>
           </button>
           <div class="card-body options" id="options">
-            <div class="opt-col">
-              <div class="opt row" id="opt-branch">
-                <label for="branch">Target branch</label>
-                <select class="field mono-field" id="branch" title="The default branch runs via the arena branch. A named branch is cleaned in place."></select>
-              </div>
-              <div class="opt row" id="opt-arena" hidden>
-                <label for="arena">Arena branch</label>
-                <select class="field mono-field" id="arena" title="The session this run cleans, newest activity first."></select>
-              </div>
-              <div class="opt row" id="opt-paths">
-                <label for="pathin">Remove paths</label>
-                <div class="chips" id="chips" title="git filter-repo removes each path from every ref.">
-                  <input id="pathin" placeholder="add a file or folder…" spellcheck="false" autocomplete="off" aria-label="Add a path to remove">
-                </div>
-                <button type="button" class="link-btn" id="browse" aria-expanded="false" aria-controls="tree">Browse</button>
-                <div class="tree" id="tree" role="tree" aria-label="Files at HEAD" hidden></div>
-              </div>
+            <div class="opt row" id="opt-branch">
+              <label for="branch">Target branch</label>
+              <select class="field mono-field" id="branch" title="The default branch runs via the arena branch. A named branch is cleaned in place."></select>
             </div>
-            <div class="opt-col">
-              <div class="opt row" id="opt-timeout">
-                <label for="timeout">PR check timeout</label>
-                <input class="slider" id="timeout" type="range" min="0" max="9" step="1" value="3" title="How long the run waits for the pull request checks; 0 does not wait.">
-                <output class="readout" id="timeout-out" for="timeout">15 min</output>
+            <div class="opt row" id="opt-arena" hidden>
+              <label for="arena">Arena branch</label>
+              <select class="field mono-field" id="arena" title="The session this run cleans, newest activity first."></select>
+            </div>
+            <div class="opt row" id="opt-paths">
+              <label for="pathin">Remove paths</label>
+              <div class="chips" id="chips" title="git filter-repo removes each path from every ref.">
+                <input id="pathin" placeholder="add a file or folder…" spellcheck="false" autocomplete="off" aria-label="Add a path to remove">
               </div>
-              <div class="opt checks" id="checks">
-                <label class="check" title="Prints every step it would take and writes nothing."><input type="checkbox" data-opt="dry_run">Dry Run</label>
-                <label class="check" title="Publishes even when the pull request still has running or failing checks."><input type="checkbox" data-opt="skip_pr_check">Ignore PR Checks</label>
-                <label class="check" title="Keeps commits that would be empty once the removed paths are gone."><input type="checkbox" data-opt="keep_empty">Keep Empty Commits</label>
-                <label class="check" title="Moves the tags to the rewritten commits. Unchecked, they stay on the old ones."><input type="checkbox" data-opt="update_tags" checked>Update Tags</label>
-                <label class="check danger" title="Pushes even when the push would drop commits that are on the default branch."><input type="checkbox" data-opt="force">Force Push</label>
-              </div>
+              <button type="button" class="link-btn" id="browse" aria-expanded="false" aria-controls="tree">Browse</button>
+              <div class="tree" id="tree" role="tree" aria-label="Files at HEAD" hidden></div>
+            </div>
+            <div class="opt row" id="opt-timeout">
+              <label for="timeout">PR check timeout</label>
+              <input class="slider" id="timeout" type="range" min="0" max="9" step="1" value="3" title="How long the run waits for the pull request checks; 0 does not wait.">
+              <output class="readout" id="timeout-out" for="timeout">15 min</output>
+            </div>
+            <div class="opt checks" id="checks">
+              <label class="check" title="Prints every step it would take and writes nothing."><input type="checkbox" data-opt="dry_run">Dry Run</label>
+              <label class="check" title="Publishes even when the pull request still has running or failing checks."><input type="checkbox" data-opt="skip_pr_check">Ignore PR Checks</label>
+              <label class="check" title="Keeps commits that would be empty once the removed paths are gone."><input type="checkbox" data-opt="keep_empty">Keep Empty Commits</label>
+              <label class="check" title="Moves the tags to the rewritten commits. Unchecked, they stay on the old ones."><input type="checkbox" data-opt="update_tags" checked>Update Tags</label>
+              <label class="check danger" title="Pushes even when the push would drop commits that are on the default branch."><input type="checkbox" data-opt="force">Force Push</label>
             </div>
           </div>
         </section>

@@ -34,3 +34,16 @@ def test_the_arena_option_shows_the_branch_and_the_day(desktop: Walker) -> None:
   for value, label, title in options:
     assert label.startswith(f"{value} · ") and ":" not in label, label
     assert title.startswith(value) and ":" in title, title
+
+
+def test_the_option_rows_share_their_lines(desktop: Walker) -> None:
+  desktop.goto(1200)
+  desktop.click(".repo-card", 800)
+  edges = "e => { const b = e.getBoundingClientRect(); return [b.top, b.bottom]; }"
+  rows = {
+    name: desktop.page.eval_on_selector(f"#{name}", edges)
+    for name in ("opt-branch", "opt-paths", "opt-timeout", "checks")
+  }
+  assert rows["opt-timeout"] == rows["opt-branch"]
+  assert rows["checks"] == rows["opt-paths"]
+  assert rows["opt-paths"][0] == rows["opt-branch"][1]
