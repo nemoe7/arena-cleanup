@@ -308,12 +308,17 @@ def flow_board(_: dict[str, bytes]) -> str:
 
 
 def wireframe_board(_: dict[str, bytes]) -> str:
+  column = '<div class="col" style="flex:1;gap:8px;align-items:stretch">'
   options = (
     block("Options ▾ — main (default) · defaults", height=28)
+    + '<div class="bar" style="align-items:flex-start;gap:10px">'
+    + column
     + block("Target branch | main (default)", height=28)
     + block("Arena branch | newest first, with two or more", height=28)
     + block("Remove paths | one chip per path | Browse", height=28)
     + block("HEAD tree — folders first, a click adds the chip", height=28)
+    + "</div>"
+    + column
     + block("PR check timeout | slider, 0 to 120 min | 15 min", height=28)
     + '<div class="bar" style="flex-wrap:wrap">'
     + "".join(
@@ -326,7 +331,7 @@ def wireframe_board(_: dict[str, bytes]) -> str:
         "☐ Force Push",
       )
     )
-    + "</div>"
+    + "</div></div></div>"
   )
   run = (
     '<div class="bar">'
