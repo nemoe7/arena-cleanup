@@ -81,7 +81,9 @@ def test_at_1200_the_repos_are_cards(browser: Any, demo: Demo) -> None:
   assert card["rowTops"][0] < card["rowTops"][1], "arena rows stacked"
   assert card["rowLefts"][0] == card["rowLefts"][1]
   assert card["bname"]["y"] < card["tail"]["y"], "two lines: the name over the pills"
-  # one left edge: the icon, the arena rows, and the button. The name follows the icon
-  assert card["icoLeft"] == card["rowLefts"][0] == card["actionsLeft"]
+  # one left edge: the icon and the arena rows. The button sits bottom right
+  assert card["icoLeft"] == card["rowLefts"][0]
+  assert card["cardRight"] - card["actionsRight"] <= 17
+  assert card["actionsLeft"] > card["nameLeft"]
   assert card["icoLeft"] < card["nameLeft"] < card["removeLeft"]
   assert card["removeTop"] == card["icoTop"], "remove sits top right"

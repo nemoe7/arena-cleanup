@@ -624,17 +624,20 @@
     .work { grid-template-columns: 1fr; }
     #options-card { order: -1; }
     .grid { grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); }
-    /* a card: the icon, the name, and Remove on top, then the branch, the arena rows, and the buttons at the bottom */
+    /* a card: the icon, the name, and Remove on top, the arena rows, and the button bottom right.
+       The branch chip stays in the rows; an unavailable repo shows its reason where the arena rows go */
     .repo-card {
-      grid-column: auto; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto 1fr auto;
-      grid-template-areas: "ico name rm" "meta meta meta" "arena arena arena" "actions actions actions";
+      grid-column: auto; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto 1fr auto;
+      grid-template-areas: "ico name rm" "arena arena arena" "actions actions actions";
       gap: 12px 10px; align-items: start; padding: 16px;
     }
     .repo-head > div { max-width: none; }
+    .repo-meta { grid-area: arena; align-self: start; }
+    .repo-meta.branch { display: none; }
     .repo-meta .pill { max-width: 100%; }
     .arena-list { justify-content: flex-start; border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 12px; }
     .arena-row { flex-direction: column; align-items: stretch; gap: 4px; }
-    .card-actions { align-self: end; }
+    .card-actions { align-self: end; justify-self: end; }
   }
   @media (max-width: 900px) {
     /* One column: the run first, then the sidebar with the facts and the commits. */
@@ -1117,7 +1120,7 @@
           onclick: (e) => { e.stopPropagation(); openRepo(repo.id); } }, repo.name)),
     );
 
-    const meta = el("div", { class: "repo-meta" });
+    const meta = el("div", { class: s.ok ? "repo-meta branch" : "repo-meta" });
     if (!s.ok) {
       meta.append(el("span", { class: "pill err" }, el("i", { class: "dot" }), s.reason || "unavailable"));
     } else {
@@ -1148,7 +1151,7 @@
     }
 
     const actions = el("div", { class: "card-actions" },
-      el("button", { class: "btn primary icon clean", "aria-label": "Clean & Push", title: "Clean & Push", onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, icon("broom-sparkles")));
+      el("button", { class: "btn primary clean", title: "Clean & Push", onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, icon("broom-sparkles"), "Clean & Push"));
 
     return el("div", { class: "repo-card", onclick: () => openRepo(repo.id) },
       head, meta, arena, actions, removeButton(repo));

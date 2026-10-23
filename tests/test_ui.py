@@ -1068,8 +1068,11 @@ def test_every_clean_button_carries_the_broom_glyph() -> None:
     )
     assert match is not None, button_id
     assert match.group(1) == CLEAN_GLYPH + "Clean &amp; Push", button_id
-  card = 'class: "btn primary icon clean", "aria-label": "Clean & Push", title: "Clean & Push"'
+  card = 'class: "btn primary clean", title: "Clean & Push"'
   assert card in page
+  assert 'icon("broom-sparkles"), "Clean & Push"));' in page, (
+    "the card button has words"
+  )
   assert 'running ? ["Cancel"] : [icon("broom-sparkles"), "Clean & Push"]' in page
   assert ".clean .sparkles { opacity: 0;" in page
   assert (
