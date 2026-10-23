@@ -7,3 +7,7 @@ rules:
   dangerous-triggers:
     ignore:
       - docker.yml
+  # ci.yml installs one pinned npm package, the JavaScript parser of the nemoizer.
+  adhoc-packages:
+    ignore:
+      - ci.yml

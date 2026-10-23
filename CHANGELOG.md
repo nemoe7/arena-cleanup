@@ -12,7 +12,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Web app, rewrite engine, Docker image, and test suite from the off-GitHub project.
 - The CLI is one standard-library file, `arena-cleanup.py`, with the Windows launcher `arena-cleanup.cmd`. It runs on a PC with Python 3.11, `git`, and `gh`. The image runs the same file. It carries its own version, `pyproject.toml` carries the web app's, and a test keeps the two equal.
 - uv-managed tool chain: `uv sync` installs Ruff, shfmt, pytest, and `git-filter-repo` from `uv.lock`.
-- GitHub workflows: CI (lint, format, Markdown, suite), the pull request contract, and an advisory container scan.
+- GitHub workflows: CI (lint, format, prose, Markdown, suite), the pull request contract, and an advisory container scan.
 - Image publishing: a green CI run on `main` pushes `ghcr.io/nemoe7/arena-cleanup:latest` for amd64 and arm64, the only tag.
 - `scripts/demo.py`: a throwaway fixture served by the UI for demos and the QA tools. It holds five repos, a stub `gh`, an identity, and a GPG key. Each repo has 14 commits on main and nine on the arena branch. In `infra-tools` main moved on by two commits after the session, and `data-pipeline` keeps two arena branches. The origins answer to `https://github.com/demo/<name>`, so the page shows live-looking remotes. The fixture clones them by URL under its data directory. The stub `gh` is signed in as the configured identity, the credential helper is set, and the host's tokens are gone.
 - `docs/design.md`: the design record with the type ramp, spacing scale, breakpoints, and accepted decisions.

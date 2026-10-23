@@ -10,6 +10,8 @@ __pycache__/
 .playwright-cli/
 *.pyc
 .venv/
+# The JavaScript parser of the nemoizer, installed by CI next to the checkout.
+node_modules/
 
 # Arena session state (reports, uploads, scratch copies) never enters Git.
 arena-state/

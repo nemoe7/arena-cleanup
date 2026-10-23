@@ -148,6 +148,7 @@ uv run ruff format arena-cleanup.py ui/server.py scripts/*.py tests
 uv run ruff check --fix arena-cleanup.py ui/server.py scripts/*.py tests
 uv run shfmt -i 2 -w docker-entrypoint.sh
 markdownlint-cli2
+uv run python .agents/skills/nemoizer/scripts/nemoize.py README.md  # prose, any text files
 ```
 
 The tests run against throwaway repos: a real bare `origin`, a stub `gh`, and

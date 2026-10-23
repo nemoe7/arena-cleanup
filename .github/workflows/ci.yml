@@ -41,6 +41,14 @@ jobs:
       - run: uv run --no-sync ruff check arena-cleanup.py ui/server.py scripts/*.py tests
       - run: uv run --no-sync ruff format --check arena-cleanup.py ui/server.py scripts/*.py tests
       - run: uv run --no-sync shfmt -i 2 -d docker-entrypoint.sh
+      # The nemoizer reads comments, docstrings, docs, and help text in every
+      # tracked text file. A blocking finding fails the step, advisory ones print.
+      # It parses JavaScript through acorn, resolved upwards from its own folder.
+      - run: npm install --no-save --no-package-lock --no-audit --no-fund acorn@8.19.0
+      - name: Nemoize prose
+        run: |
+          uv run --no-sync python .agents/skills/nemoizer/scripts/nemoize.py \
+            $(git ls-files | grep -v '^\.agents/\|^ARENA.md\|^LICENSE.md\|\.png$\|\.svg$\|\.ico$\|LICENSE-lucide.txt\|manifest.webmanifest')
       - name: Lint Markdown
         uses: DavidAnson/markdownlint-cli2-action@v24.2.0
         with:
