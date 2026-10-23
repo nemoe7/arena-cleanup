@@ -646,3 +646,29 @@ def test_the_primary_button_fill_reads_under_white() -> None:
     ratio = 1.05 / (luminance(tokens[name]) + 0.05)
     assert ratio >= TEXT_CONTRAST, f"--{name} {tokens[name]} gives {ratio:.2f}:1"
   assert luminance(tokens["accent-deep-hi"]) < luminance(tokens["accent-deep"])
+
+
+ICON_KEY_RE = re.compile(r'^    "?([a-z-]+)"?: svg\(', re.MULTILINE)
+GLYPH_BUTTONS = {
+  "commits-refresh": "refresh-cw",
+  "browse": "folder-tree",
+  "copy": "copy",
+  "logtoggle": "chevron-right",
+}
+
+
+def test_every_icon_name_on_the_page_is_vendored() -> None:
+  page = PAGE.read_text(encoding="utf-8")
+  vendored = set(ICON_KEY_RE.findall(page))
+  used = set(re.findall(r'data-icon="([a-z-]+)"', page)) | set(
+    re.findall(r'icon\("([a-z-]+)"', page)
+  )
+  assert used <= vendored
+  assert {"refresh-cw", "copy", "folder-tree"} <= used
+  for button_id, glyph in GLYPH_BUTTONS.items():
+    match = re.search(rf'<button[^>]*id="{button_id}"[^>]*>(.*?)</button>', page)
+    assert match is not None, button_id
+    assert f'data-icon="{glyph}"' in match.group(0), button_id
+    if button_id == "commits-refresh":
+      assert 'aria-label="Reload commits"' in match.group(0)
+      assert re.sub(r"<[^>]+>", "", match.group(1)) == ""

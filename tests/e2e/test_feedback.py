@@ -60,3 +60,18 @@ def test_the_add_bar_reports_a_bad_source_under_the_field(desktop: Walker) -> No
   page.type("#add-source", "x")
   assert page.is_hidden("#add-error")
   assert page.get_attribute("#add-source", "aria-invalid") is None
+
+
+def test_the_log_toggle_turns_its_caret(desktop: Walker) -> None:
+  desktop.goto(1200)
+  desktop.click(".repo-card", 800)
+  page = desktop.page
+  caret = "#logtoggle .caret"
+  assert page.get_by_role("button", name="Reload commits").count() == 1
+  assert page.inner_text("#commits-refresh") == ""
+  assert desktop.text("#logtoggle") == "Show log"
+  assert page.eval_on_selector(caret, "e => getComputedStyle(e).transform") == "none"
+  desktop.click("#logtoggle", 300)
+  assert page.get_attribute("#logtoggle", "aria-expanded") == "true"
+  assert desktop.text("#logtoggle") == "Hide log"
+  assert page.eval_on_selector(caret, "e => getComputedStyle(e).transform") != "none"

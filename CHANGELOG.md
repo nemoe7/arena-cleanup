@@ -38,6 +38,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The claim rules come from the global git config keys `arena.claim-email` and `arena.claim-name`. The constants are the fallback. The container seeds the identity only while git config is empty.
 - One Settings page behind the gear icon: Identity, GitHub access, Commit signing, and Claimed commits, then About.
 - The page has three named breakpoints, 1200, 900, and 640 px. 1200 folds the options to one column, 900 stacks the sidebar, 640 starts the phone ramp.
+- Six buttons carry a Lucide glyph. Reload is `refresh-cw` alone with an accessible name. Re-check and Retry lead with `refresh-cw`, Copy log and Copy public key with `copy`, Browse with `folder-tree`. Show log carries the fold caret.
 - Log rows show the clock of the browser. The engine stamps each line in the server zone.
 - Remove on a card deletes its URL clone from the volume. A path repo is only forgotten.
 - `POST /api/repos/<id>/reset`: fetch, check out the default branch, and reset it hard. Untracked files stay.

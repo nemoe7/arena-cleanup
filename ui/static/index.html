@@ -303,10 +303,9 @@
   /* The commit list takes the rest of the column and scrolls on its own. */
   .side-commits { flex: 1 1 auto; min-height: 0; }
   .side-commits .commits { flex: 1 1 auto; min-height: 120px; overflow: auto; scrollbar-gutter: stable; }
-  .side-label .btn { height: auto; padding: 2px 6px; font-size: var(--fs-1); font-weight: 600; }
   .side-label {
     font-size: var(--fs-1); font-weight: 600; letter-spacing: 0;
-    color: var(--muted); padding: 0 6px 4px; display: flex; justify-content: space-between;
+    color: var(--muted); padding: 0 6px 4px; display: flex; justify-content: space-between; align-items: center;
   }
   .kv { display: grid; grid-template-columns: 68px 1fr; gap: 2px 8px; padding: 0 6px; font-size: var(--fs-1); }
   .kv dt { color: var(--dim); }
@@ -382,8 +381,8 @@
   .fold-head:hover { background: var(--surface-2); }
   .fold-head[aria-expanded="false"] { border-bottom: 0; }
   .fold-head .fold-title { font-size: var(--fs-2); font-weight: 600; }
-  .fold-head .caret { display: inline-flex; color: var(--dim); transition: transform .12s; }
-  .fold-head[aria-expanded="true"] .caret { transform: rotate(90deg); }
+  .caret { display: inline-flex; color: var(--dim); transition: transform .12s; }
+  [aria-expanded="true"] > .caret { transform: rotate(90deg); }
   .fold-head[aria-expanded="true"] .pill, .fold-head[aria-expanded="true"] .hint { display: none; }
   .options[hidden] { display: none; }
 
@@ -394,7 +393,7 @@
   .chip-x { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-2); background: var(--surface-3); border-radius: 6px; padding: 2px 4px 2px 8px; font: var(--fs-1) var(--mono); }
   .chip-x button { border: 0; background: none; color: var(--dim); cursor: pointer; padding: 0 3px; font-size: var(--fs-3); line-height: 1; }
   .chip-x button:hover { color: var(--err); }
-  .link-btn { margin-left: auto; border: 0; background: none; padding: 0; color: var(--muted); font: inherit; font-size: var(--fs-1); cursor: pointer; }
+  .link-btn { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; border: 0; background: none; padding: 0; color: var(--muted); font: inherit; font-size: var(--fs-1); cursor: pointer; }
   .link-btn:hover, .link-btn[aria-expanded="true"] { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
   /* the path tree: one level of the HEAD tree per request; a row click opens
      a folder or selects a file, the trailing button selects either */
@@ -710,7 +709,7 @@
         <section class="side-group side-commits" id="commits-card">
           <div class="side-label">
             <span>Commits <span class="hint" id="commits-hint"></span></span>
-            <button class="btn ghost" id="commits-refresh">Reload</button>
+            <button class="icon-btn" id="commits-refresh" aria-label="Reload commits" title="Reload commits"><span class="ico-svg" data-icon="refresh-cw" aria-hidden="true"></span></button>
           </div>
           <div class="commits" id="commits"></div>
         </section>
@@ -743,7 +742,7 @@
               <div class="chips" id="chips" title="git filter-repo removes each path from every ref.">
                 <input id="pathin" placeholder="add a file or folder…" spellcheck="false" autocomplete="off" aria-label="Add a path to remove">
               </div>
-              <button type="button" class="link-btn" id="browse" aria-expanded="false" aria-controls="tree">Browse</button>
+              <button type="button" class="link-btn" id="browse" aria-expanded="false" aria-controls="tree"><span class="ico-svg" data-icon="folder-tree" aria-hidden="true"></span>Browse</button>
               <div class="tree" id="tree" role="tree" aria-label="Files at HEAD" hidden></div>
             </div>
             <div class="opt row" id="opt-timeout">
@@ -770,10 +769,10 @@
           </div>
           <ol class="phases" id="phases"></ol>
           <div class="run-foot">
-            <button class="btn ghost" id="logtoggle" aria-expanded="false" aria-controls="logwrap">Show log</button>
+            <button class="btn ghost" id="logtoggle" aria-expanded="false" aria-controls="logwrap"><span class="caret"><span class="ico-svg" data-icon="chevron-right" aria-hidden="true"></span></span><span id="logtoggle-label">Show log</span></button>
             <span class="hint" id="logmeta"></span>
             <div class="grow"></div>
-            <button class="btn ghost" id="copy">Copy log</button>
+            <button class="btn ghost" id="copy"><span class="ico-svg" data-icon="copy" aria-hidden="true"></span>Copy log</button>
           </div>
           <div class="logwrap" id="logwrap" hidden>
             <div class="log" id="log" role="log" aria-live="polite" aria-relevant="additions"></div>
@@ -863,6 +862,9 @@
     "circle-small": svg('<circle cx="12" cy="12" r="6"/>'),
     "loader-circle": svg(paths("M21 12a9 9 0 1 1-6.219-8.56")),
     "git-branch": svg(paths("M15 6a9 9 0 0 0-9 9V3") + '<circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>'),
+    "refresh-cw": svg(paths("M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8", "M21 3v5h-5", "M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16", "M8 16H3v5")),
+    copy: svg('<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>' + paths("M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2")),
+    "folder-tree": svg(paths("M20 10a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2.5a1 1 0 0 1-.8-.4l-.9-1.2A1 1 0 0 0 15 3h-2a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1Z", "M20 21a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1h-2.9a1 1 0 0 1-.88-.55l-.42-.85a1 1 0 0 0-.92-.6H13a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1Z", "M3 5a2 2 0 0 0 2 2h3", "M3 3v13a2 2 0 0 0 2 2h3")),
   };
   function icon(name, cls = "ico-svg") {
     const box = el("span", { class: cls, "aria-hidden": "true" });
@@ -1082,7 +1084,7 @@
           el("b", {}, "Cannot reach the server."),
           " Every button here changes a git repo, so nothing is cached. Check that the container is running, then retry.",
           el("div", { style: "margin-top:8px" },
-            el("button", { class: "btn ghost", id: "retry", onclick: () => loadRepos() }, "Retry")))));
+            el("button", { class: "btn ghost", id: "retry", onclick: () => loadRepos() }, icon("refresh-cw"), "Retry")))));
     }
   }
 
@@ -1537,7 +1539,7 @@
   function setLogOpen(open) {
     $("logwrap").hidden = !open;
     $("logtoggle").setAttribute("aria-expanded", String(open));
-    $("logtoggle").textContent = open ? "Hide log" : "Show log";
+    $("logtoggle-label").textContent = open ? "Hide log" : "Show log";
     if (open) {
       const log = $("log");
       log.scrollTop = log.scrollHeight;
@@ -1849,7 +1851,7 @@
           await refreshAuth();
           renderAccess();
           toast("re-checked");
-        } }, "Re-check"),
+        } }, icon("refresh-cw"), "Re-check"),
         g.credentials_for_gh ? null : el("button", { class: "btn ghost", onclick: setupGit }, "Configure git credentials")));
     } else {
       ghNodes.push(el("div", { class: "banner warn" },
@@ -2015,7 +2017,7 @@
             const out = await post("/api/signing", { action: "public_key", fingerprint: k.fingerprint });
             navigator.clipboard?.writeText(out.public_key || "");
             toast("public key copied");
-          } }, "Copy public key"))
+          } }, icon("copy"), "Copy public key"))
         ) : [el("div", { class: "hint" }, "No secret keys.")])));
     nodes.push(list);
 
@@ -2060,7 +2062,7 @@
           "Add the key, then come back here and press <b>Re-check</b>.",
         ]),
         el("div", { style: "margin-top:12px;display:flex;gap:8px;flex-wrap:wrap" },
-          el("button", { class: "btn", onclick: async () => { await loadSigning(); toast("re-checked"); } }, "Re-check"),
+          el("button", { class: "btn", onclick: async () => { await loadSigning(); toast("re-checked"); } }, icon("refresh-cw"), "Re-check"),
           el("a", { class: "btn ghost", href: "https://github.com/settings/keys", target: "_blank", rel: "noopener" }, "Open GitHub keys")))));
 
     body.replaceChildren(...nodes);

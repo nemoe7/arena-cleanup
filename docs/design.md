@@ -50,7 +50,9 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ### Icons
 
 - Lucide 1.61.0, vendored one glyph at a time into the `ICONS` map in `index.html`. Each glyph keeps its 24 px grid, drawn at 1 em and stroked at 2 in the text color.
-- Names in use: arrow-left, arrow-up, arrow-down, chevron-right, check, x, triangle-alert, minus, circle-small, loader-circle, git-branch, key-round, and shield-check.
+- Navigation and file glyphs in use: arrow-left, settings, arrow-up, arrow-down, chevron-right, folder, folder-tree, file, and plus.
+- State and action glyphs in use: check, x, triangle-alert, minus, circle-small, loader-circle, git-branch, refresh-cw, and copy.
+- Buttons with a glyph: Reload is `refresh-cw` alone, named `Reload commits` in `aria-label` and `title`. Re-check and Retry lead with `refresh-cw`, Copy log and Copy public key with `copy`, and Browse with `folder-tree`. Show log carries the `chevron-right` caret, turned down while the log is open. Every other button keeps its word alone.
 - Static slots carry `data-icon="<name>"` and are filled at boot. The brand mark is the project logo, not a glyph.
 - No text glyphs stand in for icons. The licence sits beside the page in `ui/static/LICENSE-lucide.txt`.
 

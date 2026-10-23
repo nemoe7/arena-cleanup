@@ -490,13 +490,13 @@ def components_board(_: dict[str, bytes]) -> str:
     '<table class="sheet">'
     '<tr><td>primary</td><td><button class="btn primary">Clean &amp; Push</button></td>'
     '<td><button class="btn primary" disabled>Clean &amp; Push</button></td></tr>'
-    '<tr><td>default</td><td><button class="btn">Reload</button></td>'
-    '<td><button class="btn" disabled>Reload</button></td></tr>'
-    '<tr><td>ghost</td><td><button class="btn ghost">Re-check</button></td>'
-    '<td><button class="btn ghost" disabled>Re-check</button></td></tr>'
+    '<tr><td>default</td><td><button class="btn">Save</button></td>'
+    '<td><button class="btn" disabled>Save</button></td></tr>'
+    f'<tr><td>ghost</td><td><button class="btn ghost">{icon("refresh-cw")}Re-check</button></td>'
+    f'<td><button class="btn ghost" disabled>{icon("refresh-cw")}Re-check</button></td></tr>'
     f'<tr><td>back</td><td><button class="btn ghost back">{icon("arrow-left")}All repos</button></td><td></td></tr>'
     f'<tr><td>icon</td><td><button class="icon-btn" aria-label="Settings">{icon("settings")}</button></td>'
-    "<td></td></tr>"
+    f'<td><button class="icon-btn" aria-label="Reload commits">{icon("refresh-cw")}</button></td></tr>'
     '<tr><td></td><td class="mono">default</td><td class="mono">disabled</td></tr></table>'
   )
   pills = (
