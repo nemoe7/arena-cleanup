@@ -35,7 +35,6 @@ def test_log_rows_show_the_browser_clock(abroad: Walker, demo: Demo) -> None:
     abroad.click("#start", 0)
   job = hit.value.url.split("/api/jobs/")[1].split("/")[0]
   abroad.wait_status("exit")
-  abroad.open_log()
 
   with urllib.request.urlopen(f"{demo.url}/api/jobs/{job}", timeout=5) as resp:
     lines = json.load(resp)["lines"]

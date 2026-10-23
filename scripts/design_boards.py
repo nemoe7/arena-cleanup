@@ -369,9 +369,9 @@ def wireframe_board(_: dict[str, bytes]) -> str:
       )
     )
     + '<div class="bar">'
-    + block("Show log", width="70px")
+    + block("n lines", width="56px")
     + '<div class="grow"></div>'
-    + block("Copy log", width="70px")
+    + block("copy", width="36px")
     + "</div>"
   )
   sidebar = (
@@ -397,8 +397,7 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     '<table class="sheet"><tr><td class="mono">Clean &amp; Push</td>'
     "<td>starts the run with the options shown</td></tr>"
     '<tr><td class="mono">Cancel</td><td>terminates the child process, the log says cancelled</td></tr>'
-    '<tr><td class="mono">Show log</td><td>unfolds the raw lines under the phase list</td></tr>'
-    '<tr><td class="mono">Copy log</td><td>puts the whole log on the clipboard</td></tr>'
+    '<tr><td class="mono">Copy log</td><td>a glyph button, puts the whole log on the clipboard</td></tr>'
     '<tr><td class="mono">Ctrl + Enter</td><td>starts the run from anywhere</td></tr>'
     '<tr><td class="mono">1200 px</td><td>the options fold to one column</td></tr>'
     '<tr><td class="mono">900 px</td><td>the sidebar stacks below the run card</td></tr>'
@@ -409,7 +408,7 @@ def wireframe_board(_: dict[str, bytes]) -> str:
     + frame(
       "Repo view",
       "Deep dive: the one view where a run happens. The sidebar holds the facts and the "
-      "commits. The run card is the story, the raw log is one click away.",
+      "commits. The run card is the story, the raw log stays open under it.",
       screen,
     )
     + frame("Key actions", "What the view promises.", actions)
@@ -433,7 +432,7 @@ def views_board(shots: dict[str, bytes]) -> str:
     )
     + frame(
       "After a run",
-      "Five phases with their results and times, the raw log unfolded.",
+      "Five phases with their results and times, the raw log open under them.",
       img(shots, "after-run", 460),
     )
     + frame(
@@ -836,7 +835,6 @@ def capture_views(walker: Walker, demo: Demo) -> dict[str, bytes]:
   walker.click('input[data-opt="dry_run"]', 0)
   walker.click("#start", 0)
   walker.wait_status("exit")
-  walker.open_log()
   walker.page.wait_for_timeout(400)
   shots["after-run"] = walker.page.screenshot(full_page=True)
   walker.click("#settings-btn", 1500)

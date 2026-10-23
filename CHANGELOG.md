@@ -13,6 +13,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A commit subject wraps to two lines, then an ellipsis. A tap on the row shows the whole subject.
 - The PR check reads the version in `pyproject.toml` at the head and at the base branch. The head must be exactly one step above the base: the next patch, minor, or major.
 
+### Changed
+
+- The run card keeps the log of the latest run open under the phase list. The Show log toggle is gone, and Copy log is a glyph button with an accessible name.
+
 ### Fixed
 
 - A repeat add of a URL reuses the clone that already has that origin, `.git` or not. One repo keeps one card and one directory. A different repo with the same name still gets its own `-2` directory.

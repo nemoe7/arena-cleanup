@@ -186,13 +186,6 @@ class Walker:
     )
     return self.status_text()
 
-  def log_hidden(self) -> bool:
-    return self.page.eval_on_selector("#logwrap", "e => e.hidden")
-
-  def open_log(self) -> None:
-    if self.log_hidden():
-      self.click("#logtoggle", 250)
-
 
 def launch_browser(playwright: Any, chromium: str | None) -> Any:
   options: dict[str, Any] = {}
@@ -472,11 +465,8 @@ def start_a_dry_run_and_watch_it_finish(w: Walker, demo: Demo) -> None:
   w.click("#start", 0)
   status = w.wait_status("exit")
   assert "exit 0" in status
-  # the run card is the story. The raw log is one click away
-  assert w.log_hidden()
-  assert w.text("#logtoggle") == "Show log"
-  w.click("#logtoggle", 300)
-  assert w.text("#logtoggle") == "Hide log"
+  # the run card is the story, and the raw log stays open under it
+  assert w.page.is_visible("#logwrap")
   assert w.count(".log-row") > MIN_LOG_ROWS
 
 
@@ -494,7 +484,6 @@ def cancel_a_run_in_flight(w: Walker, demo: Demo) -> None:
     if w.page.is_checked(box):
       w.click(box, 150)
     w.click("#start", 0)
-    w.open_log()
     w.page.wait_for_function(
       "() => document.querySelector('#log').innerText.includes('still running, waiting up to')",
       timeout=30000,
@@ -517,14 +506,12 @@ def copy_the_log(w: Walker, demo: Demo) -> None:
   w.click('input[data-opt="dry_run"]', 0)
   w.click("#start", 0)
   w.wait_status("exit")
-  w.open_log()
   w.click("#copy", 400)
   assert "copied" in w.text("#toast")
 
 
 @step("desktop")
 def jump_to_latest_button(w: Walker, demo: Demo) -> None:
-  w.open_log()
   # the button only exists for an overflowing log, so constrain the panel to
   # reproduce the condition a long run creates
   w.page.eval_on_selector(

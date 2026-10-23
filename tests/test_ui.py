@@ -617,7 +617,9 @@ def test_the_commit_list_and_the_page_shell(ui: UI, ids: dict[str, str]) -> None
 
   page = ui.text("/")
   assert 'id="commits"' in page
-  assert 'id="logwrap" hidden' in page, "the log does not start collapsed"
+  assert 'id="logwrap"' in page
+  assert 'id="logwrap" hidden' not in page, "the log starts open"
+  assert 'id="logtoggle"' not in page
   assert 'id="phases"' in page
   assert 'class="brand" href="#/"' in page
   assert 'id="task-note"' not in page, "the task note went with the hint texts"
@@ -699,11 +701,11 @@ def test_the_primary_button_fill_reads_under_white() -> None:
 
 
 ICON_KEY_RE = re.compile(r'^    "?([a-z-]+)"?: svg\(', re.MULTILINE)
+GLYPH_ONLY = {"commits-refresh": "Reload commits", "copy": "Copy log"}
 GLYPH_BUTTONS = {
   "commits-refresh": "refresh-cw",
   "browse": "folder-tree",
   "copy": "copy",
-  "logtoggle": "chevron-right",
 }
 
 
@@ -719,8 +721,8 @@ def test_every_icon_name_on_the_page_is_vendored() -> None:
     match = re.search(rf'<button[^>]*id="{button_id}"[^>]*>(.*?)</button>', page)
     assert match is not None, button_id
     assert f'data-icon="{glyph}"' in match.group(0), button_id
-    if button_id == "commits-refresh":
-      assert 'aria-label="Reload commits"' in match.group(0)
+    if button_id in GLYPH_ONLY:
+      assert f'aria-label="{GLYPH_ONLY[button_id]}"' in match.group(0)
       assert re.sub(r"<[^>]+>", "", match.group(1)) == ""
 
 

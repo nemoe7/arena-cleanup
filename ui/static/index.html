@@ -447,6 +447,7 @@
   .run-foot .hint { color: var(--dim); font-size: var(--fs-1); }
   .logwrap { position: relative; border-top: 1px solid var(--line); }
   .logwrap .log { max-height: 340px; padding: 8px 0 12px; }
+  .logwrap .log:empty::before { content: "No run yet."; display: block; padding: 0 16px; color: var(--dim); font-size: var(--fs-1); }
   .status { display: inline-flex; align-items: center; gap: 8px; font: 520 var(--fs-1)/1 var(--mono); color: var(--muted); border: 1px solid var(--line-2); border-radius: 999px; padding: 4px 8px; background: var(--surface-2); }
   .status .led { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
   .status.running .led { background: var(--accent-hi); animation: pulse 1.4s ease-in-out infinite; }
@@ -775,12 +776,11 @@
           </div>
           <ol class="phases" id="phases"></ol>
           <div class="run-foot">
-            <button class="btn ghost" id="logtoggle" aria-expanded="false" aria-controls="logwrap"><span class="caret"><span class="ico-svg" data-icon="chevron-right" aria-hidden="true"></span></span><span id="logtoggle-label">Show log</span></button>
             <span class="hint" id="logmeta"></span>
             <div class="grow"></div>
-            <button class="btn ghost" id="copy"><span class="ico-svg" data-icon="copy" aria-hidden="true"></span>Copy log</button>
+            <button class="icon-btn" id="copy" aria-label="Copy log" title="Copy log"><span class="ico-svg" data-icon="copy" aria-hidden="true"></span></button>
           </div>
-          <div class="logwrap" id="logwrap" hidden>
+          <div class="logwrap" id="logwrap">
             <div class="log" id="log" role="log" aria-live="polite" aria-relevant="additions"></div>
             <button class="jump" id="jump"><span class="ico-svg" data-icon="arrow-down" aria-hidden="true"></span>latest</button>
           </div>
@@ -1156,7 +1156,7 @@
     setStatus("", "idle");
     $("log").replaceChildren();
     $("logmeta").textContent = "";
-    setLogOpen(false);
+    $("jump").classList.remove("show");
     show("repo");
     refreshStatus();
     loadCommits();
@@ -1535,7 +1535,7 @@
       markEarlierDone(id);
     }
     $("logmeta").textContent = `${lineCount()} lines`;
-    if (nearBottom && !$("logwrap").hidden) log.scrollTop = log.scrollHeight;
+    if (nearBottom) log.scrollTop = log.scrollHeight;
     $("jump").classList.toggle("show", !nearBottom && log.scrollHeight > log.clientHeight);
   }
 
@@ -1544,20 +1544,10 @@
     $("statustext").textContent = text;
   }
 
-  function setLogOpen(open) {
-    $("logwrap").hidden = !open;
-    $("logtoggle").setAttribute("aria-expanded", String(open));
-    $("logtoggle-label").textContent = open ? "Hide log" : "Show log";
-    if (open) {
-      const log = $("log");
-      log.scrollTop = log.scrollHeight;
-      $("jump").classList.remove("show");
-    }
-  }
-
   async function startJob(body) {
     if (state.job || !state.repo) return;
     $("log").replaceChildren();
+    $("jump").classList.remove("show");
     resetPhases();
     setStatus("running", "starting");
     setStartEnabled(false);
@@ -1568,7 +1558,6 @@
       follow(job.id);
     } catch (err) {
       setStatus("fail", "error");
-      setLogOpen(true);
       appendLines([{ text: err.message }]);
       setStartEnabled(true);
       state.job = null;
@@ -1604,7 +1593,6 @@
         cancelled ? "" : ok ? "ok" : "fail",
         cancelled ? `cancelled in ${secs}` : `exit ${snap.exit} in ${secs}`,
       );
-      if (!ok && !cancelled) setLogOpen(true);
       setStartEnabled(true);
       refreshStatus();
       loadRepos();
@@ -2142,7 +2130,6 @@
   $("cancel").onclick = cancelJob;
   $("cancel-mobile").onclick = cancelJob;
 
-  $("logtoggle").onclick = () => setLogOpen($("logwrap").hidden);
   $("commits-refresh").onclick = () => {
     loadCommits();
     toast("reloaded");
