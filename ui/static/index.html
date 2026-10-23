@@ -794,7 +794,6 @@
             <div class="opt checks" id="checks">
               <label class="check" title="Prints every step it would take and writes nothing."><input type="checkbox" data-opt="dry_run">Dry Run</label>
               <label class="check" title="Publishes even when the pull request still has running or failing checks."><input type="checkbox" data-opt="skip_pr_check">Ignore PR Checks</label>
-              <label class="check" title="Keeps commits that would be empty once the removed paths are gone."><input type="checkbox" data-opt="keep_empty">Keep Empty Commits</label>
               <label class="check" title="Moves the tags to the rewritten commits. Unchecked, they stay on the old ones."><input type="checkbox" data-opt="update_tags" checked>Update Tags</label>
               <label class="check danger" title="Pushes even when the push would drop commits that are on the default branch."><input type="checkbox" data-opt="force">Force Push</label>
             </div>
@@ -864,7 +863,7 @@
   const state = {
     repos: [],
     repo: null,
-    opts: { dry_run: false, skip_pr_check: false, keep_empty: false, no_tags: false, force: false },
+    opts: { dry_run: false, skip_pr_check: false, no_tags: false, force: false },
     paths: [],
     branch: "",
     arena: "",
@@ -1411,7 +1410,6 @@
       action: "run",
       paths: state.paths,
       dry_run: state.opts.dry_run,
-      keep_empty: state.opts.keep_empty,
       branch: state.branch || "",
       arena: state.arena || "",
       force: state.opts.force,
@@ -1435,7 +1433,6 @@
     if (state.branch) parts.push("--branch", state.branch);
     if (state.arena) parts.push("--arena", state.arena);
     for (const p of state.paths) parts.push("--path", p);
-    if (body.keep_empty) parts.push("--keep-empty");
     if (body.skip_pr_check) parts.push("--skip-pr-check");
     if (body.no_tags) parts.push("--no-tags");
     if (body.force) parts.push("--force");

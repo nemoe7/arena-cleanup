@@ -98,8 +98,8 @@ flags, and `arena-cleanup doctor` checks the setup.
 3. About sits below the settings.
 4. **Clean & Push** runs the pipeline and streams the log. A click on the
    card shows the repo view first: target branch, paths to remove, the
-   check timeout, and the options (dry run, skip the PR gate, keep empty
-   commits, leave tags alone, keep the branch, force the push).
+   check timeout, and the options (dry run, skip the PR gate, leave tags
+   alone, keep the branch, force the push).
 
 Signed out, every card reads **checks unavailable** instead of **no PR**. The
 run writes a backup bundle before each rewrite stage, and **Cancel** stops a
@@ -107,8 +107,8 @@ run in flight. Exit codes: `0` success, `1` error or cancelled, `2` usage, `7`
 a check found commits to rewrite, `130` interrupted.
 
 Path removal is `git-filter-repo --invert-paths` over every ref. Commits left
-empty go unless **Keep empty commits** is on. Signatures do not
-survive it, so the publish pass re-signs the branch it pushes.
+empty go. Signatures do not survive it, so the publish pass re-signs the branch
+it pushes.
 
 Tags that pointed into rewritten commits move with them, force-pushed with a
 lease. **Don't move tags** leaves them and warns.

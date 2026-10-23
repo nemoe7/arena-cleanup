@@ -468,7 +468,6 @@ LONG_FLAGS = (
   "--check",
   "--version",
   "--path",
-  "--keep-empty",
   "--no-tags",
   "--arena",
 )
@@ -484,7 +483,6 @@ SHORT_FLAGS = (
   "-c",
   "-V",
   "-p",
-  "-E",
   "-T",
 )
 USAGE_ERROR = 2
@@ -1074,21 +1072,11 @@ def test_path_removes_a_directory_from_history_and_tags_follow(world: World) -> 
     res.text
   )
 
-  # -E keeps a commit that only touched the removed path
-  world.git("checkout", "-q", "main")
-  world.git("reset", "-q", "--hard", "origin/main")
-  world.git("checkout", "-q", "-b", "arena/keep-empty", "main")
-  (world.work / "tmpdir").mkdir()
-  (world.work / "tmpdir" / "x.bin").write_text("x\n")
-  _commit_all(world, world.work, "chore: only tmpdir", OTHER_DEV)
-  (world.work / "tmpdir" / "y.bin").write_text("y\n")
-  _commit_all(world, world.work, "chore: only tmpdir again", OTHER_DEV)
-  keep_before = world.git("rev-list", "--count", "HEAD")
-  assert world.cleanup("strip", "-p", "tmpdir", "-E").rc == 0
-  assert world.git("rev-list", "--count", "HEAD") == keep_before
-  assert not any(p.startswith("tmpdir/") for p in _tree(world, world.work, "HEAD"))
-  world.git("checkout", "-q", "main")
-  world.git("branch", "-q", "-D", "arena/keep-empty")
+  # there is no way to keep a commit that only touched the removed path
+  res = world.cleanup("strip", "-p", "site/uploads", "-E")
+  assert res.rc == USAGE_ERROR
+  assert "unrecognized arguments: -E" in res.text, res.text
+  assert world.cleanup("strip", "-p", "site/uploads", "--keep-empty").rc == USAGE_ERROR
 
 
 @needs_filter_repo

@@ -5,6 +5,13 @@ This file documents all notable changes to this project.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-10-23
+
+### Removed
+
+- The Keep Empty Commits option, its `keep_empty` run field, and the CLI flag
+  `-E/--keep-empty`. Commits that only touched removed paths are always dropped.
+
 ## [0.2.5] - 2026-10-23
 
 ### Changed

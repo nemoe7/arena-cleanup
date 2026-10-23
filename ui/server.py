@@ -1261,7 +1261,6 @@ def build_argv(body: dict[str, Any], repo: dict[str, Any]) -> list[str]:
     "action",
     "paths",
     "dry_run",
-    "keep_empty",
     "one_click",
     "branch",
     "arena",
@@ -1285,8 +1284,6 @@ def build_argv(body: dict[str, Any], repo: dict[str, Any]) -> list[str]:
     if "\0" in path or path.startswith("-"):
       raise BadRequest(f"invalid path {path!r}")
     argv += ["--path", path]
-  if body.get("keep_empty"):
-    argv.append("--keep-empty")
 
   branch = str(body.get("branch") or "").strip()
   if branch:

@@ -346,7 +346,6 @@ def wireframe_board(_: dict[str, bytes]) -> str:
       for t, on in (
         ("Dry Run", False),
         ("Ignore PR Checks", False),
-        ("Keep Empty Commits", False),
         ("Update Tags", True),
         ("Force Push", False),
       )

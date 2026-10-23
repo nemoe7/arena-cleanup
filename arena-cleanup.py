@@ -18,7 +18,7 @@ ui/server.py::build_argv is the only code that constructs it.
 
 Flags: -n dry run, -v verbose, -b/--branch, -d/--delete-branch,
 -k/--skip-pr-check, -t/--check-timeout, -i/--check-interval, -c/--check (strip),
--p/--path, -E/--keep-empty (run, strip), -T/--no-tags (run).
+-p/--path (run, strip), -T/--no-tags (run).
 
 Everything else is a per-machine setting, not a per-run choice. The identity
 is `git config user.name` and `user.email`. The claim rules are the global git
@@ -44,7 +44,7 @@ from typing import Any
 
 # the one version of this file. pyproject.toml carries the same number for the
 # web app, and tests/test_cli.py keeps the two equal.
-__version__ = "0.2.5"
+__version__ = "0.3.0"
 PROG = "arena-cleanup"
 
 # =============================================================================
@@ -316,7 +316,6 @@ class Settings:
     self.claim_names = claim_rules("arena.claim-name") or _split(CLAIM_NAMES)
     self.sign = SIGN_COMMITS
     self.paths = list(getattr(args, "paths", None) or [])
-    self.keep_empty = bool(getattr(args, "keep_empty", False))
     self.no_tags = bool(getattr(args, "no_tags", False))
     self.dry_run = bool(args.dry_run)
     self.on_divergence = getattr(args, "on_divergence", "ask")
@@ -1225,10 +1224,9 @@ def filter_paths(log: Log, cfg: Settings, *, apply: bool) -> PathStats:
   therefore only restores the remotes and re-fetches, leaving
   `origin/<default>` resolvable for the push.
 
-  Commits that only touched the removed paths become empty and go -
-  unless -E/--keep-empty asks for them to stay. Messages stay byte for
-  byte (--preserve-commit-hashes, --preserve-commit-encoding): this stage is
-  about files, not wording.
+  Commits that only touched the removed paths become empty and go. Messages
+  stay byte for byte (--preserve-commit-hashes, --preserve-commit-encoding):
+  this stage is about files, not wording.
   """
   stats = PathStats()
   stats.paths = [_normalize_path(p) for p in cfg.paths]
@@ -1258,8 +1256,6 @@ def filter_paths(log: Log, cfg: Settings, *, apply: bool) -> PathStats:
   args: list[str] = ["filter-repo", "--force", "--invert-paths"]
   for path in stats.paths:
     args += ["--path", path]
-  if cfg.keep_empty:
-    args.append("--prune-empty=never")
   args += ["--preserve-commit-hashes", "--preserve-commit-encoding"]
 
   log.info(f"removing {listed} from every branch and tag")
@@ -1273,8 +1269,7 @@ def filter_paths(log: Log, cfg: Settings, *, apply: bool) -> PathStats:
   )
   if stats.pruned:
     log.info(
-      f"{len(stats.pruned)} commit(s) only touched those paths, so they are gone too "
-      "(pass -E to keep them)"
+      f"{len(stats.pruned)} commit(s) only touched those paths, so they are gone too"
     )
 
   if "origin" in git("remote", check=False).lines():
@@ -2434,7 +2429,6 @@ examples:
   arena-cleanup -p uploads          ...and drop uploads/ from every commit, then publish
   arena-cleanup strip -p notes/ -p TODO.md
                                     rewrite locally, removing two paths
-  arena-cleanup -p uploads -E       ...keeping commits that only touched uploads/
   arena-cleanup -p uploads -T       ...and leave tag positions on origin alone
 
 removing paths rewrites every branch and tag in the repo (that is what
@@ -2571,13 +2565,6 @@ def build_parser() -> argparse.ArgumentParser:
     help="remove PATH (file or directory) from every commit with git filter-repo; "
     "repeat for more than one",
   )
-  path_group.add_argument(
-    "-E",
-    "--keep-empty",
-    action="store_true",
-    default=argparse.SUPPRESS,
-    help="keep commits that only touched removed paths (default: drop them)",
-  )
 
   run_group.add_argument(
     "-T",
@@ -2612,8 +2599,8 @@ def main(argv: Sequence[str] | None = None) -> int:
   # flags that only mean something for one command
   if args.command != "strip" and _given(args, "check"):
     parser.error("--check/-c only applies to `strip`")
-  if args.command == "doctor" and (_given(args, "paths") or _given(args, "keep_empty")):
-    parser.error("--path/-p and --keep-empty/-E only apply to `run` and `strip`")
+  if args.command == "doctor" and _given(args, "paths"):
+    parser.error("--path/-p only applies to `run` and `strip`")
   if args.command != "run":
     for flag in (
       "branch",
@@ -2645,7 +2632,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
 
   args.paths = getattr(args, "paths", None) or []
-  args.keep_empty = getattr(args, "keep_empty", False)
   args.no_tags = getattr(args, "no_tags", False)
   args.check_timeout = getattr(args, "check_timeout", 900)
   args.check_interval = getattr(args, "check_interval", 1)
