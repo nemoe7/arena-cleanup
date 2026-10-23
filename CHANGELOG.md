@@ -24,6 +24,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The settings page is two columns above 1200 px: Identity, Claimed commits,
+  and About left, GitHub and the keys right. How git reaches GitHub and About
+  fold at every width and open on a click.
 - The commit hint reads the commit count alone, with thousands separators,
   in place of `shown of total on branch`.
 - Every Clean & Push button carries the broom glyph before its words, and its

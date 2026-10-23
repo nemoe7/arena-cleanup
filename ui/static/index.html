@@ -591,7 +591,24 @@
   .chip-edit .pill button svg { width: var(--ico-s); height: var(--ico-s); }
   .claim-label { font-size: var(--fs-1); color: var(--muted); margin-top: 2px; }
   /* a deep link scrolls a card group under the sticky header, not behind it */
-  #settings-body > .stack { scroll-margin-top: 72px; }
+  .settings-col > .stack { scroll-margin-top: 72px; }
+  /* two columns above 1200 px; below, the columns dissolve and the sections keep one order */
+  #settings-body { grid-template-columns: 1fr 1fr; align-items: start; }
+  #view-settings .wrap { max-width: 1180px; }
+  @media (max-width: 1200px) {
+    #settings-body { grid-template-columns: 1fr; }
+    .settings-col { display: contents; }
+    #identity-body { order: 1; } #access-body { order: 2; } #signing-body { order: 3; }
+    #claims-body { order: 4; } #info-body { order: 5; }
+  }
+  /* a help card folds: the head is the summary, the body opens on a click */
+  .card.fold > summary { list-style: none; cursor: pointer; }
+  .card.fold > summary::-webkit-details-marker { display: none; }
+  .card.fold:not([open]) > summary { border-bottom: 0; }
+  .card.fold > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 12px; }
+  .fold-mark { margin-left: auto; color: var(--accent); font-size: var(--fs-1); }
+  .fold-mark::after { content: "show"; }
+  .card.fold[open] .fold-mark::after { content: "hide"; }
   .sign-key { font: var(--fs-1) var(--mono); color: var(--muted); overflow-wrap: anywhere; flex: 1; min-width: 220px; }
   .sign-key b { color: var(--text); font-weight: 600; }
   .banner {
@@ -893,17 +910,21 @@
   <!-- ============================================================= settings -->
   <!-- One page for every per-machine setting: identity, GitHub access, signing, claim rules. About sits below. -->
   <div class="view" id="view-settings" hidden>
-    <div class="wrap" style="max-width:760px">
+    <div class="wrap">
       <div class="detail-head" style="margin-bottom:16px">
         <button class="btn ghost back" id="settings-back"><span class="ico-svg" data-icon="arrow-left" aria-hidden="true"></span>Back</button>
         <h1 class="page-title" tabindex="-1">Settings</h1>
       </div>
       <div id="settings-body" class="stack">
-        <div id="identity-body" class="stack"></div>
-        <div id="access-body" class="stack"></div>
-        <div id="signing-body" class="stack"></div>
-        <div id="claims-body" class="stack"></div>
-        <div id="info-body" class="stack"></div>
+        <div class="stack settings-col">
+          <div id="identity-body" class="stack"></div>
+          <div id="claims-body" class="stack"></div>
+          <div id="info-body" class="stack"></div>
+        </div>
+        <div class="stack settings-col">
+          <div id="access-body" class="stack"></div>
+          <div id="signing-body" class="stack"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -2171,13 +2192,13 @@
           el("div", {}, el("b", {}, "git has no credential helper yet."),
             " Cloning and pushing over HTTPS will fail. One click fixes it, and applies to every repo here."))
       : null;
-    nodes.push(el("div", { class: "card" },
-      el("div", { class: "card-head" }, el("h2", {}, "How git reaches GitHub"),
-        el("div", { class: "grow" }),
-        gh.authenticated && !g.credentials_for_gh
-          ? el("button", { class: "btn", onclick: setupGit }, "Configure") : null),
+    nodes.push(el("details", { class: "card fold", open: Boolean(gitBanner) },
+      el("summary", { class: "card-head" }, el("h2", {}, "How git reaches GitHub"),
+        el("span", { class: "fold-mark", "aria-hidden": "true" })),
       el("div", { class: "card-body" },
         gitBanner || el("div", {}),
+        gh.authenticated && !g.credentials_for_gh
+          ? el("button", { class: "btn", style: "margin-bottom:10px", onclick: setupGit }, "Configure") : null,
         ...gitRows,
         el("div", { class: "hint", style: "margin-top:10px" },
           "Repos cloned with a ", el("code", {}, "git@github.com:"), " URL use SSH instead and ignore the credential helper. To use your own SSH key, mount it: ",
@@ -2187,8 +2208,8 @@
   }
 
   function renderInfo() {
-    $("info-body").replaceChildren(el("div", { class: "card" },
-      el("div", { class: "card-head" }, el("h2", {}, "About")),
+    $("info-body").replaceChildren(el("details", { class: "card fold" },
+      el("summary", { class: "card-head" }, el("h2", {}, "About"), el("span", { class: "fold-mark", "aria-hidden": "true" })),
       el("div", { class: "card-body" },
         pillRow("ui", el("span", { class: "mono" }, state.env ? `v${state.env.version}, engine ${state.env.tool}` : "?")),
         pillRow("machine", el("span", { class: "mono" }, state.env ? `${state.env.arch}, python ${state.env.python}` : "?")),
