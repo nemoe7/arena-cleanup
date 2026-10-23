@@ -75,3 +75,20 @@ def test_the_log_toggle_turns_its_caret(desktop: Walker) -> None:
   assert page.get_attribute("#logtoggle", "aria-expanded") == "true"
   assert desktop.text("#logtoggle") == "Hide log"
   assert page.eval_on_selector(caret, "e => getComputedStyle(e).transform") != "none"
+
+
+SIGNING_API = "**/api/signing"
+
+
+def test_every_banner_leads_with_its_glyph(desktop: Walker) -> None:
+  desktop.page.route(SIGNING_API, lambda route: route.abort())
+  try:
+    desktop.page.goto(desktop.url.rstrip("/") + "/#/settings")
+    desktop.page.wait_for_selector("#signing-body .banner.err", timeout=8000)
+  finally:
+    desktop.page.unroute(SIGNING_API)
+  banners = desktop.page.eval_on_selector_all(
+    ".banner", "els => els.map((e) => [e.className, !!e.querySelector('svg')])"
+  )
+  assert len(banners) >= 2
+  assert all(has_glyph for _, has_glyph in banners), banners

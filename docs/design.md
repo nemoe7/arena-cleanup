@@ -22,7 +22,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - Entry: the dashboard at `/`. The header holds the brand, the tool dots, and one icon button (Settings).
 - Dashboard to repo: a click on the card or Enter on a focused card. The name underlines on hover. Back: the All repos button.
-- Settings opens from the header, and Back returns to the previous view. The old `#/access` and `#/signing` links land on the matching cards.
+- Settings opens from the header, and Back returns to the previous view.
 - Recovery: a failed run keeps its log open, and a failed load shows a banner with the error text. The service worker caches the shell only, never server state.
 
 ## Screens and states
@@ -45,7 +45,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Inter (variable) for text, JetBrains Mono for paths, hashes, and commands. Both ship as woff2 under `ui/static/fonts/`.
 - Desktop ramp: `--fs-1` 12 px for metadata and mono details, `--fs-2` 13 px for controls and labels. `--fs-3` 14 px for body, names, and buttons, `--fs-4` 16 px for a view title, `--fs-5` 20 px for the page title.
 - Phone ramp at 640 px and below: body 12 to 15 px, fields 16 px, and title 19 px. The 16 px fields keep iOS from zooming.
-- Weights: 400, 520 to 640 for labels and names, 600 for headings.
+- Weights: 400, 520 to 640 for labels and names, 600 for headings and bold runs.
 
 ### Icons
 
@@ -61,7 +61,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Spacing scale: 2, 4, 6, 8, 10, 12, 16, 20, 24, and 32 px, with 1 px for borders.
 - Page padding `--pad`: 20 px, 16 px at 1200 px and below, 14 px at 640 px and below.
 - Breakpoints, the nuu trio, one change each. 1200 px folds the options to one column and tightens the padding. 900 px stacks the sidebar below the run card and the repo cards into one column. 640 px switches to the phone ramp, 44 px targets, and stacked rows. Above 1200 px the options sit in two columns. Target branch, Arena branch, and Remove paths sit left, PR check timeout and the checkboxes right. No other width carries a rule.
-- Radius `--r` 10 px for cards, 8 px for buttons and fields, 999 px for pills.
+- Radius: 12 px for cards, 8 px for buttons and fields, and 999 px for pills. The tree select takes 6 px, the checkbox 4 px.
 
 ### Theme and motion
 
@@ -73,7 +73,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - `pill`: dot and word, 999 px radius, `ok`, `warn`, `mono` variants.
 - `commit`: grid `auto minmax(0, 1fr)`, the subject truncated by an ellipsis, the metadata on a second row.
 - `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`. The selected row carries a 2 px accent bar and the text colour. The name reads `Pull from <branch>`. Rows and the timeout slider are 44 px high on a phone.
-- `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout. `check`: a label with a drawn checkbox. The box is 16 px with a 4 px radius and the surface-2 fill. Checked, it takes the accent fill and a white Lucide check. `danger` fills a checked destructive option with the warn colour and a dark check. On a phone the checkboxes form a grid with 160 px columns. Browse, the fold head, and the 16 px path field are 44 px targets there.
+- `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout. `check`: a label with a drawn checkbox. The box is 16 px, 20 px on a phone, with a 4 px radius and the surface-2 fill. Checked, it takes the accent fill and a white Lucide check. `danger` fills a checked destructive option with the warn colour and a dark check. On a phone the checkboxes form a grid with 160 px columns. Browse, the fold head, and the 16 px path field are 44 px targets there.
 - `repo-card`: a flex column. The actions sit at the bottom, so the buttons line up across a grid row.
 - `sign-row`: label column of 120 px and a value column. On a phone the label takes a full row.
 - `sign-fields`: name and e-mail side by side, one column on a phone.
@@ -83,7 +83,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 ## Accessibility and inclusion
 
-- Target: WCAG 2.2 AA for keyboard use and names. Applied so far: a skip link, `aria-label` on icon buttons, `role="status"` for the run state, and focus rings. Targets are 44 px on a phone.
+- Target: WCAG 2.2 AA for keyboard use and names. Applied so far: a skip link, `aria-label` on icon buttons, `role="status"` for the run state, and focus rings. Targets are 44 px on a phone and at least 24 px under a pointer.
 - Test methods: the browser walk in `scripts/walk.py` (keyboard and names) and the measure reports (target sizes).
 - Not run: screen reader sessions, contrast measurement.
 
@@ -142,6 +142,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-22: the primary button reads Clean & Push. The phase list keeps Publish for the push, tags, and cleanup step.
 - Accepted 2026-10-22: a tree selector for Remove paths. It reads `git ls-tree` of HEAD in the clone, so it works for path repos and never calls GitHub. File contents stay out. A path only old commits carried stays a typed chip.
 - Accepted 2026-10-23: the breakpoints move to the nuu widths 1200, 900, and 640 px. 1200 folds the options, 900 stacks the page, 640 is the phone. Between 981 and 1200 px the options lose their two columns, and nothing clips.
+- Accepted 2026-10-23: an audit against this record found eight lines that did not hold. The page moved to the record. Pointer targets are at least 24 px. Every banner leads with its glyph, and the type weights stay in the set.
 - Accepted 2026-10-23: the primary button takes `accent-deep`, 5.3:1 under white, and `accent-deep-hi` on hover. The `accent` token stays for fills and marks.
 - Accepted 2026-10-23: the options card puts the selects and Remove paths left, PR check timeout and the checkboxes right. One grid with column-locked rows: PR check timeout shares the Target branch row, the checks share the next row.
 - Accepted 2026-10-23: the page draws the checkboxes. `appearance: none` drops the browser box, so the boxes match the select and the fields in every browser.

@@ -136,7 +136,7 @@
   .brand:hover .name { color: var(--accent-hi); }
   .brand svg { display: block; }
   .chip {
-    font: 500 var(--fs-1)/1 var(--mono); color: var(--muted);
+    font: 520 var(--fs-1)/1 var(--mono); color: var(--muted);
     border: 1px solid var(--line-2); border-radius: 6px;
     padding: 2px 6px; background: var(--surface-2);
   }
@@ -192,14 +192,14 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .btn[aria-busy="true"] { cursor: progress; }
-  .btn kbd, kbd.k { font: 500 var(--fs-1)/1 var(--mono); color: rgba(255,255,255,.72); border: 1px solid rgba(255,255,255,.2); border-radius: 4px; padding: 2px 4px; }
+  .btn kbd, kbd.k { font: 520 var(--fs-1)/1 var(--mono); color: rgba(255,255,255,.72); border: 1px solid rgba(255,255,255,.2); border-radius: 4px; padding: 2px 4px; }
 
   /* -------------------------------------------------------------- layout */
   main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
   .view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
   .view:focus { outline: none; }
   #view-dashboard, #view-settings { overflow-y: auto; scrollbar-gutter: stable; }
-  .wrap { width: min(1180px, 100%); margin: 0 auto; padding: 24px var(--pad) 40px; }
+  .wrap { width: min(1180px, 100%); margin: 0 auto; padding: 24px var(--pad) 32px; }
 
   /* ----------------------------------------------------------- dashboard */
   .hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
@@ -287,6 +287,7 @@
     border: 1px dashed var(--line-2); border-radius: 12px; padding: 32px 20px;
     text-align: center; color: var(--dim); margin-top: 20px; display: grid; gap: 6px; justify-items: center;
   }
+  b, strong { font-weight: 600; }
   .empty-state strong { color: var(--text); font-weight: 560; }
   .empty-state code { font-family: var(--mono); font-size: var(--fs-1); color: var(--muted); }
 
@@ -350,10 +351,10 @@
   .opt.row { display: grid; grid-template-columns: 128px minmax(0, 1fr) auto; align-items: center; gap: 8px 12px; }
   .opt.row > label { font-weight: 560; font-size: var(--fs-2); white-space: nowrap; }
   .opt.row .tree { grid-column: 1 / -1; }
-  .slider { width: 100%; margin: 0; accent-color: var(--accent); }
+  .slider { width: 100%; height: 24px; margin: 0; accent-color: var(--accent); }
   .readout { font: var(--fs-1) var(--mono); color: var(--muted); min-width: 6ch; text-align: right; }
   .checks { display: flex; flex-wrap: wrap; align-content: start; gap: 8px 20px; padding: 10px 2px; }
-  .check { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: var(--fs-2); cursor: pointer; }
+  .check { display: inline-flex; align-items: center; gap: 8px; min-height: 24px; color: var(--muted); font-size: var(--fs-2); cursor: pointer; }
   /* the box is drawn here, not by the browser: Lucide check, house radius, accent fill */
   .check input {
     appearance: none; width: 16px; height: 16px; margin: 0; flex: none; display: inline-grid; place-content: center;
@@ -391,9 +392,9 @@
   .chips input { flex: 1; min-width: 90px; height: 22px; border: 0; background: none; outline: none; font: var(--fs-1) var(--mono); }
   .chips input::placeholder { color: var(--dim); font-family: var(--mono); }
   .chip-x { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-2); background: var(--surface-3); border-radius: 6px; padding: 2px 4px 2px 8px; font: var(--fs-1) var(--mono); }
-  .chip-x button { border: 0; background: none; color: var(--dim); cursor: pointer; padding: 0 3px; font-size: var(--fs-3); line-height: 1; }
+  .chip-x button { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; border: 0; background: none; color: var(--dim); cursor: pointer; padding: 0 4px; font-size: var(--fs-3); line-height: 1; }
   .chip-x button:hover { color: var(--err); }
-  .link-btn { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; border: 0; background: none; padding: 0; color: var(--muted); font: inherit; font-size: var(--fs-1); cursor: pointer; }
+  .link-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; margin-left: auto; border: 0; background: none; padding: 0; color: var(--muted); font: inherit; font-size: var(--fs-1); cursor: pointer; }
   .link-btn:hover, .link-btn[aria-expanded="true"] { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
   /* the path tree: one level of the HEAD tree per request; a row click opens
      a folder or selects a file, the trailing button selects either */
@@ -404,7 +405,7 @@
   .tree-row[aria-expanded="true"] .tree-caret { transform: rotate(90deg); }
   .tree-ico { display: inline-flex; color: var(--muted); }
   .tree-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tree-select { margin-left: auto; display: inline-flex; align-items: center; border: 0; background: none; padding: 2px 4px; border-radius: 6px; color: var(--dim); cursor: pointer; }
+  .tree-select { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; border: 0; background: none; padding: 2px 4px; border-radius: 6px; color: var(--dim); cursor: pointer; }
   .tree-select:hover, .tree-select[aria-pressed="true"] { color: var(--accent-hi); }
   .tree-empty { padding: 4px 8px; color: var(--dim); }
 
@@ -446,7 +447,7 @@
   .run-foot .hint { color: var(--dim); font-size: var(--fs-1); }
   .logwrap { position: relative; border-top: 1px solid var(--line); }
   .logwrap .log { max-height: 340px; padding: 8px 0 12px; }
-  .status { display: inline-flex; align-items: center; gap: 8px; font: 500 var(--fs-1)/1 var(--mono); color: var(--muted); border: 1px solid var(--line-2); border-radius: 999px; padding: 4px 8px; background: var(--surface-2); }
+  .status { display: inline-flex; align-items: center; gap: 8px; font: 520 var(--fs-1)/1 var(--mono); color: var(--muted); border: 1px solid var(--line-2); border-radius: 999px; padding: 4px 8px; background: var(--surface-2); }
   .status .led { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
   .status.running .led { background: var(--accent-hi); animation: pulse 1.4s ease-in-out infinite; }
   .status.ok .led { background: var(--ok); }
@@ -581,7 +582,6 @@
        the version chip (it lives in the title) */
     .brand .name { white-space: nowrap; }
     #ver { display: none; }
-    .brand .name { font-size: 13.5px; }
     .env-dots span span, .env-dots .lbl { display: none; }
     .env-dots { gap: 8px; }
     .hero h1 { font-size: 19px; }
@@ -872,6 +872,9 @@
     return box;
   }
   for (const slot of document.querySelectorAll("[data-icon]")) slot.innerHTML = ICONS[slot.dataset.icon] || "";
+  // every banner leads with its glyph: a check for ok, the alert triangle otherwise
+  const banner = (tone, attrs, ...kids) =>
+    el("div", { class: "banner " + tone, ...attrs }, el("span", { class: "ico" }, icon(tone === "ok" ? "check" : "triangle-alert")), ...kids);
 
   const toast = (msg) => {
     const node = $("toast");
@@ -1078,8 +1081,7 @@
     const box = $("offline-banner");
     box.hidden = !state.unreachable;
     if (state.unreachable) {
-      box.replaceChildren(el("div", { class: "banner err", style: "margin-bottom:16px" },
-        el("span", { class: "ico" }, icon("triangle-alert")),
+      box.replaceChildren(banner("err", { style: "margin-bottom:16px" },
         el("div", { style: "flex:1" },
           el("b", {}, "Cannot reach the server."),
           " Every button here changes a git repo, so nothing is cached. Check that the container is running, then retry.",
@@ -1687,15 +1689,13 @@
     box.hidden = false;
     const gh = a.gh || {};
     if (!gh.installed) {
-      box.replaceChildren(el("div", { class: "banner err", style: "margin-bottom:14px" },
-        el("span", { class: "ico" }, icon("triangle-alert")),
+      box.replaceChildren(banner("err", { style: "margin-bottom:14px" },
         el("div", {}, el("b", {}, "gh is not installed in this container."),
           " Pull requests cannot be read and private repos cannot be cloned.")));
       return;
     }
     if (!gh.authenticated) {
-      box.replaceChildren(el("div", { class: "banner warn", style: "margin-bottom:14px" },
-        el("span", { class: "ico" }, icon("triangle-alert")),
+      box.replaceChildren(banner("warn", { style: "margin-bottom:14px" },
         el("div", { style: "flex:1" },
           el("b", {}, "GitHub is not connected."),
           " PR checks cannot be read, private clones will fail, and pushes over HTTPS have no credentials.",
@@ -1731,7 +1731,7 @@
     try {
       state.settings = await api("/api/settings");
     } catch (err) {
-      $("identity-body").replaceChildren(el("div", { class: "banner err" }, err.message));
+      $("identity-body").replaceChildren(banner("err", {}, err.message));
       return;
     }
     renderIdentity();
@@ -1835,10 +1835,9 @@
 
     // -- gh -------------------------------------------------------------
     if (!gh.installed) {
-      ghNodes.push(el("div", { class: "banner err" }, "gh is not installed in this container. Rebuild the image, it bundles the GitHub CLI."));
+      ghNodes.push(banner("err", {}, "gh is not installed in this container. Rebuild the image, it bundles the GitHub CLI."));
     } else if (gh.authenticated) {
-      ghNodes.push(el("div", { class: "banner ok" },
-        el("span", { class: "ico" }, icon("check")),
+      ghNodes.push(banner("ok", {},
         el("div", {}, el("b", {}, `Signed in as @${gh.login}`), ` on ${gh.host}`,
           gh.source === "environment" ? ". The token comes from the GH_TOKEN environment variable." : ".")));
       if (gh.scopes) {
@@ -1854,8 +1853,7 @@
         } }, icon("refresh-cw"), "Re-check"),
         g.credentials_for_gh ? null : el("button", { class: "btn ghost", onclick: setupGit }, "Configure git credentials")));
     } else {
-      ghNodes.push(el("div", { class: "banner warn" },
-        el("span", { class: "ico" }, icon("triangle-alert")),
+      ghNodes.push(banner("warn", {},
         el("div", {}, el("b", {}, "Not signed in to GitHub."),
           " Private clones, PR checks, and HTTPS pushes will fail until gh has a token.")));
       const input = el("input", { class: "field mono-field", type: "password", id: "token-input",
@@ -1891,8 +1889,7 @@
         : el("span", { class: "hint" }, "none in this container")),
     ];
     const gitBanner = gh.authenticated && !g.credentials_for_gh
-      ? el("div", { class: "banner warn", style: "margin-bottom:10px" },
-          el("span", { class: "ico" }, icon("triangle-alert")),
+      ? banner("warn", { style: "margin-bottom:10px" },
           el("div", {}, el("b", {}, "git has no credential helper yet."),
             " Cloning and pushing over HTTPS will fail. One click fixes it, and applies to every repo here."))
       : null;
@@ -1959,7 +1956,7 @@
     try {
       state.signing = await api("/api/signing");
     } catch (err) {
-      $("signing-body").replaceChildren(el("div", { class: "banner err" }, err.message));
+      $("signing-body").replaceChildren(banner("err", {}, err.message));
       return;
     }
     renderSigning();
@@ -1971,31 +1968,30 @@
     const nodes = [];
 
     if (!s.gpg) {
-      nodes.push(el("div", { class: "banner err" }, "gpg is not installed in this container, so commits cannot be signed. Rebuild the image (it includes gnupg2)."));
+      nodes.push(banner("err", {}, "gpg is not installed in this container, so commits cannot be signed. Rebuild the image (it includes gnupg2)."));
     }
 
     const active = s.keys.find((k) => k.fingerprint === s.active);
     if (s.keys.length && s.signingkey && active) {
-      nodes.push(el("div", { class: "banner ok" }, "Signing is on: commits are signed with " + active.uid));
+      nodes.push(banner("ok", {}, "Signing is on: commits are signed with " + active.uid));
     } else if (s.keys.length) {
-      nodes.push(el("div", { class: "banner warn" }, "A key exists but git is not configured to use it. Select one below."));
+      nodes.push(banner("warn", {}, "A key exists but git is not configured to use it. Select one below."));
     } else if (s.gpg) {
-      nodes.push(el("div", { class: "banner warn" }, "No GPG key in this container yet. Create one below. The key is generated inside the container and never leaves it."));
+      nodes.push(banner("warn", {}, "No GPG key in this container yet. Create one below. The key is generated inside the container and never leaves it."));
     }
 
     // the warning the whole panel exists for
     if (active && s.github.checked && !active.on_github) {
-      nodes.push(el("div", { class: "banner warn" },
-        el("span", { class: "ico" }, icon("triangle-alert")),
+      nodes.push(banner("warn", {},
         el("div", {},
           el("b", {}, "This key is not assigned to your GitHub account."),
           " Commits will show as “Unverified” until you add the public key at ",
           el("a", { href: "https://github.com/settings/gpg/new", target: "_blank", rel: "noopener", style: "text-decoration:underline" }, "github.com/settings/gpg/new"),
           " (and the key's email matches a verified email on the account).")));
     } else if (active && s.github.checked && active.on_github) {
-      nodes.push(el("div", { class: "banner ok" }, "This key is assigned to your GitHub account."));
+      nodes.push(banner("ok", {}, "This key is assigned to your GitHub account."));
     } else if (s.github.error) {
-      nodes.push(el("div", { class: "banner warn" }, "Could not check GitHub: " + s.github.error));
+      nodes.push(banner("warn", {}, "Could not check GitHub: " + s.github.error));
     }
 
     // key list

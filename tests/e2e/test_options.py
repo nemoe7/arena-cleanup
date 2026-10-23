@@ -47,3 +47,20 @@ def test_the_option_rows_share_their_lines(desktop: Walker) -> None:
   assert rows["opt-timeout"] == rows["opt-branch"]
   assert rows["checks"] == rows["opt-paths"]
   assert rows["opt-paths"][0] == rows["opt-branch"][1]
+
+
+POINTER_TARGET_PX = 24
+
+
+def test_the_option_controls_are_pointer_targets(desktop: Walker) -> None:
+  desktop.goto(1200)
+  desktop.click(".repo-card", 800)
+  desktop.click("#browse", 600)
+  desktop.click(".tree-select", 300)
+  sizes = desktop.page.eval_on_selector_all(
+    "#browse, .chip-x button, .tree-select, .check, .slider",
+    "els => els.map((e) => { const b = e.getBoundingClientRect(); return [e.className, b.width, b.height]; })",
+  )
+  assert len(sizes) >= 5
+  for name, width, height in sizes:
+    assert min(width, height) >= POINTER_TARGET_PX, (name, width, height)

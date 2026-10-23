@@ -672,3 +672,14 @@ def test_every_icon_name_on_the_page_is_vendored() -> None:
     if button_id == "commits-refresh":
       assert 'aria-label="Reload commits"' in match.group(0)
       assert re.sub(r"<[^>]+>", "", match.group(1)) == ""
+
+
+WEIGHTS = {400, 520, 560, 600, 620, 640}
+
+
+def test_the_type_weights_stay_in_the_documented_set() -> None:
+  page = PAGE.read_text(encoding="utf-8")
+  used = {int(w) for w in re.findall(r"font-weight: (\d+);", page)}
+  used |= {int(w) for w in re.findall(r"font: (\d+) ", page)}
+  assert used <= WEIGHTS, used - WEIGHTS
+  assert "b, strong { font-weight: 600; }" in page
