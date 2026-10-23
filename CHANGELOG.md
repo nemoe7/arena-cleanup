@@ -9,6 +9,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- The repo view deletes an arena branch on origin: a trash control on each
+  sidebar row, a modal that names the branch first, and
+  `POST /api/repos/<id>/arena/delete` behind it.
 - The dashboard sorts the repos: newest arena activity first, name A to Z,
   or PR state with failures first. The select sits beside Reload and the
   browser keeps the choice.

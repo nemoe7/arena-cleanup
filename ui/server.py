@@ -485,6 +485,27 @@ def prepare_managed_clone(repo: dict[str, Any]) -> str:
   return target
 
 
+def delete_arena_branch(repo: dict[str, Any], name: str) -> None:
+  """Drop origin/<name>, an arena branch the status lists, and its tracking ref.
+
+  The default branch and anything outside `arena/` never reach git: the name
+  has to be in the status list. A ref origin already lost counts as deleted.
+  """
+  if name not in (STATUS.get(repo).get("arena") or []):
+    raise BadRequest("not an arena branch on origin")
+  for job in JOBS.values():
+    if job.repo["id"] == repo["id"] and job.exit is None:
+      raise BadRequest("a run is in progress, cancel it first")
+  cwd = repo["path"]
+  rc, out, err = run_cmd(
+    ["git", "push", "origin", "--delete", name], cwd=cwd, timeout=120
+  )
+  if rc != 0 and "remote ref does not exist" not in (out + err).lower():
+    raise BadRequest(err.strip() or f"could not delete origin/{name}")
+  run_cmd(["git", "fetch", "--prune", "origin"], cwd=cwd, timeout=120)
+  LOG.info("arena delete %s %s", repo["name"], name)
+
+
 def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
   cwd = repo["path"]
   if not os.path.isdir(cwd):
@@ -1562,6 +1583,12 @@ class Handler(BaseHTTPRequestHandler):
         else:
           LOG.info("repo add %s %s", entry["name"], entry["source"])
           self._json({**entry, "status": STATUS.get(entry)}, 201)
+      elif parts[:2] == ["api", "repos"] and parts[3:] == ["arena", "delete"]:
+        repo = self._repo(parts[2])
+        name = str(self._body().get("branch") or "").strip()
+        delete_arena_branch(repo, name)
+        STATUS.drop(repo["id"])
+        self._json({"deleted": name, "status": STATUS.get(repo)})
       elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "reset":
         repo = self._repo(parts[2])
         target = reset_to_origin(repo)

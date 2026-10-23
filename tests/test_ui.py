@@ -328,6 +328,37 @@ def test_add_by_clone_url(ui: UI, world: World, ids: dict[str, str]) -> None:
   assert ui.status("GET", "/api/repos/deadbeef1234") == 404
 
 
+def test_delete_an_arena_branch_on_origin(
+  ui: UI, world: World, ids: dict[str, str]
+) -> None:
+  clone = ids["clone"]
+  bare = world.root / "work.git"
+  gone = "arena/ui-behind"
+  assert gone in ui.get(f"/api/repos/{clone}")["status"]["arena"]
+  for name in ("main", "arena/nope", ""):
+    assert (
+      ui.status("POST", f"/api/repos/{clone}/arena/delete", {"branch": name}) == 400
+    )
+  answer = ui.post(f"/api/repos/{clone}/arena/delete", {"branch": gone})
+  assert answer["deleted"] == gone
+  assert gone not in answer["status"]["arena"]
+  assert "arena/ui-test" in answer["status"]["arena"], "the other branches stay"
+  refs = world.git(
+    f"--git-dir={bare}", "for-each-ref", "--format=%(refname)", cwd=world.root
+  )
+  assert f"refs/heads/{gone}" not in refs
+  assert "refs/heads/arena/ui-test" in refs
+  assert ui.status("POST", f"/api/repos/{clone}/arena/delete", {"branch": gone}) == 400
+  assert (
+    ui.status("POST", "/api/repos/deadbeef1234/arena/delete", {"branch": gone}) == 404
+  )
+  page = ui.text("/")
+  assert (
+    'id="confirm-delete"' in page
+    and 'class="btn danger" type="submit" value="delete"' in page
+  )
+
+
 def test_a_fetch_on_demand_sees_a_new_remote_branch(
   ui: UI, world: World, ids: dict[str, str]
 ) -> None:

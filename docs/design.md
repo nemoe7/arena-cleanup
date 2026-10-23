@@ -23,6 +23,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Entry: the dashboard at `/`. The header holds the brand, the tool dots, and one icon button (Settings).
 - Dashboard to repo: a click on the card or Enter on a focused card. The name underlines on hover. Back: the All repos button.
 - Settings opens from the header, and Back returns to the previous view.
+- Delete an arena branch: the trash control on a sidebar row opens the modal, and Delete removes the branch on origin. The sidebar, the select, and the dashboard refresh after it.
 - Recovery: a failed run keeps its log open, and a failed load shows a banner with the error text. The service worker caches the shell only, never server state.
 
 ## Screens and states
@@ -78,6 +79,8 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - `pill`: dot and word, 999 px radius, `ok`, `warn`, `mono` variants.
 - `commit`: grid `auto minmax(0, 1fr)`, the subject clamped to two lines with an ellipsis, the metadata on a second row. The row is a button with `aria-expanded`, and a tap shows the whole subject. The metadata carries the author's GitHub picture, 20 px and round, or a `user` glyph in the same disc when the server has none.
 - `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`. The selected row carries a 2 px accent bar and the text colour. The name reads `Pull from <branch>`. Rows and the timeout slider are 44 px high on a phone.
+- `arena-item`: the arena row and its `arena-del` icon button side by side. The trash glyph is dim until hover, then reads in the error tint. The name reads `Delete <branch>`.
+- `modal`: a `dialog` of 420 px at most, with a title, one paragraph, and Cancel then Delete at the right. The backdrop dims the page. Escape and Cancel close it without a request.
 - `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout. `check`: a label with a drawn checkbox. The box is 16 px, 20 px on a phone, with a 4 px radius and the surface-2 fill. Checked, it takes the accent fill and a white Lucide check. `danger` fills a checked destructive option with the warn colour and a dark check. On a phone the checkboxes form a grid with 160 px columns. Browse, the fold head, and the 16 px path field are 44 px targets there.
 - `phase`: a row with the state glyph, the name, a count, and the time. The count comes from the engine's lines. PR checks reads `passed/total`. Rewrite and sign reads `collecting N commits`, then `signing X/Y`, then `signed X commits`. Push reads `moving`, `pushing`, then `pushed X tags`, and stays empty without a tag. A dry run reads `would sign` and `would move`. Before a count the row carries the name alone.
 - `repo-card`: above 1200 px a subgrid row on the columns of `grid`, so the columns align across rows. Left to right: the icon, the name, the branch pill, the arena rows stacked behind a hairline, Clean, and Remove with the trash glyph. The arena area takes the free width, so the buttons sit at the right edge. In a row an arena row is one line: the name, the ahead chip, and the PR pill. At 1200 px and below a grid card. The icon, the name, and Remove sit on top, then the arena rows, and Clean & Push bottom right. The branch chip stays in the rows, and an unavailable card shows its reason in the arena area.
@@ -184,3 +187,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: the dashboard sorts the repos by the newest arena tip, by name, or by PR state with failures first. The select sits beside Reload and the browser keeps the choice.
 - Accepted 2026-10-23: the dashboard Clean & Push button reads the glyph and the words again in rows and cards. A card puts it bottom right and drops the branch chip.
 - Accepted 2026-10-23: the commit hint is the count alone, with thousands separators. The list pages 30 at a time, a scroll near the end loads the older page, and Reload restarts.
+- Accepted 2026-10-23: each sidebar arena row carries a trash control. A modal names the branch and asks first, with no warning about an open PR. Delete drops the branch on origin and refreshes the views.

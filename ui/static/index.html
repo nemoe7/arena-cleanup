@@ -386,6 +386,19 @@
   .row-btn.select[aria-pressed="true"] { background: var(--surface-2); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
   .row-btn.select:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .row-btn .meta { flex: none; color: var(--dim); font: var(--fs-1) var(--mono); }
+  /* an arena row and its delete control side by side; the control opens the modal */
+  .arena-item { display: flex; align-items: stretch; gap: 4px; }
+  .arena-item .row-btn { flex: 1 1 auto; min-width: 0; }
+  .arena-del { flex: none; height: auto; color: var(--dim); background: none; border-color: transparent; }
+  .arena-del:hover, .arena-del:focus-visible { color: #ff9a94; background: rgba(240, 87, 79, .1); border-color: rgba(240, 87, 79, .35); }
+
+  .modal { border: 1px solid var(--line-2); border-radius: 12px; background: var(--surface); color: var(--text);
+    padding: 20px; width: min(420px, calc(100vw - 32px)); }
+  .modal::backdrop { background: rgba(0, 0, 0, .55); }
+  .modal h2 { margin: 0 0 8px; font-size: var(--fs-4); font-weight: 640; }
+  .modal p { margin: 0 0 16px; color: var(--muted); font-size: var(--fs-2); line-height: 1.5; }
+  .modal code { font-family: var(--mono); color: var(--text); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
   /* Pinned to the window like the sidebar: the log takes the height that is
      left, and it is the one thing that scrolls. */
@@ -896,6 +909,16 @@
 </div>
 
 
+<dialog class="modal" id="confirm-delete" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <h2 id="confirm-title">Delete arena branch</h2>
+    <p>This deletes <code id="confirm-branch"></code> on origin. There is no undo.</p>
+    <div class="modal-actions">
+      <button class="btn" type="submit" value="cancel">Cancel</button>
+      <button class="btn danger" type="submit" value="delete" id="confirm-go">Delete</button>
+    </div>
+  </form>
+</dialog>
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
@@ -1348,7 +1371,8 @@
     const branches = el("div", { class: "side-group" },
       el("div", { class: "side-label" }, "Arena branches", el("span", {}, String((s.arena || []).length))),
       ...((s.arena && s.arena.length)
-        ? s.arena.map((b) => el("button", { type: "button", class: "row-btn select", "data-branch": b,
+        ? s.arena.map((b) => el("div", { class: "arena-item" },
+           el("button", { type: "button", class: "row-btn select", "data-branch": b,
              "aria-pressed": String(selectedArena(s) === b), "aria-label": `Pull from ${b}`,
              title: "Pull from this arena branch",
              onclick: () => selectArena(b) },
@@ -1356,12 +1380,34 @@
              el("span", { class: "txt" }, b),
              el("span", { class: "tail" },
                aheadPill((s.ahead || {})[b], s.default, "meta ahead"),
-               el("span", { class: "meta" }, metaFor((s.pr || {})[b], s.pr_checked)))))
+               el("span", { class: "meta" }, metaFor((s.pr || {})[b], s.pr_checked)))),
+           el("button", { type: "button", class: "icon-btn arena-del", "aria-label": `Delete ${b}`,
+             title: "Delete this arena branch on origin", onclick: () => confirmDelete(b) },
+             icon("trash-2"))))
         : [el("div", { class: "row-btn", style: "cursor:default;color:var(--dim)" }, el("span", { class: "txt" }, "none on origin"))]));
 
     side.replaceChildren(
       el("div", { class: "side-group" }, el("div", { class: "side-label" }, "Repo"), kv),
       branches);
+  }
+
+  // Deleting a branch on origin has no undo, so the modal names it and asks.
+  function confirmDelete(name) {
+    const dlg = $("confirm-delete");
+    const repo = state.repo;
+    $("confirm-branch").textContent = name;
+    dlg.returnValue = "";
+    dlg.onclose = async () => {
+      if (dlg.returnValue !== "delete" || state.repo !== repo) return;
+      try {
+        await post(`/api/repos/${repo.id}/arena/delete`, { branch: name });
+        toast(`deleted ${name}`);
+        if (state.arena === name) state.arena = "";
+        await refreshStatus();
+        loadRepos();
+      } catch (err) { toast(err.message); }
+    };
+    dlg.showModal();
   }
 
   // The run pulls from the selected arena branch. With one branch there is
