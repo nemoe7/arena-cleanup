@@ -1212,7 +1212,9 @@
     const several = names.length >= 2;
     $("opt-arena").hidden = !several;
     state.arena = several ? (names.includes(state.arena) ? state.arena : names[0]) : "";
-    $("arena").replaceChildren(...names.map((name) => el("option", { value: name }, `${name} · ${when(activity[name] * 1000)}`)));
+    $("arena").replaceChildren(...names.map((name) => el("option",
+      { value: name, title: `${name}, last activity ${when(activity[name] * 1000)}` },
+      `${name} · ${when(activity[name] * 1000, false)}`)));
     $("arena").value = state.arena;
   }
 
@@ -1606,10 +1608,12 @@
   }
 
   // ---------------------------------------------------------------- commits
-  function when(iso) {
+  function when(iso, withTime = true) {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return "";
-    return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    const parts = { month: "short", day: "numeric" };
+    if (withTime) Object.assign(parts, { hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleString(undefined, parts);
   }
 
   async function loadCommits() {

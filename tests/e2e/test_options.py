@@ -21,3 +21,16 @@ def test_the_path_field_and_browse_are_tap_targets(phone: Walker) -> None:
   assert size == FIELD_TEXT_PX
   width, height = phone.page.eval_on_selector("#browse", BOX)
   assert min(width, height) >= TAP_TARGET_PX
+
+
+def test_the_arena_option_shows_the_branch_and_the_day(desktop: Walker) -> None:
+  desktop.goto(1200)
+  desktop.click(".repo-card:has-text('data-pipeline')", 800)
+  assert desktop.visible("#opt-arena")
+  options = desktop.page.eval_on_selector_all(
+    "#arena option", "els => els.map((o) => [o.value, o.textContent, o.title])"
+  )
+  assert len(options) >= 2
+  for value, label, title in options:
+    assert label.startswith(f"{value} · ") and ":" not in label, label
+    assert title.startswith(value) and ":" in title, title
