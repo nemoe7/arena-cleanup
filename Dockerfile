@@ -1,14 +1,10 @@
 # syntax=docker/dockerfile:1.7
-#
-# arena-cleanup - a web UI that cleans Arena branches. It runs on amd64 and on arm64.
-#
+
+# arena-cleanup, a web UI that cleans Arena branches, for amd64 and arm64:
 #   docker buildx build --platform linux/amd64,linux/arm64 -t arena-cleanup .
-#
-# Runtime needs four tools. git 2.36+ supports --force-with-lease=<ref>:<expect>.
-# gh reads PR checks and the GPG keys on your account.
-#
-# git-filter-repo removes paths. gnupg signs commits. This stage installs all
-# four, so the image is the whole environment. Nothing has to exist on the host.
+
+# The image carries git 2.36+ (--force-with-lease=<ref>:<expect>), gh (PR checks, GPG
+# keys), git-filter-repo (path removal), and gnupg (signing). The host needs none.
 
 FROM debian:13-slim AS base
 
@@ -69,9 +65,8 @@ EXPOSE 8080
 
 USER arena
 
-# /healthz is the purpose-built probe: cheap, no git, no gh, and it 200s only
-# when the server is actually serving. urllib raises on any non-2xx, so
-# Docker marks the container unhealthy instead of flapping.
+# /healthz is the cheap probe, no git and no gh, and it answers 200 only while serving.
+# urllib raises on any non-2xx, so Docker marks the container unhealthy, not flapping.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
   CMD python3 -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:%s/healthz' % os.environ.get('ARENA_PORT','8080'), timeout=4)"
 

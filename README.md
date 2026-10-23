@@ -39,8 +39,18 @@ docker compose exec arena-cleanup gh auth login    # once, if there is no token
 Compose runs two containers: `arena-cleanup` on `127.0.0.1:8080` and
 `arena-cleanup-tailscale`, which serves it to your tailnet as
 `https://arena-cleanup.<tailnet>.ts.net`. That HTTPS name is what makes the
-app installable on a phone. `docker/tailscale-serve.json` holds the proxy
-config. `tailscale serve` only, never `funnel`.
+app installable on a phone. A PWA needs a secure origin, and plain `http://`
+over the LAN is not one. `docker/tailscale-serve.json` holds the proxy config,
+`tailscale serve` only, never `funnel`.
+
+Compose reads `.env` from the checkout on its own, so nothing needs exporting
+in your shell. `docker compose config` prints the result without starting
+anything. The app is UI-only: paste a repo URL in the dashboard, and the server
+clones it into the `arena-home` volume.
+
+Neither container declares an ACL tag. Both run as the tailnet's default owner
+identity and inherit its policy. Tags belong in the Tailscale admin console, not
+in the compose file.
 
 Without compose:
 

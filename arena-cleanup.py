@@ -47,13 +47,10 @@ from typing import Any
 __version__ = "0.3.0"
 PROG = "arena-cleanup"
 
-# =============================================================================
-# Defaults - edit these, or override per-run with the matching flags
-# =============================================================================
+# ==== Defaults: edit these, or override per run with the matching flags ======
 
 # The claim rules. `git config --global --add arena.claim-email <email>` and
-# `--add arena.claim-name <name>` replace these. Each constant applies only
-# while its key is unset. The identity is `git config user.name/user.email`.
+# `--add arena.claim-name <name>` replace them, each constant applies while its key is unset.
 
 # Emails that were yours (space separated). The configured user.email is
 # always claimed too.
@@ -70,17 +67,16 @@ ARENA_PREFIX = "arena/"
 # Set to False if you have no signing key configured.
 SIGN_COMMITS = True
 
-# =============================================================================
-# Output
-# =============================================================================
+# ==== Output =================================================================
 
 RESET = "\x1b[0m"
 DIM = "\x1b[90m"
+# INFO cyan, OK green, WARN yellow, ERROR red.
 LEVEL_COLOR = {
-  "INFO": "\x1b[96m",  # cyan
-  "OK": "\x1b[92m",  # green
-  "WARN": "\x1b[93m",  # yellow
-  "ERROR": "\x1b[91m",  # red
+  "INFO": "\x1b[96m",
+  "OK": "\x1b[92m",
+  "WARN": "\x1b[93m",
+  "ERROR": "\x1b[91m",
 }
 
 # Check states, in the vocabulary GitHub uses across CheckRun and StatusContext.
@@ -203,9 +199,7 @@ class Log:
       self._print((f"{DIM}{prefix + line}{RESET}") if self.color else prefix + line)
 
 
-# =============================================================================
-# Subprocess plumbing
-# =============================================================================
+# ==== Subprocess plumbing ====================================================
 
 
 class Fail(Exception):
@@ -298,9 +292,7 @@ def which(tool: str) -> str | None:
   return _which(tool)
 
 
-# =============================================================================
-# Settings
-# =============================================================================
+# ==== Settings ===============================================================
 
 
 class Settings:
@@ -339,9 +331,7 @@ def claim_rules(key: str) -> list[str]:
   return [line.strip() for line in text.splitlines() if line.strip()]
 
 
-# =============================================================================
-# Git / gh queries
-# =============================================================================
+# ==== Git and gh queries =====================================================
 
 
 def require_repo() -> None:
@@ -402,9 +392,7 @@ def remote_arena_branches() -> list[str]:
   return res.lines()
 
 
-# =============================================================================
-# Step 1 - drop local arena/* branches that no longer exist on origin
-# =============================================================================
+# ==== Step 1: drop local arena/* branches that no longer exist on origin =====
 
 
 def drop_stale_local_branches(log: Log, current: str, dry_run: bool) -> int:
@@ -440,16 +428,10 @@ def drop_stale_local_branches(log: Log, current: str, dry_run: bool) -> int:
   return removed
 
 
-# =============================================================================
-# Step 2 - land on the arena branch
-# =============================================================================
+# ==== Step 2: land on the arena branch =======================================
 
-# ---------------------------------------------------------------------------
-# Interactive prompts
-# ---------------------------------------------------------------------------
-# Only used where guessing would be destructive: which arena branch to work on
-# when several exist, whether to overwrite a diverged local branch with its
-# remote copy, and whether to push over commits the rewrite would drop.
+# Interactive prompts, used only where a guess would destroy work. They choose the arena
+# branch among several, confirm a diverged local branch, and a push that drops commits.
 
 
 def _interactive() -> bool:
@@ -825,9 +807,7 @@ def already_published(default: str, rev: str = "HEAD") -> bool:
   )
 
 
-# =============================================================================
-# Step 3 - PR gate
-# =============================================================================
+# ==== Step 3: PR gate ========================================================
 
 
 def find_open_pr(branch: str) -> int | None:
@@ -1108,20 +1088,22 @@ def pr_gate(
   return pr
 
 
-# =============================================================================
-# Step 3b - remove paths from every commit (git filter-repo)
-# =============================================================================
+# ==== Step 3b: remove paths from every commit (git filter-repo) ==============
 
 
 class PathStats:
-  """What the -p/--path stage did, or would do."""
+  """What the -p/--path stage did, or would do.
+
+  `commits` touch any of the paths, `files` were ever tracked under them,
+  `rewritten` got a new sha, and `pruned` were dropped for becoming empty.
+  """
 
   def __init__(self) -> None:
     self.paths: list[str] = []
-    self.commits = 0  # commits that touch any of the paths.
-    self.files = 0  # distinct files ever tracked under them.
-    self.rewritten = 0  # commits whose sha filter-repo changed.
-    self.pruned: set[str] = set()  # commits dropped for becoming empty.
+    self.commits = 0
+    self.files = 0
+    self.rewritten = 0
+    self.pruned: set[str] = set()
 
 
 def _normalize_path(raw: str) -> str:
@@ -1277,9 +1259,7 @@ def filter_paths(log: Log, cfg: Settings, *, apply: bool) -> PathStats:
   return stats
 
 
-# =============================================================================
-# Step 4 - history rewrite (was strip-history.bat)
-# =============================================================================
+# ==== Step 4: history rewrite (was strip-history.bat) ========================
 
 
 def write_backup(log: Log, label: str) -> str:
@@ -1293,12 +1273,18 @@ def write_backup(log: Log, label: str) -> str:
 
 
 class RewriteStats:
+  """What the rewrite did, or would do.
+
+  `rewritten` commits were replaced, `signed` of those got a GPG signature,
+  `skipped` stayed byte-identical, and `tags` were re-pointed at new commits.
+  """
+
   def __init__(self) -> None:
     self.total = 0
-    self.rewritten = 0  # commits replaced (or that would be).
-    self.signed = 0  # of those, how many get a GPG signature.
-    self.skipped = 0  # commits left byte-identical.
-    self.tags = 0  # tags re-pointed at the rewritten commits.
+    self.rewritten = 0
+    self.signed = 0
+    self.skipped = 0
+    self.tags = 0
     self.seconds = 0.0
     self.old_tip = ""
     self.new_tip = ""
@@ -1673,9 +1659,8 @@ def sync_tags(log: Log, cfg: Settings, before: dict[str, str]) -> None:
       continue
     target = obj if obj_type == "commit" else peeled
     if not target or git("merge-base", "--is-ancestor", target, "HEAD", check=False).rc:
-      # filter-repo rewrote every ref, but this run publishes one branch. Moving
-      # this tag would leave origin with a tag pointing into history none of its
-      # branches have. Leave it where it is and say so.
+      # filter-repo rewrote every ref, but this run publishes one branch. A moved tag
+      # would point into history none of origin's branches have, so it stays and we say so.
       unpublished.append(ref)
       continue
     pushable.append(ref)
@@ -1819,9 +1804,7 @@ class Progress:
     self.log.clear_status()
 
 
-# =============================================================================
-# Subcommands
-# =============================================================================
+# ==== Subcommands ============================================================
 
 
 def delete_local_branch(log: Log, name: str, default: str, dry_run: bool) -> None:
@@ -2104,10 +2087,8 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
   started_on = current  # where to go back to if the user cancels
   log.info(f"current branch: {current}")
 
-  # Refuse to move the working tree out from under uncommitted changes. Decide
-  # that before anything has moved, so an aborted run leaves the repo as it was
-  # found. Landing on the arena branch counts as a move. So does hopping back
-  # to the default branch at the end to dispose of it.
+  # Refuse to move the working tree out from under uncommitted changes, before anything
+  # moved. Landing on the arena branch and hopping back to the default branch both move.
   prospective = args.branch or current
   if not args.branch and current.lower() == default.lower():
     will_switch = True  # we will hop onto the arena branch
@@ -2119,14 +2100,8 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
 
   drop_stale_local_branches(log, current, cfg.dry_run)
 
-  # ------------------------------------------------------------------ target
-  # Two ways to choose what gets cleaned:
-  #   * --branch NAME  clean that branch directly (usually `main`): no arena
-  #     discovery, no switching dance, no PR required.
-  #   * default        if we are on the default branch, hop onto the single
-  #     origin/arena/* branch first.
-  # A dry run must not move the working tree, so there we only resolve which
-  # branch we *would* use and run every check against that ref instead of HEAD.
+  # Target: --branch NAME cleans that branch directly, with no arena discovery and no PR.
+  # Otherwise, from the default branch, hop onto the single origin/arena/* branch first.
   explicit = args.branch
   switched = False
 
@@ -2178,13 +2153,8 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
       note="done, nothing to do",
     )
 
-  # Rewriting here would swap an already-published history for a fresh variant
-  # without changing a single file. If origin/<default> has moved on since, say
-  # by a maintenance commit, pushing would replace that too.
-  #
-  # Both patterns show up when origin/<default> absorbed this branch's work
-  # after a cleanup. The local branch kept the pre-cleanup commits. Detect and
-  # stop.
+  # Both patterns mean origin/<default> absorbed this branch after a cleanup. A rewrite
+  # would republish the same files and replace what origin gained since, so stop.
   if (
     not rewriting_paths
     and not cleaning_default
@@ -2405,9 +2375,7 @@ def cmd_doctor(args: argparse.Namespace, log: Log) -> int:
   return rc
 
 
-# =============================================================================
-# CLI
-# =============================================================================
+# ============================== CLI ==========================================
 
 EPILOG = """\
 commands:

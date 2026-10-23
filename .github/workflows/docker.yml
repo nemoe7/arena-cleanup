@@ -12,11 +12,8 @@ on:
 permissions:
   contents: read
 
-# One native runner for each platform, so no job emulates the arm64 build. Each
-# leg pushes a digest, and a merge job puts the one tag on the manifest list.
-#
-# A successful CI run on main publishes latest. A new build replaces an older
-# one, so its group cancels.
+# Native runners, no arm64 emulation, each push a digest, and a merge job puts one tag
+# on the manifest list. A green CI run on main publishes latest, a newer build cancels older.
 jobs:
   build:
     name: "Build the ${{ matrix.arch }} image"
@@ -151,9 +148,8 @@ jobs:
           docker buildx imagetools create -t "${IMAGE}:latest" "${digests[@]}"
           docker buildx imagetools inspect "${IMAGE}:latest"
 
-      # latest moves, so each build leaves untagged versions behind: the two
-      # platform images and the old manifest list. A private package
-      # pays for its storage, so the leftovers go.
+      # Each build leaves untagged versions behind, the platform images and the old
+      # manifest list. A private package pays for its storage, so the leftovers go.
       - name: Prune untagged versions
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,11 +1,5 @@
-/*
- * arena-cleanup service worker.
- *
- * The worker caches the app shell so the icon opens instantly and works on a flaky
- * connection. Nothing else: every /api/ request goes straight to the
- * network. A cached repo status would be a lie about someone's git
- * state. If the network is gone, the shell still opens and says so.
- */
+/* The arena-cleanup service worker caches the app shell, so the icon opens at once and on
+   a flaky connection. Every /api/ request goes to the network, a cached status would lie. */
 
 const SHELL = "arena-shell-v2";
 const SHELL_FILES = [

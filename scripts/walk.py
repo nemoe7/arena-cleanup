@@ -462,9 +462,8 @@ def cancel_a_run_in_flight(w: Walker, demo: Demo) -> None:
   w.click("#back")
   w.click(".repo-card >> nth=2", 900)
   assert "docs-site" in w.text("#repo-title")
-  # the demo fixtures finish in a fraction of a second. The stub gh reports a
-  # check that never finishes, so the run parks at the PR gate. That is the
-  # only place Cancel meets a live process.
+  # The demo fixtures finish in a fraction of a second. The stub gh reports a check that
+  # never finishes, so the run parks at the PR gate. Only there Cancel meets a live process.
   demo.slow_checks(True)
   try:
     box = 'input[data-opt="dry_run"]'

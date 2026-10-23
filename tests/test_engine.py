@@ -1116,9 +1116,8 @@ def test_path_with_run_publishes_the_cleaned_tree_and_moves_tags(world: World) -
   world.git("reset", "-q", "--hard", "origin/main")
   world.git("fetch", "-q", "--prune", "origin")
 
-  # Isolated repo: the only commit touching the path is already on main, and
-  # nothing else needs rewriting. After the prune HEAD is an ancestor of
-  # origin/main again. The push still has to drop that commit there.
+  # Isolated repo: the only commit touching the path is already on main. After the
+  # prune HEAD is an ancestor of origin/main again, and the push still drops it there.
   clean_origin = world.root / "clean-origin.git"
   clean_work = world.root / "clean-work"
   world.git("init", "-q", "--bare", "-b", "main", str(clean_origin), cwd=world.root)

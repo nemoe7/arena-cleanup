@@ -3,9 +3,8 @@
 # through to the UI server (--host, --port, --data).
 set -eu
 
-# Identity has to live in git config, because the engine reads it back. Seed it
-# from the environment only while the config is empty. A value set in the
-# container (Settings page or `git config --global`) survives a restart.
+# The engine reads the identity from git config, so the environment seeds it only
+# while the config is empty. A value set in the container survives a restart.
 if [ -n "${GIT_AUTHOR_NAME:-}" ] && [ -z "$(git config --global user.name || true)" ]; then
   git config --global user.name "$GIT_AUTHOR_NAME"
 fi

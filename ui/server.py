@@ -69,15 +69,21 @@ COMMANDS = {"run"}
 MAX_LINES = 4000
 LATEST = ["jobs", "latest"]  # the route tail of the latest run.
 STATUS_TTL = 8.0  # seconds a repo status lives before the server asks git again.
-FETCH_PERIOD = 60.0  # every repo fetches origin when the clock hits a multiple.
-FETCH_DEBOUNCE = 10.0  # seconds in which the server skips a later unforced fetch.
+
+# Every repo fetches origin when the clock hits a FETCH_PERIOD multiple. The server
+# skips a later unforced fetch within FETCH_DEBOUNCE seconds.
+FETCH_PERIOD = 60.0
+FETCH_DEBOUNCE = 10.0
 FETCH_TIMEOUT = 120
 STARTED = time.time()  # when this process came up, for /healthz
 GIT_TIMEOUT = 20
 AVATAR_TTL = 30 * 86400  # seconds a picture lives after its last use.
 AVATAR_MISS_TTL = 86400  # seconds an address without a picture stays known.
-AVATAR_PX = 40  # the picture size GitHub renders, twice the 20 px box.
-AVATAR_LOOKUPS = 8  # new addresses one commit list resolves, the rest wait.
+
+# GitHub renders AVATAR_PX, twice the 20 px box. One commit list resolves
+# AVATAR_LOOKUPS new addresses, the rest wait for the next list.
+AVATAR_PX = 40
+AVATAR_LOOKUPS = 8
 AVATAR_HOST = os.environ.get(
   "ARENA_AVATAR_HOST", "https://avatars.githubusercontent.com"
 )
@@ -142,9 +148,7 @@ def git(*args: str, cwd: str | None = None, timeout: int = GIT_TIMEOUT) -> str:
   return out if rc == 0 else ""
 
 
-# --------------------------------------------------------------------------- #
-# Registry - the repos this instance remembers
-# --------------------------------------------------------------------------- #
+# ---- Registry: the repos this instance remembers ---------------------------- #
 
 
 class Registry:
@@ -268,9 +272,7 @@ def register_path(
   return reg.add(entry), ""
 
 
-# --------------------------------------------------------------------------- #
-# Status - what the dashboard shows for each repo
-# --------------------------------------------------------------------------- #
+# ---- Status: what the dashboard shows for each repo ------------------------- #
 
 
 class StatusCache:
@@ -504,9 +506,8 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
     ).splitlines()
     if b.startswith("origin/arena/")
   ]
-  # Net commits per arena branch: its commits beyond the default branch, minus
-  # the default branch's commits beyond it. Absorbed work reads 0, and a
-  # default branch that moved on reads below 0.
+  # Net commits per arena branch: its commits beyond the default branch minus the
+  # default branch's commits beyond it. Absorbed work reads 0, a moved default below 0.
   ahead: dict[str, int] = {}
   if default:
     for name in arena:
@@ -525,10 +526,8 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
     for name in arena
   }
 
-  # PR state for each arena branch, bounded. A repo with many branches must
-  # not turn one dashboard load into a dozen API calls. `pr_checked` lets the
-  # dashboard say "cannot see checks" instead of "no PR" when gh is signed
-  # out. Those two look identical in an empty dict and mean different things.
+  # PR state per arena branch, bounded so many branches stay few API calls per load.
+  # `pr_checked` tells a signed-out gh ("cannot see checks") from an empty dict ("no PR").
   checks: dict[str, Any] = {}
   gh = auth_report()["gh"]
   authenticated = bool(gh["installed"] and gh["authenticated"])
@@ -561,9 +560,7 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
   }
 
 
-# --------------------------------------------------------------------------- #
-# Signing - a key in the container, and whether GitHub knows about it
-# --------------------------------------------------------------------------- #
+# ---- Signing: a key in the container, and whether GitHub knows about it ----- #
 
 
 def gpg_available() -> bool:
@@ -937,9 +934,7 @@ def generate_key(name: str, email: str) -> tuple[str, str]:
   return "", "key was created but could not be read back"
 
 
-# --------------------------------------------------------------------------- #
-# Jobs
-# --------------------------------------------------------------------------- #
+# ---- Jobs ------------------------------------------------------------------- #
 
 
 class Job:
@@ -1076,9 +1071,7 @@ def new_job(argv: list[str], repo: dict[str, Any], jobs_dir: Path) -> Job:
   return job
 
 
-# --------------------------------------------------------------------------- #
-# Access - gh authentication, git credentials, and how git reaches GitHub
-# --------------------------------------------------------------------------- #
+# ---- Access: gh authentication, git credentials, and how git reaches GitHub - #
 
 AUTH_TTL = 20.0
 AUTH_LOCK = threading.Lock()
@@ -1230,9 +1223,7 @@ def gh_setup_git() -> tuple[bool, str]:
   return rc == 0, "" if rc == 0 else err or "gh auth setup-git failed"
 
 
-# --------------------------------------------------------------------------- #
-# Request validation
-# --------------------------------------------------------------------------- #
+# ---- Request validation ----------------------------------------------------- #
 
 
 class BadRequest(Exception):
@@ -1329,9 +1320,7 @@ def build_argv(body: dict[str, Any], repo: dict[str, Any]) -> list[str]:
   return argv
 
 
-# --------------------------------------------------------------------------- #
-# HTTP
-# --------------------------------------------------------------------------- #
+# ---- HTTP ------------------------------------------------------------------- #
 
 CONTENT_TYPES = {
   ".html": "text/html; charset=utf-8",

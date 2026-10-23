@@ -1,20 +1,5 @@
-# cp .env.example .env   (name, email, Tailscale auth key)
-# docker compose up -d
-#
-# docker compose reads .env from this directory on its own and substitutes the
-# variables below from that file. Nothing needs exporting in your shell.
-# `docker compose config` prints the result without starting anything.
-#
-# The app is UI-only: paste a repo URL in the dashboard, and the server clones
-# it into the arena-home volume.
-#
-# TLS: `tailscale serve` gives it a real HTTPS name on your tailnet. That is
-# what makes it installable as a PWA from a phone. A PWA needs a secure
-# origin, and plain http:// over the LAN is not one.
-#
-# Neither container declares an ACL tag. Everything runs as the tailnet's
-# default owner identity and inherits the policy that identity already has.
-# If you want tags later, set them in the Tailscale admin console, not here.
+# `cp .env.example .env`, then `docker compose up -d`. Compose reads .env on its own,
+# and the Docker Compose section of the README explains the two containers.
 
 services:
   arena-cleanup:
@@ -41,10 +26,8 @@ services:
     restart: unless-stopped
     networks:
       tailnet:
-        # The sidecar's hostname is `arena-cleanup`, which gives the node its
-        # MagicDNS name. Inside that container, `arena-cleanup` therefore
-        # resolves to the sidecar itself. The proxy dials this alias instead,
-        # a name that can only mean the app.
+        # The sidecar's hostname `arena-cleanup` is its MagicDNS name, so inside it that
+        # name means the sidecar itself. The proxy dials this alias, which only means the app.
         aliases:
           - arena-app
 
