@@ -71,7 +71,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - `pill`: dot and word, 999 px radius, `ok`, `warn`, `mono` variants.
 - `commit`: grid `auto minmax(0, 1fr)`, the subject truncated by an ellipsis, the metadata on a second row.
 - `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`. The selected row carries a 2 px accent bar and the text colour. The name reads `Pull from <branch>`. Rows and the timeout slider are 44 px high on a phone.
-- `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout. `check`: a label with a drawn checkbox. The box is 16 px with a 4 px radius and the surface-2 fill. Checked, it takes the accent fill and a white Lucide check. `danger` fills a checked destructive option with the warn colour and a dark check. On a phone the checkboxes form a grid with 160 px columns. Browse and the fold head are 44 px high there.
+- `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout. `check`: a label with a drawn checkbox. The box is 16 px with a 4 px radius and the surface-2 fill. Checked, it takes the accent fill and a white Lucide check. `danger` fills a checked destructive option with the warn colour and a dark check. On a phone the checkboxes form a grid with 160 px columns. Browse, the fold head, and the 16 px path field are 44 px targets there.
 - `repo-card`: a flex column. The actions sit at the bottom, so the buttons line up across a grid row.
 - `sign-row`: label column of 120 px and a value column. On a phone the label takes a full row.
 - `sign-fields`: name and e-mail side by side, one column on a phone.

@@ -622,7 +622,7 @@
     .opt.row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; }
     .slider { height: 44px; }
     .row-btn.select { min-height: 44px; }
-    .link-btn { min-height: 44px; }
+    .link-btn { min-height: 44px; min-width: 44px; }
     .fold-head { min-height: 44px; }
     /* a grid instead of a ragged wrap: one column at 360 px, more on wider phones */
     .checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 12px; }
@@ -630,8 +630,8 @@
     .tabbar .btn { height: 46px; font-size: 15px; }
     .chip-x { padding: 4px 4px 4px 10px; }
     .chip-x button { padding: 4px 6px; }
-    .chips { min-height: 44px; }
-    .chips input { height: 32px; }
+    .chips { min-height: 44px; padding: 0 6px; }
+    .chips input { height: auto; min-height: 44px; font-size: 16px; }
     .tree-row { min-height: 44px; }
     .tree-select { min-width: 44px; min-height: 44px; justify-content: center; }
 
