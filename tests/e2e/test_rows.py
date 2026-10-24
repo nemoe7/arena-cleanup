@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import pytest
@@ -70,10 +71,36 @@ PROBE = """(card) => {
 }"""
 
 
-def probe(browser: Any, demo: Demo, width: int) -> dict[str, Any]:
+LONG_BRANCH = "arena/" + "session-with-a-very-long-name-" * 12
+MODE = "e => getComputedStyle(e).display"
+TABLE = "document.getElementById('repo-table')"
+
+
+def lengthen(route: Any) -> None:
+  """The first arena branch of the probed repo gets a name wider than any window."""
+  reply = route.fetch()
+  repos = reply.json()
+  for repo in repos:
+    status = repo.get("status") or {}
+    if repo["name"] != "data-pipeline" or not status.get("arena"):
+      continue
+    old = status["arena"][0]
+    status["arena"][0] = LONG_BRANCH
+    for field in ("ahead", "pr", "tips"):
+      if old in status.get(field, {}):
+        status[field][LONG_BRANCH] = status[field][old]
+  route.fulfill(response=reply, body=json.dumps(repos))
+
+
+def probe(
+  browser: Any, demo: Demo, width: int, long_branch: bool = False
+) -> dict[str, Any]:
   context = browser.new_context(viewport={"width": width, "height": 900})
   try:
     walker = Walker(context, demo.url)
+    if long_branch:
+      walker.page.route("**/api/fetch", lengthen)
+      walker.page.route("**/api/repos", lengthen)
     walker.goto(600)
     walker.page.wait_for_selector(f"{CARD} .arena-row .arena-tail .pill")
     return walker.page.eval_on_selector(CARD, PROBE)
@@ -127,8 +154,14 @@ def test_a_hovered_table_row_tints(desktop: Walker) -> None:
   assert page.eval_on_selector(CARD, bg) not in clear, "the pointer tints the row"
 
 
-def test_at_1200_the_repos_are_cards(browser: Any, demo: Demo) -> None:
-  card = probe(browser, demo, 1200)
+def test_the_rows_fold_into_cards_when_the_table_outgrows_its_room(
+  browser: Any, demo: Demo
+) -> None:
+  # the demo table fits a 1200 px window, so it stays a table there
+  row = probe(browser, demo, 1200)
+  assert (row["tag"], row["display"]) == ("TR", "table-row")
+  # a branch name wider than the window pushes the natural table past its room
+  card = probe(browser, demo, 1200, long_branch=True)
   assert card["display"] == "grid", "the row is the card"
   assert card["bodyColumns"] > 1, "the body is the card grid"
   assert card["width"] < card["gridWidth"] / 2
@@ -145,6 +178,25 @@ def test_at_1200_the_repos_are_cards(browser: Any, demo: Demo) -> None:
   assert card["removeTop"] <= card["icoTop"], "remove sits top right"
   assert max(card["headMids"]) - min(card["headMids"]) <= 1, "one centre line on top"
   phone = probe(browser, demo, 360)
+  assert phone["display"] == "grid" and phone["bodyColumns"] == 1, "one column"
   assert max(phone["headMids"]) - min(phone["headMids"]) <= 1, (
     "44 px remove, same centre"
   )
+
+
+def test_a_resized_window_folds_and_unfolds_the_rows(browser: Any, demo: Demo) -> None:
+  context = browser.new_context(viewport={"width": 1400, "height": 900})
+  try:
+    walker = Walker(context, demo.url)
+    walker.goto(600)
+    page = walker.page
+    page.wait_for_selector(f"{CARD} .arena-row .arena-tail .pill")
+    assert page.eval_on_selector(CARD, MODE) == "table-row"
+    page.set_viewport_size({"width": 600, "height": 900})
+    page.wait_for_function(f"{TABLE}.classList.contains('cards')")
+    assert page.eval_on_selector(CARD, MODE) == "grid", "a narrow window folds the rows"
+    page.set_viewport_size({"width": 1400, "height": 900})
+    page.wait_for_function(f"!{TABLE}.classList.contains('cards')")
+    assert page.eval_on_selector(CARD, MODE) == "table-row", "a wide one unfolds them"
+  finally:
+    context.close()

@@ -35,7 +35,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 ## Screens and states
 
 - Dashboard: sort select and Reload button in the head, add bar.
-  - Table and cards: one table with one row per repo above 1200 px, repo cards at 1200 px and below.
+  - Table and cards: one table with one row per repo while it fits its room, repo cards once its natural width outgrows the room.
     - The header row reads Repo, Default, Arena Branches, and Actions. Rules of 1 px split the rows, cells pad 12 px, and a hovered row tints.
     - A row or card shows the branch.
     - The repo name is a button that opens the repo, and a click on its card body does the same.
@@ -145,8 +145,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Page padding `--pad`: 20 px, 16 px at 1200 px and below.
 - Breakpoints, the nuu trio in em, one change each: 75em, 56.25em, and 40em.
   - Pixels: 1200, 900, and 640 px at the 16 px browser default, and the em unit moves each switch with the reader's font size.
-  - 1200 px stacks the options card over the run card and folds the repo rows into cards. It puts the settings in one column and tightens the padding.
-  - 900 px stacks the sidebar below the cards and the repo cards into one column, and the page scrolls as one.
+  - 1200 px stacks the options card over the run card. It puts the settings in one column and tightens the padding.
+  - 900 px stacks the sidebar below the cards and the repo cards, once folded, into one column, and the page scrolls as one.
   - 640 px switches to the phone ramp, 44 px targets, and stacked rows.
     - The options sit in one column at every width.
     - No other width carries a rule.
@@ -211,13 +211,13 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Push reads `moving`, `pushing`, then `pushed X tags`, and stays empty without a tag.
     - A dry run reads `would sign` and `would move`.
     - Before a count the row carries the name alone.
-- `repo-card`: a `tr` of `grid`, a real `table` with `th` header cells, so the columns align across rows under the header row. At 1200 px and below the cells hand their content to the row, which lays the card out by area.
+- `repo-card`: a `tr` of `grid`, a real `table` with `th` header cells, so the columns align across rows under the header row. Once the table outgrows its room the cells hand their content to the row, which lays the card out by area.
   - Row, left to right, four cells: the icon and name, the default branch pill, the arena rows stacked, and the actions.
     - The actions cell holds Clean, and Remove with the trash glyph.
     - The arena area takes the free width, so Clean and Remove sit at the right edge.
     - In a row an arena row is one line: the name, the ahead chip, and the PR pill.
     - A clean in flight turns Clean & Push into Running: disabled, an amber spinning glyph, the same box, and the reason as its title. The row carries `aria-busy`.
-  - Card: at 1200 px and below a grid card.
+  - Card: a grid card once the table, laid out at its natural width, no longer fits its room. The page measures after each render and on each resize.
     - The icon, the name, and Remove sit on top on one centre line, then the arena rows, and Clean & Push bottom right.
     - The branch chip stays in the rows, and an unavailable card shows its reason in the arena area.
   - Pending: a pending card, the clone still running, dims behind a `cloning` pill and leads the grid.
@@ -517,6 +517,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: above 1200 px the repos are one table, not row-shaped cards, and the cards below 1200 px keep their shape.
   - A header line reads Repo, Branch, Arena branches, and Actions. Rules of 1 px split the rows, cells pad 12 px, a hovered row tints, and the Sort select stays.
 - Accepted 2026-10-24: the rows view is a real `table` element with `th` header cells, and the header reads Repo, Default, Arena Branches, and Actions.
+- Accepted 2026-10-24: the rows fold into cards by measurement, not at a fixed width. The page lays the table out at its natural width, compares it with the room, and toggles the cards on render and on resize.
 - Accepted 2026-10-24: a button that leads to GitHub shows the GitHub mark instead of the word. Its title and accessible name keep the phrase.
 - Accepted 2026-10-24: the Clean & Push button carries a live run itself, as Running with an amber spinning glyph, and the `clean running` pill is gone. Both labels share one grid cell, so the button keeps its width and height across states.
 - Accepted 2026-10-24: every amber dot pulses like the LED: a running check, a running job step, and the sidebar dot of a running PR. The run timeline glyph, the Running button, and Re-check keep their spinners.

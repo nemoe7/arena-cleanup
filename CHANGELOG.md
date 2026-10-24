@@ -23,9 +23,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and cursor, the last settings and signing answers, and the last finished
   run of a repo. Each paints at once, a fresh read replaces it when it
   differs, and the repo status now carries the tip of each arena branch.
-- The rows view above 1200 px is a real table element with header cells
-  that read Repo, Default, Arena Branches, and Actions. The cards at
-  1200 px and below keep their shape.
+- The rows view is a real table element with header cells that read
+  Repo, Default, Arena Branches, and Actions. The cards keep their shape.
+- The rows fold into cards by measurement: the page lays the table out at
+  its natural width and folds it once that outgrows the room, on each
+  render and on each resize. A fixed 1200 px fold no longer applies.
 
 ## [0.3.9] - 2026-10-24
 

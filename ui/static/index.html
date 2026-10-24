@@ -791,33 +791,34 @@
     :root { --pad: 16px; }
     .work { grid-template-columns: 1fr; }
     #options-card { order: -1; }
-    /* the table turns into cards: the header row goes, the body is the card grid, and each cell
-       hands its content to the card, so the row lays the parts out by area */
-    .grid { display: block; border: 0; border-radius: 0; background: none; }
-    .grid thead { display: none; }
-    .grid tbody { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
-    .grid td, .repo-head, .repo-card.pending .repo-meta { display: contents; }
-    /* a card: the icon, the name, and Remove on top, the arena rows, and the button bottom right.
-       The branch chip stays in the rows; an unavailable repo shows its reason where the arena rows go */
-    .repo-card {
-      display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto 1fr auto;
-      grid-template-areas: "ico name rm" "arena arena arena" "actions actions actions";
-      gap: 12px 10px; align-items: start; padding: 16px;
-      border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
-    }
-    @media (hover: hover) { .repo-card:hover { border-color: var(--card-hover-line); } }
-    .repo-card:active { transform: translateY(1px); }
-    .repo-head > div { max-width: none; padding: 0; }
-    .grid td .repo-name { white-space: normal; overflow: visible; }
-    /* the icon, the name, and Remove share one centre line, 44 px Remove on a phone included */
-    .repo-ico, .repo-head > div, .repo-card .rm { align-self: center; margin: 0; }
-    .repo-meta { grid-area: arena; align-self: start; padding: 0; }
-    .repo-meta.branch { display: none; }
-    .repo-meta .pill { max-width: 100%; }
-    .arena-list { justify-content: flex-start; padding: 12px 0 0; border-top: 1px solid var(--line); }
-    .arena-row { flex-direction: column; align-items: stretch; gap: 4px; }
-    .card-actions { display: flex; align-self: end; justify-self: end; padding: 0; }
   }
+  /* the table turns into cards when its natural width outgrows its room, measured by the page:
+     the header row goes, the body is the card grid, and each cell hands its content to the card,
+     so the row lays the parts out by area */
+  .grid.cards { display: block; border: 0; border-radius: 0; background: none; }
+  .grid.cards thead { display: none; }
+  .grid.cards tbody { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
+  .cards td, .cards .repo-head, .cards .repo-card.pending .repo-meta { display: contents; }
+  /* a card: the icon, the name, and Remove on top, the arena rows, and the button bottom right.
+     The branch chip stays in the rows; an unavailable repo shows its reason where the arena rows go */
+  .cards .repo-card {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto 1fr auto;
+    grid-template-areas: "ico name rm" "arena arena arena" "actions actions actions";
+    gap: 12px 10px; align-items: start; padding: 16px;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+  }
+  @media (hover: hover) { .cards .repo-card:hover { border-color: var(--card-hover-line); } }
+  .cards .repo-card:active { transform: translateY(1px); }
+  .cards .repo-head > div { max-width: none; padding: 0; }
+  .cards td .repo-name { white-space: normal; overflow: visible; }
+  /* the icon, the name, and Remove share one centre line, 44 px Remove on a phone included */
+  .cards .repo-ico, .cards .repo-head > div, .cards .repo-card .rm { align-self: center; margin: 0; }
+  .cards .repo-meta { grid-area: arena; align-self: start; padding: 0; }
+  .cards .repo-meta.branch { display: none; }
+  .cards .repo-meta .pill { max-width: 100%; }
+  .cards .arena-list { justify-content: flex-start; padding: 12px 0 0; border-top: 1px solid var(--line); }
+  .cards .arena-row { flex-direction: column; align-items: stretch; gap: 4px; }
+  .cards .card-actions { display: flex; align-self: end; justify-self: end; padding: 0; }
   @media (max-width: 56.25em) {
     /* One column: the run first, then the sidebar with the facts and the commits. */
     .detail { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: start; }
@@ -825,7 +826,7 @@
     .side-commits .commits { overflow: visible; min-height: 0; }  /* one scroll: the page */
     .main-col { height: auto; overflow: visible; }
     .logwrap .log { max-height: 52vh; }
-    .grid tbody { grid-template-columns: 1fr; }
+    .grid.cards tbody { grid-template-columns: 1fr; }
   }
   @media (max-width: 40em) {
     /* one scale on a phone: 15 body, 13 controls, 12 metadata. Before this the
@@ -1657,9 +1658,25 @@
     const first = grid.children.length === 0;
     grid.replaceChildren(...sortedRepos().map(repoCard));
     $("repo-table").hidden = grid.children.length === 0;
+    fitRows();
     if (first) enter([...grid.children], { amount: 0.12 });
     renderChecks();
   }
+
+  // the rows fold into cards when the table, laid out at its natural width, outgrows
+  // its room. Measured after each render, and again whenever the room changes size
+  function fitRows() {
+    const table = $("repo-table");
+    if (table.hidden) return;
+    const box = getComputedStyle(table.parentElement);
+    const room = table.parentElement.clientWidth - parseFloat(box.paddingLeft) - parseFloat(box.paddingRight);
+    table.classList.remove("cards");
+    table.style.width = "max-content";
+    const natural = table.getBoundingClientRect().width;
+    table.style.width = "";
+    table.classList.toggle("cards", natural > room);
+  }
+  new ResizeObserver(fitRows).observe($("repo-table").parentElement);
 
   // the table and its empty state together, for a load and for a list edited before the reply
   function renderRepos() {
