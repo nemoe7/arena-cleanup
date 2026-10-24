@@ -21,6 +21,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The phase rows start on the engine's own lines. A branch or repo name with
   a phase word, such as cleanup, moved the run ahead and left PR checks,
   Rewrite and sign, and Push skipped.
+- A reopened check row paints from its kept detail, and the server keeps a
+  finished job's steps and log by job id, so a reopen costs no GitHub call.
 
 ## [0.3.8] - 2026-10-24
 

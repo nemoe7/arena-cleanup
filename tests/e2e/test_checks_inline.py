@@ -74,6 +74,28 @@ def test_a_failed_check_opens_its_steps_and_the_last_log_page(desktop: Walker) -
     close_modal(desktop)
 
 
+def test_a_reopened_check_paints_from_its_kept_detail(desktop: Walker) -> None:
+  page = desktop.page
+  hits: list[str] = []
+  page.on("request", lambda req: hits.append(req.url) if "/job?" in req.url else None)
+  open_modal(desktop, BILLING)
+  try:
+    row = ROW.format(name="test")
+    page.click(row)
+    page.wait_for_selector(LOG)
+    page.click(row)
+    page.wait_for_selector(PANE, state="detached")
+    page.click(row)
+    page.wait_for_selector(LOG)
+    log = page.evaluate(LOG_STATE)
+    assert log["lines"] == f"lines {TOTAL - PAGE + 1} to {TOTAL} of {TOTAL}"
+    assert log["atBottom"], "the kept log opens at its end again"
+    assert desktop.count(f"{PANE} .job-steps li") == STEPS
+    assert len(hits) == 1, hits
+  finally:
+    close_modal(desktop)
+
+
 def test_scrolling_to_the_top_loads_an_older_page_and_keeps_the_place(
   desktop: Walker,
 ) -> None:

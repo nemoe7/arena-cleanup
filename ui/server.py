@@ -516,10 +516,11 @@ def check_rows(summary: Any, rollup: list[dict[str, Any]]) -> list[dict[str, Any
 JOB_URL = re.compile(
   r"^https://github\.com/([\w.-]+)/([\w.-]+)/actions/runs/\d+/jobs?/(\d+)(?:[/?#].*)?$"
 )
-JOB_LOG_TTL = 30.0  # seconds a job log lives before the server asks gh again
+JOB_LOG_TTL = 30.0  # seconds a running job's log lives before the server asks gh again
 JOB_LOG_PAGE = 400
-JOB_LOG_CACHE: dict[str, tuple[float, list[str]]] = {}
-JOB_LOG_LOCK = threading.Lock()
+JOB_CACHE_MAX = 32  # finished jobs kept with their logs, oldest out first
+JOB_CACHE: dict[str, dict[str, Any]] = {}
+JOB_CACHE_LOCK = threading.Lock()
 
 
 def job_ref(url: str) -> tuple[str, str, str] | None:
@@ -528,8 +529,27 @@ def job_ref(url: str) -> tuple[str, str, str] | None:
   return (match.group(1), match.group(2), match.group(3)) if match else None
 
 
+def cached_job(ref: tuple[str, str, str]) -> dict[str, Any]:
+  """The kept job and log for `ref`, empty parts when the server has none yet."""
+  with JOB_CACHE_LOCK:
+    entry = JOB_CACHE.get("/".join(ref))
+    return dict(entry) if entry else {"job": None, "log": None, "at": 0.0}
+
+
+def keep_job(ref: tuple[str, str, str], **parts: Any) -> None:
+  """Keep `parts` of a job under its id and drop the oldest job over the cap."""
+  with JOB_CACHE_LOCK:
+    entry = JOB_CACHE.setdefault("/".join(ref), {"job": None, "log": None})
+    entry.update(parts, at=time.time())
+    while len(JOB_CACHE) > JOB_CACHE_MAX:
+      del JOB_CACHE[next(iter(JOB_CACHE))]
+
+
 def job_report(ref: tuple[str, str, str]) -> dict[str, Any] | None:
-  """The job and its steps from one gh call, None when gh cannot answer."""
+  """The job and its steps, from the kept copy once completed, else from one gh call."""
+  kept = cached_job(ref)["job"]
+  if kept and kept["status"] == "completed":
+    return kept
   owner, repo, job_id = ref
   rc, out, _ = run_cmd(
     ["gh", "api", f"repos/{owner}/{repo}/actions/jobs/{job_id}"], timeout=25
@@ -542,7 +562,7 @@ def job_report(ref: tuple[str, str, str]) -> dict[str, Any] | None:
     return None
   if not isinstance(job, dict):
     return None
-  return {
+  report = {
     "name": job.get("name", ""),
     "status": job.get("status", ""),
     "conclusion": job.get("conclusion") or "",
@@ -557,6 +577,10 @@ def job_report(ref: tuple[str, str, str]) -> dict[str, Any] | None:
       for step in job.get("steps") or []
     ],
   }
+  if report["status"] == "completed":
+    # a log read while the job ran is short, so the first read after the end replaces it
+    keep_job(ref, job=report, log=None)
+  return report
 
 
 def step_seconds(step: dict[str, Any]) -> int | None:
@@ -570,12 +594,14 @@ def step_seconds(step: dict[str, Any]) -> int | None:
 
 
 def job_log_lines(ref: tuple[str, str, str]) -> list[str] | None:
-  """The whole job log, read once per `JOB_LOG_TTL`, or None while GitHub has none."""
-  key = "/".join(ref)
-  with JOB_LOG_LOCK:
-    hit = JOB_LOG_CACHE.get(key)
-    if hit and time.time() - hit[0] < JOB_LOG_TTL:
-      return hit[1]
+  """The whole job log, kept once the job completed, else read once per `JOB_LOG_TTL`.
+
+  None while GitHub has no log yet.
+  """
+  kept = cached_job(ref)
+  done = bool(kept["job"]) and kept["job"]["status"] == "completed"
+  if kept["log"] is not None and (done or time.time() - kept["at"] < JOB_LOG_TTL):
+    return kept["log"]
   owner, repo, job_id = ref
   rc, out, _ = run_cmd(
     ["gh", "api", f"repos/{owner}/{repo}/actions/jobs/{job_id}/logs"], timeout=60
@@ -583,8 +609,7 @@ def job_log_lines(ref: tuple[str, str, str]) -> list[str] | None:
   if rc != 0:
     return None
   lines = out.splitlines()
-  with JOB_LOG_LOCK:
-    JOB_LOG_CACHE[key] = (time.time(), lines)
+  keep_job(ref, log=lines)
   return lines
 
 

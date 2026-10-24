@@ -1401,7 +1401,7 @@ def test_the_job_route_reads_steps_and_pages_the_log(
     return 0, json.dumps(job), ""
 
   monkeypatch.setattr(server, "run_cmd", fake_gh)
-  server.JOB_LOG_CACHE.clear()
+  server.JOB_CACHE.clear()
   ref = ("acme", "shop-web", "9")
   report = server.job_report(ref)
   assert report is not None
@@ -1412,4 +1412,52 @@ def test_the_job_route_reads_steps_and_pages_the_log(
   assert lines is not None and len(lines) == 1000
   server.job_log_lines(ref)
   assert calls.count("repos/acme/shop-web/actions/jobs/9/logs") == 1
-  server.JOB_LOG_CACHE.clear()
+  server.JOB_CACHE.clear()
+
+
+def test_a_finished_job_is_read_once_and_a_running_one_again(
+  monkeypatch: pytest.MonkeyPatch,
+) -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  status = {"value": "in_progress"}
+  calls: list[str] = []
+
+  def fake_gh(argv: list[str], **_: Any) -> tuple[int, str, str]:
+    calls.append(argv[2])
+    if argv[2].endswith("/logs"):
+      return 0, "row 1\nrow 2", ""
+    return 0, json.dumps({"name": "test", "status": status["value"], "steps": []}), ""
+
+  monkeypatch.setattr(server, "run_cmd", fake_gh)
+  server.JOB_CACHE.clear()
+  ref = ("acme", "shop-web", "9")
+  job_path = "repos/acme/shop-web/actions/jobs/9"
+  for _ in range(2):
+    assert server.job_report(ref) == {
+      "name": "test",
+      "status": "in_progress",
+      "conclusion": "",
+      "url": "",
+      "steps": [],
+    }
+  assert calls.count(job_path) == 2, "a running job is read on every call"
+  assert server.job_log_lines(ref) == ["row 1", "row 2"]
+  monkeypatch.setattr(server, "JOB_LOG_TTL", 0.0)
+  server.job_log_lines(ref)
+  assert calls.count(job_path + "/logs") == 2, "a running job's log follows the TTL"
+  status["value"] = "completed"
+  calls.clear()
+  server.job_report(ref)
+  server.job_log_lines(ref)
+  assert calls == [job_path, job_path + "/logs"], "the end of a job reads its log again"
+  calls.clear()
+  assert server.job_report(ref)["status"] == "completed"
+  assert server.job_log_lines(ref) == ["row 1", "row 2"]
+  assert calls == [], "a finished job and its log come from the kept copy"
+  for n in range(server.JOB_CACHE_MAX):
+    server.keep_job(("acme", "shop-web", f"1{n:03d}"), job={"status": "completed"})
+  assert len(server.JOB_CACHE) == server.JOB_CACHE_MAX
+  assert "acme/shop-web/9" not in server.JOB_CACHE, "the oldest job leaves at the cap"
+  server.JOB_CACHE.clear()

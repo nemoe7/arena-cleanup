@@ -507,3 +507,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - The log pads 8 by 12 px, and the pane indents 24 px to line up with the row name.
 - Accepted 2026-10-24: the Commits list follows the selected arena branch on origin, its whole history with the commits ahead on top. A click on another arena row reloads it, and a repo with no arena branch lists the clone HEAD.
 - Accepted 2026-10-24: the phase rows start on the engine's own lines. A word test matched branch and repo names, so a name like arena-cleanup moved a run to Clean up and left the middle rows skipped.
+- Accepted 2026-10-24: the server keeps 32 finished jobs with steps and log by job id. The page keeps 20 loaded details for a reopen.
+  - A running job refreshes on every poll, and its first read after the end replaces the short log.
