@@ -35,6 +35,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   is flat, the nuu rule, and the focus rings stay.
 - Every transition runs 160 ms on one curve, from two tokens, instead of
   120 or 180 ms on the browser default.
+- The delete modal has an x top right that closes it like Cancel.
 
 ## [0.3.0] - 2026-10-23
 

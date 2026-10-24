@@ -398,7 +398,8 @@
   .modal { border: 1px solid var(--line-2); border-radius: 12px; background: var(--surface); color: var(--text);
     padding: 20px; width: min(420px, calc(100vw - 32px)); }
   .modal::backdrop { background: rgba(0, 0, 0, .55); }
-  .modal h2 { margin: 0 0 8px; font-size: var(--fs-4); font-weight: 640; }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
+  .modal h2 { margin: 0; font-size: var(--fs-4); font-weight: 640; }
   .modal p { margin: 0 0 16px; color: var(--muted); font-size: var(--fs-2); line-height: 1.5; }
   .modal code { font-family: var(--mono); color: var(--text); }
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
@@ -934,10 +935,13 @@
 
 <dialog class="modal" id="confirm-delete" aria-labelledby="confirm-title">
   <form method="dialog">
-    <h2 id="confirm-title">Delete arena branch</h2>
+    <div class="modal-head">
+      <h2 id="confirm-title">Delete arena branch</h2>
+      <button class="icon-btn" type="submit" value="cancel" id="confirm-x" aria-label="Close" title="Close"><span class="ico-svg" data-icon="x" aria-hidden="true"></span></button>
+    </div>
     <p>This deletes <code id="confirm-branch"></code> on origin. There is no undo.</p>
     <div class="modal-actions">
-      <button class="btn" type="submit" value="cancel">Cancel</button>
+      <button class="btn" type="submit" value="cancel" autofocus>Cancel</button>
       <button class="btn danger" type="submit" value="delete" id="confirm-go">Delete</button>
     </div>
   </form>
