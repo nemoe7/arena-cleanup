@@ -39,6 +39,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ### Colour
 
 - Roles: `bg`, `surface`, `surface-2`, `surface-3`, `line`, `line-2`, `text`, `muted`, `dim`, `accent`, `accent-hi`, `accent-deep`, `accent-deep-hi`, `accent-soft`, `ok`, `warn`, `err`, `info`.
+- Tints and edges, also in `:root`: `on-accent`, `accent-edge`, `selection`, `line-hover`, `line-3`, `line-check-hover`, `card-hover`, `card-hover-line`, `thumb`, `thumb-hover`, `glass`, `glass-2`, `scrim`, `kbd-text`, `kbd-line`, `log-text`, `log-dim`, and `on-danger`. Each tone has `-text`, `-line`, and `-tint`, and `err-line-hi` edges the armed button. No rule below `:root` names a colour.
 - One dark theme, `color-scheme: dark`. Contrast checks: white on the primary button 5.3:1 at rest and 5.9:1 on hover, and `dim` text 5.1:1 on a card. `accent` itself gives 3.9:1 under white, so it fills checked boxes and marks rows, never a text button.
 
 ### Type
@@ -199,3 +200,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-24: every transition takes `--fast`, 160 ms, on `--ease`, one curve, nuu clause 8. The spinners and the LED pulse are CSS animations and keep their own timing, and reduced motion stops them all.
 - Accepted 2026-10-24: the delete modal carries an `x` icon button top right, nuu clause 15. It submits `cancel` like the Cancel button, which keeps the first focus.
 - Accepted 2026-10-24: every `:hover` rule sits in its own `@media (hover: hover)` block in place, nuu clause 9. The cascade order stays, and `:focus-visible` and `:active` apply on every device.
+- Accepted 2026-10-24: the 36 colour literals below `:root` moved onto 29 role tokens, nuu clause 3. The pills and the banners share one text, line, and tint per tone, a shift of at most two per cent in alpha.

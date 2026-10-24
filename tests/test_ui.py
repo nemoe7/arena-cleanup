@@ -493,6 +493,18 @@ def test_hover_rules_wait_for_a_pointer(ui: UI) -> None:
   assert any(":active" in line for line in plain)
 
 
+def test_colours_live_in_root_tokens_only(ui: UI) -> None:
+  """nuu rule 3: every colour is a role token, so no rule below :root names one."""
+  page = ui.text("/")
+  style = page[page.index("<style>") : page.index("</style>")]
+  start = style.index(":root {")
+  end = style.index("\n  }\n", start)
+  root, rules = style[start:end], style[:start] + style[end:]
+  literal = re.compile(r"#[0-9a-fA-F]{3,8}(?![\w-])|rgba?\(")
+  assert len(literal.findall(root)) >= 40
+  assert literal.findall(rules) == []
+
+
 def test_the_fetch_clock_is_aligned_and_ticks(
   ui: UI, world: World, ids: dict[str, str]
 ) -> None:

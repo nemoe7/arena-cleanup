@@ -38,6 +38,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The delete modal has an x top right that closes it like Cancel.
 - Hover tints apply only with a pointer, under `@media (hover: hover)`, so a
   tap on a touch screen leaves no stuck hover state. Focus and active stay.
+- Every colour below `:root` is a role token. The pills and the banners share
+  one text, line, and tint per tone, so their tints differ by at most two per
+  cent from before.
 
 ## [0.3.0] - 2026-10-23
 
