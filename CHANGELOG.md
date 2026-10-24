@@ -33,6 +33,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- A clone refused while a reload of the list is in flight leaves no pending
+  card behind. The reload reads the pending cards after its wait, not before.
 - The run phases measure one contiguous timeline. A line names the current
   phase or a later one, never an earlier one, and the next phase starts where
   the last one ends. A stale branch deleted in Prepare no longer starts

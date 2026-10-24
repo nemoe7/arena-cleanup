@@ -112,3 +112,39 @@ def test_the_add_bar_shows_a_pending_card_before_the_clone_answers(
     assert desktop.count(".repo-card") == cards
   finally:
     page.unroute("**/api/repos")
+
+
+def test_a_clone_refused_during_a_reload_leaves_no_card_behind(desktop: Walker) -> None:
+  page = desktop.page
+  posts: list[Any] = []
+  fetches: list[Any] = []
+
+  def hold_posts(route: Any) -> None:
+    if route.request.method == "POST":
+      posts.append(route)
+    else:
+      route.continue_()
+
+  page.route("**/api/repos", hold_posts)
+  try:
+    desktop.goto(1200)
+    page.route("**/api/fetch", lambda route: fetches.append(route))
+    cards = desktop.count(".repo-card")
+    page.fill("#add-source", "https://github.com/acme/late-repo.git")
+    desktop.click("#add-btn", SETTLE)
+    clone = wait_for(posts, page)
+    page.click("#repos-refresh")
+    reload = wait_for(fetches, page)
+    fail(clone)
+    page.wait_for_timeout(SETTLE)
+    assert desktop.count(PENDING) == 0
+    fresh = page.evaluate("fetch('/api/repos').then((r) => r.text())")
+    reload.fulfill(status=200, content_type="application/json", body=fresh)
+    page.wait_for_timeout(SETTLE)
+    assert desktop.count(PENDING) == 0, (
+      "the reload in flight does not bring the refused clone back"
+    )
+    assert desktop.count(".repo-card") == cards
+  finally:
+    page.unroute("**/api/repos")
+    page.unroute("**/api/fetch")

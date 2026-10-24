@@ -1444,18 +1444,19 @@
   }
   async function loadRepos(fresh = false) {
     if (!state.auth) await refreshAuth();
-    // a card whose clone is still running outlives every reload of the list
-    const pending = state.repos.filter((r) => r.pending);
+    // a card whose clone is still running outlives every reload of the list,
+    // read after the wait: a clone refused meanwhile has left already
+    const pending = () => state.repos.filter((r) => r.pending);
     try {
       const repos = fresh
         ? await fetchWithBar(fresh === "force")
         : await api("/api/repos");
-      state.repos = [...pending, ...repos];
+      state.repos = [...pending(), ...repos];
       state.unreachable = false;
     } catch (err) {
       // "no repos" and "cannot ask the server" look identical on screen
       // unless we keep them apart - and an empty dashboard here would be a lie
-      state.repos = pending;
+      state.repos = pending();
       state.unreachable = true;
     }
     $("repo-loading").hidden = true;
