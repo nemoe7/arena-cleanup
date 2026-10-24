@@ -459,6 +459,15 @@ def test_the_running_pill_is_amber_like_github(ui: UI) -> None:
   assert ".pill.run" not in page
 
 
+def test_no_surface_casts_a_drop_shadow(ui: UI) -> None:
+  """nuu rule 6: no shadow. A box-shadow is a focus ring, an inset bar, or none."""
+  page = ui.text("/")
+  shadows = re.findall(r"box-shadow: ([^;]+);", page)
+  assert len(shadows) >= 3, "the focus rings are still there"
+  for value in shadows:
+    assert value.startswith(("0 0 0 3px", "inset", "none")), value
+
+
 def test_the_fetch_clock_is_aligned_and_ticks(
   ui: UI, world: World, ids: dict[str, str]
 ) -> None:

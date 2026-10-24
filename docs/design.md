@@ -195,3 +195,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-24: the PR pill and the sidebar dot paint running checks amber, the GitHub pending colour, instead of blue. A PR without checks gets a grey dot. The `info` token keeps the debug log rows.
 - Accepted 2026-10-24: a sidebar arena row takes two lines, as the cards do. The dot and the name first, then the ahead count and the PR meta under the name. The tail used to wrap right aligned only when it did not fit.
 - Accepted 2026-10-24: list edits show before the reply, nuu rule 10. The arena row leaves on Delete, the card leaves on Remove, and Add puts a dimmed pending card first. A refused call puts the row back with the error, a lost connection sends the write once more.
+- Accepted 2026-10-24: no surface casts a drop shadow, nuu clause 6. The toast and the jump button lost theirs, so the primary button, the cards, and the floats are all flat. The 3 px focus rings stay.

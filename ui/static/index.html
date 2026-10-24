@@ -566,7 +566,7 @@
   .empty-log { display: grid; place-items: center; gap: 8px; height: 100%; min-height: 190px; color: var(--dim); text-align: center; padding: 20px; }
   .empty-log p { margin: 0; max-width: 380px; font-size: var(--fs-2); line-height: 1.6; }
   .empty-log code { font-family: var(--mono); color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-size: var(--fs-1); }
-  .jump { position: absolute; right: 16px; bottom: 16px; border: 1px solid var(--line-2); background: var(--surface-3); border-radius: 1000px; padding: 4px 12px; font-size: var(--fs-1); cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.55); display: none; }
+  .jump { position: absolute; right: 16px; bottom: 16px; border: 1px solid var(--line-2); background: var(--surface-3); border-radius: 1000px; padding: 4px 12px; font-size: var(--fs-1); cursor: pointer; display: none; }
   .jump.show { display: block; }
 
   /* --------------------------------------------------------------- signing */
@@ -643,7 +643,7 @@
     position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(10px);
     background: var(--surface-3); border: 1px solid var(--line-2); padding: 8px 16px; border-radius: 10px;
     font-size: var(--fs-2); opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s;
-    box-shadow: 0 12px 34px rgba(0,0,0,.6); z-index: 60; max-width: calc(100vw - 32px); text-align: center;
+    z-index: 60; max-width: calc(100vw - 32px); text-align: center;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 

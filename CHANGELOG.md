@@ -31,6 +31,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   more.
 - The sidebar Delete button stays a 32 px square on a desktop instead of
   stretching to the height of its two-line row.
+- The toast and the log's jump button lose their drop shadows. Every surface
+  is flat, the nuu rule, and the focus rings stay.
 
 ## [0.3.0] - 2026-10-23
 
