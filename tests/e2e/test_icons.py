@@ -26,7 +26,8 @@ ICON_ONLY = """() => [...document.querySelectorAll('button')]
   .map((b) => { const r = b.getBoundingClientRect(); return [b.getAttribute('aria-label'), r.width, r.height]; })"""
 OPACITY = "e => Number(getComputedStyle(e).opacity)"
 BACKGROUND = "e => getComputedStyle(e).backgroundColor"
-CARD_CLEAN = ".repo-card .btn.clean"
+# a clean in flight hides the idle face, so the test reads a button at rest
+CARD_CLEAN = ".repo-card .btn.clean:not(.running)"
 
 
 def glyph_widths(walker: Walker) -> dict[str, float]:
