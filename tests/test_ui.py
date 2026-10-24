@@ -336,6 +336,23 @@ def test_add_by_clone_url(ui: UI, world: World, ids: dict[str, str]) -> None:
   assert ui.status("GET", "/api/repos/deadbeef1234") == 404
 
 
+def test_the_commit_list_follows_the_selected_arena_branch(
+  ui: UI, ids: dict[str, str]
+) -> None:
+  clone = ids["clone"]
+  on_main = ui.get(f"/api/repos/{clone}/commits?limit=2")
+  ahead = ui.get(f"/api/repos/{clone}/commits?limit=2&ref=arena/ui-ahead")
+  assert ahead["branch"] == "arena/ui-ahead"
+  assert ahead["commits"][0]["subject"] == "one more", "the commit beyond main leads"
+  assert ahead["commits"][1]["sha"] == on_main["commits"][0]["sha"], (
+    "then main's history"
+  )
+  assert ahead["total"] == on_main["total"] + 1
+  assert ui.status("GET", f"/api/repos/{clone}/commits?ref=arena/nope") == 404
+  assert ui.status("GET", f"/api/repos/{clone}/commits?ref=-x") == 404
+  assert ui.status("GET", f"/api/repos/{clone}/commits?ref=a..b") == 404
+
+
 def test_delete_an_arena_branch_on_origin(
   ui: UI, world: World, ids: dict[str, str]
 ) -> None:

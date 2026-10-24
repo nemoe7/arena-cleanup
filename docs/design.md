@@ -66,7 +66,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - The commit list fills the rest and scrolls on its own.
     - Its hint is the commit count with thousands separators.
     - Reload sits in its label.
-  - Commit list: 30 commits a page, and a scroll near the end appends the older page.
+  - Commit list: 30 commits a page, and a scroll near the end appends the older page. It reads the selected arena branch on origin, and the clone HEAD when the repo has none.
     - Each row shows hash, subject, author, and date. The hash reads 7 characters, the GitHub short SHA.
     - Each arena row shows the PR state and is a button that selects the branch to pull from.
   - Flow: the page runs the full flow only.
@@ -505,3 +505,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: every commit hash reads 7 characters, the GitHub short SHA, in the commits list, the run log, and the phase modals. Git's own abbreviation grows with the clone.
 - Accepted 2026-10-24: the checks modal takes the house sizes after the nuu audit. A check row reads 44 px below 40em, and Open on GitHub is a 34 px button with 12 px sides.
   - The log pads 8 by 12 px, and the pane indents 24 px to line up with the row name.
+- Accepted 2026-10-24: the Commits list follows the selected arena branch on origin, its whole history with the commits ahead on top. A click on another arena row reloads it, and a repo with no arena branch lists the clone HEAD.

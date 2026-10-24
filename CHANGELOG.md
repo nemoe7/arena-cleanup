@@ -9,6 +9,13 @@ The engine, `arena-cleanup.py`, carries its own number and its own file,
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.9] - 2026-10-24
+
+### Added
+
+- The Commits list shows the selected arena branch from origin instead of
+  the clone HEAD, and reloads when the selection changes.
+
 ## [0.3.8] - 2026-10-24
 
 ### Fixed

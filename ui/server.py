@@ -973,25 +973,45 @@ class Avatars:
     tmp.replace(self.index)
 
 
+BRANCH_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]*")
+
+
+def arena_ref(repo: dict[str, Any], name: str) -> str | None:
+  """The remote ref of an arena branch, or None when origin has no such branch."""
+  if not BRANCH_NAME.fullmatch(name) or ".." in name:
+    return None
+  ref = f"refs/remotes/origin/{name}"
+  return ref if git("rev-parse", "--verify", "--quiet", ref, cwd=repo["path"]) else None
+
+
 def commits_report(
   repo: dict[str, Any],
   limit: int = 30,
   avatars: Avatars | None = None,
   before: str | None = None,
+  ref: str | None = None,
 ) -> dict[str, Any]:
-  """The most recent commits on HEAD, with their signature state and picture.
+  """The most recent commits on a ref, with their signature state and picture.
 
   The run card shows which commits a cleanup produced. This is the git answer,
-  read after the run rather than parsed out of its log. `before` names the
-  last commit of the caller's page, so the answer is one page older.
-  `next` is the cursor for the following page, or None once pages run out.
+  read after the run rather than parsed out of its log. `ref` is the remote
+  arena branch the page selected, else the clone's HEAD.
+
+  `before` names the last commit of the caller's page, so the answer is one
+  page older. `next` is the cursor for the following page, or None once pages
+  run out.
   """
   cwd = repo["path"]
-  branch = git("rev-parse", "--abbrev-ref", "HEAD", cwd=cwd) or "(detached)"
-  total = git("rev-list", "--count", "HEAD", cwd=cwd).strip()
+  tip = ref or "HEAD"
+  branch = (
+    tip.removeprefix("refs/remotes/origin/")
+    if ref
+    else git("rev-parse", "--abbrev-ref", "HEAD", cwd=cwd) or "(detached)"
+  )
+  total = git("rev-list", "--count", tip, cwd=cwd).strip()
   fmt = "%H%x1f%s%x1f%an%x1f%ae%x1f%aI%x1f%G?"
   count = limit + 1 if before else limit
-  out = git("log", f"-{count}", f"--format={fmt}", before or "HEAD", cwd=cwd)
+  out = git("log", f"-{count}", f"--format={fmt}", before or tip, cwd=cwd)
   commits = []
   emails: dict[str, str] = {}
   for line in out.splitlines():
@@ -1666,7 +1686,12 @@ class Handler(BaseHTTPRequestHandler):
         if before is not None and not re.fullmatch(r"[0-9a-f]{7,40}", before):
           self._error("bad cursor", 400)
           return
-        self._json(commits_report(repo, limit, self.reg.avatars, before))
+        name = query.get("ref", [""])[0]
+        ref = arena_ref(repo, name) if name else None
+        if name and not ref:
+          self._error("no such arena branch on origin", 404)
+          return
+        self._json(commits_report(repo, limit, self.reg.avatars, before, ref))
       elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "job":
         self._repo(parts[2])
         query = urllib.parse.parse_qs(
