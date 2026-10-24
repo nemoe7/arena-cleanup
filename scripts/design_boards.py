@@ -57,7 +57,7 @@ COLOURS = [
   ("ok", "#46b95c", "passed, signed in"),
   ("warn", "#d6a032", "needs attention"),
   ("err", "#f0574f", "failed, missing"),
-  ("info", "#5aa2f7", "running checks"),
+  ("info", "#5aa2f7", "debug log rows"),
 ]
 DESKTOP_RAMP = [
   ("--fs-1", "12 px", "metadata, mono details"),
@@ -477,7 +477,7 @@ def states_board(_: dict[str, bytes]) -> str:
     '<table class="sheet">'
     f"<tr><td>{pill('ok', 'PR #142, 4/4', dot=False)}</td><td>open PR, all checks passed</td></tr>"
     f"<tr><td>{pill('err', 'PR #88, 1/3', dot=False)}</td><td>a check failed, the run stops at the gate</td></tr>"
-    f"<tr><td>{pill('run', 'PR #12, 2/3', dot=False)}</td><td>checks still running, the run waits</td></tr>"
+    f"<tr><td>{pill('warn', 'PR #12, 2/3', dot=False)}</td><td>checks still running, amber like GitHub</td></tr>"
     f"<tr><td>{pill('mono', 'no PR', dot=False)}</td><td>the branch exists, no open PR</td></tr>"
     f"<tr><td>{pill('warn', 'checks unavailable', dot=False)}</td><td>signed out: the app cannot know</td></tr>"
     "</table>"
@@ -527,7 +527,7 @@ def components_board(_: dict[str, bytes]) -> str:
     + pill("mono ahead", f"{icon('arrow-up')}23", dot=False)
     + pill("ok", "clean")
     + pill("err", "failing")
-    + pill("run", "running")
+    + pill("warn", "running")
     + pill("mono", "6f5a842", dot=False)
     + "</div>"
     + '<div class="row" style="gap:8px"><span class="chip">0.1.0</span>'

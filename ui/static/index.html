@@ -320,7 +320,6 @@
   .pill.ok { color: #8fe0a0; border-color: rgba(70,185,92,.3); background: rgba(70,185,92,.09); }
   .pill.warn { color: #f0c674; border-color: rgba(214,160,50,.32); background: rgba(214,160,50,.09); }
   .pill.err { color: #ff9a94; border-color: rgba(240,87,79,.32); background: rgba(240,87,79,.09); }
-  .pill.run { color: #9dc7ff; border-color: rgba(90,162,247,.32); background: rgba(90,162,247,.09); }
   .pill.mono { font-family: var(--mono); font-size: var(--fs-1); }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
 
@@ -1120,7 +1119,8 @@
       }, "checks unavailable");
     }
     if (!pr) return el("span", { class: "pill mono" }, "no PR");
-    const cls = pr.state === "passing" ? "ok" : pr.state === "failing" ? "err" : pr.state === "running" ? "run" : "mono";
+    // GitHub paints a pending check amber, so a running PR shares the warn pill
+    const cls = pr.state === "passing" ? "ok" : pr.state === "failing" ? "err" : pr.state === "running" ? "warn" : "mono";
     if (pr.state === "none") return el("span", { class: "pill mono" }, `PR #${pr.number}, no checks`);
     return el("span", { class: "pill " + cls, title: pr.title },
       `PR #${pr.number}`,
@@ -1368,8 +1368,8 @@
   }
 
   function dotFor(pr) {
-    if (!pr) return "var(--line-2)";
-    return pr.state === "passing" ? "var(--ok)" : pr.state === "failing" ? "var(--err)" : "var(--info)";
+    if (!pr || pr.state === "none") return "var(--line-2)";
+    return pr.state === "passing" ? "var(--ok)" : pr.state === "failing" ? "var(--err)" : "var(--warn)";
   }
   function metaFor(pr, checked) {
     if (!pr) return checked === false ? "cannot check" : "no PR";

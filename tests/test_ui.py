@@ -449,6 +449,16 @@ def test_the_pill_counts_checks_by_the_engine_rule(
   assert red["state"] == "failing"
 
 
+def test_the_running_pill_is_amber_like_github(ui: UI) -> None:
+  """GitHub paints a pending check amber. The running pill and the sidebar
+  dot share the warn colour, and no blue pill variant remains."""
+  page = ui.text("/")
+  assert 'pr.state === "running" ? "warn" : "mono"' in page
+  assert 'pr.state === "failing" ? "var(--err)" : "var(--warn)"' in page
+  assert 'if (!pr || pr.state === "none") return "var(--line-2)";' in page
+  assert ".pill.run" not in page
+
+
 def test_the_fetch_clock_is_aligned_and_ticks(
   ui: UI, world: World, ids: dict[str, str]
 ) -> None:

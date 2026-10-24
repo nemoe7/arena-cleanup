@@ -21,6 +21,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   UI, `arena-cleanup.py` the engine. The version check asks for one step in
   a part whose files changed and none in the other, so a docs-only change
   needs no bump.
+- The PR pill and the sidebar dot paint running checks amber, the GitHub
+  pending colour, instead of blue. A PR without checks gets a grey dot.
 
 ## [0.3.0] - 2026-10-23
 
