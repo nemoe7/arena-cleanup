@@ -21,7 +21,7 @@ import pytest
 
 from scripts import app_icon
 
-from .conftest import ME_EMAIL, ROLLUPS, ROOT, World, project_version
+from .conftest import ME_EMAIL, ROLLUPS, ROOT, World, engine_version, project_version
 
 SERVER = ROOT / "ui" / "server.py"
 STARTUP_SECONDS = 15
@@ -245,7 +245,7 @@ def ids() -> dict[str, str]:
 def test_env_and_page(ui: UI) -> None:
   env = ui.get("/api/env")
   assert env["version"] == project_version()
-  assert env["tool"] == project_version()
+  assert env["tool"] == engine_version()
   assert env["tools"]["git"] is True
   assert env["tools"]["gh"] is True
   assert env["data"] == str(ui.data)

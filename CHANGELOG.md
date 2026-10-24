@@ -1,6 +1,8 @@
 # Changelog
 
-This file documents all notable changes to this project.
+This file documents all notable changes to the UI, the web app in `ui/`.
+The engine, `arena-cleanup.py`, carries its own number and its own file,
+`CHANGELOG-engine.md`, from 0.3.0 on. Up to 0.3.0 both parts shared this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -15,6 +17,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Four values sit on the 4 px scale: fields pad 12 px, the pill gap is 8 px,
   the phone keeps the 16 px page padding, and the phone title reads 20 px.
   Pill radii read 1000 px, the same shape.
+- The UI and the engine carry separate versions: `pyproject.toml` holds the
+  UI, `arena-cleanup.py` the engine. The version check asks for one step in
+  a part whose files changed and none in the other, so a docs-only change
+  needs no bump.
 
 ## [0.3.0] - 2026-10-23
 

@@ -9,15 +9,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from .conftest import ENGINE, ROOT, project_version
+from .conftest import ENGINE, ROOT, engine_version
 
 LAUNCHER = ROOT / "arena-cleanup.cmd"
 
 
-def test_the_cli_carries_the_project_version() -> None:
-  match = re.search(r'^__version__ = "([^"]+)"$', ENGINE.read_text(), re.MULTILINE)
-  assert match, "no version constant"
-  assert match.group(1) == project_version()
+def test_the_cli_carries_its_own_version() -> None:
+  assert re.fullmatch(r"\d+\.\d+\.\d+", engine_version())
 
 
 def test_the_cli_imports_the_standard_library_only() -> None:
@@ -38,7 +36,7 @@ def test_the_cli_runs_alone_in_an_empty_directory(tmp_path: Path) -> None:
   res = subprocess.run(
     [sys.executable, str(copy), "-V"], capture_output=True, text=True, check=True
   )
-  assert res.stdout.split() == ["arena-cleanup", project_version()]
+  assert res.stdout.split() == ["arena-cleanup", engine_version()]
 
 
 def test_the_launcher_runs_the_file_beside_it() -> None:

@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from .conftest import LOG_LINE, ME_EMAIL, SEED_COMMITS, World, project_version
+from .conftest import LOG_LINE, ME_EMAIL, SEED_COMMITS, World, engine_version
 
 MAIN_ONLY = 1
 ARENA_COMMITS = SEED_COMMITS - MAIN_ONLY
@@ -550,7 +550,7 @@ def test_help_screen_and_shorthands(world: World) -> None:
   res = world.cleanup("-V")
   assert res.rc == 0
   assert re.search(r"arena-cleanup \d+\.\d+\.\d+", res.text)
-  assert res.text.split()[-1] == project_version()
+  assert res.text.split()[-1] == engine_version()
   res = world.cleanup("doctor", "-v")
   assert any(line.startswith("$ ") for line in res.lines)
   assert world.cleanup("strip", "-c").rc in STRIP_CHECK_CODES

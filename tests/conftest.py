@@ -155,8 +155,16 @@ GITCONFIG = f"""[user]
 
 
 def project_version() -> str:
+  """The UI version, from pyproject.toml."""
   with open(ROOT / "pyproject.toml", "rb") as fh:
     return tomllib.load(fh)["project"]["version"]
+
+
+def engine_version() -> str:
+  """The engine version, the `__version__` constant in arena-cleanup.py."""
+  match = re.search(r'^__version__ = "([^"]*)"$', ENGINE.read_text(), re.MULTILINE)
+  assert match, "arena-cleanup.py carries no __version__ line"
+  return match.group(1)
 
 
 @dataclass

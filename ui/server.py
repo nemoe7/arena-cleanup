@@ -57,7 +57,7 @@ engine = load_tool()
 
 
 def project_version() -> str:
-  """The version from pyproject.toml, the one place it is set."""
+  """The UI version from pyproject.toml. The engine carries its own in `-V`."""
   with (UI_DIR.parent / "pyproject.toml").open("rb") as fh:
     return tomllib.load(fh)["project"]["version"]
 
