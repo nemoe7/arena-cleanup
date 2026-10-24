@@ -149,9 +149,9 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - Transitions of 120 to 180 ms on transform, opacity, border, and background. `prefers-reduced-motion` stops them.
 - Enter motion on GSAP 3.15.0, vendored as `ui/static/gsap.min.js`.
-  - The first cards of the grid, the first commits of a repo, and a dialog fade in and rise 8 px.
+  - The cards of the grid, the commits of a repo, and a dialog fade in and rise 8 px.
   - A view only fades, as a transform would unpin the fixed tab bar inside it.
-  - The tween takes 180 ms on `power2.out`, with a 30 ms stagger in a list.
+  - The tween takes 180 ms on `power2.out`, and a list spreads its rows over 120 ms more.
   - `prefers-reduced-motion: reduce` skips the tweens.
 - Scroll-edge fade, the nuu recipe: the commit list and the log carry `scroll-panel`.
   - A scrolled edge fades over 12 px, and the fade grows and shrinks over a 192 px scroll ramp. A panel that does not scroll stays unmasked.
@@ -465,3 +465,6 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-24: a phone hit area grows without a visual change.
   - The PR pill and the repo name carry an unseen box 10 px above and below, so a thumb hits 44 px.
   - The claim inputs are 44 px tall on a phone.
+- Accepted 2026-10-24: a list enters as one spread.
+  - Every row of a loaded page animates, and the stagger is a 120 ms amount, not 30 ms per row.
+  - A fixed per-row delay left the rows after the twelfth solid while earlier rows were still transparent.

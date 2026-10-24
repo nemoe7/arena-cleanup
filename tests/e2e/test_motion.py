@@ -1,7 +1,8 @@
 """The motion set: GSAP tweens on one curve, off under reduced motion.
 
-A view fades in. The first cards, the first commits, and a dialog also rise
-8 px, 180 ms on one curve. Reduced motion paints at once.
+A view fades in. The cards, the commits, and a dialog also rise 8 px, 180 ms
+on one curve. A list spreads its rows over 120 ms. Reduced motion paints at
+once.
 """
 
 from __future__ import annotations
@@ -70,3 +71,33 @@ def test_reduced_motion_paints_at_once(browser: Any, desktop: Walker) -> None:
     assert page.evaluate(OPACITY, "#view-repo") == "1"
   finally:
     context.close()
+
+
+STAGGER_S = 0.12
+# wrap gsap.fromTo, so the test sees which nodes a list enters and how
+RECORD_ENTERS = """() => {
+  window.__enters = [];
+  const orig = gsap.fromTo;
+  gsap.fromTo = (targets, from, to) => {
+    const nodes = [targets].flat();
+    const rows = nodes.filter((n) => n.classList?.contains('commit')).length;
+    window.__enters.push([nodes.length, rows, to.stagger, to.duration]);
+    return orig.call(gsap, targets, from, to);
+  };
+}"""
+ROWS = "document.querySelectorAll('#commits .commit').length"
+
+
+def test_every_commit_row_enters_within_one_spread(desktop: Walker) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  page.evaluate(RECORD_ENTERS)
+  page.click(".repo-card:has-text('shop-web') .repo-name")
+  page.wait_for_selector("#commits .commit")
+  page.wait_for_timeout(500)
+  rows = page.evaluate(ROWS)
+  assert rows > 12, "the demo page holds more rows than the old slice"
+  enters = [e for e in page.evaluate("window.__enters") if e[1]]
+  assert enters == [[rows, rows, {"amount": STAGGER_S}, 0.18]]
+  assert page.evaluate(OPACITY, "#commits .commit:last-child") == "1"
+  desktop.click("#back", 600)

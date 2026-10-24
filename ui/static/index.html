@@ -1445,7 +1445,7 @@
     const grid = $("repo-grid");
     const first = grid.children.length === 0;
     grid.replaceChildren(...sortedRepos().map(repoCard));
-    if (first) enter([...grid.children], 0.03);
+    if (first) enter([...grid.children], { amount: 0.12 });
     renderChecks();
   }
 
@@ -2357,7 +2357,7 @@
         return;
       }
       box.replaceChildren(...data.commits.map(commitRow));
-      enter([...box.children].slice(0, 12), 0.03);
+      enter([...box.children], { amount: 0.12 });
       box.scrollTop = 0;
       state.commitsNext = data.next;
     } catch (err) {

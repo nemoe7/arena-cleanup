@@ -17,6 +17,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - The brand link pads 8 px.
 - On a phone the PR pill and the repo name hit 44 px tall through an unseen box above and below.
   - The claim inputs are 44 px tall there too.
+- Every commit row of a page enters within one 120 ms spread. Before, only the first twelve rows animated, and the rest popped in solid next to still transparent rows.
 
 ## [0.3.2] - 2026-10-24
 
