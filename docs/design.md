@@ -483,3 +483,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the remote fact links a GitHub remote as the GitHub mark and `owner/repo` in a new tab. The mark is the one filled glyph, from Octicons.
 - Accepted 2026-10-24: the Prepare modal names three steps instead of its log lines. Later steps show only once the phase reaches them.
 - Accepted 2026-10-24: Clean & Push greys only when a clean would overwrite commits on the default branch, read from the net count. An absorbed branch keeps the button live, and the run reports nothing to push.
+- Accepted 2026-10-24: dates read in 24-hour time. The shared formatter sets `hourCycle` to `h23`, so a commit date reads `Oct 24, 18:11`, and the log stamps keep their `HH:MM:SS`.

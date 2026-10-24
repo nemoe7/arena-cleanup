@@ -2390,7 +2390,7 @@
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return "";
     const parts = { month: "short", day: "numeric" };
-    if (withTime) Object.assign(parts, { hour: "2-digit", minute: "2-digit" });
+    if (withTime) Object.assign(parts, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
     return d.toLocaleString(undefined, parts);
   }
 
