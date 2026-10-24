@@ -50,7 +50,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - The log card holds the open log of the latest run and takes the height that is left, down to a 160 px floor.
     - Both come back after a return to the view or a restart.
     - The main column pins to the window as the sidebar does, so only its log scrolls.
-  - Run button: the options card foot carries the one run button, bottom right. It reads Clean & Push while idle and Cancel while a run is live.
+  - Run button: the one run button ends the checkbox row of the options card and drops under the boxes when the row is narrow. It reads Clean & Push while idle and Cancel while a run is live.
   - Options: each option is one row: label, control, and a trailing action or readout.
     - No hint texts.
     - Dry Run, Ignore PR Checks, Update Tags (checked by default), and No lease are checkboxes.
@@ -224,7 +224,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Starting is disabled until the job id arrives.
   - Running reads Cancel as a plain button.
   - Idle greys with the tooltip `a clean would overwrite commits on main` when the arena branch the run takes reads below 0 and the target is the default branch. Any other idle state keeps it live.
-- `card-foot`: the action row of a card, right-aligned with an 8 px gap and 16 px of padding.
+- `card-foot`: the action row of a card, right-aligned with an 8 px gap and 16 px of padding. The options card has none: its run button sits in the checkbox row.
   - Every card action sits there, so the x alone stays top right.
   - The options foot hides on a phone, where the tab bar runs.
 - `tree`: the path selector.
@@ -485,3 +485,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: Clean & Push greys only when a clean would overwrite commits on the default branch, read from the net count. An absorbed branch keeps the button live, and the run reports nothing to push.
 - Accepted 2026-10-24: dates read in 24-hour time. The shared formatter sets `hourCycle` to `h23`, so a commit date reads `Oct 24, 18:11`, and the log stamps keep their `HH:MM:SS`.
 - Accepted 2026-10-24: the hover tint and the selected mark of a sidebar arena row span the whole row, icon buttons included. The icon buttons keep their own hover rings on top of the row tint.
+- Accepted 2026-10-24: Clean & Push ends the checkbox row of the options card, and drops under the boxes, right-aligned, when the row is narrow. The button keeps the 34 px control height, and the phone keeps its tab bar.

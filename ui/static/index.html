@@ -486,7 +486,6 @@
   .card-body { padding: 16px; }
   /* every card action sits bottom right in a foot; the close x alone stays top right */
   .card-foot { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 0 16px 16px; }
-  #options-card .card-foot { padding-top: 6px; }
 
   /* one column: the card shares its row with the run card. No vertical padding
      and no rule under the last row, so the rows sit like the phase rows */
@@ -504,6 +503,8 @@
   .slider { width: 100%; height: 24px; margin: 0; accent-color: var(--accent); }
   .readout { font: var(--fs-1) var(--mono); color: var(--muted); min-width: 6ch; text-align: right; }
   .checks { display: flex; flex-wrap: wrap; align-content: start; gap: 8px 20px; padding: 10px 2px; }
+  /* the run button ends the checkbox row and drops under it, right-aligned, when the row is narrow */
+  .checks #start { margin-left: auto; }
   .check { display: inline-flex; align-items: center; gap: 8px; min-height: 24px; color: var(--muted); font-size: var(--fs-2); cursor: pointer; }
   /* the box is drawn here, not by the browser: Lucide check, house radius, accent fill */
   .check input {
@@ -808,7 +809,7 @@
     .field, .mono-field, input, select, textarea { font-size: 16px; }
     .addbar .field { flex: 0 0 auto; height: 48px; padding: 0 12px; }
     .addbar .btn { height: 48px; font-size: 15px; }
-    #start, #options-card .card-foot { display: none; }  /* the tab bar carries the run controls on a phone */
+    #start { display: none; }  /* the tab bar carries the run controls on a phone */
     .main-col { padding: 12px; }
     .sidebar { padding-bottom: 88px; }
     .wrap { padding: 16px var(--pad) 88px; }
@@ -984,10 +985,8 @@
               <label class="check" title="Pushes even when the PR still has running or failing checks."><input type="checkbox" data-opt="skip_pr_check">Ignore PR Checks</label>
               <label class="check" title="Moves the tags to the rewritten commits. Unchecked, they stay on the old ones."><input type="checkbox" data-opt="update_tags" checked>Update Tags</label>
               <label class="check danger" title="Pushes with git push --force and no lease, so it lands even when the default branch moved during the run. Also runs with uncommitted changes, which the final reset discards, and pushes over commits the run would drop."><input type="checkbox" data-opt="force">No lease</label>
+              <button class="btn primary clean" id="start" data-state="idle"><span class="ico-svg" data-icon="broom-sparkles" aria-hidden="true"></span>Clean &amp; Push</button>
             </div>
-          </div>
-          <div class="card-foot">
-            <button class="btn primary clean" id="start" data-state="idle"><span class="ico-svg" data-icon="broom-sparkles" aria-hidden="true"></span>Clean &amp; Push</button>
           </div>
         </section>
         </div>

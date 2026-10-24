@@ -18,6 +18,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - The hover tint and the selected mark of a sidebar arena row span the whole row, the checks and trash icon buttons included.
+- Clean & Push ends the checkbox row of the options card and drops under the boxes, right-aligned, when the row is narrow.
 
 ## [0.3.5] - 2026-10-24
 

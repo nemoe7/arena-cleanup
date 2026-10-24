@@ -1,9 +1,9 @@
 """Every card action sits bottom right in a card foot, at both widths.
 
 nuu puts the close x top right and every other action button bottom right.
-The run button, two Save buttons, and GitHub and signing actions
-all live in a `.card-foot` row. The phone keeps its tab
-bar as the run control, so the options foot hides there.
+The two Save buttons and the GitHub and signing actions live in a
+`.card-foot` row. The options card has no foot: its run button ends the
+checkbox row. The phone keeps its tab bar as the run control.
 """
 
 from __future__ import annotations
@@ -75,11 +75,11 @@ def test_the_settings_actions_sit_bottom_right(
     assert_bottom_right(foot)
 
 
-def test_the_run_button_sits_in_the_options_foot(desktop: Walker) -> None:
+def test_the_options_card_has_no_foot_and_no_head_button(desktop: Walker) -> None:
   feet = feet_on(desktop, "")
-  assert feet["options-card"]["labels"] == ["Clean & Push"]
-  assert_bottom_right(feet["options-card"])
+  assert "options-card" not in feet
   assert desktop.count("#options-card .card-head .btn") == 0
+  assert desktop.count("#checks #start") == 1
 
 
 def test_the_phone_keeps_the_tab_bar_as_the_run_control(phone: Walker) -> None:
