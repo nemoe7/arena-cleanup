@@ -23,6 +23,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   needs no bump.
 - The PR pill and the sidebar dot paint running checks amber, the GitHub
   pending colour, instead of blue. A PR without checks gets a grey dot.
+- A sidebar arena row takes two lines: the dot and the name, then the ahead
+  count and the PR meta under the name, as the cards do.
 
 ## [0.3.0] - 2026-10-23
 

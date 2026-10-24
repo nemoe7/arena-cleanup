@@ -28,6 +28,11 @@ PROBE = """() => {
   };
 }"""
 
+ARENA_ROWS = """() => [...document.querySelectorAll('.row-btn.select')].map((row) => {
+  const box = (el) => { const b = el.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
+  return { name: box(row.querySelector('.txt')), tail: box(row.querySelector('.tail')) };
+})"""
+
 
 def open_with_a_run(
   browser: Any, demo: Demo, width: int, height: int
@@ -75,3 +80,19 @@ def test_the_log_keeps_its_floor_and_the_page_still_stays_put(
   log_height = seen["log"][3] - seen["log"][1]
   assert log_height >= LOG_FLOOR
   assert seen["pageScroll"] == 0, "a window too short scrolls the column, not the page"
+
+
+def test_the_sidebar_arena_rows_take_two_lines(browser: Any, demo: Demo) -> None:
+  """The tail sits under the name on every row, never beside it, as the cards do."""
+  context = browser.new_context(viewport={"width": 1568, "height": 775})
+  try:
+    walker = Walker(context, demo.url)
+    walker.goto(600)
+    walker.click(".repo-card:has-text('data-pipeline') .repo-ico", 800)
+    rows = walker.page.evaluate(ARENA_ROWS)
+  finally:
+    context.close()
+  assert len(rows) == 2, "the demo repo carries two arena branches"
+  for row in rows:
+    assert row["tail"][1] >= row["name"][3], "the tail starts below the name"
+    assert row["tail"][0] == row["name"][0], "the tail lines up with the name"

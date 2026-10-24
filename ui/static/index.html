@@ -333,9 +333,9 @@
     text-decoration: none; border-radius: 1000px; min-height: 24px; }
   .arena-row .prlink:hover .pill { border-color: var(--line-2); }
   .arena-tail > .pill { flex: none; }
-  .row-btn.select { flex-wrap: wrap; row-gap: 2px; }
-  .row-btn.select .txt { flex: 1 0 auto; max-width: 100%; }
-  .row-btn.select .tail { display: inline-flex; gap: 8px; margin-left: auto; }
+  /* two lines, as the cards do: the dot and the name, then the tail under the name */
+  .row-btn.select { display: grid; grid-template-columns: auto minmax(0, 1fr); row-gap: 2px; }
+  .row-btn.select .tail { grid-column: 2; display: flex; gap: 8px; }
   .row-btn .ahead { display: inline-flex; align-items: center; gap: 2px; }
 
   /* what the selected task will do, in one sentence */
