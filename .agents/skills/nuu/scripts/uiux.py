@@ -29,10 +29,10 @@ from measure import (
 from measure import check as check_measurements
 from measure import main as measure_main
 
-VERSION = "0.1.6"
-NAMED_BREAKPOINTS = ("75em", "56.25em", "40em")
+VERSION = "0.1.9"
+NAMED_BREAKPOINTS = ("75em", "60em", "40em", "30em")
 MEDIA_BREAKPOINT_RE = re.compile(
-  r"@media\b[^{]*?\(\s*(?:min|max)-width\s*:\s*([0-9.]+(?:em|rem|px))\s*\)",
+  r"@media\b[^{]*?\(\s*(?:min|max)-(?:width|height)\s*:\s*([0-9.]+(?:em|rem|px))\s*\)",
   re.IGNORECASE,
 )
 HOME = Path(__file__).resolve().parent.parent
@@ -193,7 +193,7 @@ class SourcePage(HTMLParser):
       if attrs.get("for"):
         self.labels.add(attrs["for"])
     if tag == "img" and "alt" not in attrs:
-      self.finding("UIX001", "1.1.1", "Image has no alt attribute", self.getpos())
+      self.finding("NUL001", "1.1.1", "Image has no alt attribute", self.getpos())
     if tag in {"input", "select", "textarea"}:
       self.controls.append((attrs, bool(self.label_depth), self.getpos()))
 
@@ -218,7 +218,7 @@ class SourcePage(HTMLParser):
         or attrs.get("id") in self.labels
       ):
         self.finding(
-          "UIX002", "4.1.2", "Control has no source naming evidence", position
+          "NUL002", "4.1.2", "Control has no source naming evidence", position
         )
 
 
@@ -253,7 +253,7 @@ def lint(root):
       ):
         current.append(
           {
-            "rule": "UIX003",
+            "rule": "NUL003",
             "path": str(path),
             "line": text.count("\n", 0, match.start()) + 1,
             "column": 1,
@@ -265,7 +265,7 @@ def lint(root):
         )
     for finding in current:
       line = text.splitlines()[finding["line"] - 1]
-      ignored = set(re.findall(r"\bnoui:\s*([A-Za-z0-9_-]+)", line))
+      ignored = set(re.findall(r"\bnonuu:\s*([A-Za-z0-9_-]+)", line))
       if finding["rule"] not in ignored:
         findings.append(finding)
   return {
@@ -413,7 +413,7 @@ def browser(args):
       }
       result.setdefault("findings", []).extend(
         {
-          "rule": "UIX201",
+          "rule": "NUM201",
           "severity": "review",
           "evidence": finding,
           "location": location,

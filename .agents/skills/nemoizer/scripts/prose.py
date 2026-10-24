@@ -57,6 +57,7 @@ def python_comments(source: str) -> list[tuple[str, int, int]]:
 def python_docstrings(source: str) -> list[tuple[str, int, int]]:
   """Collect Python docstrings with their source line spans."""
   sections = []
+  lines = source.splitlines(True)
   for node in ast.walk(ast.parse(source)):
     if isinstance(
       node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
@@ -70,10 +71,16 @@ def python_docstrings(source: str) -> list[tuple[str, int, int]]:
       ):
         text = first.value.value.strip()
         if text:
-          literal = ast.get_source_segment(source, first.value).lstrip("rRuU")
+          head = (
+            lines[first.value.lineno - 1]
+            .encode("utf-8")[first.value.col_offset :]
+            .decode("utf-8")
+          )
+          tail = "".join(lines[first.value.lineno : first.value.end_lineno])
+          literal = (head + tail).lstrip("rRuU")
           width = 3 if literal.startswith(('"""', "'''")) else 1
-          body = literal[width:]
-          leading = body[: len(body) - len(body.lstrip())]
+          inner = literal[width:]
+          leading = inner[: len(inner) - len(inner.lstrip())]
           sections.append(
             (text, first.value.lineno + leading.count("\n"), first.value.end_lineno)
           )

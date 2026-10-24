@@ -297,7 +297,7 @@ async function a11yChecks(page) {
       if (!isVisible(control)) continue;
       if (!accessibleName(control)) {
         findings.push({
-          rule: 'UIX301',
+          rule: 'NUA301',
           severity: 'review',
           criterion: '4.1.2',
           selector: selectorFor(control),
@@ -310,18 +310,18 @@ async function a11yChecks(page) {
         const box = control.getBoundingClientRect();
         if (box.width > 0 && box.height > 0 && Math.abs(box.width - box.height) > 1) {
           findings.push({
-            rule: 'UIX208',
+            rule: 'NUM208',
             severity: 'review',
             criterion: '2.5.8',
             selector: selectorFor(control),
-            evidence: `Icon-only button ${selectorFor(control)} is ${Math.round(box.width)}x${Math.round(box.height)} px (not square)`,
+            evidence: `Icon-only button ${selectorFor(control)} is ${Math.round(box.width)}x${Math.round(box.height)} px (not symmetric)`,
           });
         }
       }
       const nested = control.querySelector(interactiveSelector);
       if (nested && isVisible(nested)) {
         findings.push({
-          rule: 'UIX303',
+          rule: 'NUA303',
           severity: 'review',
           criterion: '4.1.2',
           selector: selectorFor(control),
@@ -338,7 +338,7 @@ async function a11yChecks(page) {
         const missing = raw.split(/\s+/).filter(id => id && !document.getElementById(id));
         if (missing.length) {
           findings.push({
-            rule: 'UIX302',
+            rule: 'NUA302',
             severity: 'review',
             criterion: '1.3.1',
             selector: selectorFor(element),
@@ -357,7 +357,7 @@ async function a11yChecks(page) {
     for (const [id, count] of idCounts.entries()) {
       if (count > 1) {
         findings.push({
-          rule: 'UIX304',
+          rule: 'NUA304',
           severity: 'review',
           criterion: '4.1.1',
           selector: `#${CSS.escape(id)}`,
@@ -375,7 +375,7 @@ async function a11yChecks(page) {
       if (!Number.isInteger(level) || level < 1) continue;
       if (previousLevel > 0 && level > previousLevel + 1) {
         findings.push({
-          rule: 'UIX305',
+          rule: 'NUA305',
           severity: 'review',
           criterion: '1.3.1',
           selector: selectorFor(heading),
@@ -406,7 +406,7 @@ async function a11yChecks(page) {
       const threshold = large ? 3.0 : 4.5;
       if (ratio + 1e-4 < threshold) {
         findings.push({
-          rule: 'UIX306',
+          rule: 'NUA306',
           severity: 'review',
           criterion: '1.4.3',
           selector: selectorFor(parent),
@@ -571,10 +571,11 @@ async function run() {
   const timeout = request.timeout * 1000;
   try {
     for (const width of request.widths) {
-      const touch = width <= 768;
+      const height = Number(request.height || 900);
+      const touch = width <= 768 || height <= 480;
       for (const scheme of ['light', 'dark']) {
         for (const motion of ['no-preference', 'reduce']) {
-          const context = await browser.newContext({viewport: {width, height: 900},
+          const context = await browser.newContext({viewport: {width, height},
             hasTouch: touch, isMobile: touch,
             colorScheme: scheme, reducedMotion: motion, acceptDownloads: false});
           const page = await context.newPage();
@@ -638,10 +639,10 @@ async function run() {
   const findings = [];
   for (const row of captures) {
     const location = {url: target, width: row.width, scheme: row.scheme, motion: row.motion};
-    if (row.status === 'failed') findings.push({rule: 'UIX104', severity: 'error', location, evidence: row.error});
-    if (row.flow.status === 'failed') findings.push({rule: 'UIX103', severity: 'error', location, evidence: row.flow});
-    if (row.errors.length) findings.push({rule: 'UIX102', severity: 'review', location, evidence: row.errors});
-    if (row.measurements?.overflow) findings.push({rule: 'UIX101', severity: 'review', location, evidence: 'Horizontal overflow'});
+    if (row.status === 'failed') findings.push({rule: 'NUB104', severity: 'error', location, evidence: row.error});
+    if (row.flow.status === 'failed') findings.push({rule: 'NUB103', severity: 'error', location, evidence: row.flow});
+    if (row.errors.length) findings.push({rule: 'NUB102', severity: 'review', location, evidence: row.errors});
+    if (row.measurements?.overflow) findings.push({rule: 'NUB101', severity: 'review', location, evidence: 'Horizontal overflow'});
     if (row.a11y?.findings?.length) {
       for (const item of row.a11y.findings) {
         findings.push({...item, location});

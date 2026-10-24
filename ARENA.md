@@ -206,7 +206,7 @@
 - Previews have no network: inline CSS, embedded SVG/data URIs; no CDNs/remote fonts/stylesheets.
 - Servers bind 0.0.0.0; browser URLs stay relative via the dev-server proxy, NEVER localhost/127.0.0.1.
 - Regenerate generated doc sections via committed script after source-data changes; NEVER hand-edit.
-- For agent handoffs or cross-session specs, follow the [handoff template](.agents/skills/arena-skill/references/handoff.md).
+- For agent handoffs or cross-session specs, follow the [handoff template](.agents/skills/arena-skill/references/handoff.md) with no form fields.
 
 ## When in doubt
 

@@ -166,7 +166,7 @@ body {
 }
 
 /* Breakpoints: em, so layouts follow the reader's browser font size.
-   40em = 640px, 56.25em = 900px, 75em = 1200px at a 16px initial size. */
+   40em = 640px, 60em = 960px, 75em = 1200px width, and 30em = 480px max-height at a 16px initial size. */
 .page {
   max-width: var(--column);
   margin: 0 auto;
@@ -179,7 +179,7 @@ body {
   }
 }
 
-@media (max-width: 56.25em) {
+@media (max-width: 60em) {
   .page {
     padding: 0 var(--space-2);
   }
@@ -196,6 +196,12 @@ body {
   .table th,
   .table td {
     display: block;
+  }
+}
+
+@media (max-height: 30em) {
+  .page {
+    padding: 0 var(--space-2);
   }
 }
 

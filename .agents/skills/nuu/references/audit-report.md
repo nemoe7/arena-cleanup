@@ -14,7 +14,7 @@
 
 | Location | Rule / Check | Width | Finding | Fix |
 | --- | --- | --- | --- | --- |
-| `selector` or `path:line` | `UIX301` or `measure` | `1280` / `360` | Violation description | Repair applied or needed |
+| `selector` or `path:line` | `NUA301` or `measure` | `1280` / `360` | Violation description | Repair applied or needed |
 
 ## Visual Judgment Findings
 

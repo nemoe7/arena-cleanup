@@ -1,4 +1,4 @@
-<!-- nonemo: NMO100; nonemo: NMO901; nonemo: NMO003; nonemo: STE001; nonemo: STE100; nonemo: STE200; nonemo: STE300; nonemo: STE400; nonemo: STE401; nonemo: STE901; nonemo: STE902; nonemo: STE903; nonemo: STE904; nonemo: STE905; nonemo: STE906; nonemo: STE908; nonemo: STE909; nonemo: STE910; nonemo: HMN100; nonemo: HMN200; nonemo: HMN300; nonemo: HMN400; nonemo: HMN500; nonemo: HMN600; nonemo: HMN901; nonemo: HMN902; nonemo: HMN903; nonemo: HMN904; nonemo: HMN905; nonemo: HMN906; nonemo: HMN907; nonemo: HMN908; nonemo: HMN909; nonemo: HMN910; nonemo: NMP100; nonemo: NMT100; nonemo: NMT200 -->
+<!-- nonemo: NMO100; nonemo: NMO901; nonemo: NMO902; nonemo: NMO003; nonemo: STE001; nonemo: STE100; nonemo: STE200; nonemo: STE300; nonemo: STE400; nonemo: STE401; nonemo: STE901; nonemo: STE902; nonemo: STE903; nonemo: STE904; nonemo: STE905; nonemo: STE906; nonemo: STE908; nonemo: STE909; nonemo: STE910; nonemo: HMN100; nonemo: HMN200; nonemo: HMN300; nonemo: HMN400; nonemo: HMN500; nonemo: HMN600; nonemo: HMN901; nonemo: HMN902; nonemo: HMN903; nonemo: HMN904; nonemo: HMN905; nonemo: HMN906; nonemo: HMN907; nonemo: HMN908; nonemo: HMN909; nonemo: HMN910; nonemo: NMP100; nonemo: NMP101; nonemo: NMT100; nonemo: NMT200 -->
 # Rules
 
 This document describes the rules enforced by `nemoizer`. Each rule also has a standalone reference file (`<id>.md`) in this directory.
@@ -57,6 +57,30 @@ Select a file from the repo and open a PR.
 Note: Default checks report `NMO901` as `(manual review)` with exit code `0`; `nemoizer format` rewrites unsuppressed matches in place.
 
 Rationale: Consistent terms reduce variation while keeping manual review for false friends such as `pickle`.
+
+## `NMO902` - High "the" usage density
+
+Tags: `style`, `conciseness`, `advisory`
+
+Aliases: `the-density`
+
+Parameters: `the_density_cap` (`int`; default `20`), `min_the_count` (`int`; default `3`)
+
+This rule triggers for manual review when a prose line uses `"the"` at least three times and `"the"` accounts for `20%` or more of the words on that line.
+
+```text
+Check the status of the server in the logs of the worker.
+```
+
+To fix this issue, remove unnecessary `"the"` articles where meaning stays unchanged:
+
+```text
+Check server status in worker logs.
+```
+
+Note: Default checks report `NMO902` as `(manual review)` (`advisory`) with exit code `0`. Retain `"the"` when removing it changes specificity or meaning.
+
+Rationale: Excessive definite articles pad technical instructions and descriptions without adding information.
 
 ## `NMO003` - Missing serial comma
 

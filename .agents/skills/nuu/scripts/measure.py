@@ -106,7 +106,7 @@ def check(
 
 
 def check_density(report: dict) -> list[dict]:
-  """Return whitespace and layout-density findings (UIX205, UIX206, UIX207, UIX208)."""
+  """Return whitespace and layout-density findings (NUM205, NUM206, NUM207, NUM208)."""
   findings: list[dict] = []
   viewport_width = float(report.get("width", 1280) or 1280)
   for element in report.get("elements", []):
@@ -126,7 +126,7 @@ def check_density(report: dict) -> list[dict]:
         ratio = float(raw_ratio)
         findings.append(
           {
-            "rule": "UIX205",
+            "rule": "NUM205",
             "selector": selector,
             "evidence": (
               f"{selector}: ink ratio is {ratio:.2f} (< {MIN_INK_RATIO:g})"
@@ -143,7 +143,7 @@ def check_density(report: dict) -> list[dict]:
     if gap > MAX_SIBLING_GAP and (width <= 0 or gap > 0.4 * width):
       findings.append(
         {
-          "rule": "UIX206",
+          "rule": "NUM206",
           "selector": selector,
           "evidence": f"{selector}: sibling gap is {gap:g} px (> {MAX_SIBLING_GAP:g} px)",
         }
@@ -157,7 +157,7 @@ def check_density(report: dict) -> list[dict]:
     ) and width > MAX_CONTROL_WIDTH:
       findings.append(
         {
-          "rule": "UIX207",
+          "rule": "NUM207",
           "selector": selector,
           "evidence": (
             f"{selector}: control width is {width:g} px (> {MAX_CONTROL_WIDTH:g} px)"
@@ -168,10 +168,10 @@ def check_density(report: dict) -> list[dict]:
     if icon_only and width > 0 and height > 0 and abs(width - height) > 1.0:
       findings.append(
         {
-          "rule": "UIX208",
+          "rule": "NUM208",
           "selector": selector,
           "evidence": (
-            f"{selector}: icon-only button is {width:g}x{height:g} px (not square)"
+            f"{selector}: icon-only button is {width:g}x{height:g} px (not symmetric)"
           ),
         }
       )

@@ -1804,7 +1804,7 @@ def render_report(markdown):
 		else:parts.append(field_html(item))
 	return''.join(parts),questions
 SLASH_COMMAND_RE=re.compile('^/(nuu|nemoizer)(?:\\s+([\\s\\S]*))?$',re.IGNORECASE)
-NEMOIZER_COLLECT_IGNORES='arena-state','.git','node_modules','LICENSE.md','skills/arena-skill/assets/markdown-it.min.js','skills/refs/arena-skill/assets/markdown-it.min.js','skills/amending-violations/LICENSE.txt','skills/refs/amending-violations/LICENSE.txt','skills/squash/LICENSE.txt','skills/refs/squash/LICENSE.txt','skills/arena-skill/assets/lucide.LICENSE','skills/refs/arena-skill/assets/lucide.LICENSE','skills/arena-skill/assets/markdown-it.LICENSE','skills/refs/arena-skill/assets/markdown-it.LICENSE','skills/arena-skill/assets/sortable.LICENSE','skills/refs/arena-skill/assets/sortable.LICENSE','skills/nuu/data/vendor','skills/refs/nuu/data/vendor'
+NEMOIZER_COLLECT_IGNORES='arena-state','.agents','.git','node_modules','LICENSE.md','skills/arena-skill','skills/refs/arena-skill/assets/markdown-it.min.js','skills/amending-violations/LICENSE.txt','skills/refs/amending-violations/LICENSE.txt','skills/squash/LICENSE.txt','skills/refs/squash/LICENSE.txt','skills/refs/arena-skill/assets/lucide.LICENSE','skills/refs/arena-skill/assets/markdown-it.LICENSE','skills/refs/arena-skill/assets/sortable.LICENSE','skills/nuu/data/vendor','skills/refs/nuu/data/vendor'
 def _find_skill_dir(root,name):
 	roots=[Path(root)];here=Path(__file__).resolve();roots.extend(here.parents);cwd=Path.cwd().resolve();roots.append(cwd);roots.extend(cwd.parents)
 	for base in roots:
@@ -1816,6 +1816,19 @@ def _extract_clauses(skill_md):
 	text=skill_md.read_text(encoding='utf-8')
 	if'## Clauses'not in text:return''
 	after=text.split('## Clauses',1)[1];section=after.split('\n## ',1)[0].strip();lines=[line.strip()for line in section.splitlines()if re.match('^\\d+\\.',line.strip())];return'\n'.join(lines)
+def _extract_nuu_breakpoints(nuu_dir):
+	uiux_py=nuu_dir/'scripts'/'uiux.py'
+	if uiux_py.is_file():
+		match=re.search('NAMED_BREAKPOINTS\\s*=\\s*\\(([^)]+)\\)',uiux_py.read_text(encoding='utf-8'))
+		if match:
+			items=re.findall('["\\\']([^"\\\']+)["\\\']',match.group(1))
+			if items:return tuple(items)
+	clauses=_extract_clauses(nuu_dir/'SKILL.md')
+	for line in clauses.splitlines():
+		if line.startswith('7.'):
+			items=re.findall('\\b[0-9.]+(?:em|rem|px)\\b',line)
+			if items:return tuple(items)
+	return'75em','60em','40em','30em'
 def _recipe_summary_line(content):
 	for raw in content.splitlines():
 		line=raw.strip()
@@ -1877,7 +1890,7 @@ def resolve_slash_command(text,root=None):
 			except ValueError as err:return{'mode':'query','command':'/nuu search','title':'nuu search','markdown':f"Invalid search arguments: `{err}`"}
 			proc=subprocess.run([sys.executable,str(nuu_dir/'scripts'/'uiux.py'),'search',*tokens],cwd=str(repo_root),capture_output=True,text=True,timeout=15,check=False);out=(proc.stdout or proc.stderr or'No results.').strip();return{'mode':'query','command':f"/nuu search {arg}",'title':f"nuu search · {arg}",'markdown':f"```text\n{out}\n```"}
 		if sub=='audit':
-			note_text='Run a full `nuu` UI/UX audit (`1280` px and `360` px viewports, `a11y`, `density`, and `annotate`) and publish the audit report using `skills/refs/nuu/references/audit-report.md`.'
+			bp_list=', '.join(f"`{bp}`"for bp in _extract_nuu_breakpoints(nuu_dir));note_text=f"Run a full `nuu` UI/UX audit (breakpoints {bp_list}; `a11y`, `density`, and `annotate`) and publish the audit report using `skills/refs/nuu/references/audit-report.md`."
 			if trailing:note_text=f"{note_text}\n\n{trailing}"
 			return{'mode':'note','command':'/nuu audit','text':note_text}
 		if sub=='recipe':
@@ -2085,7 +2098,7 @@ class Store:
 			if tasks is not None:
 				for item in tasks['finished']+tasks['upcoming']:item['updated_at']=clip_stamp(item['updated_at'])
 				tasks['updated_at']=clip_stamp(tasks['updated_at'])
-			polling=self.polling();runs=live_runs(self.path.parent)if polling else[];return{'notes':notes,'reports':reports,'tasks':tasks,'uploads':uploads,'fetch_jobs':fetch_jobs,'workspace':workspace_usage(),'last_check':clip_stamp(meta.get('last_check')),'polling':polling,'waiting_for_gates':bool(runs),'checking_pr':any(pr_checks_command(routed_record(self.path.parent,name).get('argv',[]))for name in runs),'polling_since':clip_stamp(meta.get(POLL_SINCE_META))if polling else None,'skip_poll':clip_stamp(meta.get(SKIP_POLL_META)),'agent_interrupt_pending':bool(meta.get(AGENT_INTERRUPT_FLAG_META)),'read_set':read_set_files(self.repository_root()),'calls_since_message':meta_number(db,POLLS_SINCE_MESSAGE),'agent_key':self.agent_key(),'agent_seen_at':clip_stamp(meta.get(AGENT_SEEN_META)),'turn_ended_at':clip_stamp(meta.get(TURN_ENDED_META)),'agent_call_ended_at':clip_stamp(meta.get(AGENT_CALL_ENDED_META)),'gate_threshold':GATE_THRESHOLD}
+			polling=self.polling();runs=live_runs(self.path.parent)if polling else[];return{'notes':notes,'reports':reports,'tasks':tasks,'uploads':uploads,'fetch_jobs':fetch_jobs,'workspace':workspace_usage(),'last_check':clip_stamp(meta.get('last_check')),'polling':polling,'waiting_for_gates':bool(runs),'checking_pr':any(pr_checks_command(routed_record(self.path.parent,name).get('argv',[]))for name in runs),'polling_since':clip_stamp(meta.get(POLL_SINCE_META))if polling else None,'skip_poll':clip_stamp(meta.get(SKIP_POLL_META)),'agent_interrupt_pending':bool(meta.get(AGENT_INTERRUPT_FLAG_META)),'read_set':read_set_files(self.repository_root()),'calls_since_message':meta_number(db,POLLS_SINCE_MESSAGE),'agent_key':self.agent_key(),'agent_seen_at':clip_stamp(meta.get(AGENT_SEEN_META)),'turn_ended_at':clip_stamp(meta.get(TURN_ENDED_META)),'agent_call_ended_at':clip_stamp(meta.get(AGENT_CALL_ENDED_META)),'gate_threshold':GATE_THRESHOLD,'display_tz':meta.get(TIMEZONE_META)}
 	def tasks(self):
 		with closing(self.connect())as db:
 			rows=db.execute(f"SELECT {TASK_COLUMNS} FROM tasks ORDER BY {TASK_ORDER}").fetchall();records=attach_blockers(db,[task_row(row)for row in rows])
@@ -2671,6 +2684,9 @@ class Store:
 	def clear_turn_ended(self):
 		with closing(self.connect())as db,db:db.execute('DELETE FROM meta WHERE key = ?',(TURN_ENDED_META,))
 	def set_agent_key(self,key,host=None):self.set_meta(AGENT_KEY_META,json.dumps({'key':key,'host':host,'at':now()},ensure_ascii=False))
+	def set_display_timezone(self,tz):
+		if not isinstance(tz,str)or not tz.strip()or not zone_exists(tz.strip()):raise ValueError(f"Unknown zone {tz}")
+		name=tz.strip();self.set_meta(TIMEZONE_META,name);(self.path.parent/'display_tz').write_text(f"{name}\n",encoding='utf-8');global DISPLAY_ZONE;DISPLAY_ZONE=resolve_display_zone(self);return name
 	def notice_expired_key(self):
 		record=self.agent_key()
 		if not record:return None
@@ -3097,7 +3113,7 @@ def handler(store):
 			request_id=value.get('id');method,path=value.get('method','GET'),value.get('path','');body,headers=value.get('body',''),value.get('headers',{})
 			if type(request_id)not in(str,int)or len(str(request_id))>80 or method not in('GET','POST')or not isinstance(path,str)or not path.startswith('/api/')or urlsplit(path).path=='/api/ws'or not isinstance(body,str)or not isinstance(headers,dict):raise ValueError('Invalid WebSocket request')
 			fields=Message()
-			for name in('Content-Type','X-Fetch-Claim','X-Fetch-Source'):
+			for name in('Content-Type','X-Fetch-Claim','X-Fetch-Source','X-Timezone'):
 				item=headers.get(name)
 				if item is not None:
 					if not isinstance(item,str)or'\r'in item or'\n'in item:raise ValueError('Invalid request header')
@@ -3175,6 +3191,8 @@ def handler(store):
 					self.reply(200,body);return
 				if path=='/api/userscript-autosave':self.reply(200,json.dumps(store.userscript_snapshot(),ensure_ascii=False));return
 				if path=='/api/state':
+					header_tz=(self.headers.get('X-Timezone')or'').strip()
+					if header_tz and zone_exists(header_tz)and store.meta_value(TIMEZONE_META)!=header_tz:store.set_display_timezone(header_tz)
 					state=store.state();state['slash_commands']=discover_slash_commands()
 					try:
 						for item in state['notes']+[ack for report in state['reports']for ack in report['acknowledgements']]:
@@ -3199,8 +3217,8 @@ def handler(store):
 			except FileNotFoundError as error:self.problem(404,error)
 			except(OSError,sqlite_api().Error,RuntimeError)as error:self.problem(503,error)
 		def do_POST(self):
-			path=urlsplit(self.path).path;autosave_post=path in{'/api/userscript-autosave','/api/userscript-autosave/compare'};report_submit=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/submit',path);report_seen=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/seen',path);report_ack_seen=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/ack-seen',path);report_view=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/view',path);message_replies_seen=re.fullmatch('/api/messages/([a-zA-Z0-9_-]{1,80})/replies/seen',path);report_unpublish=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/unpublish',path);fetch_post=re.fullmatch('/api/fetch-jobs/([a-zA-Z0-9_-]{1,80})/(renew|result|fail|retry|approve|deny|drop)',path);note_upload=path=='/api/notes/with-file';staged_upload=path=='/api/uploads';upload_drop=re.fullmatch('/api/uploads/([a-zA-Z0-9_-]{1,80})/drop',path);agent_key_post=path=='/api/key';skip_poll_post=path=='/api/skip-poll';interrupt_post=path=='/api/agent-interrupt';task_order_post=path=='/api/tasks/order';fetch_result=bool(fetch_post and fetch_post.group(2)=='result')
-			if path not in{'/api/notes','/api/markdown','/api/slash','/api/fetch-jobs','/api/fetch-jobs/claim','/api/survey','/api/survey/request'}and not report_submit and not report_seen and not report_ack_seen and not report_view and not message_replies_seen and not report_unpublish and not note_upload and not staged_upload and not upload_drop and not fetch_post and not agent_key_post and not skip_poll_post and not interrupt_post and not task_order_post and not autosave_post:self.problem(404,'Not found');return
+			path=urlsplit(self.path).path;autosave_post=path in{'/api/userscript-autosave','/api/userscript-autosave/compare'};report_submit=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/submit',path);report_seen=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/seen',path);report_ack_seen=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/ack-seen',path);report_view=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/view',path);message_replies_seen=re.fullmatch('/api/messages/([a-zA-Z0-9_-]{1,80})/replies/seen',path);report_unpublish=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/unpublish',path);fetch_post=re.fullmatch('/api/fetch-jobs/([a-zA-Z0-9_-]{1,80})/(renew|result|fail|retry|approve|deny|drop)',path);note_upload=path=='/api/notes/with-file';staged_upload=path=='/api/uploads';upload_drop=re.fullmatch('/api/uploads/([a-zA-Z0-9_-]{1,80})/drop',path);agent_key_post=path=='/api/key';timezone_post=path=='/api/timezone';skip_poll_post=path=='/api/skip-poll';interrupt_post=path=='/api/agent-interrupt';task_order_post=path=='/api/tasks/order';fetch_result=bool(fetch_post and fetch_post.group(2)=='result')
+			if path not in{'/api/notes','/api/markdown','/api/slash','/api/fetch-jobs','/api/fetch-jobs/claim','/api/survey','/api/survey/request'}and not report_submit and not report_seen and not report_ack_seen and not report_view and not message_replies_seen and not report_unpublish and not note_upload and not staged_upload and not upload_drop and not fetch_post and not agent_key_post and not timezone_post and not skip_poll_post and not interrupt_post and not task_order_post and not autosave_post:self.problem(404,'Not found');return
 			content_type=self.headers.get('Content-Type','')
 			if note_upload or staged_upload:
 				if not content_type.lower().startswith('multipart/form-data;'):self.problem(415,'Expected multipart/form-data');return
@@ -3860,7 +3878,7 @@ def main():
 		elif args.command=='init':
 			if args.tz:
 				if not zone_exists(args.tz):print(f"Unknown zone {args.tz}.",file=sys.stderr);return 1
-				store.set_meta(TIMEZONE_META,args.tz);DISPLAY_ZONE=resolve_display_zone(store)
+				store.set_display_timezone(args.tz)
 			print(f"state {store.path} {'created'if fresh_state else'present'}")
 	except(OSError,ValueError,TypeError,KeyError,sqlite_api().Error,RuntimeError)as error:print(f"Preview error: {error}",file=sys.stderr);return 1
 	return 0

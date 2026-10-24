@@ -158,6 +158,9 @@ strip_block "$GATE_MARKER"
 _arena_preview_gate() {
   # The shell command line never changes, so one read per shell serves every command.
   # case: shell-line
+  if [ -z "\${TZ:-}" ] && [ -s "$REPO_ROOT/$STATE_REL/display_tz" ]; then
+    export TZ="\$(head -n 1 "$REPO_ROOT/$STATE_REL/display_tz")"
+  fi
   case "\${_arena_preview_line:-}" in
     "") _arena_preview_line="\$(tr '\\0' ' ' < /proc/\$\$/cmdline 2>/dev/null)" ;;
   esac

@@ -14,6 +14,8 @@ import sys
 import tokenize
 from pathlib import Path
 
+import tomllib
+
 try:
   from markers import (
     MARKER,
@@ -59,7 +61,9 @@ except ImportError:
     return file_ids, line_ids, marks
 
   def is_advisory_finding(finding, advisory_rule_ids):
-    return finding.rsplit(": ", 1)[-1].split()[0] in advisory_rule_ids
+    first = finding.splitlines()[0]
+    token = first.rsplit(": ", 1)[-1].split()[0].strip("[]")
+    return token in advisory_rule_ids
 
   def audit_lines(marks, findings, advisory_rule_ids):
     return [
@@ -106,6 +110,7 @@ RULE_IDS = {
 }
 ADVISORY_RULE_IDS = {
   "NMO901",
+  "NMO902",
   "STE901",
   "STE902",
   "STE903",
@@ -128,6 +133,8 @@ ADVISORY_RULE_IDS = {
 }
 SENTENCE_CAPS = {"instruction": 20, "description": 25}
 PARAGRAPH_CAP = 4
+THE_DENSITY_CAP = 20
+MIN_THE_COUNT = 3
 PROSE_RULE_IDS = {
   "dangling_conjunction": "STE001",
   "semicolon": "STE100",
@@ -163,6 +170,7 @@ PROSE_RULE_IDS = {
   "paragraph": "NMP100",
   "comment_block": "NMP101",
   "serial_comma": "NMO003",
+  "the_density": "NMO902",
 }
 RULE_DESCRIPTIONS = {
   "STE001": "dangling conjunction",
@@ -199,6 +207,7 @@ RULE_DESCRIPTIONS = {
   "NMP100": "paragraph has {count} sentences (cap {cap})",
   "NMP101": "comment block has {count} lines (cap {cap})",
   "NMO003": "missing Oxford comma",
+  "NMO902": '"the" density is {count}% (cap {cap}%)',
 }
 
 
@@ -243,12 +252,157 @@ SKIP_SUFFIXES = {
   ".json",
   ".webmanifest",
 }
+DEFAULT_CONFIG = {
+  "root": None,
+  "exclude": None,
+  "extend_exclude": (),
+  "context": None,
+  "paragraph_cap": None,
+  "comment_block_cap": COMMENT_BLOCK_CAP,
+  "test_helpers": (),
+  "select": ("ALL",),
+  "ignore": (),
+  "per_file_ignores": {},
+}
+ACTIVE_CONFIG = dict(DEFAULT_CONFIG)
 LICENSE_FILE_RE = re.compile(
   r"^(?:(?:un)?licen[cs]e(?:[-._].*)?|.*\.licen[cs]e|copying(?:[-._].*)?|"
   r"notice(?:[-._].*)?|(?:thirdparty|copyright)notices?(?:\..*)?|"
   r"patents?(?:[-._].*)?)$",
   re.IGNORECASE,
 )
+
+
+def _match_selectors(code, selectors):
+  """True when a rule ID matches any configured rule ID, prefix, or ALL."""
+  for item in selectors:
+    token = str(item).strip().upper()
+    if token == "ALL" or code == token or code.startswith(token):
+      return True
+  return False
+
+
+def _match_glob(rel_posix, name, pattern):
+  """Match a path against a Ruff-style file or directory glob pattern."""
+  pat = pattern.strip().replace("\\", "/")
+  if pat.endswith("/**"):
+    prefix = pat[:-3].rstrip("/")
+    return rel_posix == prefix or rel_posix.startswith(prefix + "/")
+  if "/" not in pat:
+    return fnmatch.fnmatchcase(name, pat) or fnmatch.fnmatchcase(rel_posix, pat)
+  return fnmatch.fnmatchcase(rel_posix, pat)
+
+
+def load_config(targets=(), config_path=None, no_config=False):
+  """Discover and parse nemoizer.toml or [tool.nemoizer] in pyproject.toml."""
+  config = dict(DEFAULT_CONFIG)
+  if no_config:
+    return config
+  root = None
+  table = None
+  if config_path is not None:
+    candidate = Path(config_path)
+    if not candidate.is_file():
+      raise ValueError(f"config file does not exist: {candidate}")
+    raw = tomllib.loads(candidate.read_text(encoding="utf-8"))
+    table = (
+      raw.get("tool", {}).get("nemoizer", {})
+      if candidate.name == "pyproject.toml"
+      else raw
+    )
+    root = candidate.resolve().parent
+  else:
+    first = Path(targets[0]).resolve() if targets else Path.cwd().resolve()
+    start = first if first.is_dir() else first.parent
+    for directory in (start, *start.parents):
+      for name in ("nemoizer.toml", ".nemoizer.toml"):
+        candidate = directory / name
+        if candidate.is_file():
+          table = tomllib.loads(candidate.read_text(encoding="utf-8"))
+          root = directory
+          break
+      if table is not None:
+        break
+      pyproject = directory / "pyproject.toml"
+      if pyproject.is_file():
+        raw = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+        section = raw.get("tool", {}).get("nemoizer")
+        if isinstance(section, dict):
+          table = section
+          root = directory
+          break
+      if (directory / ".git").exists():
+        break
+  if not isinstance(table, dict):
+    return config
+  config["root"] = root
+  if "exclude" in table:
+    config["exclude"] = tuple(str(item) for item in table["exclude"])
+  if "extend-exclude" in table:
+    config["extend_exclude"] = tuple(str(item) for item in table["extend-exclude"])
+  if "context" in table:
+    context = str(table["context"])
+    if context not in {*SENTENCE_CAPS, "unknown"}:
+      raise ValueError(f"invalid context in config: {context}")
+    config["context"] = context
+  if "paragraph-cap" in table:
+    paragraph_cap = int(table["paragraph-cap"])
+    if not 0 < paragraph_cap <= PARAGRAPH_CAP:
+      raise ValueError(f"paragraph-cap must be between 1 and {PARAGRAPH_CAP}")
+    config["paragraph_cap"] = paragraph_cap
+  if "comment-block-cap" in table:
+    comment_cap = int(table["comment-block-cap"])
+    if comment_cap < 1:
+      raise ValueError("comment-block-cap must be at least 1")
+    config["comment_block_cap"] = comment_cap
+  if "test-helpers" in table:
+    config["test_helpers"] = tuple(
+      (root / str(item)).resolve() if root else Path(str(item)).resolve()
+      for item in table["test-helpers"]
+    )
+  lint = table.get("lint", {})
+  if isinstance(lint, dict):
+    if "select" in lint:
+      config["select"] = tuple(str(item) for item in lint["select"])
+    if "ignore" in lint:
+      config["ignore"] = tuple(str(item) for item in lint["ignore"])
+    per_file = lint.get("per-file-ignores", {})
+    if isinstance(per_file, dict):
+      config["per_file_ignores"] = {
+        str(pattern): tuple(str(rule) for rule in rules)
+        for pattern, rules in per_file.items()
+      }
+  return config
+
+
+def config_file_exclusions(path, config=None):
+  """Return rule IDs suppressed for path by select, ignore, and per-file-ignores."""
+  cfg = ACTIVE_CONFIG if config is None else config
+  select = cfg.get("select", ("ALL",))
+  ignore = cfg.get("ignore", ())
+  per_file = cfg.get("per_file_ignores", {})
+  disabled = {
+    code
+    for code in KNOWN_RULE_IDS
+    if not _match_selectors(code, select) or _match_selectors(code, ignore)
+  }
+  if per_file:
+    candidate = Path(path)
+    root = cfg.get("root")
+    try:
+      rel = (
+        candidate.resolve().relative_to(root.resolve()).as_posix()
+        if root is not None
+        else candidate.as_posix()
+      )
+    except ValueError:
+      rel = candidate.as_posix()
+    for pattern, rules in per_file.items():
+      if _match_glob(rel, candidate.name, pattern):
+        disabled.update(
+          code for code in KNOWN_RULE_IDS if _match_selectors(code, rules)
+        )
+  return disabled
 
 
 def is_license_file(path):
@@ -281,9 +435,16 @@ def skipped(path, root, ignores):
   text = relative.as_posix()
   if any(part in SKIP_DIRS for part in Path(text).parts):
     return True
-  if any(text == item or text.startswith(item + "/") for item in SKIP_PATHS):
+  base_skips = (
+    ACTIVE_CONFIG["exclude"] if ACTIVE_CONFIG.get("exclude") is not None else SKIP_PATHS
+  )
+  all_ignores = (*ignores, *ACTIVE_CONFIG.get("extend_exclude", ()))
+  if any(text == item or text.startswith(item + "/") for item in base_skips):
     return True
-  return any(text == item or text.startswith(item + "/") for item in ignores)
+  return any(
+    text == item or text.startswith(item + "/") or _match_glob(text, path.name, item)
+    for item in all_ignores
+  )
 
 
 def walk(targets, ignores):
@@ -307,7 +468,8 @@ def head_marker(line, position=None):
 
 def exclusions(path, lines):
   """Collect every marker and the known rule IDs it suppresses."""
-  return collect_markers(path, lines, KNOWN_RULE_IDS, ROTATIONS)
+  file_ids, line_ids, marks = collect_markers(path, lines, KNOWN_RULE_IDS, ROTATIONS)
+  return file_ids | config_file_exclusions(path), line_ids, marks
 
 
 def suppressed(code, ids, name=None):
@@ -344,6 +506,36 @@ def rotate(line, suppressed=frozenset()):
   return line
 
 
+def format_finding(path, line, code, message, source_line=None):
+  """Format one finding in STE-linter style with an indented source snippet."""
+  level = "advisory" if code in ADVISORY_RULE_IDS else "advisory-free"
+  suffix = (
+    " (manual review)"
+    if code in ADVISORY_RULE_IDS and "(manual review)" not in message
+    else ""
+  )
+  header = f"{path}:{line}: [{code}] ({level}) {message}{suffix}"
+  if source_line is None:
+    return header
+  snippet = source_line.strip()
+  if len(snippet) > 100:
+    snippet = snippet[:97] + "..."
+  return f"{header}\n    {snippet}" if snippet else header
+
+
+def format_summary(findings):
+  """Format the STE-linter summary footer for a non-empty finding list."""
+  if not findings:
+    return ""
+  hard = sum(1 for item in findings if not is_advisory(item))
+  advisory = len(findings) - hard
+  files = len({item.splitlines()[0].rsplit(":", 2)[0] for item in findings})
+  return (
+    f"\nSummary: {hard} hard violation(s), "
+    f"{advisory} advisory finding(s) across {files} file(s)."
+  )
+
+
 def scan(targets, ignores):
   """Return findings and all exclusion markers with locations and rule IDs."""
   findings, marks = [], []
@@ -374,8 +566,7 @@ def scan(targets, ignores):
         if suppressed(code, excluded, name):
           continue
         for word in sorted(set(re.findall(pattern, visible, flags=re.IGNORECASE))):
-          suffix = " (manual review)" if code in ADVISORY_RULE_IDS else ""
-          findings.append(f"{path}:{number}: {code} {word} -> {use}{suffix}")
+          findings.append(format_finding(path, number, code, f"{word} -> {use}", line))
   return findings, marks
 
 
@@ -1088,6 +1279,36 @@ def prose_self_narration(text):
   return prose_line_matches(text, lambda clean: list(SELF_NARRATION_RE.finditer(clean)))
 
 
+def prose_the_density(text, cap=THE_DENSITY_CAP, min_the=MIN_THE_COUNT):
+  """Find prose lines where 'the' appears at least min_the times and >= cap% of words."""
+  rows = []
+  fence = None
+  for index, line in enumerate(text.splitlines()):
+    number = index + 1
+    marker = re.match(r"^\s*(`{3,}|~{3,})", line)
+    if marker:
+      if fence is None:
+        fence = marker[1]
+      elif (
+        marker[1][0] == fence[0]
+        and len(marker[1]) >= len(fence)
+        and not line[marker.end() :].strip()
+      ):
+        fence = None
+      continue
+    if fence is not None or TABLE_ROW.match(line.strip()):
+      continue
+    clean = re.sub(r"(`+)(.*?)\1", lambda match: " " * len(match[0]), line)
+    clean = blank_inline_comments(clean)
+    words = re.findall(r"[A-Za-z0-9_'-]+", clean)
+    hits = list(re.finditer(r"\bthe\b", clean, re.IGNORECASE))
+    if len(hits) >= min_the and words:
+      density = round(len(hits) * 100 / len(words))
+      if density >= cap:
+        rows.append((number, hits[0].start() + 1, density))
+  return rows
+
+
 def prose_review(path, text, context, paragraph_cap):
   """Return unsuppressed measurable candidates for one explicit text scope."""
   lines = text.splitlines()
@@ -1188,6 +1409,21 @@ def prose_review(path, text, context, paragraph_cap):
             "status": "review",
           }
         )
+  code = PROSE_RULE_IDS["the_density"]
+  if not suppressed(code, file_ids):
+    for number, column, density in prose_the_density(text):
+      if not suppressed(code, line_ids[number - 1]):
+        findings.append(
+          {
+            "rule": code,
+            "path": str(path),
+            "line": number,
+            "column": column,
+            "count": density,
+            "cap": THE_DENSITY_CAP,
+            "status": "manual_review",
+          }
+        )
   return findings
 
 
@@ -1208,9 +1444,10 @@ def source_prose(path, text, context, paragraph_cap):
   findings = []
   if path.suffix in COMMENT_SUFFIXES or path.name in SPECIAL_CODE_NAMES:
     code = PROSE_RULE_IDS["comment_block"]
+    comment_cap = ACTIVE_CONFIG.get("comment_block_cap", COMMENT_BLOCK_CAP)
     if not suppressed(code, file_ids):
       for start, count in comment_blocks(path, text):
-        if count > COMMENT_BLOCK_CAP and not suppressed(
+        if count > comment_cap and not suppressed(
           code, set().union(*line_ids[start - 1 : start - 1 + count])
         ):
           findings.append(
@@ -1220,7 +1457,7 @@ def source_prose(path, text, context, paragraph_cap):
               "line": start,
               "column": 1,
               "count": count,
-              "cap": COMMENT_BLOCK_CAP,
+              "cap": comment_cap,
               "status": "review",
             }
           )
@@ -1628,17 +1865,27 @@ def is_test_file(path, text, helpers):
   if suffix == ".py":
     for parent in path.resolve().parents:
       config = parent / "pytest.ini"
-      if not config.is_file():
-        continue
-      settings = configparser.ConfigParser(interpolation=None)
-      settings.read(config, encoding="utf-8")
-      patterns = settings.get("pytest", "python_files", fallback="test_*.py").split()
-      roots = settings.get("pytest", "testpaths", fallback=".").split()
-      if any(fnmatch.fnmatchcase(path.name, pattern) for pattern in patterns) and any(
-        path.resolve().is_relative_to((parent / root).resolve()) for root in roots
-      ):
-        return True
-      break
+      pyproject = parent / "pyproject.toml"
+      patterns, roots = None, None
+      if config.is_file():
+        settings = configparser.ConfigParser(interpolation=None)
+        settings.read(config, encoding="utf-8")
+        patterns = settings.get("pytest", "python_files", fallback="test_*.py").split()
+        roots = settings.get("pytest", "testpaths", fallback=".").split()
+      elif pyproject.is_file():
+        raw = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+        ini = raw.get("tool", {}).get("pytest", {}).get("ini_options")
+        if isinstance(ini, dict):
+          pf = ini.get("python_files", ["test_*.py"])
+          tp = ini.get("testpaths", ["."])
+          patterns = [pf] if isinstance(pf, str) else list(pf)
+          roots = [tp] if isinstance(tp, str) else list(tp)
+      if patterns is not None and roots is not None:
+        if any(fnmatch.fnmatchcase(path.name, pattern) for pattern in patterns) and any(
+          path.resolve().is_relative_to((parent / root).resolve()) for root in roots
+        ):
+          return True
+        break
     return any(
       isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
       and node.name.startswith("test_")
@@ -1653,6 +1900,7 @@ def is_test_file(path, text, helpers):
 
 
 def main(argv=None):
+  global ACTIVE_CONFIG
   argv = list(sys.argv[1:] if argv is None else argv)
   if argv[:1] == ["prose"]:
     return prose_main(argv[1:])
@@ -1682,11 +1930,11 @@ def main(argv=None):
   parser.add_argument(
     "--selftest", action="store_true", help="run built-in self-tests and exit"
   )
-  parser.add_argument(
-    "--context", choices=[*SENTENCE_CAPS, "unknown"], default="unknown"
-  )
-  parser.add_argument("--paragraph-cap", type=int, default=PARAGRAPH_CAP)
+  parser.add_argument("--context", choices=[*SENTENCE_CAPS, "unknown"], default=None)
+  parser.add_argument("--paragraph-cap", type=int, default=None)
   parser.add_argument("--test-helper", action="append", type=Path, default=[])
+  parser.add_argument("--config", type=Path, default=None)
+  parser.add_argument("--no-config", action="store_true")
   arguments = parser.parse_args(argv)
   if arguments.selftest:
     assert rotate("Transmit the kind.") == "Send the type."
@@ -1695,12 +1943,30 @@ def main(argv=None):
     )
     assert any(row["rule"] == "STE100" for row in sample)
     return 0
-  if not 0 < arguments.paragraph_cap <= PARAGRAPH_CAP:
-    parser.error(f"--paragraph-cap must be between 1 and {PARAGRAPH_CAP}")
-  for helper in arguments.test_helper:
-    if not helper.is_file():
-      parser.error(f"test helper does not exist: {helper}")
   targets = arguments.targets or ["."]
+  try:
+    ACTIVE_CONFIG = load_config(targets, arguments.config, arguments.no_config)
+  except (OSError, ValueError, tomllib.TOMLDecodeError) as error:
+    parser.error(str(error))
+  context = (
+    arguments.context
+    if arguments.context is not None
+    else (ACTIVE_CONFIG.get("context") or "unknown")
+  )
+  paragraph_cap = (
+    arguments.paragraph_cap
+    if arguments.paragraph_cap is not None
+    else (ACTIVE_CONFIG.get("paragraph_cap") or PARAGRAPH_CAP)
+  )
+  if not 0 < paragraph_cap <= PARAGRAPH_CAP:
+    parser.error(f"--paragraph-cap must be between 1 and {PARAGRAPH_CAP}")
+  test_helpers = [
+    *ACTIVE_CONFIG.get("test_helpers", ()),
+    *arguments.test_helper,
+  ]
+  for helper in test_helpers:
+    if not Path(helper).is_file():
+      parser.error(f"test helper does not exist: {helper}")
   if arguments.format:
     changed = format_paths(targets, arguments.ignore)
     print(f"{changed} lines rotated", file=sys.stderr)
@@ -1710,15 +1976,15 @@ def main(argv=None):
     print("\n".join(marks))
     return 0
   errors, tests = [], []
-  helpers = {path.resolve() for path in arguments.test_helper}
-  for path in walk([*targets, *arguments.test_helper], arguments.ignore):
+  helpers = {Path(path).resolve() for path in test_helpers}
+  for path in walk([*targets, *test_helpers], arguments.ignore):
     text = text_file(path)
     try:
-      if is_test_file(path, text or "", helpers):
+      if not arguments.audit and is_test_file(path, text or "", helpers):
         tests.append(str(path))
       if text is None:
         continue
-      rows = source_prose(path, text, arguments.context, arguments.paragraph_cap)
+      rows = source_prose(path, text, context, paragraph_cap)
     except (
       SyntaxError,
       tokenize.TokenError,
@@ -1731,9 +1997,15 @@ def main(argv=None):
     ) as error:
       errors.append(f"{path}: {type(error).__name__}: {error}")
       continue
+    lines = text.splitlines()
     findings.extend(
-      f"{row['path']}:{row['line']}: {row['rule']} {describe_finding(row)}"
-      + (" (manual review)" if row["rule"] in ADVISORY_RULE_IDS else "")
+      format_finding(
+        row["path"],
+        row["line"],
+        row["rule"],
+        describe_finding(row),
+        lines[row["line"] - 1] if 0 < row["line"] <= len(lines) else None,
+      )
       for row in rows
     )
   if arguments.audit:
@@ -1743,10 +2015,17 @@ def main(argv=None):
       return 2
     return 0
   result = review_tests(tests)
-  findings.extend(
-    f"{row['path']}:{row['line']}: {row['rule']} {row['evidence']}"
-    for row in result["findings"]
-  )
+  for row in result["findings"]:
+    test_lines = (text_file(Path(row["path"])) or "").splitlines()
+    findings.append(
+      format_finding(
+        row["path"],
+        row["line"],
+        row["rule"],
+        row["evidence"],
+        test_lines[row["line"] - 1] if 0 < row["line"] <= len(test_lines) else None,
+      )
+    )
   for row in result["coverage"]:
     if row["status"] != "checked":
       errors.append(f"{row['path']}: tests not checked: {row['reason']}")
@@ -1756,7 +2035,7 @@ def main(argv=None):
       "Test scope: static paths and declarations. Dynamic helpers may be unresolved.",
       file=sys.stderr,
     )
-  print("\n".join(findings))
+  print("\n".join(findings) + ("\n" + format_summary(findings) if findings else ""))
   if errors:
     print("\n".join(errors), file=sys.stderr)
     return 2

@@ -37,9 +37,9 @@ Apply this skill to a page, a component, or an interface change. The sheet is th
 
 5. Four sizes from the sheet, three weights, one eyebrow size, and a tabular face for IDs, and MUST bundle and load custom fonts via [references/recipes/offline-fonts.md](references/recipes/offline-fonts.md) without reload jitter.
 
-6. Every gap lands on the 8 px scale. Rows are 40 px, panels take a 10 px radius and no shadow, icon-only buttons are square, and a touch target is at least 44 px.
+6. Every gap lands on the 8 px scale. Rows are 40 px, panels take a 10 px radius and no shadow, icon-only buttons are symmetric, and a touch target is at least 44 px.
 
-7. The sheet names 75em, 56.25em, and 40em. Choose each breakpoint where the content breaks. A width outside the list gets no behaviour of its own.
+7. The sheet names 75em, 60em, and 40em for width, plus 30em for short-height landscape. Choose each breakpoint where the content breaks. A dimension outside the list gets no behaviour of its own.
 
 8. Every transition shares one curve over 160 to 220 ms; for animations, vendor [GSAP](https://github.com/greensock/GSAP) into the project as the go-to library. Reduced motion turns animation off.
 
@@ -53,7 +53,7 @@ Apply this skill to a page, a component, or an interface change. The sheet is th
 
 13. When a page needs a pattern the sheet lacks, the change adds the entry, both widths, and the screenshots, in one pull request.
 
-14. Enable touch input (`hasTouch` and `isMobile`) when auditing or inspecting mobile widths (`<= 768` px, including `360` px) so `@media (pointer: coarse)` rules apply.
+14. Enable touch input (`hasTouch` and `isMobile`) when auditing or inspecting mobile viewports (`width <= 768` px or `height <= 480` px) so `@media (pointer: coarse)` rules apply.
 
 15. Place a Lucide `x` exit button at the top right of a container, and place other action buttons at the bottom right.
 
