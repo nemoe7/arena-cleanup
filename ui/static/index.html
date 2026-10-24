@@ -2487,14 +2487,18 @@
 
   // A list of values as pills with one text field: Enter or a comma adds the
   // typed value, Backspace on an empty field removes the last pill.
-  function chipEditor(id, values, placeholder) {
+  function chipEditor(id, values, label, fallback) {
     const items = [...values];
     const box = el("div", { class: "chip-edit", id });
-    const input = el("input", { placeholder, "aria-label": placeholder, autocomplete: "off", spellcheck: "false" });
-    const draw = () => box.replaceChildren(...items.map((v, i) =>
-      el("span", { class: "pill mono" }, v,
-        el("button", { type: "button", "aria-label": `Remove ${v}`, onclick: () => { items.splice(i, 1); draw(); } }, icon("x")))),
-      input);
+    const input = el("input", { "aria-label": label, autocomplete: "off", spellcheck: "false" });
+    // an empty list shows the built-in fallback as its placeholder, an entry replaces it
+    const draw = () => {
+      input.placeholder = items.length ? "" : fallback;
+      box.replaceChildren(...items.map((v, i) =>
+        el("span", { class: "pill mono" }, v,
+          el("button", { type: "button", "aria-label": `Remove ${v}`, onclick: () => { items.splice(i, 1); draw(); } }, icon("x")))),
+        input);
+    };
     const add = () => {
       const v = input.value.trim().replace(/,+$/, "").trim();
       if (v && !items.includes(v)) items.push(v);
@@ -2520,8 +2524,8 @@
 
   function renderClaims() {
     const c = state.settings.claims;
-    const emails = chipEditor("claim-emails", c.emails, "add an email");
-    const names = chipEditor("claim-names", c.names, "add a name");
+    const emails = chipEditor("claim-emails", c.emails, "claimed emails", c.defaults.emails.join(", "));
+    const names = chipEditor("claim-names", c.names, "claimed names", c.defaults.names.join(", "));
     const save = el("button", { class: "btn primary", id: "claims-save", onclick: async () => {
       save.disabled = true;
       try {
@@ -2536,11 +2540,9 @@
     $("claims-body").replaceChildren(el("div", { class: "card", id: "card-claims" },
       el("div", { class: "card-head" }, el("h2", {}, "Claimed commits"), el("span", { class: "hint" }, "git config arena.claim-email, arena.claim-name")),
       el("div", { class: "card-body", style: "display:grid;gap:10px" },
-        el("div", { class: "hint" }, "A run rewrites every commit by one of these emails or names onto the identity above. The configured email is always claimed."),
+        el("div", { class: "hint" }, "A run rewrites every commit by one of these emails or names onto the identity above. The configured email is always claimed, and an empty list falls back to its placeholder."),
         el("div", { class: "claim-label" }, "Emails"), emails.box,
-        el("div", { class: "claim-label" }, "Names"), names.box,
-        el("div", { class: "hint" }, "An empty list falls back to the built-in rule: ",
-          el("code", {}, c.defaults.emails.join(", ")), " and ", el("code", {}, c.defaults.names.join(", ")), ".")),
+        el("div", { class: "claim-label" }, "Names"), names.box),
       el("div", { class: "card-foot" }, save)));
   }
 

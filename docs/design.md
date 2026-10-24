@@ -471,3 +471,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - Every row of a loaded page animates, and the stagger is a 120 ms amount, not 30 ms per row.
   - A fixed per-row delay left the rows after the twelfth solid while earlier rows were still transparent.
 - Accepted 2026-10-24: below 40em a step row is two lines: the stamp with the duration, then the text at full width.
+- Accepted 2026-10-24: the claim inputs carry the built-in fallback as their placeholder while empty, so the card needs no sentence for it.
