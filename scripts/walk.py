@@ -35,6 +35,8 @@ ROOT = Path(__file__).resolve().parent.parent
 DEMO = ROOT / "scripts" / "demo.py"
 STARTUP_SECONDS = 60
 STATUS_CACHE_SECONDS = 15
+# the dashboard hides this line once the repo list is in, on success and on failure
+REPOS_READY = "#repo-loading"
 DESKTOP = {"viewport": {"width": 1360, "height": 900}}
 PHONE_DEVICE = "iPhone 13"
 # the walk provokes these on purpose, so they are narration, not failures
@@ -156,7 +158,9 @@ class Walker:
       self.errors.append(message.text)
 
   def goto(self, settle_ms: int = 1200) -> None:
-    self.page.goto(self.url, wait_until="networkidle")
+    """Open the dashboard and wait for its repo list, then settle for the motion."""
+    self.page.goto(self.url, wait_until="load")
+    self.page.wait_for_selector(REPOS_READY, state="hidden", timeout=15000)
     self.page.wait_for_timeout(settle_ms)
 
   def visible(self, selector: str) -> bool:
@@ -167,6 +171,13 @@ class Walker:
 
   def count(self, selector: str) -> int:
     return self.page.eval_on_selector_all(selector, "els => els.length")
+
+  def count_settled(self, selector: str, want: int, timeout_ms: int = 2000) -> int:
+    """Read a count once it reaches `want`, or whatever stands at the timeout."""
+    deadline = time.monotonic() + timeout_ms / 1000
+    while self.count(selector) != want and time.monotonic() < deadline:
+      self.page.wait_for_timeout(50)
+    return self.count(selector)
 
   def click(self, selector: str, settle_ms: int = 500) -> None:
     self.page.click(selector, timeout=8000)

@@ -48,10 +48,9 @@ def test_the_arena_row_leaves_before_the_reply_and_returns_on_failure(
     desktop.click(f"{ROW} .arena-del", 300)
     desktop.click("#confirm-go", SETTLE)
     route = wait_for(held, page)
-    assert desktop.count(ROW) == 0, "the row left before the server answered"
+    assert desktop.count_settled(ROW, 0) == 0, "the row left before the server answered"
     fail(route)
-    page.wait_for_timeout(SETTLE)
-    assert desktop.count(ROW) == 1, "a refused delete puts the row back"
+    assert desktop.count_settled(ROW, 1) == 1, "a refused delete puts the row back"
     assert "origin refused" in desktop.text("#toast")
   finally:
     page.unroute("**/api/repos/*/arena/delete")
@@ -69,11 +68,12 @@ def test_the_card_leaves_before_the_reply_and_returns_on_failure(
     desktop.click(f"{CARD} .rm", 100)
     desktop.click(f"{CARD} .rm", SETTLE)
     route = wait_for(held, page)
-    assert desktop.count(CARD) == 0, "the card left before the server answered"
+    assert desktop.count_settled(CARD, 0) == 0, (
+      "the card left before the server answered"
+    )
     assert desktop.count(".repo-card") == cards - 1
     fail(route)
-    page.wait_for_timeout(SETTLE)
-    assert desktop.count(CARD) == 1, "a refused remove puts the card back"
+    assert desktop.count_settled(CARD, 1) == 1, "a refused remove puts the card back"
   finally:
     page.unroute("**/api/repos/*/remove")
 
