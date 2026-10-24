@@ -173,7 +173,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - `commit`: grid `auto minmax(0, 1fr)`, the subject clamped to two lines with an ellipsis, the metadata on a second row.
   - The row is a button with `aria-expanded`, and a tap shows the whole subject.
   - The metadata carries the author's GitHub picture, 20 px and round, or a `user` glyph in the same disc when the server has none.
-- `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`, two lines: the dot and the name, then the tail under the name.
+- `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`, two lines: the dot and the name, then the tail under the name. The amber dot of a running PR pulses.
   - A selected row carries text colour. Its tint and 2 px accent bar sit on its `arena-item`.
   - The name reads `Pull from <branch>`.
   - Rows and the timeout slider are 44 px high on a phone.
@@ -184,12 +184,12 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - The backdrop dims the page.
   - Escape and Cancel close it without a request.
 - `checks-modal`: a 640 px `dialog` for the checks of a PR, whose body scrolls past 60 vh.
-  - One row per check, 36 px tall, with a glyph in the state colour and the name.
+  - One row per check, 36 px tall, with a glyph in the state colour and the name. A running check shows an amber pulsing dot in the glyph slot.
   - A row that names an Actions job is a toggle with a chevron, and opens its `job-pane` under itself. Any other run keeps Open run.
   - Open PR, with the GitHub mark, and Close sit at the right.
 - `job-pane`: the job behind a check row, indented 24 px so its content lines up with the row name.
   - A head line with the verdict and the summed step time, then Open, with the GitHub mark, as a house 34 px button.
-  - `job-steps`: one 28 px row per step with the state glyph, the name, and the seconds, or `running`.
+  - `job-steps`: one 28 px row per step with the state glyph, the name, and the seconds, or `running` behind an amber pulsing dot.
   - `job-log`: a `pre` in the mono face, 26 vh tall at most, that opens on the last 400 lines. A scroll to its top prepends the page before, and the view keeps its place.
     - Each line drops the date and the fraction of its stamp, so `11:27:19` leads it.
     - A running job shows a note instead, since GitHub serves the log once the job ends.
@@ -517,4 +517,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - A header line reads Repo, Branch, Arena branches, and Actions. Rules of 1 px split the rows, cells pad 12 px, a hovered row tints, and the Sort select stays.
 - Accepted 2026-10-24: a button that leads to GitHub shows the GitHub mark instead of the word. Its title and accessible name keep the phrase.
 - Accepted 2026-10-24: the Clean & Push button carries a live run itself, as Running with an amber spinning glyph, and the `clean running` pill is gone. Both labels share one grid cell, so the button keeps its width and height across states.
+- Accepted 2026-10-24: every amber dot pulses like the LED: a running check, a running job step, and the sidebar dot of a running PR. The run timeline glyph, the Running button, and Re-check keep their spinners.
   - A running job refreshes on every poll, and its first read after the end replaces the short log.

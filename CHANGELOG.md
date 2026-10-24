@@ -16,6 +16,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A clean in flight shows on the Clean & Push button itself: disabled, an
   amber spinning glyph, and the label Running, at the same width and height.
   The `clean running` pill is gone.
+- A running PR check and a running job step show an amber pulsing dot
+  instead of a spinner, and every amber dot pulses, the sidebar dot of a
+  running PR included.
 
 ## [0.3.9] - 2026-10-24
 
