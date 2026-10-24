@@ -17,6 +17,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   nemoizer finding each. No behaviour change.
 - The loading bar marks the first repo list load alone. A fetch of repo states
   spins the Reload glyph.
+- Clean & Push greys from the run end until the branch state answers. It
+  stays grey while the picked arena branch has nothing ahead.
+- The server forgets a repo's cached status when its run ends.
 
 ### Fixed
 

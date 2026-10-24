@@ -231,7 +231,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Idle reads Clean & Push and is the primary.
   - Starting is disabled until the job id arrives.
   - Running reads Cancel as a plain button.
-  - Idle greys with the tooltip `a clean would overwrite commits on main` when the arena branch the run takes reads below 0 and the target is the default branch. Any other idle state keeps it live.
+  - Idle greys with a tooltip in three cases: `reading the branch state` from the run end until the status answers, `a clean would overwrite commits on main` below 0, and `nothing to clean on <branch>` at 0. Any other idle state keeps it live, an unknown count included.
 - `card-foot`: the action row of a card, right-aligned with an 8 px gap and 16 px of padding. The options card has none: its run button sits in the checkbox row.
   - Every card action sits there, so the x alone stays top right.
   - The options foot hides on a phone, where the tab bar runs.
@@ -498,6 +498,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the remote fact links a GitHub remote as the GitHub mark and `owner/repo` in a new tab. The mark is the one filled glyph, from Octicons.
 - Accepted 2026-10-24: the Prepare modal names three steps instead of its log lines. Later steps show only once the phase reaches them.
 - Accepted 2026-10-24: Clean & Push greys only when a clean would overwrite commits on the default branch, read from the net count. An absorbed branch keeps the button live, and the run reports nothing to push.
+- Accepted 2026-10-24: Clean & Push greys from the run end until the status answers, and stays grey while the picked branch has nothing ahead. Commits ahead re-arm it, and this replaces the overwrite-only rule above.
 - Accepted 2026-10-24: dates read in 24-hour time. The shared formatter sets `hourCycle` to `h23`, so a commit date reads `Oct 24, 18:11`, and the log stamps keep their `HH:MM:SS`.
 - Accepted 2026-10-24: the hover tint and the selected mark of a sidebar arena row span the whole row, icon buttons included. The icon buttons keep their own hover rings on top of the row tint.
 - Accepted 2026-10-24: Clean & Push ends the checkbox row of the options card, and drops under the boxes, right-aligned, when the row is narrow. The button keeps the 34 px control height, and the phone keeps its tab bar.

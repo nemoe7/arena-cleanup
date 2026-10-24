@@ -1137,6 +1137,7 @@
     phase: null,
     counts: { checks: {}, dry: false, tags: 0, pushed: 0 },
     signing: null,
+    settling: false,
   };
 
   // Lucide 1.61.0 glyphs, ISC licence in LICENSE-lucide.txt beside this file. One
@@ -2060,18 +2061,28 @@
   const CLEAN_RUNNING = "a clean is running on this repo";
   // The default branch runs through the chosen arena branch, else the newest.
   // Below 0 the default moved under it, and the push would drop those commits.
+  function runArena(s, chosen = "") {
+    const names = byActivity(s);
+    return names.includes(chosen) ? chosen : names[0];
+  }
   function overwriteReason(s, chosen = "") {
     const ahead = (s && s.ahead) || {};
-    const names = byActivity(s);
-    const name = names.includes(chosen) ? chosen : names[0];
+    const name = runArena(s, chosen);
     const moved = name && Number(ahead[name]) < 0;
     return moved ? `a clean would overwrite commits on ${s.default || "the default branch"}` : "";
   }
+  // why the idle button is grey: a run just ended and the branch state is on its
+  // way, a clean would overwrite the default branch, or nothing is ahead
   function runBlock() {
+    if (state.settling) return "reading the branch state";
     const s = state.repo?.status;
     if (!s || !s.ok) return "";
     const target = state.branch || s.branch || s.default;
-    return target === s.default ? overwriteReason(s, state.arena) : "";
+    if (target !== s.default) return "";
+    const reason = overwriteReason(s, state.arena);
+    if (reason) return reason;
+    const name = runArena(s, state.arena);
+    return name && s.ahead?.[name] === 0 ? `nothing to clean on ${name}` : "";
   }
   function renderCommand() {
     const line = commandLine();
@@ -2484,11 +2495,15 @@
   function follow(id) {
     const es = new EventSource(`/api/jobs/${id}/events`);
     state.es = es;
-    const finish = (snap) => {
+    // the button stays grey from the run end until the branch state answers
+    const finish = async (snap) => {
       state.job = null;
       paintDone(snap);
+      state.settling = true;
       setRunButton("idle");
-      refreshStatus();
+      await refreshStatus();
+      state.settling = false;
+      renderCommand();
       loadRepos();
       loadCommits();
     };

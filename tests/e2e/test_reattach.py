@@ -71,4 +71,7 @@ def test_a_live_run_streams_on_after_a_return_to_the_repo(
   finally:
     demo.slow_checks(False)
   assert desktop.text("#start") == "Clean & Push"
-  assert not desktop.page.eval_on_selector("#start", "e => e.disabled")
+  # grey from the run end until the branch state answers, then commits ahead re-arm it
+  desktop.page.wait_for_function(
+    "!document.getElementById('start').disabled", timeout=WAIT_MS
+  )

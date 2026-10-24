@@ -878,6 +878,29 @@ def test_a_cancelled_job_is_marked_cancelled() -> None:
   assert snap["exit"] != 0
 
 
+def test_a_finished_job_drops_the_status_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+  # a finished run changed this clone, so its status read asks git again
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  repo = {"id": "fresh", "name": "fresh", "path": "/tmp"}
+  reads: list[str] = []
+  monkeypatch.setattr(
+    server, "repo_status", lambda r: reads.append(r["id"]) or {"ok": True}
+  )
+  server.STATUS.get(repo)
+  server.STATUS.get(repo)
+  assert reads == ["fresh"], "the second read came from the cache"
+  job = server.Job(["true"], "/tmp", repo)
+  job.start()
+  deadline = time.monotonic() + STARTUP_SECONDS
+  while job.snapshot()["status"] != "done" and time.monotonic() < deadline:
+    time.sleep(0.1)
+  server.STATUS.get(repo)
+  assert reads == ["fresh", "fresh"], "the run end dropped the cached status"
+  server.STATUS.drop("fresh")
+
+
 def test_a_live_job_marks_its_repo_as_running() -> None:
   # The dashboard reads this flag, so a slow job must show while it runs and
   # leave with the process.

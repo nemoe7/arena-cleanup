@@ -1169,6 +1169,7 @@ class Job:
         self.lines.append((time.time(), text))
         self._cond.notify_all()
     self._proc.wait()
+    STATUS.drop(self.repo["id"])  # a run changes this clone, so its next read asks git
     with self._cond:
       self.exit = self._proc.returncode
       self.finished = time.time()
