@@ -82,6 +82,33 @@ def open_run(walker: Walker, lines: list[tuple[str, str]] | None) -> None:
     walker.page.unroute(PATTERN)
 
 
+STEP_BOXES = """() => {
+  const li = document.querySelector('#phase-body .step-list li');
+  const box = (sel) => li.querySelector(sel).getBoundingClientRect();
+  const [t, msg, d] = ['.t', '.msg', '.d'].map(box);
+  return { row: li.getBoundingClientRect().width, t, msg, d };
+}"""
+
+
+@pytest.mark.parametrize("width", ["desktop", "phone"])
+def test_a_step_row_stacks_its_text_on_a_phone_only(
+  request: pytest.FixtureRequest, width: str
+) -> None:
+  walker: Walker = request.getfixturevalue(width)
+  open_run(walker, RUN)
+  open_phase(walker, "prepare")
+  boxes = walker.page.evaluate(STEP_BOXES)
+  stacked = boxes["msg"]["top"] > boxes["t"]["bottom"] - 1
+  assert stacked == (width == "phone")
+  if stacked:
+    assert boxes["msg"]["width"] > boxes["row"] * 0.9, "the text takes the row"
+    assert abs(boxes["d"]["top"] - boxes["t"]["top"]) < 2, (
+      "the duration shares the stamp line"
+    )
+  close_phase(walker)
+  walker.click("#back", 600)
+
+
 def open_phase(walker: Walker, phase: str) -> dict:
   walker.page.click(f'.phase[data-phase="{phase}"] .phase-head')
   walker.page.wait_for_selector("#phase-modal[open]")

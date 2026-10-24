@@ -836,6 +836,11 @@
     button.pill, .repo-name { position: relative; }
     button.pill::before, .repo-name::before { content: ""; position: absolute; inset: -10px 0; }
     .chips input, .chip-edit input { height: 44px; }
+    /* a phone step row: the stamp and the duration on one line, the text under them at full width */
+    .step-list li { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; }
+    .step-list .t { grid-row: 1; }
+    .step-list .d { grid-row: 1; grid-column: 2; }
+    .step-list .msg { grid-row: 2; grid-column: 1 / -1; }
     /* a grid instead of a ragged wrap: one column at 360 px, more on wider phones */
     .checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 12px; }
     .opt.row > label { grid-column: 1 / -1; }
