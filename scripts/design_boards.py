@@ -480,6 +480,7 @@ def states_board(_: dict[str, bytes]) -> str:
     f"<tr><td>{pill('warn', 'PR #12, 2/3', dot=False)}</td><td>checks still running, amber like GitHub</td></tr>"
     f"<tr><td>{pill('mono', 'no PR', dot=False)}</td><td>the branch exists, no open PR</td></tr>"
     f"<tr><td>{pill('warn', 'checks unavailable', dot=False)}</td><td>signed out: the app cannot know</td></tr>"
+    f"<tr><td>{pill('mono', 'cloning…', dot=False)}</td><td>a pending card while the clone runs, dimmed</td></tr>"
     "</table>"
   )
   body = (

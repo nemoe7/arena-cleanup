@@ -25,6 +25,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   pending colour, instead of blue. A PR without checks gets a grey dot.
 - A sidebar arena row takes two lines: the dot and the name, then the ahead
   count and the PR meta under the name, as the cards do.
+- List edits show before the reply: the arena row leaves on Delete, the card
+  leaves on Remove, and Add puts a pending card first. A refused call puts
+  the row back with the error, and a lost connection sends the write once
+  more.
 
 ## [0.3.0] - 2026-10-23
 

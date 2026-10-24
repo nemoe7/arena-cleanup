@@ -293,6 +293,7 @@
   .repo-card:hover { border-color: #2c333c; background: #0f1216; }
   .repo-card:hover .repo-name, .repo-name:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
   .repo-card:active { transform: translateY(1px); }
+  .repo-card.pending { opacity: .6; pointer-events: none; }
   .repo-head { display: contents; }
   .repo-head > div { grid-area: name; max-width: 280px; }
   .repo-card > .rm { grid-area: rm; }
@@ -1027,6 +1028,16 @@
   }
   const post = (path, body) =>
     api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+  // a write that lost its connection goes once more with the same body; the
+  // server treats a repeat as done, so the list holds one row either way
+  async function postOnce(path, body) {
+    try {
+      return await post(path, body);
+    } catch (err) {
+      if (err instanceof TypeError) return post(path, body);
+      throw err;
+    }
+  }
 
   // ------------------------------------------------------------------ views
   // The address bar is the state: refresh, Back, and Forward all land on the
@@ -1144,17 +1155,31 @@
           return;
         }
         clearTimeout(timer);
+        const kept = state.repos;
+        state.repos = state.repos.filter((r) => r.id !== repo.id);
+        renderRepos();
         try {
-          await post(`/api/repos/${repo.id}/remove`, { delete: true });
+          await postOnce(`/api/repos/${repo.id}/remove`, { delete: true });
           toast("removed");
           loadRepos();
-        } catch (err) { toast(err.message); disarm(); }
+        } catch (err) {
+          state.repos = kept;
+          renderRepos();
+          toast(err.message);
+        }
       },
     }, icon("trash-2"));
     return btn;
   }
 
   function repoCard(repo) {
+    if (repo.pending) {
+      return el("div", { class: "repo-card pending", "aria-busy": "true" },
+        el("div", { class: "repo-head" },
+          el("span", { class: "repo-ico", "aria-hidden": "true" }, icon("git-branch")),
+          el("div", { style: "min-width:0" }, el("span", { class: "repo-name" }, repo.name))),
+        el("div", { class: "repo-meta" }, el("span", { class: "pill mono" }, "cloning…")));
+    }
     const s = repo.status || {};
     const head = el("div", { class: "repo-head" },
       el("span", { class: "repo-ico", "aria-hidden": "true" }, icon("git-branch")),
@@ -1226,11 +1251,18 @@
 
   function sortedRepos() {
     const order = SORTS[$("repo-sort").value] || SORTS.newest;
-    return state.repos.map((repo, at) => ({ repo, at })).sort(order).map((x) => x.repo);
+    const first = (a, b) => Number(Boolean(b.repo.pending)) - Number(Boolean(a.repo.pending)) || order(a, b);
+    return state.repos.map((repo, at) => ({ repo, at })).sort(first).map((x) => x.repo);
   }
 
   function renderGrid() {
     $("repo-grid").replaceChildren(...sortedRepos().map(repoCard));
+  }
+
+  // the grid and its empty state together, for a load and for a list edited before the reply
+  function renderRepos() {
+    renderGrid();
+    $("repo-empty").hidden = state.unreachable || state.repos.length > 0;
   }
 
   function restoreSort() {
@@ -1246,21 +1278,23 @@
 
   async function loadRepos(fresh = false) {
     if (!state.auth) await refreshAuth();
+    // a card whose clone is still running outlives every reload of the list
+    const pending = state.repos.filter((r) => r.pending);
     try {
-      state.repos = fresh
+      const repos = fresh
         ? await post("/api/fetch", { force: fresh === "force" })
         : await api("/api/repos");
+      state.repos = [...pending, ...repos];
       state.unreachable = false;
     } catch (err) {
       // "no repos" and "cannot ask the server" look identical on screen
       // unless we keep them apart - and an empty dashboard here would be a lie
-      state.repos = [];
+      state.repos = pending;
       state.unreachable = true;
     }
     $("repo-loading").hidden = true;
     const grid = $("repo-grid");
-    renderGrid();
-    $("repo-empty").hidden = state.unreachable || state.repos.length > 0;
+    renderRepos();
     grid.hidden = state.unreachable;
     const box = $("offline-banner");
     box.hidden = !state.unreachable;
@@ -1301,13 +1335,21 @@
     const btn = $("add-btn");
     btn.disabled = true;
     btn.textContent = "Cloning…";
+    const name = source.replace(/\/+$/, "").replace(/\.git$/, "").split(/[/:]/).pop();
+    const pending = { id: `pending-${Date.now()}`, name, pending: true };
+    const settle = () => { state.repos = state.repos.filter((r) => r !== pending); };
+    state.repos = [pending, ...state.repos];
+    renderRepos();
     try {
-      const repo = await post("/api/repos", { source });
+      const repo = await postOnce("/api/repos", { source });
       input.value = "";
       toast(`added ${repo.name}`);
+      settle();
       await loadRepos();
       openRepo(repo.id);
     } catch (err) {
+      settle();
+      renderRepos();
       toast(err.message);
     } finally {
       btn.disabled = false;
@@ -1419,15 +1461,29 @@
     dlg.returnValue = "";
     dlg.onclose = async () => {
       if (dlg.returnValue !== "delete" || state.repo !== repo) return;
+      const kept = repo.status;
+      if (state.arena === name) state.arena = "";
+      showArena(repo, { ...kept, arena: (kept.arena || []).filter((b) => b !== name) });
       try {
-        await post(`/api/repos/${repo.id}/arena/delete`, { branch: name });
+        await postOnce(`/api/repos/${repo.id}/arena/delete`, { branch: name });
         toast(`deleted ${name}`);
-        if (state.arena === name) state.arena = "";
         await refreshStatus();
         loadRepos();
-      } catch (err) { toast(err.message); }
+      } catch (err) {
+        if (state.repo === repo) showArena(repo, kept);
+        toast(err.message);
+      }
     };
     dlg.showModal();
+  }
+
+  // the row leaves before the reply and comes back on a failure
+  function showArena(repo, status) {
+    repo.status = status;
+    renderBranchSelect();
+    renderArenaSelect();
+    renderSidebar();
+    renderGrid();
   }
 
   // The run pulls from the selected arena branch. With one branch there is
