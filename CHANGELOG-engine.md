@@ -7,6 +7,11 @@ file, `CHANGELOG.md`.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the engine uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-10-24
+
+- The comment above `__version__` names the split numbers and the version
+  check. No behaviour change.
+
 ## [0.3.1] - 2026-10-24
 
 - Three docstrings and one comment read in the active voice. No behaviour

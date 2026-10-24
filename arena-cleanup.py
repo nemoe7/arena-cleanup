@@ -42,9 +42,9 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 
-# the one version of this file. pyproject.toml carries the same number for the
-# web app, and tests/test_cli.py keeps the two equal.
-__version__ = "0.3.1"
+# the engine's own number. pyproject.toml carries the UI's, and
+# scripts/check_versions.py asks for one step per changed part.
+__version__ = "0.3.2"
 PROG = "arena-cleanup"
 
 # ==== Defaults: edit these, or override per run with the matching flags ======
