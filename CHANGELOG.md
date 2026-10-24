@@ -9,6 +9,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.2] - 2026-10-24
 
+### Added
+
+- A loading bar under the header follows the repo fetch: the server counts
+  two steps per repo, the fetch and the status, and `GET /api/progress`
+  reports them. The Reload glyph spins while the page follows a fetch.
+
 ### Changed
 
 - The How git reaches GitHub fold is gone. The GitHub card shows the

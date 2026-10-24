@@ -123,6 +123,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - `sign-fields`: name and e-mail side by side, one column on a phone.
 - `card.fold`: a `details` card. The `summary` is the card head with a `show` or `hide` mark at the right, and the body opens below it. Closed, the head has no bottom border.
 - `banner`: `err`, `warn`, `ok` variants with an icon and one sentence of action.
+- `load-bar`: a 2 px accent bar on the bottom edge of the top bar. It shows while the page follows a fetch, filled by the server counter, and the Reload glyph spins with it.
 - `run button`: one button with `data-state` idle, starting, or running. Idle reads Clean & Push and is the primary. Starting is disabled until the job id arrives. Running reads Cancel as a plain button. Idle is disabled with the tooltip nothing to clean or push when no arena branch is ahead and the target is the default branch.
 - `card-foot`: the action row of a card, right-aligned with an 8 px gap and 16 px of padding. Every card action sits there, so the x alone stays top right. The options foot hides on a phone, where the tab bar runs.
 - `tree`: the path selector.
@@ -251,3 +252,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-24: every card action sits bottom right in a `card-foot`, nuu clause 15. The run button leaves the options card head, and the Save, Re-check, Sign in, Configure, and key buttons leave their bodies. Create key takes its natural width.
 - Accepted 2026-10-24: the hash picks the first frame. The boot sequence hides the views the hash does not name before it loads the environment and the repos. A reload off the dashboard shows no dashboard interstitial.
 - Accepted 2026-10-24: Clean & Push rests when no arena branch is ahead on origin. The dashboard button, the run button, and the phone bar grey out and name the reason. A named target branch is cleaned in place, so it keeps the run button live, and the status refresh wakes the buttons.
+- Accepted 2026-10-24: the repo fetch shows a loading bar under the header. The server counts two steps per repo and serves the count. The page polls it while its fetch request is open, and once a minute it looks for the clock fetch.

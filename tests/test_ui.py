@@ -389,6 +389,41 @@ def test_a_fetch_on_demand_sees_a_new_remote_branch(
   assert "arena/ui-later" in clone["status"]["arena"]
 
 
+def test_the_fetch_counter_reports_two_steps_per_repo(ui: UI) -> None:
+  repos = ui.get("/api/repos")
+  ui.post("/api/fetch", {"force": True})
+  progress = ui.get("/api/progress")
+  assert progress["active"] is False, "the fetch finished before the reply"
+  assert progress["total"] == 2 * len(repos), "one fetch and one status per repo"
+  assert progress["done"] == progress["total"]
+
+
+def test_the_fetch_counter_climbs_while_the_fetch_runs(
+  monkeypatch: pytest.MonkeyPatch,
+) -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  seen: list[dict[str, Any]] = []
+
+  def fetch(repo: dict[str, Any]) -> bool:
+    seen.append(server.PROGRESS.read())
+    return True
+
+  def status(repo: dict[str, Any]) -> dict[str, Any]:
+    seen.append(server.PROGRESS.read())
+    return {"ok": True}
+
+  monkeypatch.setattr(server, "fetch_origin", fetch)
+  monkeypatch.setattr(server, "repo_status", status)
+  repos = [{"id": f"r{n}", "path": f"/nowhere/{n}", "name": f"r{n}"} for n in range(3)]
+  server.fetch_all(repos)
+  assert [p["active"] for p in seen] == [True] * 6, "live during both phases"
+  assert all(p["total"] == 6 for p in seen)
+  assert max(p["done"] for p in seen) >= 3, "the status phase sees the fetches done"
+  assert server.PROGRESS.read() == {"active": False, "done": 6, "total": 6}
+
+
 def test_one_fetch_runs_at_a_time_and_the_rest_wait_for_it(
   monkeypatch: pytest.MonkeyPatch,
 ) -> None:

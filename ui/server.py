@@ -300,14 +300,23 @@ class StatusCache:
     with self._lock:
       self._cache.clear()
 
-  def refresh(self, repos: list[dict[str, Any]]) -> None:
+  def refresh(
+    self, repos: list[dict[str, Any]], step: Callable[[], None] | None = None
+  ) -> None:
     """Read fresh statuses for `repos`, then swap them in together.
 
     The old entries stay readable while git works. A dashboard that asks in
-    the meantime gets cards instead of a gap.
+    the meantime gets cards instead of a gap. `step` runs after each repo.
     """
+
+    def read(repo: dict[str, Any]) -> dict[str, Any]:
+      value = repo_status(repo)
+      if step:
+        step()
+      return value
+
     with ThreadPoolExecutor(max_workers=4) as pool:
-      values = list(pool.map(repo_status, repos))
+      values = list(pool.map(read, repos))
     now = time.time()
     with self._lock:
       for repo, value in zip(repos, values):
@@ -315,6 +324,35 @@ class StatusCache:
 
 
 STATUS = StatusCache()
+
+
+class FetchProgress:
+  """Counts the steps of the running fetch, two per repo: the fetch and the status."""
+
+  def __init__(self) -> None:
+    self.total = 0
+    self.done = 0
+    self.active = False
+    self._lock = threading.Lock()
+
+  def start(self, repos: int) -> None:
+    with self._lock:
+      self.total, self.done, self.active = 2 * repos, 0, True
+
+  def step(self) -> None:
+    with self._lock:
+      self.done += 1
+
+  def finish(self) -> None:
+    with self._lock:
+      self.done, self.active = self.total, False
+
+  def read(self) -> dict[str, Any]:
+    with self._lock:
+      return {"active": self.active, "done": self.done, "total": self.total}
+
+
+PROGRESS = FetchProgress()
 
 
 def fetch_origin(repo: dict[str, Any]) -> bool:
@@ -334,9 +372,19 @@ def fetch_all(repos: list[dict[str, Any]]) -> list[dict[str, Any]]:
   with JOBS_LOCK:
     busy = {job.repo["id"] for job in JOBS.values() if job.exit is None}
   idle = [repo for repo in repos if repo["id"] not in busy]
-  with ThreadPoolExecutor(max_workers=4) as pool:
-    list(pool.map(fetch_origin, idle))
-  STATUS.refresh(idle)
+
+  def fetched(repo: dict[str, Any]) -> bool:
+    ok = fetch_origin(repo)
+    PROGRESS.step()
+    return ok
+
+  PROGRESS.start(len(idle))
+  try:
+    with ThreadPoolExecutor(max_workers=4) as pool:
+      list(pool.map(fetched, idle))
+    STATUS.refresh(idle, PROGRESS.step)
+  finally:
+    PROGRESS.finish()
   return idle
 
 
@@ -1473,6 +1521,8 @@ class Handler(BaseHTTPRequestHandler):
         )
       elif path == "/api/repos":
         self._json(self._repos())
+      elif path == "/api/progress":
+        self._json(PROGRESS.read())
       elif len(parts) == 3 and parts[:2] == ["api", "repos"]:
         repo = self._repo(parts[2])
         self._json({**repo, "status": STATUS.get(repo)})
