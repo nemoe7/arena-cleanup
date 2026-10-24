@@ -367,10 +367,15 @@ def fetch_origin(repo: dict[str, Any]) -> bool:
   return rc == 0
 
 
+def running_repo_ids() -> set[str]:
+  """IDs of the repos with a run in flight."""
+  with JOBS_LOCK:
+    return {job.repo["id"] for job in JOBS.values() if job.exit is None}
+
+
 def fetch_all(repos: list[dict[str, Any]]) -> list[dict[str, Any]]:
   """Fetch every repo without a run in flight, then refresh their statuses."""
-  with JOBS_LOCK:
-    busy = {job.repo["id"] for job in JOBS.values() if job.exit is None}
+  busy = running_repo_ids()
   idle = [repo for repo in repos if repo["id"] not in busy]
 
   def fetched(repo: dict[str, Any]) -> bool:
@@ -1511,11 +1516,15 @@ class Handler(BaseHTTPRequestHandler):
     return repo
 
   def _repos(self) -> list[dict[str, Any]]:
-    """Every repo with its status, four at a time."""
+    """Every repo with its status and run flag, four at a time."""
     repos = self.reg.all()
     with ThreadPoolExecutor(max_workers=4) as pool:
       statuses = list(pool.map(STATUS.get, repos))
-    return [{**repo, "status": status} for repo, status in zip(repos, statuses)]
+    busy = running_repo_ids()
+    return [
+      {**repo, "status": status, "running": repo["id"] in busy}
+      for repo, status in zip(repos, statuses)
+    ]
 
   # -- GET ---------------------------------------------------------------
   def do_GET(self) -> None:

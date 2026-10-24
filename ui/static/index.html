@@ -462,7 +462,7 @@
   .check-list .passed .ico-svg { color: var(--ok); }
   .check-list .failed .ico-svg { color: var(--err); }
   .check-list .running .ico-svg { color: var(--warn); }
-  .check-list .running .ico-svg { animation: spin 1s linear infinite; }
+  .check-list .running .ico-svg, .pill.busy .ico-svg { animation: spin 1s linear infinite; }
 
   /* Pinned to the window like the sidebar: the log takes the height that is
      left, and it is the one thing that scrolls. */
@@ -1382,6 +1382,9 @@
     } else {
       meta.append(el("span", { class: "pill mono" }, s.branch));
     }
+    if (repo.running) {
+      meta.append(el("span", { class: "pill warn busy", title: CLEAN_RUNNING }, icon("loader-circle"), "clean running"));
+    }
 
     let arena = null;
     if (s.ok) {
@@ -1409,11 +1412,13 @@
     }
 
     const idle = Boolean(s.ok) && !hasWork(s);
+    const busy = Boolean(repo.running);
     const actions = el("div", { class: "card-actions" },
-      el("button", { class: "btn primary clean", disabled: idle, title: idle ? NO_WORK : "Clean & Push",
+      el("button", { class: "btn primary clean", disabled: idle || busy,
+        title: busy ? CLEAN_RUNNING : idle ? NO_WORK : "Clean & Push",
         onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, icon("broom-sparkles"), "Clean & Push"));
 
-    return el("div", { class: "repo-card", onclick: () => openRepo(repo.id) },
+    return el("div", { class: "repo-card", "aria-busy": busy, onclick: () => openRepo(repo.id) },
       head, meta, arena, actions, removeButton(repo));
   }
 
@@ -1897,6 +1902,7 @@
     return parts.join(" ");
   }
 
+  const CLEAN_RUNNING = "a clean is running on this repo";
   const NO_WORK = "nothing to clean or push";
   // the default branch runs through an arena branch, so it needs one that is ahead
   const hasWork = (s) => Object.values((s && s.ahead) || {}).some((n) => Number(n) > 0);

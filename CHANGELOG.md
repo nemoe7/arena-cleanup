@@ -9,6 +9,12 @@ The engine, `arena-cleanup.py`, carries its own number and its own file,
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2026-10-24
+
+### Added
+
+- A dashboard row shows a clean in flight: an amber pill, a greyed Clean & Push that names the reason, and `aria-busy`.
+
 ## [0.3.4] - 2026-10-24
 
 ### Changed

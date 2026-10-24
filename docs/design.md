@@ -202,6 +202,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Then Clean, and Remove with the trash glyph.
     - The arena area takes the free width, so Clean and Remove sit at the right edge.
     - In a row an arena row is one line: the name, the ahead chip, and the PR pill.
+    - A clean in flight adds an amber `clean running` pill after the branch pill, greys Clean & Push with the reason, and sets `aria-busy`.
   - Card: at 1200 px and below a grid card.
     - The icon, the name, and Remove sit on top on one centre line, then the arena rows, and Clean & Push bottom right.
     - The branch chip stays in the rows, and an unavailable card shows its reason in the arena area.
@@ -474,3 +475,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: below 40em a step row is two lines: the stamp with the duration, then the text at full width.
 - Accepted 2026-10-24: the claim inputs carry the built-in fallback as their placeholder while empty, so the card needs no sentence for it.
 - Accepted 2026-10-24: the loading bar belongs to the dashboard. Other views hide it, the minute fetch included.
+- Accepted 2026-10-24: a dashboard row shows a clean in flight with a pill and a greyed button that names the reason. The server flags the repo on every list read.

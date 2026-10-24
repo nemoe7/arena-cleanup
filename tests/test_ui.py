@@ -878,6 +878,28 @@ def test_a_cancelled_job_is_marked_cancelled() -> None:
   assert snap["exit"] != 0
 
 
+def test_a_live_job_marks_its_repo_as_running() -> None:
+  # The dashboard reads this flag, so a slow job must show while it runs and
+  # leave with the process.
+  sys.path.insert(0, str(ROOT))
+  from ui.server import JOBS, JOBS_LOCK, Job, running_repo_ids
+
+  job = Job(["sleep", "30"], "/tmp", {"id": "live", "name": "live"})
+  with JOBS_LOCK:
+    JOBS[job.id] = job
+  try:
+    job.start()
+    assert "live" in running_repo_ids()
+    assert job.cancel() is True
+    deadline = time.monotonic() + STARTUP_SECONDS
+    while job.snapshot()["status"] != "done" and time.monotonic() < deadline:
+      time.sleep(0.1)
+    assert "live" not in running_repo_ids()
+  finally:
+    with JOBS_LOCK:
+      JOBS.pop(job.id, None)
+
+
 def test_the_brand_mark_and_the_app_icon_share_one_glyph(ui: UI) -> None:
   page = ui.text("/")
   assert 'class="brand" href="#/"' in page
