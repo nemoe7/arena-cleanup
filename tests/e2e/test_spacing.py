@@ -70,6 +70,33 @@ COLLECT = """
 """
 
 
+# The values the nuu audit moved to the 4 px scale. The step and log rows exist
+# after a run only, so the probe builds one of each.
+AUDIT_VALUES = """
+() => {
+  const read = (node, prop) => parseFloat(getComputedStyle(node).getPropertyValue(prop));
+  const out = {};
+  const pairs = [
+    ['.icon-btn', 'padding-left'], ['.icon-btn', 'padding-top'], ['#pathin', 'padding-left'],
+    ['.btn.back', 'padding-left'], ['.phase-head', 'column-gap'], ['.brand', 'padding-left'],
+    ['#browse', 'column-gap'],
+  ];
+  for (const [sel, prop] of pairs) out[sel + ' ' + prop] = read(document.querySelector(sel), prop);
+  const ol = document.createElement('ol');
+  ol.className = 'step-list';
+  const li = ol.appendChild(document.createElement('li'));
+  const row = document.createElement('div');
+  row.className = 'log-row';
+  document.body.append(ol, row);
+  out['.step-list li column-gap'] = read(li, 'column-gap');
+  out['.log-row column-gap'] = read(row, 'column-gap');
+  ol.remove();
+  row.remove();
+  return out;
+}
+"""
+
+
 def px(value: str) -> float | None:
   value = (value or "").strip()
   if not value.endswith("px"):
@@ -120,3 +147,12 @@ def test_phone_spacing_sits_on_the_even_scale(phone: Walker, view: str) -> None:
   assert elements
   assert off_grid(elements) == []
   assert font_sizes(elements) <= PHONE_RAMP
+
+
+def test_audit_values_sit_on_the_four_px_scale(desktop: Walker) -> None:
+  collect(desktop, VIEWS["repo"])
+  values = desktop.page.evaluate(AUDIT_VALUES)
+  assert len(values) == 9
+  assert values[".icon-btn padding-left"] == 0
+  assert values[".icon-btn padding-top"] == 0
+  assert all(value % 4 == 0 for value in values.values()), values

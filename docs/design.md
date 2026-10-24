@@ -458,3 +458,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - All but the view also rise 8 px.
   - A reduced-motion preference turns it off.
   - The service worker caches the script with the shell.
+- Accepted 2026-10-24: the nuu audit's off-scale values move to the 4 px scale, as the four values before them did.
+  - The icon buttons and the path input pad 0, so no browser default stays.
+  - Back pads 12 px, and the brand link 8 px.
+  - The phase rows and Browse gap 8 px, the step and log rows 12 px.
