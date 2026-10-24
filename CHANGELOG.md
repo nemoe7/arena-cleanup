@@ -21,6 +21,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - PR checks and the gh sign-in state stay cached for 60 s, so the minute
   fetch is their one reader. A run end, Reload, login, and logout still drop
   them at once.
+- The design boards render through `nuu board -T design` from
+  `docs/boards.json` and the fragments in `docs/boards/`. The project script
+  `scripts/design_boards.py` is gone, and `scripts/walk.py --views` shoots
+  the four example views.
 
 ### Fixed
 

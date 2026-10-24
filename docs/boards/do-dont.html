@@ -1,0 +1,103 @@
+<!-- nonemo: STE901 -->
+<div class="row">
+<div class="col" style="width:460px">
+<p class="lbl">Spacing</p>
+<div class="pair" style="width:100%">
+<div class="frame">
+<div class="verdict do"><span class="ico-svg" data-icon="check" aria-hidden="true"></span> Do</div>
+<div class="off" style="gap:0"><span class="pill mono" style="margin-right:6px">main</span><span class="pill " style="margin-right:6px">#203</span><span class="pill mono ahead" style="margin-right:0px"><span class="ico-svg" data-icon="arrow-up" aria-hidden="true"></span>23</span></div>
+<p class="cap">Gaps from the even scale: 6 px between chips.</p>
+</div>
+<div class="frame">
+<div class="verdict dont"><span class="ico-svg" data-icon="x" aria-hidden="true"></span> Do not</div>
+<div class="off" style="gap:0"><span class="pill mono" style="margin-right:5px">main</span><span class="pill " style="margin-right:9px">#203</span><span class="pill mono ahead" style="margin-right:0px"><span class="ico-svg" data-icon="arrow-up" aria-hidden="true"></span>23</span></div>
+<p class="cap">5 and 9 px gaps: values nobody chose.</p>
+</div>
+</div>
+</div>
+<div class="col" style="width:460px">
+<p class="lbl">Type</p>
+<div class="pair" style="width:100%">
+<div class="frame">
+<div class="verdict do"><span class="ico-svg" data-icon="check" aria-hidden="true"></span> Do</div>
+<p style="margin:0;font-size:var(--fs-3);font-weight:600">shop-web</p>
+<p style="margin:6px 0 0"><span class="pill mono">6f5a842</span></p>
+<p class="cap">Sizes from the ramp: 14 px name, 12 px mono hash.</p>
+</div>
+<div class="frame">
+<div class="verdict dont"><span class="ico-svg" data-icon="x" aria-hidden="true"></span> Do not</div>
+<p style="margin:0;font-size:13.5px;font-weight:600">shop-web</p>
+<p style="margin:6px 0 0"><span class="pill mono" style="font-size:11.5px">6f5a842</span></p>
+<p class="cap">13.5 and 11.5 px: a ninth and tenth size.</p>
+</div>
+</div>
+</div>
+<div class="col" style="width:460px">
+<p class="lbl">Icons</p>
+<div class="pair" style="width:100%">
+<div class="frame">
+<div class="verdict do"><span class="ico-svg" data-icon="check" aria-hidden="true"></span> Do</div>
+<button class="btn ghost back"><span class="ico-svg" data-icon="arrow-left" aria-hidden="true"></span>All repos</button>
+<p class="cap">The Lucide glyph at 1 em, stroked in the text colour.</p>
+</div>
+<div class="frame">
+<div class="verdict dont"><span class="ico-svg" data-icon="x" aria-hidden="true"></span> Do not</div>
+<button class="btn ghost back"><span class="glyph">&lt;</span>&nbsp;All repos</button>
+<p class="cap">A text glyph: wrong weight, wrong baseline, font dependent.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="row" style="margin-top:24px">
+<div class="col" style="width:760px">
+<p class="lbl">Phone width</p>
+<div class="pair" style="width:100%">
+<div class="frame">
+<div class="verdict do"><span class="ico-svg" data-icon="check" aria-hidden="true"></span> Do</div>
+<div class="narrow" style="display:grid;gap:8px"><input class="field" value="Demo User"><input class="field" value="demo@example.com"></div>
+<p class="cap">Name and e-mail stack at 360 px. Each field keeps 16 px text.</p>
+</div>
+<div class="frame">
+<div class="verdict dont"><span class="ico-svg" data-icon="x" aria-hidden="true"></span> Do not</div>
+<div class="narrow" style="display:flex;gap:8px"><input class="field" value="Demo User" style="width:50%"><input class="field" value="demo@example.com" style="width:50%"></div>
+<p class="cap">Side by side: the e-mail truncates and iOS zooms the field.</p>
+</div>
+</div>
+</div>
+<div class="col" style="width:460px">
+<p class="lbl">Honest pills</p>
+<div class="pair" style="width:100%">
+<div class="frame">
+<div class="verdict do"><span class="ico-svg" data-icon="check" aria-hidden="true"></span> Do</div>
+<span class="pill warn">checks unavailable</span>
+<p class="cap">Signed out, say what the app cannot know.</p>
+</div>
+<div class="frame">
+<div class="verdict dont"><span class="ico-svg" data-icon="x" aria-hidden="true"></span> Do not</div>
+<span class="pill mono">no PR</span>
+<p class="cap">Claim no PR when gh never answered.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="row" style="margin-top:24px">
+<div class="col" style="width:900px">
+<p class="lbl">Banners</p>
+<div class="pair" style="width:100%">
+<div class="frame">
+<div class="verdict do"><span class="ico-svg" data-icon="check" aria-hidden="true"></span> Do</div>
+<div class="banner warn" style="max-width:420px"><span class="ico"><span class="ico-svg" data-icon="triangle-alert" aria-hidden="true"></span></span>
+<div><b>This key is not assigned to your GitHub account.</b> Add it at github.com/settings/gpg/new.</div>
+</div>
+<p class="cap">A bold lead, one action, a link to the fix.</p>
+</div>
+<div class="frame">
+<div class="verdict dont"><span class="ico-svg" data-icon="x" aria-hidden="true"></span> Do not</div>
+<div class="banner warn" style="max-width:420px"><span class="ico"><span class="ico-svg" data-icon="triangle-alert" aria-hidden="true"></span></span>
+<div>Warning: the system has detected that the currently active signing key may not have been associated with the authenticated GitHub account, which means that commits could appear as unverified until the situation is resolved by the user.</div><!-- nonemo: STE200 -->
+</div>
+<p class="cap">A paragraph that explains before it asks.</p>
+</div>
+</div>
+</div>
+</div>

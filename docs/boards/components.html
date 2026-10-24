@@ -1,0 +1,80 @@
+<!-- nonemo: STE901 -->
+<div class="row">
+<div class="col">
+<div>
+<p class="lbl">Buttons</p>
+<p class="sub">34 px high, 8 px radius, and 44 px on a phone. Hover lifts the surface one step.</p>
+</div>
+<table class="sheet">
+<tr><td>primary</td><td><button class="btn primary clean"><span class="ico-svg" data-icon="broom-sparkles" aria-hidden="true"></span>Clean &amp; Push</button></td><td><button class="btn primary clean" disabled><span class="ico-svg" data-icon="broom-sparkles" aria-hidden="true"></span>Clean &amp; Push</button></td></tr>
+<tr><td>primary, live run</td><td><button class="btn primary">Cancel</button></td><td></td></tr>
+<tr><td>default</td><td><button class="btn">Save</button></td><td><button class="btn" disabled>Save</button></td></tr>
+<tr><td>ghost</td><td><button class="btn ghost"><span class="ico-svg" data-icon="refresh-cw" aria-hidden="true"></span>Re-check</button></td><td><button class="btn ghost" disabled><span class="ico-svg" data-icon="refresh-cw" aria-hidden="true"></span>Re-check</button></td></tr>
+<tr><td>back</td><td><button class="btn ghost back"><span class="ico-svg" data-icon="arrow-left" aria-hidden="true"></span>All repos</button></td><td></td></tr>
+<tr><td>icon</td><td><button class="icon-btn" aria-label="Settings"><span class="ico-svg" data-icon="settings" aria-hidden="true"></span></button></td><td><button class="icon-btn" aria-label="Reload commits"><span class="ico-svg" data-icon="refresh-cw" aria-hidden="true"></span></button></td></tr>
+<tr><td></td><td class="mono">default</td><td class="mono">disabled</td></tr>
+</table>
+</div>
+<div class="col">
+<div>
+<p class="lbl">Pills and chips</p>
+<p class="sub">Pills carry a dot or a glyph and a word. Mono pills carry names and hashes. Chips are inert, chip-x removes.</p>
+</div>
+<div class="col">
+<div class="row" style="gap:8px"><span class="pill mono">main</span><span class="pill">clean</span><span class="pill mono ahead"><span class="ico-svg" data-icon="arrow-up" aria-hidden="true"></span>23</span><span class="pill ok"><i class="dot"></i>clean</span><span class="pill err"><i class="dot"></i>failing</span><span class="pill warn"><i class="dot"></i>running</span><span class="pill warn busy"><span class="ico-svg" data-icon="loader-circle" aria-hidden="true"></span>clean running</span><span class="pill mono">6f5a842</span></div>
+<div class="row" style="gap:8px"><span class="chip">0.1.0</span><span class="chip-x">uploads/ <button aria-label="remove"><span class="ico-svg" data-icon="x" aria-hidden="true"></span></button></span></div>
+</div>
+</div>
+<div class="col">
+<div>
+<p class="lbl">Fields</p>
+<p class="sub">34 px, surface-2, a 3 px accent-soft ring on focus. 16 px text on a phone.</p>
+</div>
+<div class="col" style="width:320px"><input class="field" placeholder="Paste a repo URL…"><input class="field" value="https://github.com/acme/example.git"><input class="field" value="disabled" disabled><select class="field"><option>main (default)</option></select><dl class="kv"><dt>remote</dt><dd class="mono"><a class="remote-link" href="#"><span class="ico-svg" data-icon="github" aria-hidden="true"></span><span>acme/example</span></a></dd></dl></div>
+</div>
+</div>
+<div class="row" style="margin-top:24px">
+<div class="col">
+<div>
+<p class="lbl">Checkboxes</p>
+<p class="sub">Off, on, and the warn colour for a destructive option.</p>
+</div>
+<div class="checks"><label class="check"><input type="checkbox">Dry Run</label><label class="check"><input type="checkbox" checked>Dry Run</label><label class="check danger"><input type="checkbox" checked>No lease</label></div>
+</div>
+<div class="col">
+<div>
+<p class="lbl">Banners</p>
+<p class="sub">A bold lead, one sentence of action: ok, warn, err.</p>
+</div>
+<div class="col">
+<div class="banner ok" style="max-width:420px"><span class="ico"><span class="ico-svg" data-icon="check" aria-hidden="true"></span></span>
+<div><b>Signed in as @demo</b> on github.com.</div>
+</div>
+<div class="banner warn" style="max-width:420px"><span class="ico"><span class="ico-svg" data-icon="triangle-alert" aria-hidden="true"></span></span>
+<div><b>This key is not assigned to your GitHub account.</b> Commits will show as Unverified.</div>
+</div>
+<div class="banner err" style="max-width:420px"><span class="ico"><span class="ico-svg" data-icon="triangle-alert" aria-hidden="true"></span></span>
+<div><b>Cannot reach the server.</b> Check that the container is running, then retry.</div>
+</div>
+</div>
+</div>
+<div class="col">
+<div>
+<p class="lbl">Cards</p>
+<p class="sub">12 px radius, 1 px line, a 44 px head with an optional hint.</p>
+</div>
+<div class="card" style="width:420px">
+<div class="card-head">
+<h2>Keys in this container</h2>
+<div class="grow"></div>
+<span class="hint">1 found</span></div>
+<div class="card-body">
+<div class="sign-row">
+<div class="sign-key"><b>Demo User &lt;demo@example.com&gt;</b>
+<div class="mono">3AA5 C34D 7F2B 1C4E</div>
+</div>
+<span class="pill ok"><i class="dot"></i>active</span></div>
+</div>
+</div>
+</div>
+</div>

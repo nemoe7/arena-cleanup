@@ -1,0 +1,83 @@
+{
+  "stylesheet": "ui/static/index.html",
+  "icons": {
+    "file": "ui/static/index.html",
+    "table": "ICONS"
+  },
+  "shots": {
+    "dashboard": "docs/walk/views/dashboard.png",
+    "signed-out": "docs/walk/views/signed-out.png",
+    "after-run": "docs/walk/views/after-run.png",
+    "settings": "docs/walk/views/settings.png"
+  },
+  "boards": [
+    {
+      "name": "flow",
+      "title": "Lay of the land",
+      "lede": "The three views and how a person moves between them. Blocks stand for regions, the accent block for the primary action of the view.",
+      "html": "docs/boards/flow.html"
+    },
+    {
+      "name": "wireframe-repo",
+      "title": "Repo view",
+      "lede": "Deep-dive wireframe of the view a run lives in.",
+      "html": "docs/boards/wireframe-repo.html"
+    },
+    {
+      "name": "views",
+      "title": "Example views",
+      "lede": "Full views at 1360 px, straight from the demo fixture, two to a row. A new view is only documented when an event changes the whole page.",
+      "wide": true,
+      "frames": [
+        {
+          "label": "Default view",
+          "sub": "Five remembered repos, the add bar focused, the tool dots green.",
+          "shot": "dashboard",
+          "width": 1360
+        },
+        {
+          "label": "Signed out",
+          "sub": "The banner offers Connect GitHub. Every arena row reads checks unavailable, never no PR.",
+          "shot": "signed-out",
+          "width": 1360
+        },
+        {
+          "label": "After a run",
+          "sub": "Five phases with their results and times, the raw log open under them.",
+          "shot": "after-run",
+          "width": 1360
+        },
+        {
+          "label": "Settings",
+          "sub": "Identity, GitHub access, signing, and the claim rules, then the informing cards.",
+          "shot": "settings",
+          "width": 1360
+        }
+      ]
+    },
+    {
+      "name": "states",
+      "title": "Component states",
+      "lede": "States of the components that belong to the run and the dashboard, next to the views they appear in.",
+      "html": "docs/boards/states.html"
+    },
+    {
+      "name": "components",
+      "title": "Global components",
+      "lede": "Every component that is not tied to one view. All variants shown are in use.",
+      "html": "docs/boards/components.html"
+    },
+    {
+      "name": "style",
+      "title": "Style guide",
+      "lede": "The tokens in the :root block of index.html, with the rule for each family.",
+      "html": "docs/boards/style.html"
+    },
+    {
+      "name": "do-dont",
+      "title": "Do and do not",
+      "lede": "Pairs from the audit findings and the accepted decisions. The left side is the stylesheet as it is. The right side is what was there before, or what to avoid.",
+      "html": "docs/boards/do-dont.html"
+    }
+  ]
+}

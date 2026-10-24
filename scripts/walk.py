@@ -8,6 +8,10 @@ failed.
 
   uv run scripts/walk.py --out /tmp/walk
   uv run scripts/walk.py --out /tmp/walk --chromium /path/to/chrome
+  uv run scripts/walk.py --views --out docs/walk/views
+
+`--views` skips the walk and saves four example views, which
+`docs/boards.json` embeds in the design boards.
 
 It needs Playwright: `uv sync --group qa`, then `uv run playwright install
 chromium`, or `--chromium` with a Chromium binary of your own.
@@ -729,10 +733,61 @@ def walk(out: Path, chromium: str | None) -> int:
   return 1 if failed else 0
 
 
+def capture_views(walker: Walker, demo: Demo) -> dict[str, bytes]:
+  """The four example views of the design boards, PNG bytes by shot name."""
+  shots: dict[str, bytes] = {}
+  walker.goto(1500)
+  shots["dashboard"] = walker.page.screenshot()
+  demo.sign_in(False)
+  demo.wait_until_checked(False)
+  walker.goto(2500)
+  shots["signed-out"] = walker.page.screenshot()
+  demo.sign_in(True)
+  demo.wait_until_checked(True)
+  walker.goto(2000)
+  walker.click(".repo-card .repo-name", 800)
+  walker.click('input[data-opt="dry_run"]', 0)
+  walker.click("#start", 0)
+  walker.wait_status("exit")
+  walker.page.wait_for_timeout(400)
+  shots["after-run"] = walker.page.screenshot(full_page=True)
+  walker.click("#settings-btn", 1500)
+  shots["settings"] = walker.page.screenshot(full_page=True)
+  return shots
+
+
+def views(out: Path, chromium: str | None) -> int:
+  from playwright.sync_api import sync_playwright
+
+  out.mkdir(parents=True, exist_ok=True)
+  with tempfile.TemporaryDirectory(prefix="walk-demo-") as tmp:
+    demo = Demo(Path(tmp) / "demo")
+    try:
+      with sync_playwright() as playwright:
+        browser = launch_browser(playwright, chromium)
+        walker = Walker(browser.new_context(**DESKTOP), demo.url)
+        shots = capture_views(walker, demo)
+        browser.close()
+    finally:
+      demo.stop()
+  if walker.errors:
+    print("console errors while capturing:", *walker.errors, sep="\n  ")
+    return 1
+  for name, png in shots.items():
+    (out / f"{name}.png").write_bytes(png)
+  print(f"views: {len(shots)} shots -> {out}")
+  return 0
+
+
 def main() -> int:
   parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
   parser.add_argument(
     "--out", required=True, type=Path, help="screenshot and report directory"
+  )
+  parser.add_argument(
+    "--views",
+    action="store_true",
+    help="save the four example views of the design boards instead of the walk",
   )
   parser.add_argument(
     "--chromium",
@@ -740,6 +795,8 @@ def main() -> int:
     help="a Chromium binary to use instead of the one `playwright install` fetched",
   )
   args = parser.parse_args()
+  if args.views:
+    return views(args.out, args.chromium)
   return walk(args.out, args.chromium)
 
 
