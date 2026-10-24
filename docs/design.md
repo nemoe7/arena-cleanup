@@ -22,7 +22,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - Entry: the dashboard at `/`. The header holds the brand, the tool dots, and one icon button (Settings).
 - Dashboard to repo: a click on the card or Enter on a focused card. The name underlines on hover. Back: the All repos button.
-- Settings opens from the header, and Back returns to the previous view.
+- Settings opens from the header, and Back returns to the previous view. A reload keeps the screen the hash names, with no dashboard frame first.
 - Delete an arena branch: the trash control on a sidebar row opens the modal, and Delete removes the branch on origin. The sidebar, the select, and the dashboard refresh after it.
 - Recovery: a failed run keeps its log open, and a failed load shows a banner with the error text. The service worker caches the shell only, never server state.
 
@@ -249,3 +249,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-24: the 36 colour literals below `:root` moved onto 29 role tokens, nuu clause 3. The pills and the banners share one text, line, and tint per tone, a shift of at most two per cent in alpha.
 - Accepted 2026-10-24: the How git reaches GitHub fold goes. Its one control, Configure, already sat in the GitHub card. That card takes the helper and ssh rows and the helper warning, and the README takes the SSH mount hint.
 - Accepted 2026-10-24: every card action sits bottom right in a `card-foot`, nuu clause 15. The run button leaves the options card head, and the Save, Re-check, Sign in, Configure, and key buttons leave their bodies. Create key takes its natural width.
+- Accepted 2026-10-24: the hash picks the first frame. The boot sequence hides the views the hash does not name before it loads the environment and the repos. A reload off the dashboard shows no dashboard interstitial.

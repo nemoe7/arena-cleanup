@@ -18,6 +18,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the options, both Save buttons, Re-check, Sign in, Configure, Create key at
   its natural width, and Open GitHub keys.
 
+### Fixed
+
+- A reload at `#/settings` or in a repo view paints that screen first. The
+  dashboard no longer shows while the environment and the repos load.
+
 ## [0.3.1] - 2026-10-24
 
 ### Changed

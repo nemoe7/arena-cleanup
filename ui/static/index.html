@@ -2575,6 +2575,10 @@
   });
 
   async function boot() {
+    // the hash picks the first frame, so a reload off the dashboard never
+    // paints the dashboard while the status loads
+    const first = location.hash === "#/settings" ? "settings" : /^#\/repo\//.test(location.hash) ? "repo" : "dashboard";
+    for (const name of ["dashboard", "repo", "settings"]) $("view-" + name).hidden = name !== first;
     resetPhases();
     renderCommand();
     try {
