@@ -15,6 +15,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - The icon buttons and the path input drop the browser default padding.
   - Back pads 12 px, the phase rows and Browse gap 8 px, the step and log rows 12 px.
   - The brand link pads 8 px.
+- On a phone the PR pill and the repo name hit 44 px tall through an unseen box above and below.
+  - The claim inputs are 44 px tall there too.
 
 ## [0.3.2] - 2026-10-24
 

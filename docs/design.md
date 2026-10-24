@@ -462,3 +462,6 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - The icon buttons and the path input pad 0, so no browser default stays.
   - Back pads 12 px, and the brand link 8 px.
   - The phase rows and Browse gap 8 px, the step and log rows 12 px.
+- Accepted 2026-10-24: a phone hit area grows without a visual change.
+  - The PR pill and the repo name carry an unseen box 10 px above and below, so a thumb hits 44 px.
+  - The claim inputs are 44 px tall on a phone.
