@@ -19,6 +19,29 @@ DESKTOP = {"viewport": {"width": 1360, "height": 900}}
 TWEENS = """(sel) => gsap.getTweensOf(document.querySelector(sel))
   .map((t) => [t.duration(), t.vars.ease])"""
 OPACITY = "(sel) => getComputedStyle(document.querySelector(sel)).opacity"
+# a loaded test round trip outlives the 180 ms tween. The page records each
+# entry at its start instead: target id, duration, ease, and first opacity.
+HOOK = """() => {
+  const real = gsap.fromTo;
+  window.__entries = [];
+  gsap.fromTo = (targets, from, to) => {
+    const tween = real.call(gsap, targets, from, to);
+    const first = [targets].flat()[0];
+    window.__entries.push([first.id, tween.duration(), to.ease, getComputedStyle(first).opacity]);
+    return tween;
+  };
+  window.__unhook = () => { gsap.fromTo = real; };
+}"""
+SETTLED = """(sel) => window.__entries.length
+  && getComputedStyle(document.querySelector(sel)).opacity === '1'
+  && !gsap.getTweensOf(document.querySelector(sel)).length"""
+
+
+def entries(page: Any, sel: str) -> list[list[Any]]:
+  """Wait until the hooked entry of `sel` ended, then return what the hook saw of it."""
+  page.wait_for_function(SETTLED, arg=sel)
+  page.evaluate("window.__unhook()")
+  return [e for e in page.evaluate("window.__entries") if e[0] == sel.lstrip("#")]
 
 
 def test_gsap_is_vendored_and_served_as_a_script(desktop: Walker) -> None:
@@ -36,11 +59,12 @@ def test_a_view_enters_on_the_shared_curve(
   walker: Walker = request.getfixturevalue(width)
   page = walker.page
   walker.goto(1200)
+  page.evaluate(HOOK)
   page.click(".repo-card:has-text('shop-web') .repo-name")
-  tweens = page.evaluate(TWEENS, "#view-repo")
-  assert tweens == [[0.18, "power2.out"]], "one tween, 180 ms, one curve"
-  assert float(page.evaluate(OPACITY, "#view-repo")) < 1
-  page.wait_for_timeout(400)
+  seen = entries(page, "#view-repo")
+  assert seen == [["view-repo", 0.18, "power2.out", "0"]], (
+    "one tween, 180 ms, one curve, from transparent"
+  )
   assert page.evaluate(OPACITY, "#view-repo") == "1"
   assert page.evaluate(TWEENS, "#view-repo") == [], (
     "the tween clears its props and ends"
@@ -51,9 +75,9 @@ def test_a_view_enters_on_the_shared_curve(
 def test_a_dialog_enters_the_same_way(desktop: Walker) -> None:
   page = desktop.page
   desktop.goto(1200)
+  page.evaluate(HOOK)
   page.click(".repo-card:has-text('billing-api') button.pill")
-  assert page.evaluate(TWEENS, "#checks-modal") == [[0.18, "power2.out"]]
-  page.wait_for_timeout(400)
+  assert entries(page, "#checks-modal") == [["checks-modal", 0.18, "power2.out", "0"]]
   assert page.evaluate(OPACITY, "#checks-modal") == "1"
   page.keyboard.press("Escape")
   page.wait_for_function("!document.getElementById('checks-modal').open")
