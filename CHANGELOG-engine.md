@@ -7,6 +7,11 @@ file, `CHANGELOG.md`.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the engine uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2026-10-24
+
+- The nemoizer markers name current rule IDs: NMO901 and STE901 at file
+  scope, and the unknown NMO002 goes. No behaviour change.
+
 ## [0.3.3] - 2026-10-24
 
 - The divergence docstring lists its two outcomes as bullets under the lead

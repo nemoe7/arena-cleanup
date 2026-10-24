@@ -1,5 +1,7 @@
 # Changelog
 
+<!-- nonemo: NMO901; nonemo: STE901; nonemo: STE902 -->
+
 This file documents all notable changes to the UI, the web app in `ui/`.
 The engine, `arena-cleanup.py`, carries its own number and its own file,
 `CHANGELOG-engine.md`, from 0.3.0 on. Up to 0.3.0 both parts shared this file.

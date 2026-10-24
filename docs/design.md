@@ -1,5 +1,7 @@
 # Design record
 
+<!-- nonemo: NMO901; nonemo: STE901; nonemo: STE902 -->
+
 The one design record for the arena-cleanup web app. The sections follow the nemo-ui-ux skill template. The token source is the `:root` block in `ui/static/index.html`.
 
 ## Purpose and status

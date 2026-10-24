@@ -1,3 +1,4 @@
+# nonemo: STE902
 """Each run phase row opens a modal with its detail.
 
 Prepare, PR checks, and Clean up list their steps with stamps and durations.

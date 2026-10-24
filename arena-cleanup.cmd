@@ -1,5 +1,5 @@
 @echo off
-:: arena-cleanup, the Windows launcher: put it next to arena-cleanup.py on PATH. nonemo:P002
+:: arena-cleanup, the Windows launcher: put it next to arena-cleanup.py on PATH.
 :: Every argument passes through. Exit codes are the script's: 0 ok, 1 error, 7 work found.
 setlocal
 

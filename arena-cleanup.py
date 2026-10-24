@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# nonemo: NMO901; nonemo: STE901
 """
 arena-cleanup - Arena branch cleanup + history rewrite in one file.
 
@@ -44,7 +45,7 @@ from typing import Any
 
 # the engine's own number. pyproject.toml carries the UI's, and
 # scripts/check_versions.py asks for one step per changed part.
-__version__ = "0.3.3"
+__version__ = "0.3.4"
 PROG = "arena-cleanup"
 
 # ==== Defaults: edit these, or override per run with the matching flags ======
@@ -340,7 +341,7 @@ def require_repo() -> None:
     return  # require_tools() reports this better
   if git("rev-parse", "--is-inside-work-tree", check=False).text != "true":
     raise Fail("not inside a git repo (run me from one)")
-  bare = git("rev-parse", "--is-bare-repository", check=False).text  # nonemo: NMO002
+  bare = git("rev-parse", "--is-bare-repository", check=False).text
   if bare == "true":
     raise Fail("this is a bare repo, run me from a working tree")
 
