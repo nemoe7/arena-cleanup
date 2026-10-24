@@ -327,7 +327,7 @@ STATUS = StatusCache()
 
 
 class FetchProgress:
-  """Counts the steps of the running fetch, two per repo: the fetch and the status."""
+  """Counts the running fetch's steps, two per repo: fetch and status."""
 
   def __init__(self) -> None:
     self.total = 0
@@ -608,7 +608,7 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
       ).split()
       behind, own = (int(n) for n in counts) if len(counts) == 2 else (0, 0)
       ahead[name] = own - behind
-  # The commit time of each tip. The page offers the newest branch first.
+  # Each tip's commit time. The page offers the newest branch first.
   activity = {
     name: int(git("log", "-1", "--format=%ct", f"origin/{name}", cwd=cwd) or 0)
     for name in arena
@@ -891,9 +891,9 @@ def commits_report(
   """The most recent commits on HEAD, with their signature state and picture.
 
   The run card shows which commits a cleanup produced. This is the git answer,
-  read after the run rather than parsed out of the log. `before` names the
-  last commit of the page the caller has, so the answer is the next older page.
-  `next` is the cursor for the page after this one, or None at the end.
+  read after the run rather than parsed out of its log. `before` names the
+  last commit of the caller's page, so the answer is one page older.
+  `next` is the cursor for the following page, or None once pages run out.
   """
   cwd = repo["path"]
   branch = git("rev-parse", "--abbrev-ref", "HEAD", cwd=cwd) or "(detached)"
