@@ -69,7 +69,6 @@ CHECKBOX=re.compile('^\\s*[-*]\\s+\\[([ xX]?)\\]\\s+(\\S.*?)\\s*$')
 BLANK=re.compile('^(?:(.*?)[\\s:])?_{3,}\\s*$')
 ANCHOR=re.compile('\\s*\\{#([a-zA-Z0-9_-]{1,80})\\}\\s*$')
 COMMENT_ANCHOR=re.compile('<!--\\s*(?:id\\s*[:=]\\s*|#)([a-zA-Z0-9_-]{1,80})\\s*-->',re.IGNORECASE)
-MD_COMMENT_OR_CODE=re.compile('(`+)[\\s\\S]*?(?<!`)\\1(?!`)|<!--[\\s\\S]*?-->')
 BLOCK_START=re.compile('^ {0,3}(?:#{1,6}(?:\\s|$)|>|[-*+](?:\\s|$)|\\d+[.)](?:\\s|$)|(?:[-*_]\\s*){3,}$|`{3,}|~{3,})')
 TASK_REMINDER='{remaining} tasks left.'
 def fill_reminder(tail,remaining):
@@ -430,11 +429,11 @@ HEX7_RE=re.compile('[0-9a-f]{7}')
 MINT_ATTEMPTS=16
 DIFF_FILE_RE=re.compile('^\\+\\+\\+ b/(.+)$')
 DIFF_HUNK_RE=re.compile('^@@ -\\S+ \\+(\\d+)')
-def session_id_tokens(store):
+def session_id_tokens(store,db=None):
 	tokens={}
-	with closing(store.connect())as db:
+	with store.transaction(db,autosave=False)as conn:
 		for(table,label)in SESSION_ID_TABLES:
-			for row in db.execute(f"SELECT id FROM {table}").fetchall():
+			for row in conn.execute(f"SELECT id FROM {table}").fetchall():
 				ident=row['id'];tokens.setdefault(ident,(label,ident))
 				if NOTE_ID.fullmatch(ident):tokens.setdefault(ident[:6],(label,ident))
 				head=ident.split('-',1)[0]
@@ -611,19 +610,49 @@ def formatted_selection(field,item,mapping):
 		if mapping is None:return('custom',item['label']),f"{item['label']}: {text}"
 		wrapper=mapping.get('custom_answer');return('custom',item['label']),expand_submission_template(wrapper,{'custom':text})if wrapper is not None else text
 	raise ValueError(f"{field['id']}: invalid selection or blank custom answer")
-def strip_md_comments(text):return MD_COMMENT_OR_CODE.sub(lambda match:match.group(0)if match.group(1)else'',text)
+def iter_md_comments(text):
+	if'<!--'not in text:return
+	runs_by_len,offsets={},{};n=len(text)
+	if'`'in text:
+		pos=text.find('`')
+		while pos!=-1:
+			end_pos=pos+1
+			while end_pos<n and text[end_pos]=='`':end_pos+=1
+			runs_by_len.setdefault(end_pos-pos,[]).append((pos,end_pos));pos=text.find('`',end_pos)
+	cursor=0
+	while cursor<n:
+		c_start=text.find('<!--',cursor)
+		if c_start==-1:break
+		t_start=text.find('`',cursor)if runs_by_len else-1
+		if t_start==-1 or c_start<t_start:
+			c_end=text.find('-->',c_start+4)
+			if c_end==-1:break
+			yield(c_start,c_end+3);cursor=c_end+3;continue
+		t_end=t_start+1
+		while t_end<n and text[t_end]=='`':t_end+=1
+		run_len=t_end-t_start;spans=runs_by_len.get(run_len,());idx=offsets.get(run_len,0)
+		while idx<len(spans)and spans[idx][0]<t_end:idx+=1
+		if idx<len(spans):offsets[run_len]=idx+1;cursor=spans[idx][1]
+		else:offsets[run_len]=idx;cursor=t_end
+def strip_md_comments(text,keep_anchors=False):
+	if'<!--'not in text:return text
+	out,last=[],0
+	for(start,end)in iter_md_comments(text):
+		if keep_anchors and COMMENT_ANCHOR.fullmatch(text[start:end].strip()):continue
+		out.append(text[last:start]);last=end
+	if not out and last==0:return text
+	out.append(text[last:]);return''.join(out)
 def find_comment_anchor(text):
 	found=None
-	for match in MD_COMMENT_OR_CODE.finditer(text):
-		if match.group(1):continue
-		anchor_match=COMMENT_ANCHOR.fullmatch(match.group(0).strip())
+	for(start,end)in iter_md_comments(text):
+		anchor_match=COMMENT_ANCHOR.fullmatch(text[start:end].strip())
 		if anchor_match:found=anchor_match.group(1)
 	return found
 def strip_fenced_md_comments(markdown,keep_anchors=False):
 	lines=markdown.splitlines(keepends=True);out,chunk,fence=[],[],None
 	def flush():
 		if not chunk:return
-		segment=''.join(chunk);out.append(MD_COMMENT_OR_CODE.sub(lambda match:match.group(0)if match.group(1)or keep_anchors and COMMENT_ANCHOR.fullmatch(match.group(0).strip())else'',segment));chunk.clear()
+		out.append(strip_md_comments(''.join(chunk),keep_anchors=keep_anchors));chunk.clear()
 	for line in lines:
 		if fence is not None:
 			out.append(line)
@@ -1539,7 +1568,19 @@ def long_run_name(line):
 def pr_checks_command(argv):line=argv[-1]if len(argv)>2 and argv[0]in SHELL_BASENAMES else' '.join(argv);return long_run_name(line)=='pr-checks'
 JOB_LOG_PATH_RE=re.compile('(?:^|/|repos/[^/\\s\\"\']+/[^/\\s\\"\']+/)actions/(jobs|runs)/(\\d+)/logs\\b')
 PR_PATCH_PATH_RE=re.compile('(?:^|/|repos/[^/\\s\\"\']+/[^/\\s\\"\']+/)pulls/(\\d+)\\b')
-def pr_update_command(number,title,body_file,root=None):
+def pr_session_id_hits(store,title,body,body_label='body'):
+	if store is None:return[]
+	tokens=session_id_tokens(store)
+	if not tokens:return[]
+	patterns={token:re.compile(f"(?<![0-9A-Za-z]){re.escape(token)}(?![0-9A-Za-z])")for token in tokens};hits=[]
+	for(number,line)in enumerate(str(title or'').splitlines(),1):
+		for(token,pattern)in patterns.items():
+			if pattern.search(line):entry_type,ident=tokens[token];hits.append(('title',number,token,entry_type,ident))
+	for(number,line)in enumerate(str(body or'').splitlines(),1):
+		for(token,pattern)in patterns.items():
+			if pattern.search(line):entry_type,ident=tokens[token];hits.append((body_label,number,token,entry_type,ident))
+	return hits
+def pr_update_command(number,title,body_file,root=None,store=None):
 	root_path=Path(root or resolve_repo_root()).resolve()
 	if type(number)is not int or number<=0:raise ValueError('Pull request number must be a positive integer')
 	clean_title=str(title or'').strip()
@@ -1551,7 +1592,16 @@ def pr_update_command(number,title,body_file,root=None):
 		if str(candidate).startswith('/tmp/')or candidate==Path('/tmp'):raise ValueError('Stage pull request text in the workspace, never /tmp')
 		raise ValueError(f"Pull request body file must be inside the workspace ({root_path})")
 	if not candidate.is_file():raise ValueError(f"Pull request body file not found: {raw_arg}")
-	body=candidate.read_text(encoding='utf-8');slug=repo_slug(root_path)
+	body=candidate.read_text(encoding='utf-8');rel=candidate.relative_to(root_path).as_posix()
+	if store is None:
+		candidate_state=root_path/'arena-state'if root is not None else Path(resolve_state_dir())
+		if state_file(candidate_state).is_file():store=Store(candidate_state,create=False)
+	hits=pr_session_id_hits(store,clean_title,body,body_label=rel)
+	if hits:
+		lines=['PR UPDATE BLOCKED: the pull request title or body cites a session-local ID. Strip message, report, and task IDs before updating the pull request:']
+		for(source_label,line_no,token,entry_type,ident)in hits:named=ident if token==ident else f"{token} of {ident}";lines.append(f"  {source_label}:{line_no}: {entry_type} {named}")
+		raise ValueError('\n'.join(lines))
+	slug=repo_slug(root_path)
 	if not slug:raise ValueError('Could not resolve GitHub repository slug from origin remote')
 	payload=json.dumps({'title':clean_title,'body':body});patch_proc=subprocess.run(['gh','api',f"repos/{slug}/pulls/{number}",'-X','PATCH','--input','-'],input=payload,cwd=root_path,capture_output=True,text=True,check=False)
 	if patch_proc.returncode!=0:detail=(patch_proc.stderr or patch_proc.stdout or'gh api PATCH failed').strip();raise ValueError(f"Pull request #{number} update failed: {detail}")
@@ -1560,7 +1610,7 @@ def pr_update_command(number,title,body_file,root=None):
 	try:fetched=json.loads(fetch_proc.stdout)
 	except json.JSONDecodeError as error:raise ValueError(f"Pull request #{number} verification returned invalid JSON: {error}")from None
 	if fetched.get('title')!=clean_title or(fetched.get('body')or'')!=body:raise ValueError(f"Pull request #{number} title/body parity mismatch after PATCH")
-	rel=candidate.relative_to(root_path).as_posix();return f"Updated PR #{number}: {clean_title} (verified against {rel})"
+	return f"Updated PR #{number}: {clean_title} (verified against {rel})"
 def job_log_command(store=None,job_id=None,run_id=None,root=None):
 	job_clean=str(job_id or'').strip();run_clean=str(run_id or'').strip()
 	if not job_clean and not run_clean:raise ValueError('Supply --job <job-id> or --run <run-id>')
@@ -2227,17 +2277,18 @@ class Store:
 		if db is not None:yield db;return
 		with closing(self.connect())as own,own:yield own
 		if autosave:self.autosave()
-	def task_blockers(self,task_id):
-		with closing(self.connect())as db:rows=db.execute('SELECT blocked_by FROM task_dependencies WHERE task_id = ? ORDER BY blocked_by',(task_id,)).fetchall()
+	def task_blockers(self,task_id,db=None):
+		with self.transaction(db,autosave=False)as conn:rows=conn.execute('SELECT blocked_by FROM task_dependencies WHERE task_id = ? ORDER BY blocked_by',(task_id,)).fetchall()
 		return[row[0]for row in rows]
-	def all_task_blockers(self):
+	def all_task_blockers(self,db=None):
 		edges={}
-		with closing(self.connect())as db:rows=db.execute('SELECT task_id, blocked_by FROM task_dependencies ORDER BY blocked_by').fetchall()
+		with self.transaction(db,autosave=False)as conn:rows=conn.execute('SELECT task_id, blocked_by FROM task_dependencies ORDER BY blocked_by').fetchall()
 		for row in rows:edges.setdefault(row[0],[]).append(row[1])
 		return edges
-	def check_dependency(self,task_id,blocker,edges):
+	def check_dependency(self,task_id,blocker,edges,db=None):
 		if blocker==task_id:raise ValueError(f"{task_id} cannot wait on itself")
-		if not self.task_record(blocker):raise ValueError(f"No task holds {blocker}; add it before another waits on it")
+		with self.transaction(db,autosave=False)as conn:exists=conn.execute('SELECT 1 FROM tasks WHERE id = ?',(blocker,)).fetchone()
+		if not exists:raise ValueError(f"No task holds {blocker}; add it before another waits on it")
 		pending=[blocker];seen=set()
 		while pending:
 			node=pending.pop()
@@ -2247,8 +2298,8 @@ class Store:
 	def write_dependencies(self,db,task_id,blocked_by):
 		db.execute('DELETE FROM task_dependencies WHERE task_id = ?',(task_id,))
 		for blocker in blocked_by:db.execute('INSERT OR IGNORE INTO task_dependencies (task_id, blocked_by) VALUES (?, ?)',(task_id,blocker))
-	def refuse_session_ids(self,details):
-		tokens={token:found for(token,found)in session_id_tokens(self).items()if NOTE_ID.fullmatch(token)or HEX7_RE.fullmatch(token)}
+	def refuse_session_ids(self,details,db=None):
+		tokens={token:found for(token,found)in session_id_tokens(self,db=db).items()if NOTE_ID.fullmatch(token)or HEX7_RE.fullmatch(token)}
 		for detail in details:
 			for(token,(type,ident))in tokens.items():
 				if re.search(f"(?<![0-9A-Za-z]){re.escape(token)}(?![0-9A-Za-z])",detail):named=ident if token==ident else f"{token} of {ident}";raise ValueError(f"That detail cites the session-local {type} {named}. A repository reader cannot resolve that ID. Describe the work instead")
@@ -2257,8 +2308,8 @@ class Store:
 		if scope is not None:
 			if not isinstance(scope,str)or'\n'in scope or'\r'in scope or not scope.strip():raise ValueError('A task scope must be a non-empty single line of text')
 			scope_line=f"{TASK_SCOPE_PREFIX}{scope.strip()}";check_task_steps([scope_line])
-		if details and not restoring:self.refuse_session_ids(details)
-		if scope_line and not restoring:self.refuse_session_ids([scope_line])
+		if details and not restoring:self.refuse_session_ids(details,db=shared)
+		if scope_line and not restoring:self.refuse_session_ids([scope_line],db=shared)
 		if append_details and not details:raise ValueError('Appending requires at least one task detail')
 		check_task(task_id,title,details)
 		if status is not None and status not in TASK_STATUSES:raise ValueError(f"A task is either {' or '.join(TASK_STATUSES)}")
@@ -2302,8 +2353,8 @@ class Store:
 				task_type=(stored.get('type')if stored else None)or TASK_MISC
 			if report_id:identifier(report_id)
 			if blocked_by is not None:
-				blocked_by=[str(item)for item in blocked_by if str(item).strip()];edges=self.all_task_blockers()
-				for blocker in blocked_by:self.check_dependency(task_id,blocker,edges)
+				blocked_by=[str(item)for item in blocked_by if str(item).strip()];edges=self.all_task_blockers(db=db)
+				for blocker in blocked_by:self.check_dependency(task_id,blocker,edges,db=db)
 				self.write_dependencies(db,task_id,blocked_by)
 			if report_wait and report_id and blocked and self.report_has_answers(db,report_id):blocked=False
 			if report_id and blocked and(not stored or not stored['blocked']or stored.get('report_id')!=report_id):
@@ -2313,7 +2364,7 @@ class Store:
 				guard_task_runs(self.path.parent,task_id,'finish task')
 				if not restoring and(status_arg=='finished'or not stored or stored['status']!='finished'):guard_task_push(self.repository_root(),task_id,task_type)
 			if status=='finished'and blocked:raise ValueError(f"Task {task_id} is blocked; clear the report wait with --unblocked first")
-			siblings=[task_row(item)for item in db.execute(f"SELECT {TASK_COLUMNS} FROM tasks WHERE status = ? AND id != ? ORDER BY position, id",(status,task_id)).fetchall()];record={'id':task_id,'title':title,'details':details,'status':status,'order':len(siblings)+1,'updated_at':stamp,'completed_at':completed_at,'blocked':bool(blocked),'report_id':report_id,'type':task_type};blockers=self.task_blockers(task_id)
+			siblings=[task_row(item)for item in db.execute(f"SELECT {TASK_COLUMNS} FROM tasks WHERE status = ? AND id != ? ORDER BY position, id",(status,task_id)).fetchall()];record={'id':task_id,'title':title,'details':details,'status':status,'order':len(siblings)+1,'updated_at':stamp,'completed_at':completed_at,'blocked':bool(blocked),'report_id':report_id,'type':task_type};blockers=self.task_blockers(task_id,db=db)
 			if blockers:record['blocked_by']=blockers
 			if order is not None:index=max(0,min(order-1,len(siblings)))
 			elif stored and stored['status']==status:index=max(0,min(stored['order']-1,len(siblings)))
@@ -3935,7 +3986,7 @@ def main():
 			except ValueError as error:print(error,file=sys.stderr);return 1
 			return 0
 		if args.command=='pr-update':
-			try:print(pr_update_command(args.number,args.title,args.body_file))
+			try:store=Store(state_dir,create=False)if state_file(state_dir).is_file()else None;print(pr_update_command(args.number,args.title,args.body_file,store=store))
 			except ValueError as error:print(error,file=sys.stderr);return 1
 			return 0
 		if args.command=='job-log':
