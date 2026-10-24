@@ -100,9 +100,10 @@ flags, and `arena-cleanup doctor` checks the setup.
    - **Identity**: the `git config` name and e-mail every claimed commit gets.
    - **GitHub**: `gh` sign-in (`GH_TOKEN`, `gh auth login`, or a pasted
      token), its scopes, the credential helper and the SSH keys in the
-     container, and **Configure git credentials** for HTTPS clones. The token
-     needs `repo`. A `git@github.com:` clone uses SSH and ignores the helper, so
-     mount a key: `-v ~/.ssh:/home/arena/.ssh:ro`.
+     container, and **Configure git credentials** for HTTPS clones.
+     - The token needs `repo`.
+     - A `git@github.com:` clone uses SSH and ignores the helper, so mount a
+       key: `-v ~/.ssh:/home/arena/.ssh:ro`.
    - **Signing**: the active GPG key, whether GitHub has it, and **Create
      key** when there is none. Add the public key under GPG keys in the GitHub
      settings with a verified e-mail, then **Re-check**.

@@ -44,7 +44,7 @@ from typing import Any
 
 # the engine's own number. pyproject.toml carries the UI's, and
 # scripts/check_versions.py asks for one step per changed part.
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 PROG = "arena-cleanup"
 
 # ==== Defaults: edit these, or override per run with the matching flags ======
@@ -647,8 +647,9 @@ def pull_latest(log: Log, cfg: Settings, default: str) -> bool:
     * local simply ahead -> local wins, no question asked.
 
     * different content *and* commits on both sides -> we cannot guess which
-      side matters. We stop and ask whether to replace the local branch with
-      its remote copy. Cancelling aborts the whole run.
+      side matters.
+      - We stop and ask whether to replace the local branch with its remote copy.
+      - Cancelling aborts the whole run.
   """
   if cfg.dry_run:
     log.info("would pull latest changes (fast-forward only)")

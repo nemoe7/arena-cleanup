@@ -1,6 +1,7 @@
 # Keep the build context to what the image actually needs: the version file,
-# the CLI, the UI, and the entrypoint. Tests, docs, screenshots, caches, git
-# metadata, and the Windows launcher arena-cleanup.cmd stay out.
+# the CLI, the UI, and the entrypoint.
+# Tests, docs, screenshots, caches, git metadata, and the Windows launcher
+# arena-cleanup.cmd stay out.
 *
 !pyproject.toml
 !arena-cleanup.py
