@@ -108,7 +108,7 @@
     background: #2b313a; border-radius: 1000px;
     border: 2px solid transparent; background-clip: padding-box;
   }
-  ::-webkit-scrollbar-thumb:hover { background: #3c4450; background-clip: padding-box; }
+  @media (hover: hover) { ::-webkit-scrollbar-thumb:hover { background: #3c4450; background-clip: padding-box; } }
   body {
     margin: 0; background: var(--bg); color: var(--text);
     font: 400 var(--fs-3)/1.55 var(--sans);
@@ -180,7 +180,7 @@
     display: flex; align-items: center; gap: 8px; align-self: stretch; font-weight: 620; font-size: var(--fs-3);
     color: inherit; text-decoration: none; border-radius: 8px; padding: 4px 6px; margin-left: -6px;
   }
-  .brand:hover .name { color: var(--accent-hi); }
+  @media (hover: hover) { .brand:hover .name { color: var(--accent-hi); } }
   .brand .ico-svg { --ico: var(--ico-l); color: var(--accent); }
   .chip {
     font: 520 var(--fs-1)/1 var(--mono); color: var(--muted);
@@ -197,7 +197,8 @@
   /* the card X: a bare glyph at rest; the frame and the red come back under
      the pointer, on press, and while armed */
   .btn.ghost.rm { color: var(--dim); border-color: transparent; background: transparent; width: 30px; height: 30px; padding: 0; margin-left: auto; }
-  .btn.ghost.rm:hover, .btn.ghost.rm:active { color: var(--err); border-color: rgba(240, 87, 79, .5); background: rgba(240, 87, 79, .1); }
+  .btn.ghost.rm:active { color: var(--err); border-color: rgba(240, 87, 79, .5); background: rgba(240, 87, 79, .1); }
+  @media (hover: hover) { .btn.ghost.rm:hover { color: var(--err); border-color: rgba(240, 87, 79, .5); background: rgba(240, 87, 79, .1); } }
   .btn.ghost.rm.armed { width: auto; padding: 0 10px; }
   .icon-btn {
     --ico: var(--ico-l);
@@ -205,7 +206,7 @@
     border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface-2);
     color: var(--muted); cursor: pointer;
   }
-  .icon-btn:hover { color: var(--text); background: var(--surface-3); }
+  @media (hover: hover) { .icon-btn:hover { color: var(--text); background: var(--surface-3); } }
 
   .btn {
     --ico: var(--ico-m);
@@ -215,24 +216,26 @@
     font-weight: 560; font-size: var(--fs-2); white-space: nowrap;
     transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
   }
-  .btn:hover { background: var(--surface-3); border-color: #313842; }
+  @media (hover: hover) { .btn:hover { background: var(--surface-3); border-color: #313842; } }
   .btn.icon { width: 34px; padding: 0; --ico: var(--ico-l); }
   .clean .sparkles { opacity: 0; transition: opacity var(--fast) var(--ease); }
-  .clean:hover .sparkles, .clean:focus-visible .sparkles { opacity: 1; }
+  .clean:focus-visible .sparkles { opacity: 1; }
+  @media (hover: hover) { .clean:hover .sparkles { opacity: 1; } }
   .btn:active { transform: translateY(.5px); }
   .btn:disabled { opacity: .45; cursor: not-allowed; }
   .btn.primary { background: var(--accent-deep); border-color: #5c67c6; color: #fff; }
-  .btn.primary:hover { background: var(--accent-deep-hi); }
+  @media (hover: hover) { .btn.primary:hover { background: var(--accent-deep-hi); } }
   /* a ghost button is a real button with a quieter fill, not a label: same
      border, same height, same contrast as the rest, so Copy and Cancel do not
      read as disabled next to the primary */
   .btn.ghost { background: transparent; border-color: var(--line-2); color: var(--text); }
-  .btn.ghost:hover { background: var(--surface-2); border-color: #313842; }
+  @media (hover: hover) { .btn.ghost:hover { background: var(--surface-2); border-color: #313842; } }
   .btn.ghost:disabled { color: var(--dim); border-color: var(--line); }
   /* an armed destructive button, after the hover rule so it keeps its colour under the pointer */
-  .btn.ghost.armed, .btn.ghost.armed:hover { color: var(--err); border-color: rgba(240, 87, 79, .5); background: rgba(240, 87, 79, .1); }
+  .btn.ghost.armed { color: var(--err); border-color: rgba(240, 87, 79, .5); background: rgba(240, 87, 79, .1); }
+  @media (hover: hover) { .btn.ghost.armed:hover { color: var(--err); border-color: rgba(240, 87, 79, .5); background: rgba(240, 87, 79, .1); } }
   .btn.danger { color: #ff9a94; }
-  .btn.danger:hover { background: rgba(240, 87, 79, .1); border-color: rgba(240, 87, 79, .35); }
+  @media (hover: hover) { .btn.danger:hover { background: rgba(240, 87, 79, .1); border-color: rgba(240, 87, 79, .35); } }
   .btn.back { padding: 0 10px; }
   .btn .spin {
     width: 12px; height: 12px; border-radius: 50%; display: inline-block;
@@ -293,8 +296,9 @@
     padding: 12px 16px; text-align: left; cursor: pointer; color: inherit;
     transition: border-color var(--fast) var(--ease), background var(--fast) var(--ease), transform var(--fast) var(--ease);
   }
-  .repo-card:hover { border-color: #2c333c; background: #0f1216; }
-  .repo-card:hover .repo-name, .repo-name:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+  @media (hover: hover) { .repo-card:hover { border-color: #2c333c; background: #0f1216; } }
+  .repo-name:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+  @media (hover: hover) { .repo-card:hover .repo-name { text-decoration: underline; text-underline-offset: 3px; } }
   .repo-card:active { transform: translateY(1px); }
   .repo-card.pending { opacity: .6; pointer-events: none; }
   .repo-head { display: contents; }
@@ -335,7 +339,7 @@
   /* the checks pill is the link: one control, no orphan "Pull request" label */
   .arena-row .prlink { flex: none; display: inline-flex; align-items: center;
     text-decoration: none; border-radius: 1000px; min-height: 24px; }
-  .arena-row .prlink:hover .pill { border-color: var(--line-2); }
+  @media (hover: hover) { .arena-row .prlink:hover .pill { border-color: var(--line-2); } }
   .arena-tail > .pill { flex: none; }
   /* two lines, as the cards do: the dot and the name, then the tail under the name */
   .row-btn.select { display: grid; grid-template-columns: auto minmax(0, 1fr); row-gap: 2px; }
@@ -383,7 +387,7 @@
     display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: 0;
     text-align: left; color: var(--muted); padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: var(--fs-2);
   }
-  .row-btn:hover { background: var(--surface-2); color: var(--text); }
+  @media (hover: hover) { .row-btn:hover { background: var(--surface-2); color: var(--text); } }
   .row-btn .txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: var(--fs-1); }
   /* an arena row selects the branch the run pulls from; the selected row keeps its mark */
   .row-btn.select[aria-pressed="true"] { background: var(--surface-2); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
@@ -393,7 +397,8 @@
   .arena-item { display: flex; align-items: stretch; gap: 4px; }
   .arena-item .row-btn { flex: 1 1 auto; min-width: 0; }
   .arena-del { flex: none; align-self: center; color: var(--dim); background: none; border-color: transparent; }
-  .arena-del:hover, .arena-del:focus-visible { color: #ff9a94; background: rgba(240, 87, 79, .1); border-color: rgba(240, 87, 79, .35); }
+  .arena-del:focus-visible { color: #ff9a94; background: rgba(240, 87, 79, .1); border-color: rgba(240, 87, 79, .35); }
+  @media (hover: hover) { .arena-del:hover { color: #ff9a94; background: rgba(240, 87, 79, .1); border-color: rgba(240, 87, 79, .35); } }
 
   .modal { border: 1px solid var(--line-2); border-radius: 12px; background: var(--surface); color: var(--text);
     padding: 20px; width: min(420px, calc(100vw - 32px)); }
@@ -450,7 +455,7 @@
     -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>") center / contain no-repeat;
     mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>") center / contain no-repeat;
   }
-  .check:hover input:not(:checked):not(:disabled) { border-color: #525c6b; }
+  @media (hover: hover) { .check:hover input:not(:checked):not(:disabled) { border-color: #525c6b; } }
   .check input:checked { background: var(--accent); border-color: var(--accent); }
   .check input:checked::after { opacity: 1; }
   .check.danger input:checked { background: var(--warn); border-color: var(--warn); }
@@ -467,21 +472,23 @@
   .chips input::placeholder { color: var(--dim); font-family: var(--mono); }
   .chip-x { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-2); background: var(--surface-3); border-radius: 6px; padding: 2px 4px 2px 8px; font: var(--fs-1) var(--mono); }
   .chip-x button { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; border: 0; background: none; color: var(--dim); cursor: pointer; padding: 0 4px; font-size: var(--fs-3); line-height: 1; }
-  .chip-x button:hover { color: var(--err); }
+  @media (hover: hover) { .chip-x button:hover { color: var(--err); } }
   .link-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; margin-left: auto; border: 0; background: none; padding: 0; color: var(--muted); font: inherit; font-size: var(--fs-1); cursor: pointer; }
-  .link-btn:hover, .link-btn[aria-expanded="true"] { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+  .link-btn[aria-expanded="true"] { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+  @media (hover: hover) { .link-btn:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; } }
   /* the path tree: one level of the HEAD tree per request; a row click opens
      a folder or selects a file, the trailing button selects either */
   .tree { margin-top: 6px; padding: 4px; max-height: 260px; overflow: auto; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface-2); font: var(--fs-1) var(--mono); }
   .tree-row { display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 4px 0 calc(4px + (var(--depth) - 1) * 16px); border-radius: 6px; cursor: pointer; color: var(--text); }
-  .tree-row:hover { background: var(--surface-3); }
+  @media (hover: hover) { .tree-row:hover { background: var(--surface-3); } }
   .tree-row { --ico: var(--ico-m); }
   .tree-caret { width: 16px; display: inline-flex; color: var(--dim); transition: transform var(--fast) var(--ease); }
   .tree-row[aria-expanded="true"] .tree-caret { transform: rotate(90deg); }
   .tree-ico { display: inline-flex; color: var(--muted); }
   .tree-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tree-select { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; border: 0; background: none; padding: 2px 4px; border-radius: 6px; color: var(--dim); cursor: pointer; }
-  .tree-select:hover, .tree-select[aria-pressed="true"] { color: var(--accent-hi); }
+  .tree-select[aria-pressed="true"] { color: var(--accent-hi); }
+  @media (hover: hover) { .tree-select:hover { color: var(--accent-hi); } }
   .tree-empty { padding: 4px 8px; color: var(--dim); }
 
 
@@ -591,7 +598,7 @@
   .chip-edit input:focus { outline: none; }
   .chip-edit .pill { padding-right: 4px; }
   .chip-edit .pill button { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border: 0; border-radius: 1000px; background: transparent; color: var(--dim); cursor: pointer; padding: 0; }
-  .chip-edit .pill button:hover { color: var(--text); background: var(--surface-3); }
+  @media (hover: hover) { .chip-edit .pill button:hover { color: var(--text); background: var(--surface-3); } }
   .chip-edit .pill button svg { width: var(--ico-s); height: var(--ico-s); }
   .claim-label { font-size: var(--fs-1); color: var(--muted); margin-top: 2px; }
   /* a deep link scrolls a card group under the sticky header, not behind it */

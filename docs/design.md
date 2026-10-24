@@ -198,3 +198,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-24: no surface casts a drop shadow, nuu clause 6. The toast and the jump button lost theirs, so the primary button, the cards, and the floats are all flat. The 3 px focus rings stay.
 - Accepted 2026-10-24: every transition takes `--fast`, 160 ms, on `--ease`, one curve, nuu clause 8. The spinners and the LED pulse are CSS animations and keep their own timing, and reduced motion stops them all.
 - Accepted 2026-10-24: the delete modal carries an `x` icon button top right, nuu clause 15. It submits `cancel` like the Cancel button, which keeps the first focus.
+- Accepted 2026-10-24: every `:hover` rule sits in its own `@media (hover: hover)` block in place, nuu clause 9. The cascade order stays, and `:focus-visible` and `:active` apply on every device.

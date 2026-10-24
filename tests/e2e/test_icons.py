@@ -25,6 +25,7 @@ ICON_ONLY = """() => [...document.querySelectorAll('button')]
   .filter((b) => b.offsetParent !== null && !b.textContent.trim())
   .map((b) => { const r = b.getBoundingClientRect(); return [b.getAttribute('aria-label'), r.width, r.height]; })"""
 OPACITY = "e => Number(getComputedStyle(e).opacity)"
+BACKGROUND = "e => getComputedStyle(e).backgroundColor"
 CARD_CLEAN = ".repo-card .btn.clean"
 
 
@@ -61,6 +62,25 @@ def test_clean_buttons_carry_the_broom_and_sparkle_on_hover(desktop: Walker) -> 
   desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
   assert page.eval_on_selector("#start .ico-svg", BOX) == BUTTON
   assert page.eval_on_selector("#start .sparkles", OPACITY) == 0
+
+
+def hover_shift(walker: Walker) -> tuple[str, str]:
+  """The reload button's background before and under the pointer."""
+  walker.goto(1200)
+  before = walker.page.eval_on_selector("#repos-refresh", BACKGROUND)
+  walker.page.hover("#repos-refresh")
+  walker.page.wait_for_timeout(300)
+  return before, walker.page.eval_on_selector("#repos-refresh", BACKGROUND)
+
+
+def test_a_pointer_hover_tints_the_icon_button(desktop: Walker) -> None:
+  before, under = hover_shift(desktop)
+  assert before != under
+
+
+def test_a_touch_screen_hover_leaves_the_icon_button_alone(phone: Walker) -> None:
+  before, under = hover_shift(phone)
+  assert before == under
 
 
 def squares(walker: Walker) -> list[list[float | str]]:

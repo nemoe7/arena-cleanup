@@ -480,6 +480,19 @@ def test_every_transition_shares_one_curve_and_one_band(ui: UI) -> None:
       assert part.strip().endswith("var(--fast) var(--ease)"), value
 
 
+def test_hover_rules_wait_for_a_pointer(ui: UI) -> None:
+  """nuu rule 9: hover only under the media query, and focus and active everywhere."""
+  page = ui.text("/")
+  hovers = [line.strip() for line in page.splitlines() if ":hover" in line]
+  assert len(hovers) >= 15
+  assert [
+    line for line in hovers if not line.startswith("@media (hover: hover) {")
+  ] == []
+  plain = [line for line in page.splitlines() if ":hover" not in line]
+  assert any(":focus-visible" in line for line in plain)
+  assert any(":active" in line for line in plain)
+
+
 def test_the_fetch_clock_is_aligned_and_ticks(
   ui: UI, world: World, ids: dict[str, str]
 ) -> None:
@@ -1145,9 +1158,8 @@ def test_every_clean_button_carries_the_broom_glyph() -> None:
   )
   assert 'running ? ["Cancel"] : [icon("broom-sparkles"), "Clean & Push"]' in page
   assert ".clean .sparkles { opacity: 0;" in page
-  assert (
-    ".clean:hover .sparkles, .clean:focus-visible .sparkles { opacity: 1; }" in page
-  )
+  assert ".clean:focus-visible .sparkles { opacity: 1; }" in page
+  assert "@media (hover: hover) { .clean:hover .sparkles { opacity: 1; } }" in page
 
 
 WEIGHTS = {400, 520, 560, 600, 620, 640}

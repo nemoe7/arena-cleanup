@@ -36,6 +36,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Every transition runs 160 ms on one curve, from two tokens, instead of
   120 or 180 ms on the browser default.
 - The delete modal has an x top right that closes it like Cancel.
+- Hover tints apply only with a pointer, under `@media (hover: hover)`, so a
+  tap on a touch screen leaves no stuck hover state. Focus and active stay.
 
 ## [0.3.0] - 2026-10-23
 
