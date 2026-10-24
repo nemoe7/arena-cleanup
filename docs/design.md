@@ -512,6 +512,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the Commits list follows the selected arena branch on origin, its whole history with the commits ahead on top. A click on another arena row reloads it, and a repo with no arena branch lists the clone HEAD.
 - Accepted 2026-10-24: the phase rows start on the engine's own lines. A word test matched branch and repo names, so a name like arena-cleanup moved a run to Clean up and left the middle rows skipped.
 - Accepted 2026-10-24: the server keeps 32 finished jobs with steps and log by job id. The page keeps 20 loaded details for a reopen.
+  - A running job refreshes on every poll, and its first read after the end replaces the short log.
 - Accepted 2026-10-24: the design boards render through `nuu board -T design` from `docs/boards.json`, and the project script that drew them is gone. The boards keep their markup, chrome, and sizes.
 - Accepted 2026-10-24: above 1200 px the repos are one table, not row-shaped cards, and the cards below 1200 px keep their shape.
   - A header line reads Repo, Branch, Arena branches, and Actions. Rules of 1 px split the rows, cells pad 12 px, a hovered row tints, and the Sort select stays.
@@ -519,4 +520,3 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the Clean & Push button carries a live run itself, as Running with an amber spinning glyph, and the `clean running` pill is gone. Both labels share one grid cell, so the button keeps its width and height across states.
 - Accepted 2026-10-24: every amber dot pulses like the LED: a running check, a running job step, and the sidebar dot of a running PR. The run timeline glyph, the Running button, and Re-check keep their spinners.
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.
-  - A running job refreshes on every poll, and its first read after the end replaces the short log.
