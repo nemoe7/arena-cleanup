@@ -11,6 +11,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Each run phase row opens a modal with its detail. Prepare, PR checks,
+  and Clean up list their steps with a clock stamp and the time each took.
+  Rewrite and sign lists the commits after the rewrite under the engine's
+  counts. Push shows the ref, the move from the old hash to the new one, the
+  lease, the moved tags, and a GitHub link. The last row reads Clean up.
 - A loading bar under the header follows the repo fetch: the server counts
   two steps per repo, the fetch and the status, and `GET /api/progress`
   reports them. The Reload glyph spins while the page follows a fetch.

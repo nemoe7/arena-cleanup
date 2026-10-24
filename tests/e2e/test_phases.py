@@ -32,8 +32,8 @@ RUN = [
     "OK",
     "history rewritten: 23 commit(s): 20 rewritten, 20 signed, 3 untouched (4.2s)",
   ),
-  ("INFO", "pushing HEAD -> origin/arena/session-4"),
-  ("OK", "updated 1 tag(s) on origin"),
+  ("INFO", "pushing (with lease) HEAD -> refs/heads/main"),
+  ("OK", "pushed 2222222 to origin/main"),
   ("INFO", "returning to main"),
   ("OK", "deleted origin/arena/session-4"),
   ("OK", "done: 23 commits rewritten"),
@@ -94,4 +94,4 @@ def test_an_early_deletion_and_a_late_scan_stay_in_their_phases(
     "the commit scan opens the rewrite, it does not stretch Prepare"
   )
   assert rows["rewrite"] == "<0.1s"
-  assert rows["sync"] == "", "Finish does not start before the push"
+  assert rows["sync"] == "", "Clean up does not start before the push"

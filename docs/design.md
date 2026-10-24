@@ -16,7 +16,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Primary tasks: add a repo, run a cleanup, read the log, and keep the settings right. Settings: GitHub access, signing, identity, and the claim rules.
 - Repo: a clone the server registered. Identifier: the server-minted `id`. The card shows `name` only.
 - Arena branch: a branch under the `arena/` prefix with its PR and check count.
-- Run: one engine execution with five phases: Prepare, PR checks, Rewrite and sign, Push, Finish.
+- Run: one engine execution with five phases: Prepare, PR checks, Rewrite and sign, Push, Clean up.
 
 ## Journeys and information architecture
 
@@ -110,6 +110,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - `arena-item`: the arena row and its `arena-del` icon button side by side. The trash glyph is dim until hover, then reads in the error tint. The name reads `Delete <branch>`.
 - `modal`: a `dialog` of 420 px at most, with a title, one paragraph, and Cancel then Delete at the right. The backdrop dims the page. Escape and Cancel close it without a request.
 - `checks-modal`: the same `dialog` for the checks of a PR. One row per check, 36 px tall, with a glyph in the state colour, the name, and Open run when GitHub names a run. Open PR on GitHub and Close sit at the right.
+- `phase-modal`: a 640 px `dialog` behind each run phase row, which is a button once the row has lines. A step list with stamp, message, and duration, the commit list after a rewrite, or the push facts as a `kv` list. The body scrolls past 60 vh.
 - `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout.
   - `check`: a label with a drawn checkbox. The box is 16 px, 20 px on a phone, with a 4 px radius and the surface-2 fill. Checked, it takes the accent fill and a white Lucide check. `danger` fills a checked destructive option with the warn colour and a dark check.
   - Phone: the checkboxes form a grid with 160 px columns. Browse, the fold head, and the 16 px path field are 44 px targets there.
@@ -258,3 +259,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-24: a PR checks pill with checks is a button and opens the checks modal. A PR without checks keeps its link pill. The server lists each resolved check with its state and the first run URL of that name. The status refresh repaints the open modal, so a running check settles in place.
 - Accepted 2026-10-24: the phase rows read the log as a forward-only timeline. A line names the current phase or a later one. The next phase starts where the last one ends, so the rows add up to the wall clock. The word tests stay, with `stale` in Prepare and the commit scan in Rewrite.
 - Accepted 2026-10-24: a reload of the repo list reads the pending cards after its wait. A clone refused during the reload has left the list by then, so the reload does not bring its card back.
+- Accepted 2026-10-24: the phase modals read the run from its log. Prepare, PR checks, and Clean up list their stamped lines, each with the time to the next line. Rewrite and sign fetches the commits after the rewrite. Push reads the old hash from the pull line, the new one from the pushed line, and the tags from the moved lines. Finish reads Clean up, as the row names the wrap-up steps.

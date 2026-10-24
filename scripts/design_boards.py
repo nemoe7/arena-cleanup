@@ -363,7 +363,7 @@ def wireframe_board(_: dict[str, bytes]) -> str:
         ("PR checks", "passed/total"),
         ("Rewrite and sign", "signed X commits"),
         ("Push", "pushed X tags"),
-        ("Finish", "time"),
+        ("Clean up", "time"),
       )
     )
   )
@@ -470,7 +470,7 @@ def states_board(_: dict[str, bytes]) -> str:
     + phase("run", "PR checks", "1/2", "running")
     + phase("idle", "Rewrite and sign", "", "")
     + phase("skip", "Push", "", "")
-    + phase("fail", "Finish", "", "<0.1s")
+    + phase("fail", "Clean up", "", "<0.1s")
     + "</ul>"
   )
   pr_pills = (

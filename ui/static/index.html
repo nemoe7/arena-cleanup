@@ -563,7 +563,24 @@
   .phase-head {
     display: flex; align-items: center; gap: 10px; width: 100%;
     padding: 8px 16px; color: var(--text); font-size: var(--fs-2); text-align: left;
+    font: inherit; background: none; border: 0; border-radius: 0; cursor: pointer;
   }
+  .phase-head:disabled { cursor: default; }
+  .phase-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  @media (hover: hover) { .phase-head:enabled:hover { background: var(--surface-2); } }
+  .modal.wide { width: min(640px, calc(100vw - 32px)); }
+  .modal-body { max-height: 60vh; overflow: auto; margin: 0 0 16px; }
+  .step-list { list-style: none; margin: 0; padding: 0; }
+  .step-list li { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 10px; min-height: 28px;
+    align-items: baseline; border-top: 1px solid var(--line); padding: 4px 0; font-size: var(--fs-2); }
+  .step-list li:first-child { border-top: 0; }
+  .step-list .t, .step-list .d { color: var(--dim); font: var(--fs-1) var(--mono); font-variant-numeric: tabular-nums; }
+  .step-list .msg { min-width: 0; overflow-wrap: anywhere; }
+  .step-list .warn .msg { color: var(--warn-text); }
+  .step-list .error .msg { color: var(--err-text); }
+  .modal-body .kv { grid-template-columns: 84px 1fr; padding: 0; font-size: var(--fs-2); }
+  .modal-body .kv dd { white-space: normal; }
+  .modal-body .commit { padding: 8px 0; }
   .phase-ico {
     --ico: var(--ico-m);
     width: 20px; height: 20px; flex: none; display: grid; place-items: center;
@@ -1024,6 +1041,20 @@
     <ul class="check-list" id="checks-list"></ul>
     <div class="modal-actions">
       <a class="btn ghost" id="checks-pr" target="_blank" rel="noopener">Open PR on GitHub</a>
+      <button class="btn" type="submit" value="cancel" autofocus>Close</button>
+    </div>
+  </form>
+</dialog>
+<dialog class="modal wide" id="phase-modal" aria-labelledby="phase-title">
+  <form method="dialog">
+    <div class="modal-head">
+      <h2 id="phase-title">Phase</h2>
+      <button class="icon-btn" type="submit" value="cancel" aria-label="Close" title="Close"><span class="ico-svg" data-icon="x" aria-hidden="true"></span></button>
+    </div>
+    <p id="phase-sub"></p>
+    <div class="modal-body" id="phase-body"></div>
+    <div class="modal-actions">
+      <a class="btn ghost" id="phase-link" target="_blank" rel="noopener" hidden>Open on GitHub</a>
       <button class="btn" type="submit" value="cancel" autofocus>Close</button>
     </div>
   </form>
@@ -1860,11 +1891,11 @@
     { id: "pr", name: "PR checks", sub: "" },
     { id: "rewrite", name: "Rewrite and sign", sub: "" },
     { id: "publish", name: "Push", sub: "" },
-    { id: "sync", name: "Finish", sub: "" },
+    { id: "sync", name: "Clean up", sub: "" },
   ];
   const PHASE_TESTS = [
     ["prepare", /^arena-cleanup \d|^claimed |^dry run:|stale/],
-    ["sync", /^done(,|$)/],
+    ["sync", /^done\b/],
     ["pr", /(^|\s)pr\b|pull request|check|gate|status rollup/],
     ["rewrite", /rewrit|claim|sign|filter-repo|remov|empty commit|--path|identity=|commit\(s\) as/],
     ["publish", /push|tag|lease|force/],
@@ -1930,23 +1961,46 @@
     } else if ((m = /^(\d+) tag\(s\) now point at the rewritten commits/.exec(msg))) {
       counts.tags = +m[1];
       row("publish").sub = `moving ${plural(+m[1], "tag")}`;
-    } else if (/^moved tag /.test(msg)) {
+    } else if ((m = /^moved tag (\S+) (\w+) -> (\w+)/.exec(msg))) {
       counts.pushed += 1;
+      counts.push.tags.push({ name: m[1], from: m[2], to: m[3] });
       row("publish").sub = `pushing ${plural(Math.max(counts.tags, counts.pushed), "tag")}`;
     } else if ((m = /^updated (\d+) tag\(s\) on origin/.exec(msg))) {
       row("publish").sub = `pushed ${plural(+m[1], "tag")}`;
     } else if ((m = /^--no-tags set: (\d+) tag\(s\) still name/.exec(msg))) {
       row("publish").sub = `${plural(+m[1], "tag")} not pushed`;
     }
+    pushFacts(msg, counts.push);
+  }
+
+  // The push modal reads the ref move from the log: the tip after the pull is
+  // the old hash and the lease, the pushed hash is the new one.
+  function pushFacts(msg, push) {
+    let m;
+    if ((m = /^(?:pulled \(\w+ -> (\w+)\)|already up to date \((\w+)\)|local history is now \S+ \((\w+)\))/.exec(msg))) {
+      push.old = m[1] || m[2] || m[3];
+    } else if ((m = /^(pushing \(with lease\)|force-pushing \(no lease\)) HEAD -> (\S+)/.exec(msg))) {
+      push.lease = m[1].startsWith("pushing");
+      push.ref = m[2].replace(/^refs\/heads\//, "origin/");
+    } else if ((m = /^would (push \(with lease\)|force-push \(no lease\)) \S+ \((\w+)\) -> (\S+)/.exec(msg))) {
+      push.lease = m[1].startsWith("push");
+      push.new = m[2];
+      push.ref = m[3];
+      push.dry = true;
+    } else if ((m = /^pushed (\w+) to (\S+)/.exec(msg))) {
+      push.new = m[1];
+      push.ref = m[2];
+    }
   }
 
   function resetPhases() {
-    state.phases = PHASES.map((p) => ({ ...p, state: "idle", lines: 0, start: 0, end: 0 }));
+    state.phases = PHASES.map((p) => ({ ...p, state: "idle", lines: 0, start: 0, end: 0, rows: [] }));
     state.phase = "prepare";
-    state.counts = { checks: {}, dry: false, tags: 0, pushed: 0 };
+    state.counts = { checks: {}, dry: false, tags: 0, pushed: 0, push: { tags: [] } };
     $("phases").replaceChildren(...state.phases.map((p) =>
       el("li", { class: "phase", "data-phase": p.id, "data-state": "idle" },
-        el("div", { class: "phase-head" },
+        el("button", { type: "button", class: "phase-head", disabled: true,
+          title: `Show the ${p.name} steps`, onclick: () => openPhase(p.id) },
           el("span", { class: "phase-ico", "aria-hidden": "true" }, icon("circle-small", "ico-svg idle")),
           el("span", { class: "phase-name" }, p.name),
           el("span", { class: "phase-sub" }, p.sub),
@@ -1971,6 +2025,7 @@
       p.state === "run" ? "running" : done ? (secs < 0.1 ? "<0.1s" : secs.toFixed(1) + "s") : "";
     node.setAttribute(
       "aria-label", `${p.name}: ${p.state === "idle" ? "not started" : p.state}${p.sub ? ", " + p.sub : ""}`);
+    node.querySelector(".phase-head").disabled = p.rows.length === 0;
   }
 
   function markEarlierDone(id) {
@@ -2042,6 +2097,9 @@
       phase.lines += 1;
       phase.start = phase.start || t;
       phase.end = t;
+      const stamped = /^(\S+)\s+(INFO|OK|WARN|ERROR|DEBUG)\s+(.*)$/.exec(text);
+      if (stamped) phase.rows.push({ t, stamp: stamped[1], level: stamped[2].toLowerCase(), msg: stamped[3] });
+      else if (phase.rows.length) phase.rows[phase.rows.length - 1].msg += " " + text.trim();
       countFrom(text);
       if (phase.state === "idle") phase.state = "run";
       markEarlierDone(id);
@@ -2049,6 +2107,84 @@
     $("logmeta").textContent = `${lineCount()} lines`;
     if (nearBottom) log.scrollTop = log.scrollHeight;
     $("jump").classList.toggle("show", !nearBottom && log.scrollHeight > log.clientHeight);
+    renderPhase();
+  }
+
+  // ------------------------------------------------------------ phase modal
+  // Each row opens its detail: the steps with their stamps, the commit list
+  // after a rewrite, or the facts of the push.
+  function openPhase(id) {
+    state.phaseOpen = id;
+    renderPhase();
+    const dlg = $("phase-modal");
+    dlg.onclose = () => { state.phaseOpen = null; };
+    dlg.showModal();
+  }
+  function secsText(secs) {
+    return secs < 0.1 ? "<0.1s" : secs.toFixed(1) + "s";
+  }
+  function phaseSteps(p) {
+    return el("ol", { class: "step-list" }, ...p.rows.map((r, i) => {
+      const next = p.rows[i + 1];
+      const took = (next ? next.t : p.end) - r.t;
+      return el("li", { class: r.level },
+        el("span", { class: "t" }, clock(r.stamp)),
+        el("span", { class: "msg" }, r.msg),
+        el("span", { class: "d" }, secsText(took)));
+    }));
+  }
+  function webUrl(remote) {
+    const m = /github\.com[:/]([^/]+)\/([^/\s]+?)(?:\.git)?$/.exec(remote || "");
+    return m ? `https://github.com/${m[1]}/${m[2]}` : "";
+  }
+  function pushBody(push) {
+    const kv = (dt, ...dd) => [el("dt", {}, dt), el("dd", {}, ...dd)];
+    const move = push.old && push.new ? `${push.old} to ${push.new}` : push.new || push.old || "not pushed";
+    const lease = push.lease == null ? "" : push.lease ? `with lease on ${push.old || "the fetched tip"}` : "no lease";
+    const tags = push.tags.length
+      ? push.tags.map((t) => el("div", {}, `${t.name}: ${t.from} to ${t.to}`))
+      : [el("span", {}, "none moved")];
+    return el("dl", { class: "kv" },
+      ...kv("Ref", push.ref || "none"),
+      ...kv("Move", push.dry ? `would move to ${move}` : move),
+      ...(lease ? kv("Lease", lease) : []),
+      ...kv("Tags", ...tags));
+  }
+  async function commitBody(box, count) {
+    box.replaceChildren(el("div", { class: "hint", style: "padding:8px 0" }, "Loading the commits…"));
+    try {
+      const data = await api(`/api/repos/${state.repo.id}/commits?limit=${Math.min(count, COMMITS_PAGE)}`);
+      if (state.phaseOpen !== "rewrite") return;
+      box.replaceChildren(...data.commits.map(commitRow));
+    } catch (err) {
+      box.replaceChildren(el("div", { class: "hint", style: "padding:8px 0" }, err.message));
+    }
+  }
+  function renderPhase() {
+    if (!state.phaseOpen) return;
+    const p = state.phases.find((x) => x.id === state.phaseOpen);
+    if (!p) return;
+    const done = p.state === "done" || p.state === "fail";
+    const secs = p.start && p.end ? secsText(p.end - p.start) : "";
+    $("phase-title").textContent = p.name;
+    $("phase-sub").textContent = [p.state === "run" ? "running" : done ? secs : "", p.sub].filter(Boolean).join(", ");
+    const box = $("phase-body");
+    const link = $("phase-link");
+    link.hidden = true;
+    const push = state.counts.push;
+    const rewritten = /^signed (\d+)/.exec(p.sub);
+    if (p.id === "rewrite" && done && rewritten && !box.querySelector(".commit")) {
+      commitBody(box, +rewritten[1]);
+    } else if (p.id === "publish") {
+      box.replaceChildren(pushBody(push));
+      const web = webUrl(state.repo?.status?.remote);
+      if (web && push.ref) {
+        link.href = `${web}/commits/${push.ref.replace(/^origin\//, "")}`;
+        link.hidden = false;
+      }
+    } else if (!(p.id === "rewrite" && done && rewritten)) {
+      box.replaceChildren(phaseSteps(p));
+    }
   }
 
   function setStatus(level, text) {
@@ -2105,6 +2241,7 @@
     const cancelled = !!snap.cancelled;
     const ok = snap.exit === 0;
     finishPhases(ok, cancelled);
+    renderPhase();
     // a run you stopped yourself is not a failure, and -15 is not a word
     setStatus(
       cancelled ? "" : ok ? "ok" : "fail",
