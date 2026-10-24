@@ -367,6 +367,9 @@
   .pill.warn { color: var(--warn-text); border-color: var(--warn-line); background: var(--warn-tint); }
   .pill.err { color: var(--err-text); border-color: var(--err-line); background: var(--err-tint); }
   .pill.mono { font-family: var(--mono); font-size: var(--fs-1); }
+  /* the arrow glyph keeps 3 px of blank in its box: pull it in on the even scale */
+  .pill.ahead { gap: 6px; }
+  .pill.ahead .ico-svg { margin-left: -2px; }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
 
   .arena-list { grid-area: arena; align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 6px; border-left: 1px solid var(--line); padding-left: 16px; }

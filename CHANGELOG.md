@@ -29,6 +29,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- The ahead chip pads the arrow ink and the count the same: the icon moves
+  2 px in and the gap narrows to 6 px, so the chip reads centred.
 - A reload at `#/settings` or in a repo view paints that screen first. The
   dashboard no longer shows while the environment and the repos load.
 
