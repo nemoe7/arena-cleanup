@@ -1093,7 +1093,7 @@
     <p id="checks-sub"></p>
     <div class="modal-body"><ul class="check-list" id="checks-list"></ul></div>
     <div class="modal-actions">
-      <a class="btn ghost" id="checks-pr" target="_blank" rel="noopener">Open PR on GitHub</a>
+      <a class="btn ghost" id="checks-pr" target="_blank" rel="noopener" title="Open PR on GitHub"><span class="ico-svg" data-icon="github" aria-hidden="true"></span>Open PR</a>
       <button class="btn" type="submit" value="cancel" autofocus>Close</button>
     </div>
   </form>
@@ -1107,7 +1107,7 @@
     <p id="phase-sub"></p>
     <div class="modal-body" id="phase-body"></div>
     <div class="modal-actions">
-      <a class="btn ghost" id="phase-link" target="_blank" rel="noopener" hidden>Open on GitHub</a>
+      <a class="btn ghost" id="phase-link" target="_blank" rel="noopener" title="Open on GitHub" hidden><span class="ico-svg" data-icon="github" aria-hidden="true"></span>Open</a>
       <button class="btn" type="submit" value="cancel" autofocus>Close</button>
     </div>
   </form>
@@ -1413,7 +1413,7 @@
     if (reopen) {
       const pane = el("div", { class: "job-pane" },
         el("div", { class: "job-head" }, el("span", { class: "job-state" }, "loading"), el("span", { class: "grow" }),
-          el("a", { class: "btn ghost", href: url, target: "_blank", rel: "noopener" }, "Open on GitHub")),
+          el("a", { class: "btn ghost", href: url, target: "_blank", rel: "noopener", title: "Open on GitHub" }, icon("github"), "Open")),
         el("ul", { class: "job-steps" }),
         el("p", { class: "job-note" }));
       const kept = state.jobs.get(url);
@@ -2674,7 +2674,7 @@
           el("b", {}, "GitHub is not connected."),
           " PR checks cannot be read, private clones will fail, and pushes over HTTPS have no credentials.",
           el("div", { style: "margin-top:8px" },
-            el("button", { class: "btn primary", onclick: () => openSettings("access-body") }, "Connect GitHub")))));
+            el("button", { class: "btn primary", title: "Connect GitHub", onclick: () => openSettings("access-body") }, icon("github"), "Connect")))));
       return;
     }
     box.hidden = true;
@@ -3026,7 +3026,7 @@
         ])),
       el("div", { class: "card-foot" },
         el("button", { class: "btn", onclick: async () => { await loadSigning(); toast("re-checked"); } }, icon("refresh-cw"), "Re-check"),
-        el("a", { class: "btn ghost", href: "https://github.com/settings/keys", target: "_blank", rel: "noopener" }, "Open GitHub keys"))));
+        el("a", { class: "btn ghost", href: "https://github.com/settings/keys", target: "_blank", rel: "noopener", title: "Open GitHub keys" }, icon("github"), "Open keys"))));
 
     body.replaceChildren(...nodes);
   }

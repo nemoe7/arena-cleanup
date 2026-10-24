@@ -28,6 +28,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Above 1200 px the dashboard shows one table: a header line, one row per
   repo, 1 px rules, 12 px cells, and a hover tint. The cards at 1200 px and
   below keep their shape.
+- Buttons that lead to GitHub show the GitHub mark and drop the word from
+  their label: Open PR, Open, Connect, and Open keys. Their titles keep the
+  full phrase.
 
 ### Fixed
 

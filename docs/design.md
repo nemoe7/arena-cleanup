@@ -85,7 +85,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - GitHub card: the sign-in state, token scopes, credential helper, and ssh keys.
     - A warning and Configure appear when a signed-in user has no helper.
     - About folds, and opens on a click.
-  - Actions: Save, Re-check, Sign in, Configure, Create key, and Open GitHub keys sit bottom right in the foot of their card.
+  - Actions: Save, Re-check, Sign in, Configure, Create key, and Open keys sit bottom right in the foot of their card.
   - Signing cards: gpg banner when gpg is missing, key list, create card, GitHub key steps. Disabled: Create key while gpg is missing.
   - Error: the banner names the failed check. Each card loads on its own.
 - Offline: the service worker serves the shell. Data requests fail with their normal error banner.
@@ -127,6 +127,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Buttons with a glyph: Reload is `refresh-cw` alone, named `Reload commits` in `aria-label` and `title`.
   - Copy log is `copy` alone, named `Copy log` the same way.
   - Re-check and Retry lead with `refresh-cw`, Copy public key with `copy`, and Browse with `folder-tree`.
+  - A button that leads to GitHub leads with the GitHub mark and drops the word: Open PR, Open, Connect, and Open keys. Its `title` keeps the full phrase.
   - Every other button keeps its word alone.
 - Clean buttons: every `Clean & Push` button carries `broom-sparkles`, the broom alone when idle, and the sparkles appear on hover and focus.
   - Every button leads with the glyph at `--ico-m` before its words, the dashboard rows and cards included.
@@ -185,9 +186,9 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - `checks-modal`: a 640 px `dialog` for the checks of a PR, whose body scrolls past 60 vh.
   - One row per check, 36 px tall, with a glyph in the state colour and the name.
   - A row that names an Actions job is a toggle with a chevron, and opens its `job-pane` under itself. Any other run keeps Open run.
-  - Open PR on GitHub and Close sit at the right.
+  - Open PR, with the GitHub mark, and Close sit at the right.
 - `job-pane`: the job behind a check row, indented 24 px so its content lines up with the row name.
-  - A head line with the verdict and the summed step time, then Open on GitHub as a house 34 px button.
+  - A head line with the verdict and the summed step time, then Open, with the GitHub mark, as a house 34 px button.
   - `job-steps`: one 28 px row per step with the state glyph, the name, and the seconds, or `running`.
   - `job-log`: a `pre` in the mono face, 26 vh tall at most, that opens on the last 400 lines. A scroll to its top prepends the page before, and the view keeps its place.
     - Each line drops the date and the fraction of its stamp, so `11:27:19` leads it.
@@ -514,4 +515,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the design boards render through `nuu board -T design` from `docs/boards.json`, and the project script that drew them is gone. The boards keep their markup, chrome, and sizes.
 - Accepted 2026-10-24: above 1200 px the repos are one table, not row-shaped cards, and the cards below 1200 px keep their shape.
   - A header line reads Repo, Branch, Arena branches, and Actions. Rules of 1 px split the rows, cells pad 12 px, a hovered row tints, and the Sort select stays.
+- Accepted 2026-10-24: a button that leads to GitHub shows the GitHub mark instead of the word. Its title and accessible name keep the phrase.
   - A running job refreshes on every poll, and its first read after the end replaces the short log.

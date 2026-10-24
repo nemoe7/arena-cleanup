@@ -40,7 +40,7 @@ SETTINGS_FEET = {
   "card-claims": ["Save"],
   "card-github": ["Re-check"],
   "card-create-key": ["Create key"],
-  "card-github-keys": ["Re-check", "Open GitHub keys"],
+  "card-github-keys": ["Re-check", "Open keys"],
 }
 
 
