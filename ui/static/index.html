@@ -1420,11 +1420,11 @@
       }
     }
 
-    const idle = Boolean(s.ok) && !hasWork(s);
+    const stale = s.ok ? overwriteReason(s) : "";
     const busy = Boolean(repo.running);
     const actions = el("div", { class: "card-actions" },
-      el("button", { class: "btn primary clean", disabled: idle || busy,
-        title: busy ? CLEAN_RUNNING : idle ? NO_WORK : "Clean & Push",
+      el("button", { class: "btn primary clean", disabled: Boolean(stale) || busy,
+        title: busy ? CLEAN_RUNNING : stale || "Clean & Push",
         onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, icon("broom-sparkles"), "Clean & Push"));
 
     return el("div", { class: "repo-card", "aria-busy": busy, onclick: () => openRepo(repo.id) },
@@ -1779,12 +1779,15 @@
     $("branch").value = state.branch;
   }
 
+  // the arena branches, newest tip first
+  const byActivity = (s) => [...((s && s.arena) || [])]
+    .sort((a, b) => ((s.activity || {})[b] || 0) - ((s.activity || {})[a] || 0));
   // With one arena branch the run finds it; with several the page selects the
   // newest tip and offers the rest, so the engine never has to ask.
   function renderArenaSelect() {
     const s = state.repo?.status || {};
     const activity = s.activity || {};
-    const names = [...(s.arena || [])].sort((a, b) => (activity[b] || 0) - (activity[a] || 0));
+    const names = byActivity(s);
     const several = names.length >= 2;
     $("opt-arena").hidden = !several;
     state.arena = several ? (names.includes(state.arena) ? state.arena : names[0]) : "";
@@ -1921,24 +1924,30 @@
   }
 
   const CLEAN_RUNNING = "a clean is running on this repo";
-  const NO_WORK = "nothing to clean or push";
-  // the default branch runs through an arena branch, so it needs one that is ahead
-  const hasWork = (s) => Object.values((s && s.ahead) || {}).some((n) => Number(n) > 0);
-  function runHasWork() {
+  // The default branch runs through the chosen arena branch, else the newest.
+  // Below 0 the default moved under it, and the push would drop those commits.
+  function overwriteReason(s, chosen = "") {
+    const ahead = (s && s.ahead) || {};
+    const names = byActivity(s);
+    const name = names.includes(chosen) ? chosen : names[0];
+    const moved = name && Number(ahead[name]) < 0;
+    return moved ? `a clean would overwrite commits on ${s.default || "the default branch"}` : "";
+  }
+  function runBlock() {
     const s = state.repo?.status;
-    if (!s || !s.ok) return true;
+    if (!s || !s.ok) return "";
     const target = state.branch || s.branch || s.default;
-    return target !== s.default || hasWork(s);
+    return target === s.default ? overwriteReason(s, state.arena) : "";
   }
   function renderCommand() {
     const line = commandLine();
-    const work = runHasWork();
+    const block = runBlock();
     for (const id of ["start", "start-mobile"]) {
       const btn = $(id);
       btn.dataset.argv = line;
       if (btn.dataset.state !== "idle") continue;
-      btn.disabled = !work;
-      btn.title = work ? `Runs: ${line}` : NO_WORK;
+      btn.disabled = Boolean(block);
+      btn.title = block || `Runs: ${line}`;
     }
   }
 

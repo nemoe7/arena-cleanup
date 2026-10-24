@@ -19,6 +19,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - The Prepare modal names three steps, `Fetched`, `Located remote arena branch`, and `Pulled arena/<slug>`, in place of its log lines.
+- Clean & Push greys only when a clean would overwrite commits on the default branch. An absorbed branch or a repo without an arena branch keeps the button live.
 
 ### Fixed
 

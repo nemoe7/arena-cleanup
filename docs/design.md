@@ -222,7 +222,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Idle reads Clean & Push and is the primary.
   - Starting is disabled until the job id arrives.
   - Running reads Cancel as a plain button.
-  - Idle is disabled with the tooltip nothing to clean or push when no arena branch is ahead and the target is the default branch.
+  - Idle greys with the tooltip `a clean would overwrite commits on main` when the arena branch the run takes reads below 0 and the target is the default branch. Any other idle state keeps it live.
 - `card-foot`: the action row of a card, right-aligned with an 8 px gap and 16 px of padding.
   - Every card action sits there, so the x alone stays top right.
   - The options foot hides on a phone, where the tab bar runs.
@@ -481,3 +481,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: a dashboard row shows a clean in flight with a pill and a greyed button that names the reason. The server flags the repo on every list read.
 - Accepted 2026-10-24: the remote fact links a GitHub remote as the GitHub mark and `owner/repo` in a new tab. The mark is the one filled glyph, from Octicons.
 - Accepted 2026-10-24: the Prepare modal names three steps instead of its log lines. Later steps show only once the phase reaches them.
+- Accepted 2026-10-24: Clean & Push greys only when a clean would overwrite commits on the default branch, read from the net count. An absorbed branch keeps the button live, and the run reports nothing to push.

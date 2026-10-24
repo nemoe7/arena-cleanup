@@ -1255,10 +1255,8 @@ def test_every_clean_button_carries_the_broom_glyph() -> None:
     )
     assert match is not None, button_id
     assert match.group(1) == CLEAN_GLYPH + "Clean &amp; Push", button_id
-  card = (
-    'class: "btn primary clean", disabled: idle, title: idle ? NO_WORK : "Clean & Push"'
-  )
-  assert card in page
+  assert 'class: "btn primary clean", disabled: Boolean(stale) || busy,' in page
+  assert 'title: busy ? CLEAN_RUNNING : stale || "Clean & Push",' in page
   assert 'icon("broom-sparkles"), "Clean & Push"));' in page, (
     "the card button has words"
   )
