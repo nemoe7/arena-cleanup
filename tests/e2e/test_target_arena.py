@@ -1,8 +1,8 @@
 """The target select never offers an arena branch as the current branch.
 
-A clone parked on an arena branch gets the default branch alone, selected
-and sent as `-b`. A clone parked on any other branch keeps that branch as
-`current` beside the default (docs/design.md).
+A clone parked on an arena branch gets the default branch alone. The page
+selects it and sends it as `-b`. A clone parked on any other branch keeps
+that branch as `current` beside the default (docs/design.md).
 """
 
 from __future__ import annotations
