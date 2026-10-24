@@ -690,7 +690,7 @@ def clean_values(raw: Any, what: str) -> list[str]:
 
 
 def github_slug(repo: dict[str, Any]) -> str:
-  """`owner/name` of the GitHub repository behind a clone, or empty."""
+  """`owner/name` of the GitHub repo behind a clone, or empty."""
   for candidate in (
     str(repo.get("source") or ""),
     git("remote", "get-url", "origin", cwd=repo["path"]).strip(),

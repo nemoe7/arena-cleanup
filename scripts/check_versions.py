@@ -103,7 +103,7 @@ def main(argv: list[str] | None = None) -> int:
   parser.add_argument(
     "--base",
     default="origin/main",
-    help="the branch or commit the pull request lands on",
+    help="the branch or commit the PR lands on",
   )
   parser.add_argument("--head", default="HEAD", help="the branch or commit under check")
   args = parser.parse_args(argv)

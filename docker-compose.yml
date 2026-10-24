@@ -59,7 +59,7 @@ services:
       net.ipv6.conf.all.forwarding: "1"
     restart: unless-stopped
     healthcheck:
-      # `tailscale status --json` exits non-zero until the node is logged in and
+      # `tailscale status --json` exits non-zero until the node has logged in and
       # running. This is a real readiness check, not a liveness poke
       test: ["CMD", "tailscale", "status", "--json"]
       interval: 30s

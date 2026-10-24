@@ -34,7 +34,7 @@ def test_the_modal_asks_before_the_branch_goes(desktop: Walker) -> None:
   desktop.goto(1200)
   desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
   assert desktop.count(f"{ROW} .arena-del") == 1
-  # Cancel: the modal closes and nothing is sent
+  # Cancel: the modal closes and the page sends nothing
   desktop.click(f"{ROW} .arena-del", 300)
   assert page.evaluate(OPEN) is True
   assert desktop.text("#confirm-branch") == BRANCH

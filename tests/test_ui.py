@@ -1040,7 +1040,7 @@ def test_a_picture_lives_thirty_days_after_its_last_use(
   assert store.resolve({ME_EMAIL: "a" * 40}, lambda: "")[ME_EMAIL] == key
   assert len(pictures.hits) == downloads + 1
 
-  # an address without a picture is asked once a day, not once a request
+  # the server asks for an address without a picture once a day, not once a request
   miss = json.loads(index.read_text())[server.Avatars.key("other@example.com")]
   assert miss["type"] == ""
   assert time.time() < miss["expires"] <= time.time() + server.AVATAR_MISS_TTL

@@ -380,7 +380,7 @@ def main(argv: list[str] | None = None) -> int:
   if failures:
     print(f"{len(failures)} contract violation(s)")
     return 1
-  print("Pull request contract passed")
+  print("PR contract passed")
   return 0
 
 

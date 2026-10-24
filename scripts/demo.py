@@ -273,7 +273,7 @@ if args[:2] == ["pr", "view"]:
     if pr["number"] == number:
       print(json.dumps({"statusCheckRollup": pr["statusCheckRollup"]}))
       sys.exit(0)
-  print("no pull requests found for %%d" %% number, file=sys.stderr)
+  print("no PR found for %%d" %% number, file=sys.stderr)
   sys.exit(1)
 if args[:2] == ["api", "user/gpg_keys"]:
   need_auth()

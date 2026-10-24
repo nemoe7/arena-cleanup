@@ -44,7 +44,7 @@ from typing import Any
 
 # the one version of this file. pyproject.toml carries the same number for the
 # web app, and tests/test_cli.py keeps the two equal.
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 PROG = "arena-cleanup"
 
 # ==== Defaults: edit these, or override per run with the matching flags ======
@@ -744,7 +744,7 @@ def force_push(
 
   Without `force` the push spells the lease out, as
   `--force-with-lease=refs/heads/<default>:<sha>` with the value fetched at the
-  start of the run. The guard is pinned to the one ref we overwrite. Nothing
+  start of the run. The guard pins the one ref we overwrite. Nothing
   moves under us between the fetch and the push. With `force` the push is a
   plain `git push --force`, which lands even when origin/<default> moved.
   """
@@ -1101,7 +1101,7 @@ class PathStats:
   """What the -p/--path stage did, or would do.
 
   `commits` touch any of the paths, `files` were ever tracked under them,
-  `rewritten` got a new sha, and `pruned` were dropped for becoming empty.
+  `rewritten` got a new sha, and `pruned` fell out as empty.
   """
 
   def __init__(self) -> None:
@@ -1281,8 +1281,8 @@ def write_backup(log: Log, label: str) -> str:
 class RewriteStats:
   """What the rewrite did, or would do.
 
-  `rewritten` commits were replaced, `signed` of those got a GPG signature,
-  `skipped` stayed byte-identical, and `tags` were re-pointed at new commits.
+  `rewritten` counts the replaced commits, `signed` those with a GPG signature,
+  `skipped` the byte-identical ones, and `tags` the moved tags.
   """
 
   def __init__(self) -> None:
