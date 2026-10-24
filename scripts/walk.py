@@ -157,7 +157,7 @@ class Walker:
     ):
       self.errors.append(message.text)
 
-  def goto(self, settle_ms: int = 1200) -> None:
+  def goto(self, settle_ms: int = 250) -> None:
     """Open the dashboard and wait for its repo list, then settle for the motion."""
     self.page.goto(self.url, wait_until="load")
     self.page.wait_for_selector(REPOS_READY, state="hidden", timeout=15000)
@@ -179,7 +179,7 @@ class Walker:
       self.page.wait_for_timeout(50)
     return self.count(selector)
 
-  def click(self, selector: str, settle_ms: int = 500) -> None:
+  def click(self, selector: str, settle_ms: int = 250) -> None:
     self.page.click(selector, timeout=8000)
     self.page.wait_for_timeout(settle_ms)
 
