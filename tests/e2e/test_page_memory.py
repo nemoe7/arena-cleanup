@@ -1,0 +1,117 @@
+"""Page memory: commit pages, the settings answers, and the last run paint at once.
+
+The key of a commit page is repo, ref, tip, and cursor. A return to a branch
+makes no request, and Reload makes one. Settings and signing paint their last
+answer while the fresh read runs.
+
+A repo view paints its last finished run before the server names the latest
+one. Another run repaints the view (docs/design.md).
+"""
+
+from __future__ import annotations
+
+import json
+from typing import Any
+
+import pytest
+
+from scripts.walk import Walker
+
+pytestmark = pytest.mark.e2e
+
+PIPELINE = ".repo-card:has-text('data-pipeline') .repo-name"
+SHOP = ".repo-card:has-text('shop-web') .repo-name"
+ROW = ".row-btn.select[data-branch='{branch}']"
+ROWS = "#log .log-row"
+LOADING = "document.querySelector('#signing-body').innerText.includes('loading')"
+
+
+def hits(page: Any, token: str) -> list[str]:
+  seen: list[str] = []
+  page.on("request", lambda req: seen.append(req.url) if token in req.url else None)
+  return seen
+
+
+def test_a_branch_seen_before_paints_its_commits_from_memory(desktop: Walker) -> None:
+  page = desktop.page
+  seen = hits(page, "/commits?")
+  desktop.goto(1200)
+  desktop.click(PIPELINE, 600)
+  page.wait_for_selector("#commits .commit")
+  first = len(seen)
+  assert first == 1, "one page for the selected branch"
+  desktop.click(ROW.format(branch="arena/session-5"), 600)
+  page.wait_for_selector("#commits .commit")
+  assert len(seen) == first + 1, "a new branch reads its page"
+  desktop.click(ROW.format(branch="arena/session-6"), 600)
+  page.wait_for_selector("#commits .commit")
+  assert len(seen) == first + 1, "a branch seen before paints from memory"
+  desktop.click("#commits-refresh", 600)
+  assert len(seen) == first + 2, "Reload reads afresh"
+  desktop.click("#back", 600)
+
+
+def test_settings_paint_their_last_answer_while_the_fresh_read_runs(
+  desktop: Walker,
+) -> None:
+  page = desktop.page
+  settings = hits(page, "/api/settings")
+  signing = hits(page, "/api/signing")
+  desktop.goto(1200)
+  desktop.click("#settings-btn", 0)
+  page.wait_for_selector("#id-name")
+  page.wait_for_function(f"!{LOADING}")
+  assert (len(settings), len(signing)) == (1, 1)
+  desktop.click("#settings-back", 300)
+  page.click("#settings-btn")
+  painted = page.evaluate(
+    f"() => ({{ name: Boolean(document.querySelector('#id-name')), loading: {LOADING} }})"
+  )
+  assert painted == {"name": True, "loading": False}, "the last answer paints at once"
+  page.wait_for_function(f"() => !{LOADING}")
+  page.wait_for_timeout(500)
+  assert (len(settings), len(signing)) == (2, 2), "the fresh read still runs"
+  desktop.click("#settings-back", 300)
+
+
+def snapshot(job: str, count: int) -> dict[str, Any]:
+  lines = [
+    {"t": 1.0 + i, "text": f"2026-10-24T00:00:0{i}Z INFO line {i} of {job}"}
+    for i in range(count)
+  ]
+  return {"id": job, "status": "done", "exit": 0, "elapsed": 1.5, "lines": lines}
+
+
+def test_the_last_run_paints_before_the_server_answers(desktop: Walker) -> None:
+  page = desktop.page
+  answer = {"snap": snapshot("job-a", 3), "delay": 0}
+  calls: list[str] = []
+
+  def latest(route: Any) -> None:
+    calls.append(route.request.url)
+    page.wait_for_timeout(answer["delay"])
+    route.fulfill(
+      status=200, content_type="application/json", body=json.dumps(answer["snap"])
+    )
+
+  page.route("**/jobs/latest", latest)
+  try:
+    desktop.goto(1200)
+    desktop.click(SHOP, 600)
+    page.wait_for_function(f"document.querySelectorAll('{ROWS}').length === 3")
+    desktop.click("#back", 300)
+    answer["delay"] = 900
+    page.click(SHOP)
+    page.wait_for_selector("#view-repo", state="visible")
+    assert desktop.count(ROWS) == 3, "the known run paints before the answer"
+    page.wait_for_timeout(1500)
+    assert desktop.count(ROWS) == 3, "the same run id adds nothing"
+    assert len(calls) == 2, "the fresh read still runs"
+    desktop.click("#back", 300)
+    answer.update(snap=snapshot("job-b", 5), delay=0)
+    desktop.click(SHOP, 300)
+    page.wait_for_function(f"document.querySelectorAll('{ROWS}').length === 5")
+    assert "job-b" in desktop.text("#log"), "another run repaints the view"
+  finally:
+    page.unroute("**/jobs/latest")
+  desktop.click("#back", 300)

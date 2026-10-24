@@ -726,13 +726,18 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
   ]
   default = default_branch(cwd)
 
-  arena = [
-    b[len("origin/") :]
-    for b in git(
-      "for-each-ref", "--format=%(refname:short)", "refs/remotes/origin", cwd=cwd
-    ).splitlines()
-    if b.startswith("origin/arena/")
-  ]
+  # Each arena branch with its tip. The page keys its commit pages on the tip:
+  # a moved branch reads afresh, an unmoved one paints from memory.
+  tips: dict[str, str] = {}
+  for line in git(
+    "for-each-ref",
+    "--format=%(refname:short) %(objectname)",
+    "refs/remotes/origin/arena/",
+    cwd=cwd,
+  ).splitlines():
+    name, _, sha = line.partition(" ")
+    tips[name[len("origin/") :]] = sha
+  arena = list(tips)
   # Net commits per arena branch: its commits beyond the default branch minus the
   # default branch's commits beyond it. Absorbed work reads 0, a moved default below 0.
   ahead: dict[str, int] = {}
@@ -773,6 +778,7 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
     "ahead": ahead,
     "activity": activity,
     "arena": arena,
+    "tips": tips,
     "pr": checks,
     "pr_checked": authenticated,
     "pr_reason": ""

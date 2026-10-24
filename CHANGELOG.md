@@ -19,6 +19,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A running PR check and a running job step show an amber pulsing dot
   instead of a spinner, and every amber dot pulses, the sidebar dot of a
   running PR included.
+- Page memory for three answers: commit pages keyed by repo, ref, tip,
+  and cursor, the last settings and signing answers, and the last finished
+  run of a repo. Each paints at once, a fresh read replaces it when it
+  differs, and the repo status now carries the tip of each arena branch.
 
 ## [0.3.9] - 2026-10-24
 

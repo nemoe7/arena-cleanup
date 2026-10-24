@@ -1798,11 +1798,7 @@
     renderSidebar();
     renderPaths();
     renderCommand();
-    resetPhases();
-    setStatus("", "idle");
-    $("log").replaceChildren();
-    $("logmeta").textContent = "";
-    $("jump").classList.remove("show");
+    clearRun();
     // a run followed from another repo keeps going on the server; this view
     // lets go of it and attaches to the latest run of the repo it shows
     if (state.es) { state.es.close(); state.es = null; }
@@ -1814,9 +1810,25 @@
     reattach(repo.id, ++state.opened);
   }
 
+  // The last finished run of each repo, by repo id. Its snapshot paints before
+  // the server answers, and the answer repaints only when it names another run.
+  const lastRuns = new Map();
+  function clearRun() {
+    resetPhases();
+    setStatus("", "idle");
+    $("log").replaceChildren();
+    $("logmeta").textContent = "";
+    $("jump").classList.remove("show");
+  }
+  function paintRun(snap) {
+    appendLines(snap.lines || []);
+    paintDone(snap);
+  }
   // The latest run of a repo: a live one streams on, a finished one is
   // painted from its saved lines. A newer open or start wins over the answer.
   async function reattach(repoId, opened) {
+    const known = lastRuns.get(repoId);
+    if (known) paintRun(known);
     let snap;
     try {
       snap = await api(`/api/repos/${repoId}/jobs/latest`);
@@ -1824,14 +1836,16 @@
       return;
     }
     if (opened !== state.opened || !snap.status) return; // a newer view, or no run yet
+    if (known && known.id === snap.id) return;
+    if (known) clearRun();
     if (snap.status === "running") {
       state.job = snap.id;
       setStatus("running", "running");
       setRunButton("running");
       follow(snap.id);
     } else {
-      appendLines(snap.lines || []);
-      paintDone(snap);
+      paintRun(snap);
+      lastRuns.set(repoId, snap);
     }
   }
 
@@ -2547,6 +2561,7 @@
     // the commits reload after the status, which names the arena branches left
     const finish = async (snap) => {
       state.job = null;
+      lastRuns.delete(state.repo?.id);
       paintDone(snap);
       state.settling = true;
       setRunButton("idle");
@@ -2617,13 +2632,34 @@
     const ref = name ? `&ref=${encodeURIComponent(name)}` : "";
     return `/api/repos/${state.repo.id}/commits?limit=${COMMITS_PAGE}${ref}`;
   };
-  // the first page; a scroll near the end of the list appends the older pages
-  async function loadCommits() {
+  // Commit pages in page memory, keyed by repo, ref, tip, and cursor. A page
+  // under one tip never changes, so a return to a branch paints from memory
+  // and a moved tip reads afresh. The newest 60 pages stay, the oldest go.
+  const COMMIT_PAGES = 60;
+  const commitPages = new Map();
+  function commitKey(cursor) {
+    const s = state.repo?.status || {};
+    const ref = selectedArena(s);
+    const tip = ref ? (s.tips || {})[ref] : (s.head || "").split("\t")[0];
+    return tip ? `${state.repo.id}/${ref || "HEAD"}/${tip}/${cursor || ""}` : "";
+  }
+  async function commitPage(url, cursor, fresh) {
+    const key = commitKey(cursor);
+    if (key && !fresh && commitPages.has(key)) return commitPages.get(key);
+    const data = await api(url);
+    if (!key) return data;
+    if (commitPages.size >= COMMIT_PAGES) commitPages.delete(commitPages.keys().next().value);
+    commitPages.set(key, data);
+    return data;
+  }
+  // the first page; a scroll near the end of the list appends the older pages.
+  // `fresh` skips the page memory, for the Reload button
+  async function loadCommits(fresh) {
     if (!state.repo) return;
     const box = $("commits");
     state.commitsNext = null;
     try {
-      const data = await api(commitsUrl());
+      const data = await commitPage(commitsUrl(), null, fresh === true);
       $("commits-hint").textContent = data.total.toLocaleString();
       if (!data.commits.length) {
         box.replaceChildren(el("div", { class: "hint", style: "padding:8px 6px" }, "This branch has no commits yet."));
@@ -2646,7 +2682,7 @@
     if (box.scrollTop + box.clientHeight < box.scrollHeight - 160) return;
     state.commitsLoading = true;
     try {
-      const data = await api(`${commitsUrl()}&before=${next}`);
+      const data = await commitPage(`${commitsUrl()}&before=${next}`, next, false);
       // a reload or another repo meanwhile: that list owns the box now
       if (state.commitsNext !== next) return;
       box.append(...data.commits.map(commitRow));
@@ -2718,13 +2754,22 @@
     });
   }
 
+  // The last answer paints at once, then the fresh one replaces it when it
+  // differs, so a return to Settings never shows an empty card or a loading hint.
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   async function renderSettings() {
+    const known = state.settings;
+    if (known) {
+      renderIdentity();
+      renderClaims();
+    }
     try {
       state.settings = await api("/api/settings");
     } catch (err) {
       $("identity-body").replaceChildren(banner("err", {}, err.message));
       return;
     }
+    if (known && same(known, state.settings)) return;
     renderIdentity();
     renderClaims();
   }
@@ -2936,13 +2981,16 @@
   }
 
   async function loadSigning() {
-    $("signing-body").replaceChildren(el("div", { class: "hint" }, "loading…"));
+    const known = state.signing;
+    if (known) renderSigning();
+    else $("signing-body").replaceChildren(el("div", { class: "hint" }, "loading…"));
     try {
       state.signing = await api("/api/signing");
     } catch (err) {
       $("signing-body").replaceChildren(banner("err", {}, err.message));
       return;
     }
+    if (known && same(known, state.signing)) return;
     renderSigning();
   }
 
@@ -3116,7 +3164,7 @@
   $("start-mobile").onclick = runButton;
 
   $("commits-refresh").onclick = () => {
-    loadCommits();
+    loadCommits(true);
     toast("reloaded");
   };
   $("commits").onscroll = loadOlderCommits;

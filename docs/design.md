@@ -518,4 +518,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: a button that leads to GitHub shows the GitHub mark instead of the word. Its title and accessible name keep the phrase.
 - Accepted 2026-10-24: the Clean & Push button carries a live run itself, as Running with an amber spinning glyph, and the `clean running` pill is gone. Both labels share one grid cell, so the button keeps its width and height across states.
 - Accepted 2026-10-24: every amber dot pulses like the LED: a running check, a running job step, and the sidebar dot of a running PR. The run timeline glyph, the Running button, and Re-check keep their spinners.
+- Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.
   - A running job refreshes on every poll, and its first read after the end replaces the short log.

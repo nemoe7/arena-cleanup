@@ -292,6 +292,8 @@ def test_add_by_path(ui: UI, world: World, ids: dict[str, str]) -> None:
   assert set(status["ahead"]) == set(status["arena"]), "one count per arena branch"
   assert set(status["activity"]) == set(status["arena"]), "one tip time per branch"
   assert all(stamp > 0 for stamp in status["activity"].values())
+  assert set(status["tips"]) == set(status["arena"]), "one tip per branch"
+  assert all(len(sha) == 40 for sha in status["tips"].values())
   assert added["managed"] is False
   assert len(json.loads((ui.data / "repos.json").read_text())) == 1
 
