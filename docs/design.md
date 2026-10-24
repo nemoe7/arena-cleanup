@@ -35,7 +35,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 ## Screens and states
 
 - Dashboard: sort select and Reload button in the head, add bar.
-  - Rows and cards: one repo row per repo above 1200 px, repo cards at 1200 px and below.
+  - Table and cards: one table with one row per repo above 1200 px, repo cards at 1200 px and below.
+    - The header line reads Repo, Branch, Arena branches, and Actions. Rules of 1 px split the rows, cells pad 12 px, and a hovered row tints.
     - A row or card shows the branch.
     - The repo name is a button that opens the repo, and a click on its card body does the same.
     - The card itself has no role.
@@ -209,8 +210,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Push reads `moving`, `pushing`, then `pushed X tags`, and stays empty without a tag.
     - A dry run reads `would sign` and `would move`.
     - Before a count the row carries the name alone.
-- `repo-card`: above 1200 px a subgrid row on the columns of `grid`, so the columns align across rows.
-  - Row, left to right: the icon, name, branch pill, and arena rows stacked behind a hairline.
+- `repo-card`: above 1200 px a subgrid row on the columns of `grid`, the table, so the columns align across rows under the header line.
+  - Row, left to right: the icon, name, branch pill, and arena rows stacked in one cell.
     - Then Clean, and Remove with the trash glyph.
     - The arena area takes the free width, so Clean and Remove sit at the right edge.
     - In a row an arena row is one line: the name, the ahead chip, and the PR pill.
@@ -511,4 +512,6 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the phase rows start on the engine's own lines. A word test matched branch and repo names, so a name like arena-cleanup moved a run to Clean up and left the middle rows skipped.
 - Accepted 2026-10-24: the server keeps 32 finished jobs with steps and log by job id. The page keeps 20 loaded details for a reopen.
 - Accepted 2026-10-24: the design boards render through `nuu board -T design` from `docs/boards.json`, and the project script that drew them is gone. The boards keep their markup, chrome, and sizes.
+- Accepted 2026-10-24: above 1200 px the repos are one table, not row-shaped cards, and the cards below 1200 px keep their shape.
+  - A header line reads Repo, Branch, Arena branches, and Actions. Rules of 1 px split the rows, cells pad 12 px, a hovered row tints, and the Sort select stays.
   - A running job refreshes on every poll, and its first read after the end replaces the short log.

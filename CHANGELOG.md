@@ -25,6 +25,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `docs/boards.json` and the fragments in `docs/boards/`. The project script
   `scripts/design_boards.py` is gone, and `scripts/walk.py --views` shoots
   the four example views.
+- Above 1200 px the dashboard shows one table: a header line, one row per
+  repo, 1 px rules, 12 px cells, and a hover tint. The cards at 1200 px and
+  below keep their shape.
 
 ### Fixed
 
