@@ -477,10 +477,9 @@
   .check-list .open .check-row .chev { transform: rotate(90deg); }
   .check-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px; }
   @media (hover: hover) { .check-row:hover .name { color: var(--text); } }
-  .job-pane { flex: 1 1 100%; min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 0 0 12px 28px; }
+  .job-pane { flex: 1 1 100%; min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 0 0 12px 24px; }
   .job-head { display: flex; align-items: center; gap: 8px; font-size: var(--fs-1); color: var(--dim); }
   .job-head .grow { flex: 1; }
-  .job-head .btn { height: 28px; font-size: var(--fs-1); padding: 0 10px; }
   .job-steps { list-style: none; margin: 0; padding: 0; }
   .job-steps li { display: flex; align-items: center; gap: 8px; min-height: 28px; font-size: var(--fs-2);
     border-top: 1px solid var(--line); }
@@ -492,7 +491,7 @@
   .job-steps .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .job-steps .d { color: var(--dim); font: var(--fs-1) var(--mono); font-variant-numeric: tabular-nums; }
   .job-log { margin: 0; min-width: 0; max-height: 26vh; overflow: auto; background: var(--bg); border: 1px solid var(--line);
-    border-radius: 8px; padding: 8px 10px; font: var(--fs-1) / 1.5 var(--mono); color: var(--muted); white-space: pre; }
+    border-radius: 8px; padding: 8px 12px; font: var(--fs-1) / 1.5 var(--mono); color: var(--muted); white-space: pre; }
   .job-log:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .job-note { font-size: var(--fs-1); color: var(--dim); }
 
@@ -813,6 +812,7 @@
     .repo-name { font-size: 15px; }
     .hint, .opt-label .desc, .phase-sub, .run-foot .hint, .commit .meta { font-size: 12px; }
     .phase-head { min-height: 44px; padding: 8px 12px; font-size: 13px; }
+    .check-row { min-height: 44px; }
     .commit { font-size: 13px; }
     .sign-fields { grid-template-columns: 1fr; }
     .sign-row .k { flex-basis: 100%; min-width: 0; }

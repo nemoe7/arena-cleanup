@@ -185,8 +185,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - One row per check, 36 px tall, with a glyph in the state colour and the name.
   - A row that names an Actions job is a toggle with a chevron, and opens its `job-pane` under itself. Any other run keeps Open run.
   - Open PR on GitHub and Close sit at the right.
-- `job-pane`: the job behind a check row, indented under its glyph.
-  - A head line with the verdict and the summed step time, then Open on GitHub.
+- `job-pane`: the job behind a check row, indented 24 px so its content lines up with the row name.
+  - A head line with the verdict and the summed step time, then Open on GitHub as a house 34 px button.
   - `job-steps`: one 28 px row per step with the state glyph, the name, and the seconds, or `running`.
   - `job-log`: a `pre` in the mono face, 26 vh tall at most, that opens on the last 400 lines. A scroll to its top prepends the page before, and the view keeps its place.
     - Each line drops the date and the fraction of its stamp, so `11:27:19` leads it.
@@ -503,3 +503,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the hover tint and the selected mark of a sidebar arena row span the whole row, icon buttons included. The icon buttons keep their own hover rings on top of the row tint.
 - Accepted 2026-10-24: Clean & Push ends the checkbox row of the options card, and drops under the boxes, right-aligned, when the row is narrow. The button keeps the 34 px control height, and the phone keeps its tab bar.
 - Accepted 2026-10-24: every commit hash reads 7 characters, the GitHub short SHA, in the commits list, the run log, and the phase modals. Git's own abbreviation grows with the clone.
+- Accepted 2026-10-24: the checks modal takes the house sizes after the nuu audit. A check row reads 44 px below 40em, and Open on GitHub is a 34 px button with 12 px sides.
+  - The log pads 8 by 12 px, and the pane indents 24 px to line up with the row name.

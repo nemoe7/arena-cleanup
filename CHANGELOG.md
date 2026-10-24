@@ -15,6 +15,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Commit hashes read 7 characters, the GitHub short SHA, in the commits list
   and the head line.
+- The checks modal takes the house sizes: a 44 px check row on the phone, a
+  34 px Open on GitHub button, a 12 px log inset, and a 24 px pane indent.
 
 ## [0.3.7] - 2026-10-24
 

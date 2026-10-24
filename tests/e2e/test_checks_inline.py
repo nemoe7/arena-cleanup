@@ -96,6 +96,40 @@ def test_scrolling_to_the_top_loads_an_older_page_and_keeps_the_place(
     close_modal(desktop)
 
 
+SIZES = """() => {
+  const li = document.querySelector('#checks-list li.open');
+  const box = (sel) => li.querySelector(sel).getBoundingClientRect();
+  const log = li.querySelector('.job-log');
+  return { row: box('.check-row').height, name: box('.check-row .name').left,
+    steps: box('.job-steps').left, button: box('.job-head .btn').height,
+    pad: parseFloat(getComputedStyle(log).paddingLeft) };
+}"""
+CONTROL = 34
+PHONE_CONTROL = 44
+INSET = 12
+
+
+@pytest.mark.parametrize("width", ["desktop", "phone"])
+def test_the_pane_takes_the_house_sizes(
+  request: pytest.FixtureRequest, width: str
+) -> None:
+  walker: Walker = request.getfixturevalue(width)
+  page = walker.page
+  open_modal(walker, BILLING)
+  try:
+    page.click(ROW.format(name="test"))
+    page.wait_for_selector(LOG)
+    sizes = page.evaluate(SIZES)
+    assert sizes["row"] >= (PHONE_CONTROL if width == "phone" else 36), sizes
+    assert sizes["button"] == (PHONE_CONTROL if width == "phone" else CONTROL), sizes
+    assert abs(sizes["steps"] - sizes["name"]) < 1, (
+      "the steps line up with the row name"
+    )
+    assert sizes["pad"] == INSET
+  finally:
+    close_modal(walker)
+
+
 def test_an_app_check_keeps_its_outbound_link(desktop: Walker) -> None:
   open_modal(desktop, SHOP)
   try:
