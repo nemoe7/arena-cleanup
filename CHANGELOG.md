@@ -29,6 +29,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   leaves on Remove, and Add puts a pending card first. A refused call puts
   the row back with the error, and a lost connection sends the write once
   more.
+- The sidebar Delete button stays a 32 px square on a desktop instead of
+  stretching to the height of its two-line row.
 
 ## [0.3.0] - 2026-10-23
 

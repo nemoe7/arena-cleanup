@@ -20,6 +20,10 @@ GLYPHS = {
   ".commit .avatar.none .ico-svg": INLINE,
 }
 BOX = "e => e.getBoundingClientRect().width"
+# every visible button without words, with its box: nuu rule 6 wants a square
+ICON_ONLY = """() => [...document.querySelectorAll('button')]
+  .filter((b) => b.offsetParent !== null && !b.textContent.trim())
+  .map((b) => { const r = b.getBoundingClientRect(); return [b.getAttribute('aria-label'), r.width, r.height]; })"""
 OPACITY = "e => Number(getComputedStyle(e).opacity)"
 CARD_CLEAN = ".repo-card .btn.clean"
 
@@ -57,3 +61,30 @@ def test_clean_buttons_carry_the_broom_and_sparkle_on_hover(desktop: Walker) -> 
   desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
   assert page.eval_on_selector("#start .ico-svg", BOX) == BUTTON
   assert page.eval_on_selector("#start .sparkles", OPACITY) == 0
+
+
+def squares(walker: Walker) -> list[list[float | str]]:
+  walker.goto(1200)
+  seen = walker.page.evaluate(ICON_ONLY)
+  walker.click(".repo-card:has-text('data-pipeline') .repo-name", 800)
+  seen += walker.page.evaluate(ICON_ONLY)
+  walker.page.goto("about:blank")
+  walker.page.goto(walker.url + "#/settings")
+  walker.page.wait_for_timeout(600)
+  return seen + walker.page.evaluate(ICON_ONLY)
+
+
+def test_icon_only_buttons_are_square_on_a_desktop(desktop: Walker) -> None:
+  seen = squares(desktop)
+  assert {row[0] for row in seen} >= {
+    "Delete arena/session-5",
+    "Reload repos",
+    "Settings",
+  }
+  assert [row for row in seen if row[1] != row[2]] == []
+
+
+def test_icon_only_buttons_are_square_on_a_phone(phone: Walker) -> None:
+  seen = squares(phone)
+  assert [row for row in seen if row[1] != row[2]] == []
+  assert min(row[1] for row in seen) >= 44, "and reach the touch size"
