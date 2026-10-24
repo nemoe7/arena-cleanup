@@ -48,7 +48,7 @@ sys.path.insert(0, str(HERE))
 
 from ui.server import Registry, register_path
 
-# The demo identity: the gitconfig the stub writes, and the author of the claimed commits.
+# Demo identity: what the stub's gitconfig holds, and the claimed commits' author.
 ME_NAME = "nemoe7"
 ME_EMAIL = "60245796+nemoe7@users.noreply.github.com"
 
@@ -99,7 +99,7 @@ REPOS = [
     False,
   ),
   ("docs-site", [("arena/session-2", None)], False),
-  # main gained commits after the session: the publish guard stops the run
+  # main gained commits after the session: the publish guard stops this run
   (
     "infra-tools",
     [

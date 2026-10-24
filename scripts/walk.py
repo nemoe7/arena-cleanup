@@ -452,7 +452,7 @@ def start_a_dry_run_and_watch_it_finish(w: Walker, demo: Demo) -> None:
   w.click("#start", 0)
   status = w.wait_status("exit")
   assert "exit 0" in status
-  # the run card is the story, and the raw log stays open under it
+  # the run card is the story, and its raw log stays open under it
   assert w.page.is_visible("#logwrap")
   assert w.count(".log-row") > MIN_LOG_ROWS
 

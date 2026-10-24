@@ -70,5 +70,5 @@ jobs:
       - if: steps.chromium.outputs.cache-hit == 'true'
         run: uv run --no-sync playwright install-deps chromium
       # The suite needs git, gpg, git-filter-repo, and Chromium. The runner has
-      # the first two. `uv run` puts the third on PATH, and the steps above the last.
+      # the first two. `uv run` puts git-filter-repo on PATH, and earlier steps Chromium.
       - run: uv run --no-sync pytest

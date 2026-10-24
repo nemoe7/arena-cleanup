@@ -27,7 +27,7 @@ SERVER = ROOT / "ui" / "server.py"
 STARTUP_SECONDS = 15
 JOB_SECONDS = 20
 MIN_FONT_BYTES = 20_000
-# the nuu trio in em, so the layouts follow the reader's browser font size
+# the nuu trio in em, so layouts follow the reader's browser font size
 BREAKPOINTS = ("75em", "56.25em", "40em")
 MINUTE = 60.0
 TICK_SECONDS = 1.0
@@ -378,7 +378,7 @@ def test_a_fetch_on_demand_sees_a_new_remote_branch(
   clone = next(r for r in after if r["id"] == ids["clone"])
   assert "arena/ui-late" in clone["status"]["arena"]
   assert "arena/ui-late" in ui.get(f"/api/repos/{ids['clone']}")["status"]["arena"]
-  # a second branch right after: the server skips the unforced fetch, not the
+  # a second branch right after: the server skips its unforced fetch, not the
   # Reload one
   world.git(f"--git-dir={bare}", "update-ref", "refs/heads/arena/ui-later", "main")
   skipped = ui.post("/api/fetch", {})
@@ -1098,7 +1098,7 @@ def test_a_picture_lives_thirty_days_after_its_last_use(
   assert json.loads(index.read_text())[key]["expires"] > first - 60
   assert len(pictures.hits) == downloads
 
-  # past the window the picture goes, and the next use fetches it again
+  # past the window the picture goes, and its next use fetches it again
   entries = json.loads(index.read_text())
   entries[key]["expires"] = time.time() - 1
   index.write_text(json.dumps(entries))

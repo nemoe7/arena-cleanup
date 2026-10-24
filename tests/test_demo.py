@@ -1,4 +1,4 @@
-"""The demo fixture holds the repo states the dashboard has to show."""
+"""The demo fixture holds every repo state the dashboard has to show."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""The ahead chip pads the arrow ink and the count the same.
+"""The ahead chip pads arrow ink and count alike.
 
 The arrow glyph keeps blank space inside its icon box. An equal box padding
 reads as a wider gap on the arrow side. The chip pulls the icon in and narrows

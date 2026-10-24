@@ -67,10 +67,10 @@ def test_above_1200_a_repo_is_one_row(browser: Any, demo: Demo) -> None:
   assert row["rowLefts"][0] == row["rowLefts"][1]
   assert row["bname"]["y"] == row["tail"]["y"], "one line: the name, then the pills"
   assert row["bname"]["x"] < row["tail"]["x"]
-  # left to right: the name, the arena rows, the button, then remove
+  # left to right: name, arena rows, the button, then remove
   assert row["nameRight"] < row["arenaLeft"] < row["actionsLeft"] < row["removeLeft"]
   assert row["removeLeft"] - row["actionsRight"] <= 12
-  # spread: the arena area takes the free width, Remove ends at the padding
+  # spread: the arena area takes all free width, Remove ends at the padding
   assert row["actionsLeft"] - row["arenaRight"] <= 12
   assert row["cardRight"] - row["removeRight"] <= 17
 
@@ -82,7 +82,7 @@ def test_at_1200_the_repos_are_cards(browser: Any, demo: Demo) -> None:
   assert card["rowTops"][0] < card["rowTops"][1], "arena rows stacked"
   assert card["rowLefts"][0] == card["rowLefts"][1]
   assert card["bname"]["y"] < card["tail"]["y"], "two lines: the name over the pills"
-  # one left edge: the icon and the arena rows. The button sits bottom right
+  # one left edge: icon and arena rows. The button sits bottom right
   assert card["icoLeft"] == card["rowLefts"][0]
   assert card["cardRight"] - card["actionsRight"] <= 17
   assert card["actionsLeft"] > card["nameLeft"]

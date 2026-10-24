@@ -878,7 +878,7 @@ def main() -> int:
           return 1
         context = browser.new_context(viewport={"width": BOARD_WIDTH, "height": 900})
         page = context.new_page()
-        # The boards keep the demo origin, so the bundled fonts load without CORS.
+        # The boards keep the demo origin, so bundled fonts load without CORS.
         page.goto(demo.url + "/fonts/LICENSE.txt")
         for name, build in BOARDS.items():
           render(page, demo.url, css, icons, build(shots), args.out / f"{name}.png")

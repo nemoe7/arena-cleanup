@@ -1,4 +1,4 @@
-"""The repo view fits the window: two cards up top, the log takes the rest."""
+"""The repo view fits its window: two cards up top, and the log takes what remains."""
 
 from __future__ import annotations
 

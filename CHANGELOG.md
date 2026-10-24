@@ -24,7 +24,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - Paddings and gaps the nuu audit found off the 4 px scale.
-  - The icon buttons and the path input drop the browser default padding.
+  - Icon buttons and the path input drop the browser default padding.
   - Back pads 12 px, the phase rows and Browse gap 8 px, the step and log rows 12 px.
   - The brand link pads 8 px.
 - On a phone the PR pill and the repo name hit 44 px tall through an unseen box above and below.
@@ -43,10 +43,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - The licence sits in `ui/static/LICENSE-gsap.txt`.
 - Each run phase row opens a modal with its detail.
   - Prepare, PR checks, and Clean up list their steps with a clock stamp and the time each took.
-  - Rewrite and sign lists the commits after the rewrite under the engine's counts.
-  - Push shows the ref, the move from the old hash to the new one, the lease, the moved tags, and a GitHub link.
+  - Rewrite and sign lists the rewritten commits under the engine's counts.
+  - Push shows the ref, its move from old hash to new, the lease, moved tags, and a GitHub link.
   - The last row reads Clean up.
-- A loading bar under the header follows the repo fetch: the server counts
+- A loading bar under the header follows a repo fetch: the server counts
   two steps per repo, the fetch and the status, and `GET /api/progress`
   reports them. The Reload glyph spins while the page follows a fetch.
 - A PR checks pill opens a modal with the checks of that PR: one row per
@@ -56,9 +56,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- The How git reaches GitHub fold is gone. The GitHub card shows the
+- The How git reaches GitHub fold is gone. The GitHub card shows credential
   credential helper, the ssh keys, and the helper warning with Configure under
-  the sign-in state, and the README carries the SSH mount hint.
+  the sign-in state, and the README carries an SSH mount hint.
 - Every card action sits bottom right in a card foot: the run button under
   the options, both Save buttons, Re-check, Sign in, Configure, Create key at
   its natural width, and Open GitHub keys.
@@ -73,7 +73,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The run phases measure one contiguous timeline.
   - A line names the current phase or a later one, never an earlier one, and the next phase starts where the last one ends.
   - A stale branch deleted in Prepare no longer starts Finish, and the commit scan no longer stretches Prepare.
-- The ahead chip pads the arrow ink and the count the same: the icon moves
+- The ahead chip pads arrow ink and count alike: its icon moves
   2 px in and the gap narrows to 6 px, so the chip reads centred.
 - A reload at `#/settings` or in a repo view paints that screen first. The
   dashboard no longer shows while the environment and the repos load.
@@ -95,7 +95,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The PR pill and the sidebar dot paint running checks amber, the GitHub
   pending colour, instead of blue. A PR without checks gets a grey dot.
 - A sidebar arena row takes two lines: the dot and the name, then the ahead
-  count and the PR meta under the name, as the cards do.
+  count and PR meta under the name, as the cards do.
 - List edits show before the reply: the arena row leaves on Delete, the card
   leaves on Remove, and Add puts a pending card first. A refused call puts
   the row back with the error, and a lost connection sends the write once
@@ -143,10 +143,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - The icon, the name, and Remove share one centre line on top.
   - The rows keep the chip.
 - Above 1200 px the dashboard shows one full-width row per repo.
-  - The row holds the name, the branch, the arena rows across the free width, then Clean and Remove at the right edge.
+  - The row holds name, branch, and arena rows across the free width, then Clean and Remove at the right edge.
   - An arena row is one line there and the rows stack.
   - At 1200 px and below the repos stay cards with two-line arena rows.
-- The Remove button carries the trash glyph in place of the X.
+- The Remove button carries a trash glyph in place of the X.
 - Human-facing text says push, not publish, and PR, not pull request: the
   page, the engine log lines, CLI help, README, and design record.
   Identifiers, API fields, and past entries keep their words.
@@ -163,7 +163,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- The app icon and the brand mark are the Lucide broom-sparkles glyph in the
+- App icon and brand mark are the Lucide broom-sparkles glyph in the
   accent colour. `scripts/app_icon.py` draws the favicon and the PWA pictures.
 
 ## [0.2.4] - 2026-10-23
@@ -192,7 +192,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- The run card and the options card of the repo view end on one line. The first option row sits right under the card head like the phase rows, and the rule under the last option row is gone.
+- The run card and options card of the repo view end on one line. The first option row sits right under the card head like the phase rows, and the rule under the last option row is gone.
 
 ## [0.2.1] - 2026-10-23
 
@@ -217,7 +217,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - A dashboard that asks in the meantime gets cards instead of a gap.
 - The dashboard shows a Loading repos line until the first answer from the server. Before, the page opened on an empty space.
 - The repo view no longer scrolls the page on a desktop window. The cards and a 340 px log were taller than a 775 px window.
-- The PR pill counts the checks the way the engine reads them.
+- The PR pill counts checks as the engine reads them.
   - One entry per check name, and a pass wins over a superseded failed or cancelled attempt.
   - Before, a cancelled older run of a check kept the pill red while the run passed.
 
@@ -234,7 +234,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - A finished run comes back with its log, phases, and status, also after a server restart.
   - The server saves the finished run of each repo under `ARENA_DATA/jobs/`.
 - A Reload button on the dashboard fetches every repo now. The server also fetches each repo at the top of every clock minute, and a page load fetches once.
-- The PR check reads the version in `pyproject.toml` at the head and at the base branch. The head must be exactly one step above the base: the next patch, minor, or major.
+- The PR check reads the version in `pyproject.toml` at head and base branch. The head must be exactly one step above the base: the next patch, minor, or major.
 
 ### Changed
 
@@ -243,8 +243,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Inline glyphs are 14 px, buttons, phase rows, tree rows, and banners 16 px, and icon buttons 18 px.
   - Most glyphs were 12 or 13 px.
 - The arena row on a repo card is two lines at every width.
-  - The branch name sits on the first line, the ahead chip and the PR pill on the second.
-  - The dots before the name and in the PR pill are gone.
+  - The branch name sits on line one, ahead chip and PR pill on line two.
+  - Dots before the name and in the PR pill are gone.
 - The ahead chip shows the net count.
   - That is its commits beyond the default branch, minus the default branch's commits beyond it.
   - The chip hides below 1.
@@ -287,13 +287,13 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - An add bar that takes a GitHub page address: `github.com/owner/repo`, with or without `https://`, `.git`, or a page suffix.
 - Cards and the repo title show the name only.
 - Design boards in `docs/design/`, rendered by `scripts/design_boards.py` and embedded in `docs/design.md`.
-- The repo card meta drops the tag count. It shows the branch and the tree state.
+- The repo card meta drops the tag count. It shows branch and tree state.
 - Arena rows on the card and in the sidebar show `↑ N` with a tooltip. N counts the commits beyond the default branch.
 - `run -a/--arena NAME` answers the arena branch menu without a prompt.
   - The page shows that select, newest tip first, when a repo has two or more arena branches.
   - The card button uses the newest.
 - The repo sidebar is 320 px wide.
-  - It lists the commits below the repo facts and the arena rows.
+  - It lists commits below the repo facts and arena rows.
   - The HEAD block is gone.
   - Below 900 px it stacks under the run card, and the commit list grows with the page.
 - A shallow history: one Back leaves a sub-view, the next one leaves the page.
@@ -327,9 +327,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The test suite runs on every CPU core through pytest-xdist. Each file stays on one worker, so the web app story in `tests/test_ui.py` keeps its order.
 - The config files follow the repo template.
   - Git normalizes line endings to LF, and GitHub prefills a pull request body with its three sections.
-  - The project metadata names the README and the licence.
+  - Project metadata names the README and the licence.
 - `AGENTS.md` carries the shared agent rules of the repo template, with the nuu and nemoizer sections below them.
-- Log rows show the clock of the browser. The engine stamps each line in the server zone.
+- Log rows show the browser's clock. The engine stamps each line in its own zone.
 - Remove on a card deletes its URL clone from the volume. A path repo only leaves the list.
 - `POST /api/repos/<id>/reset`: fetch, check out the default branch, and reset it hard. Untracked files stay.
 - The repo page runs the full flow only. The Rewrite locally switch is gone, and `strip` stays a CLI command.

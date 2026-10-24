@@ -2,7 +2,7 @@
 
 <!-- nonemo: NMO901; nonemo: STE901; nonemo: STE902 -->
 
-The one design record for the arena-cleanup web app. The sections follow the nemo-ui-ux skill template. The token source is the `:root` block in `ui/static/index.html`.
+The one design record for the arena-cleanup web app. Its sections follow the nemo-ui-ux skill template. Tokens come from the `:root` block in `ui/static/index.html`.
 
 ## Purpose and status
 
@@ -24,7 +24,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 ## Journeys and information architecture
 
-- Entry: the dashboard at `/`. The header holds the brand, the tool dots, and one icon button (Settings).
+- Entry: the dashboard at `/`. The header holds the brand, tool dots, and one icon button (Settings).
 - Dashboard to repo: a click on the card or Enter on a focused card.
   - The name underlines on hover.
   - Back: the All repos button.
@@ -43,13 +43,13 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - Arena rows: each has two lines at every width, the branch name, then `↑ N` and the PR pill.
     - `↑ N` is the net count, the commits that branch holds beyond `origin/<default>` minus the commits `origin/<default>` holds beyond it, with a tooltip.
     - The chip hides below 1, so absorbed work and a default branch that moved on show no chip.
-    - No dot sits before the name or in the PR pill, the pill colour carries the state.
+    - No dot sits before the name or in the PR pill, its colour carries the state.
   - Remove: the trash glyph sits top right, bare at rest. A red frame comes on hover, on press, and while armed.
 - Repo: a 320 px sidebar, then the run card left and the options card right, and the log card below both.
-  - Cards: the run card holds the status and the phase list.
+  - Cards: the run card holds the status and phase list.
     - The log card holds the open log of the latest run and takes the height that is left, down to a 160 px floor.
     - Both come back after a return to the view or a restart.
-    - The main column pins to the window like the sidebar, so only the log scrolls.
+    - The main column pins to the window as the sidebar does, so only its log scrolls.
   - Run button: the options card foot carries the one run button, bottom right. It reads Clean & Push while idle and Cancel while a run is live.
   - Options: each option is one row: label, control, and a trailing action or readout.
     - No hint texts.
@@ -128,10 +128,10 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Clean buttons: every `Clean & Push` button carries `broom-sparkles`, the broom alone when idle, and the sparkles appear on hover and focus.
   - Every button leads with the glyph at `--ico-m` before its words, the dashboard rows and cards included.
   - The `Cancel` state is the word alone.
-- Static slots carry `data-icon="<name>"`, and the boot fills them. The brand mark is `broom-sparkles` in the accent, the same glyph as the app icon.
+- Static slots carry `data-icon="<name>"`, and boot fills them. The brand mark is `broom-sparkles` in the accent, the app icon's glyph.
 - App icon: `scripts/app_icon.py` draws `ui/static/icons/*.png` from the `broom-sparkles` paths.
   - The favicon and the regular PWA pictures carry the accent glyph alone on a transparent ground.
-  - The maskable picture and the Apple touch icon add the `--surface` background, full bleed, with the glyph inside the safe zone.
+  - Maskable picture and Apple touch icon add the `--surface` background, full bleed, with the glyph inside the safe zone.
 - No text glyphs stand in for icons. The licence sits beside the page in `ui/static/LICENSE-lucide.txt`.
 
 ### Layout
@@ -155,7 +155,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - A view only fades, as a transform would unpin the fixed tab bar inside it.
   - The tween takes 180 ms on `power2.out`, and a list spreads its rows over 120 ms more.
   - `prefers-reduced-motion: reduce` skips the tweens.
-- Scroll-edge fade, the nuu recipe: the commit list and the log carry `scroll-panel`.
+- Scroll-edge fade, the nuu recipe: the commit list and log carry `scroll-panel`.
   - A scrolled edge fades over 12 px, and the fade grows and shrinks over a 192 px scroll ramp. A panel that does not scroll stays unmasked.
   - The rule needs `animation-timeline: scroll(self)` and no reduced-motion preference. Other scrolling regions keep their edges.
 
@@ -190,7 +190,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
     - Checked, it takes the accent fill and a white Lucide check.
     - `danger` fills a checked destructive option with the warn colour and a dark check.
   - Phone: the checkboxes form a grid with 160 px columns. Browse, the fold head, and the 16 px path field are 44 px targets there.
-- `phase`: a row with the state glyph, the name, a count, and the time.
+- `phase`: a row with the state glyph, a name, a count, and the time.
   - Counts: the count comes from the engine's lines.
     - PR checks reads `passed/total`.
     - Rewrite and sign reads `collecting N commits`, then `signing X/Y`, then `signed X commits`.
@@ -200,7 +200,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - `repo-card`: above 1200 px a subgrid row on the columns of `grid`, so the columns align across rows.
   - Row, left to right: the icon, name, branch pill, and arena rows stacked behind a hairline.
     - Then Clean, and Remove with the trash glyph.
-    - The arena area takes the free width, so the buttons sit at the right edge.
+    - The arena area takes the free width, so Clean and Remove sit at the right edge.
     - In a row an arena row is one line: the name, the ahead chip, and the PR pill.
   - Card: at 1200 px and below a grid card.
     - The icon, the name, and Remove sit on top on one centre line, then the arena rows, and Clean & Push bottom right.
@@ -209,7 +209,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - `sign-row`: label column of 120 px and a value column. On a phone the label takes a full row.
 - `sign-fields`: name and e-mail side by side, one column on a phone.
 - `card.fold`: a `details` card.
-  - The `summary` is the card head with a `show` or `hide` mark at the right, and the body opens below it.
+  - The `summary` is the card head with a `show` or `hide` mark at the right, and its body opens below.
   - Closed, the head has no bottom border.
 - `banner`: `err`, `warn`, `ok` variants with an icon and one sentence of action.
 - `load-bar`: a 2 px accent bar on the bottom edge of the top bar. It shows on the dashboard while the page follows a fetch, filled by the server counter, and the Reload glyph spins with it.
@@ -244,7 +244,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 ## Behavior and data
 
-- The repo registry and settings live on the server under `ARENA_DATA`. The page keeps no state beyond the open view.
+- The repo registry and settings live on the server under `ARENA_DATA`. The page keeps no state beyond its open view.
 - Pictures: the server keeps the GitHub picture of each author under `ARENA_DATA/avatars/`, one lookup per address.
   - A noreply address names the user, any other costs one `gh api` call.
   - A picture lives 30 days after its last use, a use renews it, and expired ones get pruned.
@@ -285,7 +285,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 ### Boards
 
-![Lay of the land: the three views and the moves between them](design/flow.png)
+![Lay of the land: three views and the moves between them](design/flow.png)
 
 ![Repo view: deep-dive wireframe and key actions](design/wireframe-repo.png)
 
@@ -319,12 +319,12 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - The engine gained `--arena NAME` for it and keeps the full flow.
   - The page never passes `-b arena/*`.
 - Accepted 2026-10-22: the sidebar grows to 320 px.
-  - The commit list sits below the repo facts and the arena rows.
+  - The commit list sits below the repo facts and arena rows.
     - The HEAD block goes.
     - The hash leads each commit row.
   - Below 900 px the sidebar stacks under the run card instead of hiding. The commit list then grows with the page: one scroll per screen.
 - Accepted 2026-10-22: a click on a sidebar arena row selects the arena branch the run pulls from.
-  - The Arena branch select follows the row and the row follows the select.
+  - The Arena branch select and the row follow each other.
   - The marked row never sets the target branch.
   - With one arena branch the row only shows which branch that is.
 - Accepted 2026-10-22: the options card loses its hint texts and the task note above it.
@@ -336,7 +336,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
     - The timeout is a slider with ten stops and a readout.
 - Accepted 2026-10-22: a managed clone holds nothing of its own.
   - The server resets it to origin before every run and drops local `arena/*` copies.
-  - The page loses the Reset button, the dirty chip, and On divergence.
+  - The page loses the Reset button, dirty chip, and On divergence.
   - `--on-divergence` stays a CLI flag.
 - Accepted 2026-10-22: the card and the sidebar show how far each arena branch is ahead of the default branch.
   - The clone's own drift stays out of sight.
@@ -347,7 +347,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - File contents stay out.
   - A path only old commits carried stays a typed chip.
 - Accepted 2026-10-23: the breakpoints move to the nuu widths 1200, 900, and 640 px.
-  - 1200 folds the options, 900 stacks the page, 640 is the phone.
+  - 1200 folds the options, 900 stacks the page, 640 is phone width.
   - Between 981 and 1200 px the options lose their two columns, and nothing clips.
 - Accepted 2026-10-23: an audit against this record found eight lines that did not hold.
   - The page moved to the record.
@@ -355,12 +355,12 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - Every banner leads with its glyph, and the type weights stay in the set.
 - Accepted 2026-10-23: the primary button takes `accent-deep`, 5.3:1 under white, and `accent-deep-hi` on hover. The `accent` token stays for fills and marks.
 - Accepted 2026-10-23: the options card puts the selects and Remove paths left, PR check timeout and the checkboxes right. One grid with column-locked rows: PR check timeout shares the Target branch row, the checks share the next row.
-- Accepted 2026-10-23: the page draws the checkboxes. `appearance: none` drops the browser box, so the boxes match the select and the fields in every browser.
+- Accepted 2026-10-23: the page draws its checkboxes. `appearance: none` drops the browser box, so the boxes match the select and fields in every browser.
 - Accepted 2026-10-22: the card Remove X moves from the action row to the top right corner.
   - At rest it is a bare glyph, so the primary button stands alone.
   - The red frame returns on hover, on press, and while armed.
 - Accepted 2026-10-23: a commit subject wraps to two lines, then an ellipsis. The row is a button, and a tap shows the whole subject on a phone without hover.
-- Accepted 2026-10-23: the log of the latest run stays open under the phase list.
+- Accepted 2026-10-23: the latest run's log stays open under the phase list.
   - Show log goes, and Copy log is a glyph button.
   - An empty log reads `No run yet.`
 - Accepted 2026-10-23: three icon size tokens at every width, 14, 16, and 18 px.
@@ -377,7 +377,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: one fetch of every origin at a time, with a ten second debounce that the Reload button skips. Fresh statuses swap into the cache after the fetch, and the dashboard reads `Loading repos…` until the first answer.
 - Accepted 2026-10-23: the PR pill counts checks by the engine rule, one entry per check name, a pass over a superseded attempt. The rule lives in the engine, and the server calls it.
 - Accepted 2026-10-23: the run card sits left and the options card right, the log card below both at full width.
-  - The main column pins to the window and the log fills the rest with a 160 px floor, so the page never scrolls.
+  - The main column pins to the window, and the log fills what remains above a 160 px floor, so the page itself never scrolls.
   - 1200 px stacks the two cards, options first.
 - Accepted 2026-10-23: Clean & Push and Cancel are one button with two states, in the options card head. The options card no longer folds, and its chevron is gone.
 - Accepted 2026-10-23: the primary button is flat. Its inset top highlight and drop shadow read as a bevel, so both are gone.
@@ -386,8 +386,8 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: the phase rows lose their hint texts. A row shows a count once the engine reports one: checks and how many still run, commits signed of the total, and tags moved.
 - Accepted 2026-10-23: the counts read `passed/total` for the checks, `collecting`, `signing X/Y`, and `signed X commits` for the rewrite, and `moving`, `pushing`, and `pushed X tags` for the push. The Publish row carries the name Push, and a run without tags leaves it empty.
 - Accepted 2026-10-23: the commit rows show the author's GitHub picture for every author. The server caches one picture per address for 30 days after its last use and prunes the rest.
-- Accepted 2026-10-23: the app icon and the brand mark are the Lucide `broom-sparkles` glyph in the accent. The regular pictures are the glyph alone, the maskable picture and the Apple touch icon get the dark ground.
-- Accepted 2026-10-23: the scroll-edge fade applies to the commit list and the log alone.
+- Accepted 2026-10-23: app icon and brand mark are the Lucide `broom-sparkles` glyph in the accent. Regular pictures are the glyph alone, the maskable picture and Apple touch icon get the dark ground.
+- Accepted 2026-10-23: the scroll-edge fade applies to the commit list and log alone.
 - Accepted 2026-10-23: human-facing text says push, not publish, and PR, not pull request. Identifiers, API fields, and the history above keep their words.
 - Accepted 2026-10-23: above 1200 px the dashboard shows one full-width row per repo on shared columns.
   - The arena area takes the free width, and Clean and Remove sit at the right edge. An arena row is one line there, and two branches stack.
@@ -406,12 +406,12 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-24: four values move to the 4 px scale after the nuu audit.
   - Fields pad 12 px instead of 10, and the pill gap is 8 px instead of 6.
   - The phone keeps the 16 px page padding instead of 14, and its title reads the 20 px ramp size instead of 19.
-  - The pill radius reads 1000 px, the same shape on the scale.
+  - The pill radius reads 1000 px, the same shape on this scale.
 - Accepted 2026-10-24: the PR pill and the sidebar dot paint running checks amber, the GitHub pending colour, instead of blue.
   - A PR without checks gets a grey dot.
   - The `info` token keeps the debug log rows.
 - Accepted 2026-10-24: a sidebar arena row takes two lines, as the cards do.
-  - The dot and the name first, then the ahead count and the PR meta under the name.
+  - Dot and name first, then the ahead count and PR meta under the name.
   - The tail used to wrap right aligned only when it did not fit.
 - Accepted 2026-10-24: list edits show before the reply, nuu rule 10.
   - The arena row leaves on Delete, the card leaves on Remove, and Add puts a dimmed pending card first.
@@ -430,7 +430,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - The run button leaves the options card head, and the Save, Re-check, Sign in, Configure, and key buttons leave their bodies.
   - Create key takes its natural width.
 - Accepted 2026-10-24: the hash picks the first frame.
-  - The boot sequence hides the views the hash does not name before it loads the environment and the repos.
+  - The boot sequence hides the views the hash does not name before it loads environment and repos.
   - A reload off the dashboard shows no dashboard interstitial.
 - Accepted 2026-10-24: Clean & Push rests when no arena branch is ahead on origin.
   - The dashboard button, run button, and phone bar grey out and name the reason.
@@ -448,19 +448,19 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - The status refresh repaints the open modal, so a running check settles in place.
 - Accepted 2026-10-24: the phase rows read the log as a forward-only timeline.
   - A line names the current phase or a later one.
-  - The next phase starts where the last one ends, so the rows add up to the wall clock.
+  - Each phase starts where the last one ends, so the rows add up to the wall clock.
   - The word tests stay, with `stale` in Prepare and the commit scan in Rewrite.
 - Accepted 2026-10-24: a reload of the repo list reads the pending cards after its wait. A clone refused during the reload has left the list by then, so the reload does not bring its card back.
 - Accepted 2026-10-24: the phase modals read the run from its log.
   - Prepare, PR checks, and Clean up list their stamped lines, each with the time to the next line.
   - Rewrite and sign fetches the commits after the rewrite.
-  - Push reads the old hash from the pull line, the new one from the pushed line, and the tags from the moved lines.
+  - Push reads the old hash from the pull line, the new one from the pushed line, and tags from moved lines.
   - Finish reads Clean up, as the row names the wrap-up steps.
 - Accepted 2026-10-24: the motion set runs on a vendored GSAP, nuu clause 8.
   - One helper fades an entering view, card, commit, or dialog in over 180 ms on one curve.
   - All but the view also rise 8 px.
   - A reduced-motion preference turns it off.
-  - The service worker caches the script with the shell.
+  - The service worker caches the script with its shell.
 - Accepted 2026-10-24: the nuu audit's off-scale values move to the 4 px scale, as the four values before them did.
   - The icon buttons and the path input pad 0, so no browser default stays.
   - Back pads 12 px, and the brand link 8 px.

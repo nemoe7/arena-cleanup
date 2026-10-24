@@ -59,7 +59,7 @@ def test_the_help_cards_fold(desktop: Walker) -> None:
   page.wait_for_selector("#card-identity")
   folds = dict(page.evaluate(PROBE, SECTIONS)["folds"])
   assert folds == {"About": False}
-  # the helper and the keys read in the GitHub card, no fold of their own
+  # helper and keys read in the GitHub card, no fold of their own
   assert desktop.count("#access-body .card") == 1
   assert "credential helper" in desktop.text("#access-body")
   assert "ssh keys" in desktop.text("#access-body")

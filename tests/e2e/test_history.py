@@ -31,7 +31,7 @@ def test_a_sub_view_is_one_entry_deep(desktop: Walker) -> None:
   assert length(desktop) == root + 1
   assert pushed(desktop)
 
-  # the browser Back lands on the dashboard, the root entry
+  # browser Back lands on the dashboard, the root entry
   desktop.page.go_back()
   desktop.page.wait_for_timeout(SETTLE_MS)
   assert desktop.visible("#view-dashboard")
@@ -66,12 +66,12 @@ def test_the_tab_title_names_the_page(desktop: Walker) -> None:
   desktop.click("#settings-btn", 800)
   assert desktop.page.title() == "arena-cleanup | Settings"
 
-  # the in-app Back returns to the repo, and the title follows
+  # in-app Back returns to the repo, and the title follows
   desktop.click("#settings-back", 800)
   assert desktop.visible("#view-repo")
   assert desktop.page.title() == f"arena-cleanup | {name}"
 
-  # the browser Back pops to the dashboard, the root entry
+  # browser Back pops to the dashboard, the root entry
   desktop.page.go_back()
   desktop.page.wait_for_timeout(SETTLE_MS)
   assert desktop.visible("#view-dashboard")

@@ -1,8 +1,8 @@
-"""The loading bar under the header follows the fetch counter.
+"""The header's loading bar follows the fetch counter.
 
-The server counts two steps per repo, the fetch and the status. The page
+The server counts two steps per repo: a fetch and a status. The page
 polls the counter while its fetch request is open, fills the bar, and spins
-the Reload glyph. The bar leaves once the request returns.
+the Reload glyph. The bar leaves once that request returns.
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ def test_the_bar_fills_from_the_counter_and_leaves_with_the_reply(
   )
   try:
     page.click("#repos-refresh")
-    # the fill animates to its width, so wait for the ink and not the attribute
+    # the fill animates to its width, so wait for ink and not the attribute
     page.wait_for_function(f"({BAR})().ratio > 0.29")
     bar = page.evaluate(BAR)
     assert bar["hidden"] is False

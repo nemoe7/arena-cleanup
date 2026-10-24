@@ -15,7 +15,7 @@ from scripts.walk import Walker
 
 pytestmark = pytest.mark.e2e
 
-# a run's lines in the engine's order. The stale branch at the start and the
+# a run's lines in engine order. A stale branch at the start and the
 # commit scan after the PR gate once moved the clock back.
 RUN = [
   ("INFO", "arena-cleanup 0.3.1 starting"),

@@ -4,7 +4,7 @@ Two parts carry a number: the UI in pyproject.toml and the engine in
 arena-cleanup.py. A part whose files changed must step once, and a part left
 alone must keep the base number. Any other file needs no bump.
 
-The version at the base tip counts, not the one at the merge base. Two open
+The base tip's version counts, not the merge base's. Two open
 branches can never claim the same number.
 """
 

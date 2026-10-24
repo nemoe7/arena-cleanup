@@ -1,4 +1,4 @@
-"""Log rows show the clock of the browser, not the clock of the server."""
+"""Log rows show the browser's clock, not the server's."""
 
 from __future__ import annotations
 

@@ -61,7 +61,7 @@ docker run --rm -p 127.0.0.1:8080:8080 -v arena-home:/home/arena \
   ghcr.io/nemoe7/arena-cleanup:latest
 ```
 
-The `arena-home` volume keeps the `gh` token, the git identity, the GPG key,
+The `arena-home` volume keeps the `gh` token, git identity, GPG key,
 the repo registry, and the clones. A rebuilt container keeps all of them.
 
 `docker compose logs -f` shows one stamped line per job, repo change, and

@@ -64,7 +64,7 @@ def test_the_hint_is_the_count_and_a_scroll_loads_the_older_page(
   assert desktop.text("#commits-hint") == f"{TOTAL:,}"
   assert page.evaluate(ROWS) == PAGE
   assert urls[-1].endswith(f"limit={PAGE}")
-  # scroll to the end: one request with the cursor, the older page appended below
+  # scroll to the end: one request with the cursor, older page appended below
   page.eval_on_selector("#commits", "e => { e.scrollTop = e.scrollHeight; }")
   page.wait_for_timeout(600)
   assert page.evaluate(ROWS) == 2 * PAGE
