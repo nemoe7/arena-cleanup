@@ -468,7 +468,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the phase rows read the log as a forward-only timeline.
   - A line names the current phase or a later one.
   - Each phase starts where the last one ends, so the rows add up to the wall clock.
-  - The word tests stay, with `stale` in Prepare and the commit scan in Rewrite.
+  - A phase test matches the start of an engine line, never a word inside a branch or repo name.
 - Accepted 2026-10-24: a reload of the repo list reads the pending cards after its wait. A clone refused during the reload has left the list by then, so the reload does not bring its card back.
 - Accepted 2026-10-24: the phase modals read the run from its log.
   - Prepare, PR checks, and Clean up list their stamped lines, each with the time to the next line.
@@ -506,3 +506,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the checks modal takes the house sizes after the nuu audit. A check row reads 44 px below 40em, and Open on GitHub is a 34 px button with 12 px sides.
   - The log pads 8 by 12 px, and the pane indents 24 px to line up with the row name.
 - Accepted 2026-10-24: the Commits list follows the selected arena branch on origin, its whole history with the commits ahead on top. A click on another arena row reloads it, and a repo with no arena branch lists the clone HEAD.
+- Accepted 2026-10-24: the phase rows start on the engine's own lines. A word test matched branch and repo names, so a name like arena-cleanup moved a run to Clean up and left the middle rows skipped.

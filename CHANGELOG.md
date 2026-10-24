@@ -16,6 +16,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The Commits list shows the selected arena branch from origin instead of
   the clone HEAD, and reloads when the selection changes.
 
+### Fixed
+
+- The phase rows start on the engine's own lines. A branch or repo name with
+  a phase word, such as cleanup, moved the run ahead and left PR checks,
+  Rewrite and sign, and Push skipped.
+
 ## [0.3.8] - 2026-10-24
 
 ### Fixed

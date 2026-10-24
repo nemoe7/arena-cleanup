@@ -2109,14 +2109,14 @@
     { id: "publish", name: "Push", sub: "" },
     { id: "sync", name: "Clean up", sub: "" },
   ];
+  // Each test is the start of an engine line, so a branch or repo name that
+  // contains a phase word cannot move the run. Lines before the first PR
+  // check line stay in Prepare, and an unknown line stays in its phase.
   const PHASE_TESTS = [
-    ["prepare", /^arena-cleanup \d|^claimed |^dry run:|stale/],
-    ["sync", /^done\b/],
-    ["pr", /(^|\s)pr\b|pull request|check|gate|status rollup/],
-    ["rewrite", /rewrit|claim|sign|filter-repo|remov|empty commit|--path|identity=|commit\(s\) as/],
-    ["publish", /push|tag|lease|force/],
-    ["sync", /return|delet|done|finished|cleanup/],
-    ["prepare", /fetch|branch|switch|checkout|scan|stale|pull|prune|starting/],
+    ["pr", /^(?:--skip-pr-check set|checking pr status for |found pr #|no open pr for |pr #\d+ |check "|would wait for \d+ still-running check|\d+ check\(s\) still running|still waiting: |all \d+ check\(s\) finished|timed out after .* waiting for pr #)/],
+    ["rewrite", /^(?:creating backup bundle|backup written to |would remove .*: \d+ file\(s\)|removing .* from every branch and tag|removed .*: \d+ file\(s\) gone|\d+ commit\(s\) only touched those paths|scanning \d+ commit\(s\) as |scanning\.\.\. |rewriting\.\.\. |nothing to rewrite|history rewritten: |history already clean|\d+ tag\(s\) (?:now point at|point into) |could not sign commit |restored remote )/],
+    ["publish", /^(?:would (?:force-)?push |(?:pushing \(with lease\)|force-pushing \(no lease\)) head -> |pushed \w+ to |a real run would (?:push anyway|stop here)|this push replaces origin\/|--force set, pushing anyway|confirmed, pushing anyway|cancelled before pushing|nothing to push: |origin\/\S+ already contains |declining to push|moved tag |updated \d+ tag\(s\) on origin|--no-tags set: |\d+ tag\(s\) not moved on origin|\d+ other branch\(es\) on origin still contain |clean one too with: )/],
+    ["sync", /^(?:done\b|staying on |returning to |would return to |resetting \S+ to origin\/|switching to \S+ first, so |(?:would delete|deleted|deleting) (?:local branch |origin\/)|deleting \S+ also closes pr #|local branch \S+ is still checked out|origin\/\S+ is already gone|cancelled: )/],
   ];
 
   function msgOf(text) {
@@ -2126,8 +2126,8 @@
 
   function phaseFor(text) {
     const msg = msgOf(text);
-    for (const [id, re] of PHASE_TESTS) if (re.test(msg)) return id;
-    return null;
+    const hit = PHASE_TESTS.find(([, re]) => re.test(msg));
+    return hit ? hit[0] : null;
   }
 
   // A run moves forward only: a line names the current phase or a later one.
