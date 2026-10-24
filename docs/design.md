@@ -185,6 +185,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Open PR on GitHub and Close sit at the right.
 - `phase-modal`: a 640 px `dialog` behind each run phase row, which is a button once the row has lines.
   - A step list with stamp, message, and duration, the commit list after a rewrite, or the push facts as a `kv` list.
+    - Prepare names three steps in place of its log: `Fetched`, `Located remote arena branch`, and `Pulled arena/<slug>`. Each takes the stamp and duration of the line that ends it, and the open step reads `Fetching…`.
   - The body scrolls past 60 vh.
 - `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout.
   - `check`: a label with a drawn checkbox.
@@ -479,3 +480,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the loading bar belongs to the dashboard. Other views hide it, the minute fetch included.
 - Accepted 2026-10-24: a dashboard row shows a clean in flight with a pill and a greyed button that names the reason. The server flags the repo on every list read.
 - Accepted 2026-10-24: the remote fact links a GitHub remote as the GitHub mark and `owner/repo` in a new tab. The mark is the one filled glyph, from Octicons.
+- Accepted 2026-10-24: the Prepare modal names three steps instead of its log lines. Later steps show only once the phase reaches them.

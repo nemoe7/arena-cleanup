@@ -2184,15 +2184,43 @@
   function secsText(secs) {
     return secs < 0.1 ? "<0.1s" : secs.toFixed(1) + "s";
   }
+  const stepRow = (level, stamp, msg, took) => el("li", { class: level },
+    el("span", { class: "t" }, clock(stamp)),
+    el("span", { class: "msg" }, msg),
+    el("span", { class: "d" }, secsText(took)));
   function phaseSteps(p) {
+    if (p.id === "prepare") return prepareSteps(p);
     return el("ol", { class: "step-list" }, ...p.rows.map((r, i) => {
       const next = p.rows[i + 1];
-      const took = (next ? next.t : p.end) - r.t;
-      return el("li", { class: r.level },
-        el("span", { class: "t" }, clock(r.stamp)),
-        el("span", { class: "msg" }, r.msg),
-        el("span", { class: "d" }, secsText(took)));
+      return stepRow(r.level, r.stamp, r.msg, (next ? next.t : p.end) - r.t);
     }));
+  }
+  // Prepare names three steps instead of its log. A step ends at the engine
+  // line that completes it, and the next one shows while the phase runs.
+  const PREPARE_STEPS = [
+    { doing: "Fetching…", done: "Fetched", end: /^fetched and pruned origin/ },
+    { doing: "Locating remote arena branch…", done: "Located remote arena branch",
+      end: /^(?:would )?switch(?:ing|ed)? to (arena\/\S+)|^current branch: (arena\/\S+)/ },
+    { doing: "Pulling {slug}…", done: "Pulled {slug}", end: /^pulled \(|^already up to date|skipping pull/ },
+  ];
+  function prepareSteps(p) {
+    const rows = [];
+    let start = p.start, i = 0, slug = "the arena branch";
+    const text = (s) => s.replace("{slug}", slug);
+    for (const r of p.rows) {
+      const step = PREPARE_STEPS[i];
+      const m = step && step.end.exec(r.msg.toLowerCase());
+      if (!m) continue;
+      slug = m[1] || m[2] || slug;
+      rows.push(stepRow("ok", r.stamp, text(step.done), r.t - start));
+      start = r.t;
+      i += 1;
+    }
+    const open = PREPARE_STEPS[i];
+    const last = p.rows[p.rows.length - 1];
+    if (open && last && p.state === "run") rows.push(stepRow("info", last.stamp, text(open.doing), Date.now() / 1000 - start));
+    else if (open && last && p.state === "fail") rows.push(stepRow("error", last.stamp, text(open.doing), p.end - start));
+    return el("ol", { class: "step-list" }, ...rows);
   }
   function webUrl(remote) {
     const m = /github\.com[:/]([^/]+)\/([^/\s]+?)(?:\.git)?$/.exec(remote || "");

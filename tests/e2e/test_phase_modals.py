@@ -1,9 +1,10 @@
 # nonemo: STE902
 """Each run phase row opens a modal with its detail.
 
-Prepare, PR checks, and Clean up list their steps with stamps and durations.
-Rewrite and sign lists the commits after the rewrite. Push shows the ref
-move, the lease, and the tags. The last row reads Clean up.
+Prepare names three steps, and PR checks and Clean up list their log lines
+with stamps and durations. Rewrite and sign lists the commits after the
+rewrite. Push shows the ref move, the lease, and the tags. The last row reads
+Clean up.
 """
 
 from __future__ import annotations
@@ -51,6 +52,7 @@ MODAL = """() => {
     link: !document.getElementById('phase-link').hidden };
 }"""
 PATTERN = "**/api/repos/*/jobs/latest"
+PREPARE_STEPS = ["Fetched", "Located remote arena branch", "Pulled arena/session-4"]
 
 
 def open_run(walker: Walker, lines: list[tuple[str, str]] | None) -> None:
@@ -130,12 +132,14 @@ def test_the_prepare_row_opens_its_steps_with_stamps_and_durations(
   modal = open_phase(walker, "prepare")
   assert modal["title"] == "Prepare"
   assert modal["sub"] == "4.0s"
-  assert [s[1] for s in modal["steps"]] == [text for _, text in RUN[:4]]
+  assert [s[1] for s in modal["steps"]] == PREPARE_STEPS, (
+    "three named steps, not the log"
+  )
   assert all(re.fullmatch(r"\d\d:\d\d:\d\d", s[0]) for s in modal["steps"]), (
     "a clock stamp per step"
   )
-  assert [s[2] for s in modal["steps"]] == ["1.0s"] * 4, (
-    "each step lasts until the next line"
+  assert [s[2] for s in modal["steps"]] == ["1.0s"] * 3, (
+    "each step lasts until the line that ends it"
   )
   close_phase(walker)
   walker.click("#back", 600)
