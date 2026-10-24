@@ -1,8 +1,10 @@
 """A PR checks pill opens a modal with the checks of that PR.
 
 The pill is a button when the PR has checks. The modal lists one row per
-check with its state glyph and carries the PR link. The repo view opens the
-same modal from the arena row. Escape closes it.
+check with its state glyph and carries the PR link. An Actions check row is a
+toggle for its job.
+
+A repo view opens this modal from its arena row. Escape closes it.
 """
 
 from __future__ import annotations
@@ -18,10 +20,15 @@ MODAL = """() => {
   const dlg = document.getElementById('checks-modal');
   return { open: dlg.open, title: document.getElementById('checks-title').textContent,
     rows: [...dlg.querySelectorAll('.check-list li')]
-      .map((li) => [li.className, li.querySelector('.name').textContent, !!li.querySelector('a')]),
+      .map((li) => [li.className, li.querySelector('.name').textContent,
+        li.querySelector('.check-row') ? 'job' : li.querySelector('a') ? 'link' : 'none']),
     pr: document.getElementById('checks-pr').getAttribute('href') };
 }"""
-ROWS = [["passed", "lint", True], ["failed", "test", True], ["running", "build", True]]
+ROWS = [
+  ["passed", "lint", "job"],
+  ["failed", "test", "job"],
+  ["running", "build", "job"],
+]
 
 
 @pytest.mark.parametrize("width", ["desktop", "phone"])
@@ -37,7 +44,7 @@ def test_the_pill_opens_the_checks_and_the_repo_view_shares_the_modal(
   page.wait_for_selector("#checks-modal[open]")
   modal = page.evaluate(MODAL)
   assert modal["title"] == "PR #88 checks"
-  assert modal["rows"] == ROWS, "one row per check, glyph by result, run link"
+  assert modal["rows"] == ROWS, "one row per check, glyph by result, a job toggle"
   assert modal["pr"].endswith("/pull/88")
   page.keyboard.press("Escape")
   page.wait_for_function("!document.getElementById('checks-modal').open")

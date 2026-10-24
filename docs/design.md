@@ -181,9 +181,17 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - `modal`: a `dialog` of 420 px at most, with a title, one paragraph, and Cancel then Delete at the right.
   - The backdrop dims the page.
   - Escape and Cancel close it without a request.
-- `checks-modal`: the same `dialog` for the checks of a PR.
-  - One row per check, 36 px tall, with a glyph in the state colour, the name, and Open run when GitHub names a run.
+- `checks-modal`: a 640 px `dialog` for the checks of a PR, whose body scrolls past 60 vh.
+  - One row per check, 36 px tall, with a glyph in the state colour and the name.
+  - A row that names an Actions job is a toggle with a chevron, and opens its `job-pane` under itself. Any other run keeps Open run.
   - Open PR on GitHub and Close sit at the right.
+- `job-pane`: the job behind a check row, indented under its glyph.
+  - A head line with the verdict and the summed step time, then Open on GitHub.
+  - `job-steps`: one 28 px row per step with the state glyph, the name, and the seconds, or `running`.
+  - `job-log`: a `pre` in the mono face, 26 vh tall at most, that opens on the last 400 lines. A scroll to its top prepends the page before, and the view keeps its place.
+    - Each line drops the date and the fraction of its stamp, so `11:27:19` leads it.
+    - A running job shows a note instead, since GitHub serves the log once the job ends.
+  - Steps refresh every 10 s while a job runs. Closing the modal or the row stops the timer.
 - `phase-modal`: a 640 px `dialog` behind each run phase row, which is a button once the row has lines.
   - A step list with stamp, message, and duration, the commit list after a rewrite, or the push facts as a `kv` list.
     - Prepare names three steps in place of its log: `Fetched`, `Located remote arena branch`, and `Pulled arena/<slug>`. Each takes the stamp and duration of the line that ends it, and the open step reads `Fetching…`.
@@ -451,6 +459,10 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - A PR without checks keeps its link pill.
   - The server lists each resolved check with its state and the first run URL of that name.
   - The status refresh repaints the open modal, so a running check settles in place.
+- Accepted 2026-10-24: a check row opens its Actions job in place, steps first, the paged log below, and the modal scrolls inside.
+  - The server reads the job and its log through `gh api`. It caches the log for 30 s and serves 400 lines per page, last page first.
+  - The log loads older pages on a scroll to the top. The steps refresh every 10 s while the job runs.
+  - A check from an app keeps Open run, since only Actions has a job to show.
 - Accepted 2026-10-24: the phase rows read the log as a forward-only timeline.
   - A line names the current phase or a later one.
   - Each phase starts where the last one ends, so the rows add up to the wall clock.

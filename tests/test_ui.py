@@ -1275,3 +1275,99 @@ def test_the_type_weights_stay_in_the_documented_set() -> None:
   used |= {int(w) for w in re.findall(r"font: (\d+) ", page)}
   assert used <= WEIGHTS, used - WEIGHTS
   assert "b, strong { font-weight: 600; }" in page
+
+
+def test_job_links_resolve_to_owner_repo_and_job() -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  link = (
+    "https://github.com/acme/shop-web/actions/runs/40058751699/job/120767437636?pr=2"
+  )
+  assert server.job_ref(link) == ("acme", "shop-web", "120767437636")
+  assert server.job_ref("https://github.com/acme/shop-web/actions/runs/1") is None
+  assert server.job_ref("https://ci.example.com/build/1") is None
+  assert server.job_ref("") is None
+
+
+def test_log_pages_end_at_the_cursor_and_open_on_the_last_page() -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  lines = [f"line {n}" for n in range(1000)]
+  last = server.log_page(lines, None, 400)
+  assert (last["start"], last["total"], len(last["lines"])) == (600, 1000, 400)
+  assert last["lines"][-1] == "line 999"
+  older = server.log_page(lines, last["start"], 400)
+  assert (older["start"], older["lines"][0], older["lines"][-1]) == (
+    200,
+    "line 200",
+    "line 599",
+  )
+  first = server.log_page(lines, older["start"], 400)
+  assert (first["start"], len(first["lines"])) == (0, 200)
+  assert server.log_page(lines, 0, 400)["lines"] == []
+
+
+def test_step_seconds_come_from_the_timestamps() -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  done = {"started_at": "2026-10-24T11:24:04Z", "completed_at": "2026-10-24T11:27:19Z"}
+  assert server.step_seconds(done) == 195
+  assert (
+    server.step_seconds({"started_at": "2026-10-24T11:24:04Z", "completed_at": None})
+    is None
+  )
+  assert server.step_seconds({}) is None
+
+
+def test_the_job_route_reads_steps_and_pages_the_log(
+  monkeypatch: pytest.MonkeyPatch,
+) -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  job = {
+    "name": "test",
+    "status": "completed",
+    "conclusion": "failure",
+    "html_url": "https://github.com/acme/shop-web/actions/runs/1/job/9",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-24T11:20:00Z",
+        "completed_at": "2026-10-24T11:20:04Z",
+      },
+      {
+        "name": "pytest",
+        "status": "completed",
+        "conclusion": "failure",
+        "started_at": "2026-10-24T11:20:04Z",
+        "completed_at": "2026-10-24T11:23:19Z",
+      },
+    ],
+  }
+  calls: list[str] = []
+
+  def fake_gh(argv: list[str], **_: Any) -> tuple[int, str, str]:
+    calls.append(argv[2])
+    if argv[2].endswith("/logs"):
+      return 0, "\n".join(f"row {n}" for n in range(1000)), ""
+    return 0, json.dumps(job), ""
+
+  monkeypatch.setattr(server, "run_cmd", fake_gh)
+  server.JOB_LOG_CACHE.clear()
+  ref = ("acme", "shop-web", "9")
+  report = server.job_report(ref)
+  assert report is not None
+  assert [s["name"] for s in report["steps"]] == ["Set up job", "pytest"]
+  assert [s["seconds"] for s in report["steps"]] == [4, 195]
+  assert report["conclusion"] == "failure"
+  lines = server.job_log_lines(ref)
+  assert lines is not None and len(lines) == 1000
+  server.job_log_lines(ref)
+  assert calls.count("repos/acme/shop-web/actions/jobs/9/logs") == 1
+  server.JOB_LOG_CACHE.clear()

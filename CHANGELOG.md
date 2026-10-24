@@ -11,6 +11,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.6] - 2026-10-24
 
+### Added
+
+- A check row in the PR checks modal opens its Actions job in place: steps with times, then the log in 400-line pages. Older pages load on a scroll to the top, and the steps refresh every 10 s while the job runs.
+- The demo serves a job with steps and a 1,000-line log for each Actions check, and an app check that keeps Open run.
+
 ### Changed
 
 - Commit dates and branch activity labels read in 24-hour time, `Oct 24, 18:11`. Log stamps were 24-hour already.

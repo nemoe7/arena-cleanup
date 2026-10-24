@@ -461,11 +461,37 @@
   .check-list li { display: flex; align-items: center; gap: 8px; min-height: 36px; border-top: 1px solid var(--line); }
   .check-list li:first-child { border-top: 0; }
   .check-list .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-2); }
-  .check-list .ico-svg { --ico: var(--ico-m); flex: none; }
-  .check-list .passed .ico-svg { color: var(--ok); }
-  .check-list .failed .ico-svg { color: var(--err); }
-  .check-list .running .ico-svg { color: var(--warn); }
-  .check-list .running .ico-svg, .pill.busy .ico-svg { animation: spin 1s linear infinite; }
+  .check-list li > .ico-svg { --ico: var(--ico-m); flex: none; }
+  .check-list .passed > .ico-svg { color: var(--ok); }
+  .check-list .failed > .ico-svg { color: var(--err); }
+  .check-list .running > .ico-svg { color: var(--warn); }
+  .check-list .running > .ico-svg, .pill.busy .ico-svg { animation: spin 1s linear infinite; }
+  .check-list { margin-bottom: 0; }
+  .check-list li { flex-wrap: wrap; }
+  .check-row { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0;
+    background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+  .check-row .chev { --ico: var(--ico-s); color: var(--dim); transition: transform var(--fast) var(--ease); }
+  .check-list .open .check-row .chev { transform: rotate(90deg); }
+  .check-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px; }
+  @media (hover: hover) { .check-row:hover .name { color: var(--text); } }
+  .job-pane { flex: 1 1 100%; min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 0 0 12px 28px; }
+  .job-head { display: flex; align-items: center; gap: 8px; font-size: var(--fs-1); color: var(--dim); }
+  .job-head .grow { flex: 1; }
+  .job-head .btn { height: 28px; font-size: var(--fs-1); padding: 0 10px; }
+  .job-steps { list-style: none; margin: 0; padding: 0; }
+  .job-steps li { display: flex; align-items: center; gap: 8px; min-height: 28px; font-size: var(--fs-2);
+    border-top: 1px solid var(--line); }
+  .job-steps li:first-child { border-top: 0; }
+  .job-steps .ico-svg { --ico: var(--ico-s); flex: none; color: var(--dim); }
+  .job-steps .success .ico-svg { color: var(--ok); }
+  .job-steps .failure .ico-svg, .job-steps .cancelled .ico-svg { color: var(--err); }
+  .job-steps .in_progress .ico-svg { color: var(--warn); animation: spin 1s linear infinite; }
+  .job-steps .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .job-steps .d { color: var(--dim); font: var(--fs-1) var(--mono); font-variant-numeric: tabular-nums; }
+  .job-log { margin: 0; min-width: 0; max-height: 26vh; overflow: auto; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 10px; font: var(--fs-1) / 1.5 var(--mono); color: var(--muted); white-space: pre; }
+  .job-log:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .job-note { font-size: var(--fs-1); color: var(--dim); }
 
   /* Pinned to the window like the sidebar: the log takes the height that is
      left, and it is the one thing that scrolls. */
@@ -1047,14 +1073,14 @@
     </div>
   </form>
 </dialog>
-<dialog class="modal" id="checks-modal" aria-labelledby="checks-title">
+<dialog class="modal wide" id="checks-modal" aria-labelledby="checks-title">
   <form method="dialog">
     <div class="modal-head">
       <h2 id="checks-title">PR checks</h2>
       <button class="icon-btn" type="submit" value="cancel" aria-label="Close" title="Close"><span class="ico-svg" data-icon="x" aria-hidden="true"></span></button>
     </div>
     <p id="checks-sub"></p>
-    <ul class="check-list" id="checks-list"></ul>
+    <div class="modal-body"><ul class="check-list" id="checks-list"></ul></div>
     <div class="modal-actions">
       <a class="btn ghost" id="checks-pr" target="_blank" rel="noopener">Open PR on GitHub</a>
       <button class="btn" type="submit" value="cancel" autofocus>Close</button>
@@ -1315,7 +1341,7 @@
     state.checksOpen = { repoId, branch };
     renderChecks();
     const dlg = $("checks-modal");
-    dlg.onclose = () => { state.checksOpen = null; };
+    dlg.onclose = () => { state.checksOpen = null; closeJob(); };
     openModal(dlg);
   }
   function renderChecks() {
@@ -1327,14 +1353,125 @@
     $("checks-sub").textContent = `${pr.title} on ${branch}: ${pr.passed}/${pr.total} passed`;
     $("checks-pr").href = pr.url;
     const glyph = { passed: "check", failed: "x", running: "loader-circle" };
-    $("checks-list").replaceChildren(...(pr.checks || []).map((c) =>
-      el("li", { class: c.result },
+    $("checks-list").replaceChildren(...(pr.checks || []).map((c) => {
+      const title = `${c.name}: ${c.state.toLowerCase()}`;
+      const open = Boolean(state.job && state.job.url === c.url);
+      // an Actions job opens in place; any other check keeps its outbound link
+      if (JOB_LINK.test(c.url || "")) {
+        return el("li", { class: c.result + (open ? " open" : "") },
+          icon(glyph[c.result] || "circle-small"),
+          el("button", { class: "check-row", type: "button", "aria-expanded": String(open), title,
+              onclick: () => toggleJob(repoId, c.url) },
+            el("span", { class: "name" }, c.name), icon("chevron-right", "ico-svg chev")),
+          open ? state.job.pane : null);
+      }
+      return el("li", { class: c.result },
         icon(glyph[c.result] || "circle-small"),
-        el("span", { class: "name", title: `${c.name}: ${c.state.toLowerCase()}` }, c.name),
+        el("span", { class: "name", title }, c.name),
         c.url
           ? el("a", { class: "btn ghost", href: c.url, target: "_blank", rel: "noopener",
               "aria-label": `Open the run of ${c.name}` }, "Open run")
-          : null)));
+          : null);
+    }));
+  }
+
+  // One Actions job open at a time: its steps, then the newest page of its log.
+  // Older pages load when the log is scrolled to its top. While the job runs,
+  // the steps refresh every JOB_POLL ms; GitHub serves the log once the job ends.
+  const JOB_LINK = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/actions\/runs\/\d+\/jobs?\/\d+/;
+  const LOG_STAMP = /^\d{4}-\d\d-\d\dT(\d\d:\d\d:\d\d)\.\d+Z /;
+  const JOB_POLL = 10000;
+  const STEP_GLYPH = { success: "check", failure: "x", cancelled: "x", skipped: "minus", in_progress: "loader-circle" };
+  const jobSecs = (secs) => secs == null ? "" : secs < 60 ? `${secs} s` : `${Math.floor(secs / 60)} min ${secs % 60} s`;
+  function closeJob() {
+    if (state.job) clearTimeout(state.job.timer);
+    state.job = null;
+  }
+  function toggleJob(repoId, url) {
+    const reopen = !(state.job && state.job.url === url);
+    closeJob();
+    if (reopen) {
+      const pane = el("div", { class: "job-pane" },
+        el("div", { class: "job-head" }, el("span", { class: "job-state" }, "loading"), el("span", { class: "grow" }),
+          el("a", { class: "btn ghost", href: url, target: "_blank", rel: "noopener" }, "Open on GitHub")),
+        el("ul", { class: "job-steps" }),
+        el("p", { class: "job-note" }));
+      state.job = { repoId, url, pane, job: null, log: null, timer: 0 };
+      loadJob();
+    }
+    renderChecks();
+  }
+  function jobPath(before, withLog) {
+    const q = new URLSearchParams({ url: state.job.url, log: withLog ? "1" : "0" });
+    if (before != null) q.set("before", String(before));
+    return `/api/repos/${state.job.repoId}/job?${q}`;
+  }
+  async function loadJob() {
+    const job = state.job;
+    let body;
+    try {
+      body = await api(jobPath(null, !job.log));
+    } catch (err) {
+      if (state.job === job) job.pane.querySelector(".job-note").textContent = err.message;
+      return;
+    }
+    if (state.job !== job) return;
+    const first = !job.job;
+    job.job = body.job;
+    if (body.log) job.log = body.log;
+    renderJob();
+    if (first) job.pane.closest("li").scrollIntoView({ block: "nearest" });
+    if (job.job && job.job.status !== "completed") job.timer = setTimeout(loadJob, JOB_POLL);
+  }
+  async function loadOlderLog() {
+    const job = state.job;
+    const pre = job.pane.querySelector(".job-log");
+    if (!job.log || job.log.start === 0 || job.loading) return;
+    job.loading = true;
+    try {
+      const body = await api(jobPath(job.log.start, true));
+      if (state.job !== job || !body.log) return;
+      const before = pre.scrollHeight;
+      job.log = { ...body.log, lines: body.log.lines.concat(job.log.lines) };
+      pre.textContent = logText(job.log.lines);
+      pre.scrollTop = pre.scrollHeight - before;
+      job.pane.querySelector(".job-lines").textContent = logRange(job.log);
+    } finally {
+      job.loading = false;
+    }
+  }
+  const logText = (lines) => lines.map((line) => line.replace(LOG_STAMP, "$1 ")).join("\n");
+  const logRange = (log) => `lines ${log.start + 1} to ${log.total} of ${log.total}`;
+  function renderJob() {
+    const { pane, job, log } = state.job;
+    const note = pane.querySelector(".job-note");
+    if (!job) {
+      pane.querySelector(".job-state").textContent = "unavailable";
+      note.textContent = "GitHub did not answer for this job.";
+      return;
+    }
+    const verdict = job.status === "completed" ? job.conclusion || "completed" : job.status.replace("_", " ");
+    const total = job.steps.reduce((sum, s) => sum + (s.seconds || 0), 0);
+    pane.querySelector(".job-state").textContent = total ? `${verdict}, ${jobSecs(total)}` : verdict;
+    pane.querySelector(".job-steps").replaceChildren(...job.steps.map((s) => {
+      const tone = s.conclusion || s.status;
+      return el("li", { class: tone },
+        icon(STEP_GLYPH[tone] || "circle-small"),
+        el("span", { class: "name" }, s.name),
+        el("span", { class: "d" }, s.status === "in_progress" ? "running" : jobSecs(s.seconds)));
+    }));
+    if (!log) {
+      note.textContent = job.status === "completed" ? "No log for this job." : "The log arrives when the job ends.";
+      return;
+    }
+    if (!pane.querySelector(".job-log")) {
+      const pre = el("pre", { class: "job-log", tabindex: "0", "aria-label": "Job log" });
+      pre.addEventListener("scroll", () => { if (pre.scrollTop === 0) loadOlderLog(); });
+      note.replaceWith(pre, el("p", { class: "job-note job-lines" }));
+      pre.textContent = logText(log.lines);
+      pre.scrollTop = pre.scrollHeight;
+    }
+    pane.querySelector(".job-lines").textContent = logRange(log);
   }
 
   // Removing a card deletes its URL clone, so the first click only arms the

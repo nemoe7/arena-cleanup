@@ -73,7 +73,12 @@ REPOS = [
             {"name": "lint", **SUCCESS},
             {"name": "test", **SUCCESS},
             {"name": "build", **SUCCESS},
-            {"name": "e2e", **SUCCESS},
+            # an app check, not an Actions job: the modal keeps its outbound link
+            {
+              "name": "e2e",
+              **SUCCESS,
+              "detailsUrl": "https://ci.example.com/shop-web/e2e/142",
+            },
           ],
         },
       )
@@ -229,10 +234,59 @@ def prs() -> list:
 
 
 def with_url(pr: dict) -> dict:
-  runs = "https://github.com/demo/actions/runs/%%d"
-  checks = [{**c, "detailsUrl": runs %% (pr["number"] * 10 + i)} for i, c in enumerate(pr["statusCheckRollup"], 1)]
-  url = "https://github.com/demo/%%s/pull/%%d" %% (pr.get("repo", "demo"), pr["number"])
+  repo = pr.get("repo", "demo")
+  job = "https://github.com/demo/%%s/actions/runs/%%d/job/%%d"
+  checks = [{**c, "detailsUrl": c.get("detailsUrl") or job %% (repo, pr["number"], pr["number"] * 10 + i)}
+            for i, c in enumerate(pr["statusCheckRollup"], 1)]
+  url = "https://github.com/demo/%%s/pull/%%d" %% (repo, pr["number"])
   return {**pr, "url": url, "statusCheckRollup": checks}
+
+
+STEP_NAMES = ["Set up job", "Checkout", "Install uv", "Run uv run --no-sync pytest", "Post Checkout", "Complete job"]
+
+
+def job_for(job_id: int) -> dict:
+  """The Actions job behind a check: its steps follow the check's state, the pytest step carries it."""
+  check = None
+  for pr in prs():
+    for i, c in enumerate(pr["statusCheckRollup"], 1):
+      if pr["number"] * 10 + i == job_id:
+        check = c
+  if check is None:
+    return {}
+  state = (check.get("conclusion") or check.get("status") or "").lower()
+  running = state in ("in_progress", "pending", "queued", "")
+  steps = []
+  for n, name in enumerate(STEP_NAMES, 1):
+    if n < 4:
+      steps.append({"number": n, "name": name, "status": "completed", "conclusion": "success",
+                    "started_at": "2026-10-24T11:%%02d:00Z" %% (20 + n),
+                    "completed_at": "2026-10-24T11:%%02d:04Z" %% (20 + n)})
+    elif n == 4:
+      step = {"number": n, "name": name, "status": "in_progress" if running else "completed",
+              "conclusion": None if running else state, "started_at": "2026-10-24T11:24:04Z",
+              "completed_at": None if running else "2026-10-24T11:27:19Z"}
+      steps.append(step)
+    else:
+      steps.append({"number": n, "name": name, "status": "queued" if running else "completed",
+                    "conclusion": None if running else "success",
+                    "started_at": None if running else "2026-10-24T11:27:19Z",
+                    "completed_at": None if running else "2026-10-24T11:27:20Z"})
+  return {"id": job_id, "name": check.get("name", ""), "status": "in_progress" if running else "completed",
+          "conclusion": None if running else state,
+          "html_url": "https://github.com/demo/actions/runs/1/job/%%d" %% job_id, "steps": steps}
+
+
+def job_log(job_id: int) -> str:
+  """A 1,000 line job log with the pytest failure at the end, so the pane pages twice."""
+  lines = ["2026-10-24T11:24:04.0000000Z ##[group]Run uv run --no-sync pytest"]
+  for n in range(1, 998):
+    t = 24 * 60 + 4 + (n * 194) // 997
+    stamp = "2026-10-24T11:%%02d:%%02d.%%07dZ" %% (t // 60, t %% 60, n * 1000)
+    lines.append("%%s tests/e2e/test_%%03d.py::test_case PASSED" %% (stamp, n))
+  lines.append("2026-10-24T11:27:18.0000000Z FAILED tests/e2e/test_optimistic.py::test_card_leaves - AssertionError")
+  lines.append("2026-10-24T11:27:19.0000000Z ##[error]Process completed with exit code 1.")
+  return "\\n".join(lines) + "\\n"
 
 
 def flag(name: str) -> str:
@@ -278,6 +332,18 @@ if args[:2] == ["pr", "view"]:
       sys.exit(0)
   print("no PR found for %%d" %% number, file=sys.stderr)
   sys.exit(1)
+if args[0:1] == ["api"] and "/actions/jobs/" in args[1]:
+  need_auth()
+  tail = args[1].split("/actions/jobs/", 1)[1]
+  job_id = int(tail.split("/", 1)[0])
+  if tail.endswith("/logs"):
+    if job_for(job_id).get("status") != "completed":
+      print("gh: Not Found (HTTP 404)", file=sys.stderr)
+      sys.exit(1)
+    sys.stdout.write(job_log(job_id))
+  else:
+    print(json.dumps(job_for(job_id)))
+  sys.exit(0)
 if args[:2] == ["api", "user/gpg_keys"]:
   need_auth()
   try:

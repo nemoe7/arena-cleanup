@@ -33,6 +33,7 @@ import uuid
 from collections import deque
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from types import ModuleType
@@ -509,6 +510,88 @@ def check_rows(summary: Any, rollup: list[dict[str, Any]]) -> list[dict[str, Any
     }
     for run in summary.runs
   ]
+
+
+JOB_URL = re.compile(
+  r"^https://github\.com/([\w.-]+)/([\w.-]+)/actions/runs/\d+/jobs?/(\d+)(?:[/?#].*)?$"
+)
+JOB_LOG_TTL = 30.0  # seconds a job log lives before the server asks gh again
+JOB_LOG_PAGE = 400
+JOB_LOG_CACHE: dict[str, tuple[float, list[str]]] = {}
+JOB_LOG_LOCK = threading.Lock()
+
+
+def job_ref(url: str) -> tuple[str, str, str] | None:
+  """`(owner, repo, job id)` from an Actions job link, None for any other link."""
+  match = JOB_URL.match(url or "")
+  return (match.group(1), match.group(2), match.group(3)) if match else None
+
+
+def job_report(ref: tuple[str, str, str]) -> dict[str, Any] | None:
+  """The job and its steps from one gh call, None when gh cannot answer."""
+  owner, repo, job_id = ref
+  rc, out, _ = run_cmd(
+    ["gh", "api", f"repos/{owner}/{repo}/actions/jobs/{job_id}"], timeout=25
+  )
+  if rc != 0 or not out:
+    return None
+  try:
+    job = json.loads(out)
+  except json.JSONDecodeError:
+    return None
+  if not isinstance(job, dict):
+    return None
+  return {
+    "name": job.get("name", ""),
+    "status": job.get("status", ""),
+    "conclusion": job.get("conclusion") or "",
+    "url": job.get("html_url", ""),
+    "steps": [
+      {
+        "name": step.get("name", ""),
+        "status": step.get("status", ""),
+        "conclusion": step.get("conclusion") or "",
+        "seconds": step_seconds(step),
+      }
+      for step in job.get("steps") or []
+    ],
+  }
+
+
+def step_seconds(step: dict[str, Any]) -> int | None:
+  """Whole seconds between a step's start and end, None while either is missing."""
+  try:
+    started = datetime.fromisoformat(str(step.get("started_at")))
+    ended = datetime.fromisoformat(str(step.get("completed_at")))
+  except ValueError:
+    return None
+  return max(0, int((ended - started).total_seconds()))
+
+
+def job_log_lines(ref: tuple[str, str, str]) -> list[str] | None:
+  """The whole job log, read once per `JOB_LOG_TTL`, or None while GitHub has none."""
+  key = "/".join(ref)
+  with JOB_LOG_LOCK:
+    hit = JOB_LOG_CACHE.get(key)
+    if hit and time.time() - hit[0] < JOB_LOG_TTL:
+      return hit[1]
+  owner, repo, job_id = ref
+  rc, out, _ = run_cmd(
+    ["gh", "api", f"repos/{owner}/{repo}/actions/jobs/{job_id}/logs"], timeout=60
+  )
+  if rc != 0:
+    return None
+  lines = out.splitlines()
+  with JOB_LOG_LOCK:
+    JOB_LOG_CACHE[key] = (time.time(), lines)
+  return lines
+
+
+def log_page(lines: list[str], before: int | None, limit: int) -> dict[str, Any]:
+  """The `limit` lines that end before line index `before`, the last page by default."""
+  end = len(lines) if before is None else max(0, min(before, len(lines)))
+  start = max(0, end - limit)
+  return {"start": start, "total": len(lines), "lines": lines[start:end]}
 
 
 def default_branch(cwd: str) -> str:
@@ -1580,6 +1663,29 @@ class Handler(BaseHTTPRequestHandler):
           self._error("bad cursor", 400)
           return
         self._json(commits_report(repo, limit, self.reg.avatars, before))
+      elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "job":
+        self._repo(parts[2])
+        query = urllib.parse.parse_qs(
+          self.path.split("?", 1)[1] if "?" in self.path else ""
+        )
+        ref = job_ref(query.get("url", [""])[0])
+        if ref is None:
+          self._error("not an Actions job link", 400)
+          return
+        try:
+          limit = max(
+            1, min(JOB_LOG_PAGE, int(query.get("limit", [str(JOB_LOG_PAGE)])[0]))
+          )
+          before_text = query.get("before", [None])[0]
+          before = None if before_text is None else max(0, int(before_text))
+        except ValueError:
+          self._error("bad cursor", 400)
+          return
+        report: dict[str, Any] = {"job": job_report(ref), "log": None}
+        if query.get("log", ["0"])[0] == "1":
+          lines = job_log_lines(ref)
+          report["log"] = None if lines is None else log_page(lines, before, limit)
+        self._json(report)
       elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "tree":
         repo = self._repo(parts[2])
         query = urllib.parse.parse_qs(
