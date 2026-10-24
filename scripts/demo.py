@@ -229,7 +229,10 @@ def prs() -> list:
 
 
 def with_url(pr: dict) -> dict:
-  return {**pr, "url": "https://github.com/demo/%%s/pull/%%d" %% (pr.get("repo", "demo"), pr["number"])}
+  runs = "https://github.com/demo/actions/runs/%%d"
+  checks = [{**c, "detailsUrl": runs %% (pr["number"] * 10 + i)} for i, c in enumerate(pr["statusCheckRollup"], 1)]
+  url = "https://github.com/demo/%%s/pull/%%d" %% (pr.get("repo", "demo"), pr["number"])
+  return {**pr, "url": url, "statusCheckRollup": checks}
 
 
 def flag(name: str) -> str:

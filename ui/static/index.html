@@ -251,7 +251,7 @@
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     height: 34px; padding: 0 12px; border-radius: 8px; cursor: pointer;
     border: 1px solid var(--line-2); background: var(--surface-2); color: var(--text);
-    font-weight: 560; font-size: var(--fs-2); white-space: nowrap;
+    font-weight: 560; font-size: var(--fs-2); white-space: nowrap; text-decoration: none;
     transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
   }
   @media (hover: hover) { .btn:hover { background: var(--surface-3); border-color: var(--line-hover); } }
@@ -439,6 +439,9 @@
   .arena-item .row-btn { flex: 1 1 auto; min-width: 0; }
   .arena-del { flex: none; align-self: center; color: var(--dim); background: none; border-color: transparent; }
   .arena-del:focus-visible { color: var(--err-text); background: var(--err-tint); border-color: var(--err-line); }
+  .arena-checks { flex: none; align-self: center; color: var(--dim); background: none; border-color: transparent; }
+  .arena-checks:focus-visible { color: var(--text); background: var(--surface-2); border-color: var(--line-2); }
+  @media (hover: hover) { .arena-checks:hover { color: var(--text); background: var(--surface-2); border-color: var(--line-2); } }
   @media (hover: hover) { .arena-del:hover { color: var(--err-text); background: var(--err-tint); border-color: var(--err-line); } }
 
   .modal { border: 1px solid var(--line-2); border-radius: 12px; background: var(--surface); color: var(--text);
@@ -449,6 +452,17 @@
   .modal p { margin: 0 0 16px; color: var(--muted); font-size: var(--fs-2); line-height: 1.5; }
   .modal code { font-family: var(--mono); color: var(--text); }
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  button.pill { font: inherit; cursor: pointer; appearance: none; }
+  @media (hover: hover) { button.pill:hover { border-color: var(--text-dim); } }
+  .check-list { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; }
+  .check-list li { display: flex; align-items: center; gap: 8px; min-height: 36px; border-top: 1px solid var(--line); }
+  .check-list li:first-child { border-top: 0; }
+  .check-list .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-2); }
+  .check-list .ico-svg { --ico: var(--ico-m); flex: none; }
+  .check-list .passed .ico-svg { color: var(--ok); }
+  .check-list .failed .ico-svg { color: var(--err); }
+  .check-list .running .ico-svg { color: var(--warn); }
+  .check-list .running .ico-svg { animation: spin 1s linear infinite; }
 
   /* Pinned to the window like the sidebar: the log takes the height that is
      left, and it is the one thing that scrolls. */
@@ -1000,6 +1014,20 @@
     </div>
   </form>
 </dialog>
+<dialog class="modal" id="checks-modal" aria-labelledby="checks-title">
+  <form method="dialog">
+    <div class="modal-head">
+      <h2 id="checks-title">PR checks</h2>
+      <button class="icon-btn" type="submit" value="cancel" aria-label="Close" title="Close"><span class="ico-svg" data-icon="x" aria-hidden="true"></span></button>
+    </div>
+    <p id="checks-sub"></p>
+    <ul class="check-list" id="checks-list"></ul>
+    <div class="modal-actions">
+      <a class="btn ghost" id="checks-pr" target="_blank" rel="noopener">Open PR on GitHub</a>
+      <button class="btn" type="submit" value="cancel" autofocus>Close</button>
+    </div>
+  </form>
+</dialog>
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
@@ -1183,7 +1211,7 @@
     return el("span", { class: cls, title }, icon("arrow-up"), el("span", { class: "n" }, String(count)));
   }
 
-  function checksPill(pr, checked, reason) {
+  function checksPill(pr, checked, reason, open) {
     if (!pr && checked === false) {
       return el("span", {
         class: "pill warn",
@@ -1194,9 +1222,44 @@
     // GitHub paints a pending check amber, so a running PR shares the warn pill
     const cls = pr.state === "passing" ? "ok" : pr.state === "failing" ? "err" : pr.state === "running" ? "warn" : "mono";
     if (pr.state === "none") return el("span", { class: "pill mono" }, `PR #${pr.number}, no checks`);
-    return el("span", { class: "pill " + cls, title: pr.title },
+    const tag = open ? "button" : "span";
+    return el(tag, { class: "pill " + cls, title: open ? `Show the checks of PR #${pr.number}` : pr.title,
+      type: open ? "button" : false, onclick: open ? (e) => { e.stopPropagation(); open(); } : false },
       `PR #${pr.number}`,
       `, ${pr.passed}/${pr.total}`);
+  }
+
+  // ----------------------------------------------------------- checks modal
+  // The pill opens the list of the PR's checks. The status refresh repaints
+  // the open modal, so a running check turns green or red in place.
+  function statusFor(repoId) {
+    if (state.repo?.id === repoId) return state.repo.status || {};
+    return (state.repos.find((r) => r.id === repoId) || {}).status || {};
+  }
+  function openChecks(repoId, branch) {
+    state.checksOpen = { repoId, branch };
+    renderChecks();
+    const dlg = $("checks-modal");
+    dlg.onclose = () => { state.checksOpen = null; };
+    dlg.showModal();
+  }
+  function renderChecks() {
+    if (!state.checksOpen) return;
+    const { repoId, branch } = state.checksOpen;
+    const pr = ((statusFor(repoId).pr || {})[branch]) || null;
+    if (!pr) { $("checks-modal").close(); return; }
+    $("checks-title").textContent = `PR #${pr.number} checks`;
+    $("checks-sub").textContent = `${pr.title} on ${branch}: ${pr.passed}/${pr.total} passed`;
+    $("checks-pr").href = pr.url;
+    const glyph = { passed: "check", failed: "x", running: "loader-circle" };
+    $("checks-list").replaceChildren(...(pr.checks || []).map((c) =>
+      el("li", { class: c.result },
+        icon(glyph[c.result] || "circle-small"),
+        el("span", { class: "name", title: `${c.name}: ${c.state.toLowerCase()}` }, c.name),
+        c.url
+          ? el("a", { class: "btn ghost", href: c.url, target: "_blank", rel: "noopener",
+              "aria-label": `Open the run of ${c.name}` }, "Open run")
+          : null)));
   }
 
   // Removing a card deletes its URL clone, so the first click only arms the
@@ -1268,13 +1331,15 @@
             el("span", { class: "bname", title: name }, name),
             el("div", { class: "arena-tail" },
               aheadPill((s.ahead || {})[name], s.default),
-              pr && pr.url
-                ? el("a", { class: "prlink", href: pr.url, target: "_blank", rel: "noopener",
-                    title: `Open PR ${pr.number ? "#" + pr.number : ""} on GitHub`,
-                    "aria-label": `Open PR ${pr.number ? "#" + pr.number : ""} on GitHub`,
-                    onclick: (e) => e.stopPropagation() },
-                    checksPill(pr, s.pr_checked, s.pr_reason))
-                : checksPill(pr, s.pr_checked, s.pr_reason))));
+              pr && pr.total
+                ? checksPill(pr, s.pr_checked, s.pr_reason, () => openChecks(repo.id, name))
+                : pr && pr.url
+                  ? el("a", { class: "prlink", href: pr.url, target: "_blank", rel: "noopener",
+                      title: `Open PR ${pr.number ? "#" + pr.number : ""} on GitHub`,
+                      "aria-label": `Open PR ${pr.number ? "#" + pr.number : ""} on GitHub`,
+                      onclick: (e) => e.stopPropagation() },
+                      checksPill(pr, s.pr_checked, s.pr_reason))
+                  : checksPill(pr, s.pr_checked, s.pr_reason))));
         }
       }
     }
@@ -1320,6 +1385,7 @@
 
   function renderGrid() {
     $("repo-grid").replaceChildren(...sortedRepos().map(repoCard));
+    renderChecks();
   }
 
   // the grid and its empty state together, for a load and for a list edited before the reply
@@ -1543,6 +1609,11 @@
              el("span", { class: "tail" },
                aheadPill((s.ahead || {})[b], s.default, "meta ahead"),
                el("span", { class: "meta" }, metaFor((s.pr || {})[b], s.pr_checked)))),
+           ((s.pr || {})[b] || {}).total
+             ? el("button", { type: "button", class: "icon-btn arena-checks", "aria-label": `Show the checks of ${b}`,
+                 title: "Show the PR checks", onclick: () => openChecks(state.repo.id, b) },
+                 icon("check"))
+             : null,
            el("button", { type: "button", class: "icon-btn arena-del", "aria-label": `Delete ${b}`,
              title: "Delete this arena branch on origin", onclick: () => confirmDelete(b) },
              icon("trash-2"))))

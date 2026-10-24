@@ -469,7 +469,8 @@ def pr_checks(branch: str, cwd: str) -> dict[str, Any] | None:
   pr = prs[0]
   # the engine's rule: one entry per check name, a pass wins over a
   # superseded failed or cancelled attempt. So the pill agrees with the run.
-  summary = engine.collapse_rollup(pr.get("statusCheckRollup") or [])
+  rollup = pr.get("statusCheckRollup") or []
+  summary = engine.collapse_rollup(rollup)
   passed = sum(1 for run in summary.runs if run.passed)
   failed = len(summary.failed)
   running = len(summary.running)
@@ -481,10 +482,28 @@ def pr_checks(branch: str, cwd: str) -> dict[str, Any] | None:
     "passed": passed,
     "failed": failed,
     "running": running,
+    "checks": check_rows(summary, rollup),
     "state": "failing"
     if failed
     else ("running" if running else ("passing" if summary.runs else "none")),
   }
+
+
+def check_rows(summary: Any, rollup: list[dict[str, Any]]) -> list[dict[str, Any]]:
+  """One row per resolved check, with the run link of its first rollup entry."""
+  urls: dict[str, str] = {}
+  for item in rollup:
+    name = item.get("name") or item.get("context") or "(unnamed check)"
+    urls.setdefault(name, item.get("detailsUrl") or item.get("targetUrl") or "")
+  return [
+    {
+      "name": run.name,
+      "state": run.state,
+      "result": "passed" if run.passed else ("failed" if run.failed else "running"),
+      "url": urls.get(run.name, ""),
+    }
+    for run in summary.runs
+  ]
 
 
 def default_branch(cwd: str) -> str:

@@ -14,6 +14,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A loading bar under the header follows the repo fetch: the server counts
   two steps per repo, the fetch and the status, and `GET /api/progress`
   reports them. The Reload glyph spins while the page follows a fetch.
+- A PR checks pill opens a modal with the checks of that PR: one row per
+  check with its state, a run link when GitHub names one, and the PR link.
+  The sidebar arena rows carry a check button for the same modal, and
+  `pr_checks` adds the `checks` list next to the counts.
 
 ### Changed
 

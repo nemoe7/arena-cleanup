@@ -1,0 +1,59 @@
+"""A PR checks pill opens a modal with the checks of that PR.
+
+The pill is a button when the PR has checks. The modal lists one row per
+check with its state glyph and carries the PR link. The repo view opens the
+same modal from the arena row. Escape closes it.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from scripts.walk import Walker
+
+pytestmark = pytest.mark.e2e
+
+CARD = ".repo-card:has-text('billing-api')"
+MODAL = """() => {
+  const dlg = document.getElementById('checks-modal');
+  return { open: dlg.open, title: document.getElementById('checks-title').textContent,
+    rows: [...dlg.querySelectorAll('.check-list li')]
+      .map((li) => [li.className, li.querySelector('.name').textContent, !!li.querySelector('a')]),
+    pr: document.getElementById('checks-pr').getAttribute('href') };
+}"""
+ROWS = [["passed", "lint", True], ["failed", "test", True], ["running", "build", True]]
+
+
+@pytest.mark.parametrize("width", ["desktop", "phone"])
+def test_the_pill_opens_the_checks_and_the_repo_view_shares_the_modal(
+  request: pytest.FixtureRequest, width: str
+) -> None:
+  walker: Walker = request.getfixturevalue(width)
+  page = walker.page
+  walker.goto(1200)
+  page.wait_for_selector(f"{CARD} button.pill")
+  assert page.evaluate(MODAL)["open"] is False
+  page.click(f"{CARD} button.pill")
+  page.wait_for_selector("#checks-modal[open]")
+  modal = page.evaluate(MODAL)
+  assert modal["title"] == "PR #88 checks"
+  assert modal["rows"] == ROWS, "one row per check, glyph by result, run link"
+  assert modal["pr"].endswith("/pull/88")
+  page.keyboard.press("Escape")
+  page.wait_for_function("!document.getElementById('checks-modal').open")
+  walker.click(f"{CARD} .repo-name", 800)
+  page.wait_for_selector(".arena-checks")
+  page.click(".arena-checks")
+  page.wait_for_selector("#checks-modal[open]")
+  assert page.evaluate(MODAL)["rows"] == ROWS
+  page.keyboard.press("Escape")
+  page.wait_for_function("!document.getElementById('checks-modal').open")
+  walker.click("#back", 600)
+
+
+def test_a_row_without_a_pr_keeps_its_plain_pill(desktop: Walker) -> None:
+  desktop.goto(1200)
+  row = ".repo-card:has-text('data-pipeline') .arena-row:has-text('session-6')"
+  desktop.page.wait_for_selector(row)
+  assert desktop.count(f"{row} span.pill:not(.ahead)") == 1
+  assert desktop.count(f"{row} button.pill, {row} .prlink") == 0

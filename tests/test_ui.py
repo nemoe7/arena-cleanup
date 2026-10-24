@@ -424,6 +424,40 @@ def test_the_fetch_counter_climbs_while_the_fetch_runs(
   assert server.PROGRESS.read() == {"active": False, "done": 6, "total": 6}
 
 
+def test_the_pill_carries_each_check_with_its_run_link(
+  monkeypatch: pytest.MonkeyPatch,
+) -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  rollup = [
+    {**ROLLUPS["superseded-failing"][0], "detailsUrl": "https://ci/build/1"},
+    {**ROLLUPS["superseded-failing"][1], "detailsUrl": "https://ci/build/2"},
+    {**ROLLUPS["superseded-failing"][2], "detailsUrl": "https://ci/test/1"},
+    {"name": "deploy", "status": "IN_PROGRESS", "conclusion": ""},
+  ]
+
+  def fake_gh(argv: list[str], **_: Any) -> tuple[int, str, str]:
+    pr = {"number": 7, "title": "t", "url": "u", "statusCheckRollup": rollup}
+    return 0, json.dumps([pr]), ""
+
+  monkeypatch.setattr(server, "run_cmd", fake_gh)
+  monkeypatch.setattr(server.shutil, "which", lambda name: "/usr/bin/gh")
+  pr = server.pr_checks("arena/x", str(ROOT))
+  assert pr is not None
+  assert [(c["name"], c["result"]) for c in pr["checks"]] == [
+    ("build", "passed"),
+    ("test", "failed"),
+    ("deploy", "running"),
+  ], "one row per name, the pass wins over the cancelled attempt"
+  assert [c["url"] for c in pr["checks"]] == [
+    "https://ci/build/1",
+    "https://ci/test/1",
+    "",
+  ]
+  assert pr["total"] == len(pr["checks"])
+
+
 def test_one_fetch_runs_at_a_time_and_the_rest_wait_for_it(
   monkeypatch: pytest.MonkeyPatch,
 ) -> None:
