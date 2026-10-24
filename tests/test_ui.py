@@ -270,6 +270,8 @@ def test_env_and_page(ui: UI) -> None:
   assert set(widths) == set(BREAKPOINTS), "three named widths, em only"
   assert len(widths) == 4, "1200 twice: the phone-first block and the rest"
   assert not re.search(r"@media \([^)]*width: \d+px", page)
+  for gone in ("999px", "--pad: 14px", "font-size: 19px"):
+    assert gone not in page, f"{gone} sits off the 4 px scale"
   assert "font-display: swap" not in page
   assert "Fallback" in page
   assert 'id="view-settings"' in page

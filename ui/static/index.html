@@ -102,7 +102,7 @@
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: #2b313a; border-radius: 999px;
+    background: #2b313a; border-radius: 1000px;
     border: 2px solid transparent; background-clip: padding-box;
   }
   ::-webkit-scrollbar-thumb:hover { background: #3c4450; background-clip: padding-box; }
@@ -269,7 +269,7 @@
   .field-error { margin: 8px 0 0; color: var(--err); font-size: var(--fs-1); }
   .field {
     width: 100%; height: 34px; background: var(--surface-2); border: 1px solid var(--line-2);
-    border-radius: 8px; padding: 0 10px; color: var(--text); font-size: var(--fs-2); min-width: 0;
+    border-radius: 8px; padding: 0 12px; color: var(--text); font-size: var(--fs-2); min-width: 0;
   }
   .field:focus { border-color: #3d4655; box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
   /* the ring has to survive the rule above: keyboard focus gets a solid one */
@@ -310,8 +310,8 @@
   .repo-meta .pill { max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
   .pill {
     --ico: var(--ico-s);
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: var(--fs-1); font-weight: 520; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: var(--fs-1); font-weight: 520; border-radius: 1000px;
     padding: 4px 8px; border: 1px solid var(--line-2); background: var(--surface-2); color: var(--muted);
     white-space: nowrap; min-width: 0; max-width: 100%;
   }
@@ -331,7 +331,7 @@
   .arena-tail { display: flex; align-items: center; gap: 8px; min-width: 0; }
   /* the checks pill is the link: one control, no orphan "Pull request" label */
   .arena-row .prlink { flex: none; display: inline-flex; align-items: center;
-    text-decoration: none; border-radius: 999px; min-height: 24px; }
+    text-decoration: none; border-radius: 1000px; min-height: 24px; }
   .arena-row .prlink:hover .pill { border-color: var(--line-2); }
   .arena-tail > .pill { flex: none; }
   .row-btn.select { flex-wrap: wrap; row-gap: 2px; }
@@ -519,7 +519,7 @@
   .logwrap { position: relative; border-top: 1px solid var(--line); display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
   .logwrap .log { flex: 1 1 auto; padding: 8px 0 12px; }
   .logwrap .log:empty::before { content: "No run yet."; display: block; padding: 0 16px; color: var(--dim); font-size: var(--fs-1); }
-  .status { display: inline-flex; align-items: center; gap: 8px; font: 520 var(--fs-1)/1 var(--mono); color: var(--muted); border: 1px solid var(--line-2); border-radius: 999px; padding: 4px 8px; background: var(--surface-2); }
+  .status { display: inline-flex; align-items: center; gap: 8px; font: 520 var(--fs-1)/1 var(--mono); color: var(--muted); border: 1px solid var(--line-2); border-radius: 1000px; padding: 4px 8px; background: var(--surface-2); }
   .status .led { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
   .status.running .led { background: var(--accent-hi); animation: pulse 1.4s ease-in-out infinite; }
   .status.ok .led { background: var(--ok); }
@@ -560,13 +560,13 @@
   }
   .commit .sig { --ico: var(--ico-s); color: var(--ok); font-size: var(--fs-1); }
   .commit .sig.none { color: var(--dim); }
-  .commit .avatar { width: 20px; height: 20px; border-radius: 999px; background: var(--surface-2); flex: none; }
+  .commit .avatar { width: 20px; height: 20px; border-radius: 1000px; background: var(--surface-2); flex: none; }
   .commit .avatar.none { --ico: var(--ico-s); display: inline-flex; align-items: center; justify-content: center; color: var(--dim); }
 
   .empty-log { display: grid; place-items: center; gap: 8px; height: 100%; min-height: 190px; color: var(--dim); text-align: center; padding: 20px; }
   .empty-log p { margin: 0; max-width: 380px; font-size: var(--fs-2); line-height: 1.6; }
   .empty-log code { font-family: var(--mono); color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-size: var(--fs-1); }
-  .jump { position: absolute; right: 16px; bottom: 16px; border: 1px solid var(--line-2); background: var(--surface-3); border-radius: 999px; padding: 4px 12px; font-size: var(--fs-1); cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.55); display: none; }
+  .jump { position: absolute; right: 16px; bottom: 16px; border: 1px solid var(--line-2); background: var(--surface-3); border-radius: 1000px; padding: 4px 12px; font-size: var(--fs-1); cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.55); display: none; }
   .jump.show { display: block; }
 
   /* --------------------------------------------------------------- signing */
@@ -586,7 +586,7 @@
   .chip-edit input { flex: 1; min-width: 140px; height: 24px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: var(--fs-2); padding: 0 4px; }
   .chip-edit input:focus { outline: none; }
   .chip-edit .pill { padding-right: 4px; }
-  .chip-edit .pill button { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: transparent; color: var(--dim); cursor: pointer; padding: 0; }
+  .chip-edit .pill button { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border: 0; border-radius: 1000px; background: transparent; color: var(--dim); cursor: pointer; padding: 0; }
   .chip-edit .pill button:hover { color: var(--text); background: var(--surface-3); }
   .chip-edit .pill button svg { width: var(--ico-s); height: var(--ico-s); }
   .claim-label { font-size: var(--fs-1); color: var(--muted); margin-top: 2px; }
@@ -681,7 +681,6 @@
     .grid { grid-template-columns: 1fr; }
   }
   @media (max-width: 40em) {
-    :root { --pad: 14px; }
     /* one scale on a phone: 15 body, 13 controls, 12 metadata. Before this the
        page mixed 11.5, 12, 12.5, 13, and 14 in the same view */
     body { font-size: 15px; }
@@ -701,7 +700,6 @@
     #ver { display: none; }
     .env-dots span span, .env-dots .lbl { display: none; }
     .env-dots { gap: 8px; }
-    .hero h1 { font-size: 19px; }
     /* stacked, the bar is not a frame any more: the field and the button
        stand on their own, so there is no box inside a box */
     .addbar { flex-direction: column; align-items: stretch; gap: 10px; padding: 0; border: 0; background: none; }
@@ -769,7 +767,6 @@
     .opt.row > label, .phase-name, .check { font-size: 13px; }
     .status, #statustext, .phase-ico, .commit .sig, .commit .sha { font-size: 12px; }
     .brand .name, .repo-card .btn, .card-actions .btn, .run-foot .btn { font-size: 14px; }
-    .wrap h1, .hero h1, .wrap h1.page-title { font-size: 19px; }
   }
 </style>
 </head>

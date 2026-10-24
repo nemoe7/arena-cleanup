@@ -66,13 +66,13 @@ DESKTOP_RAMP = [
   ("--fs-4", "16 px", "view title"),
   ("--fs-5", "20 px", "page title"),
 ]
-PHONE_RAMP = "12, 13, 14, 15 body, 16 fields, 19 title at 640 px and below"
+PHONE_RAMP = "12, 13, 14, 15 body, 16 fields, 20 title at 640 px and below"
 SPACING = [2, 4, 6, 8, 10, 12, 16, 20, 24, 32]
 RADII = [
   ("12 px", "cards"),
   ("8 px", "buttons, fields, banners"),
   ("6 px", "chips"),
-  ("999 px", "pills"),
+  ("1000 px", "pills"),
 ]
 PHASE_ICON = {
   "idle": "circle-small",

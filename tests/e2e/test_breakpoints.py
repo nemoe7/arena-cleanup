@@ -63,3 +63,4 @@ def test_each_named_width_carries_one_change(
     assert (above["body"], at["body"]) == ("14px", "15px")
     assert above["browse"] < 44 <= at["browse"]
     assert above["detailColumns"] == at["detailColumns"] == 1
+    assert above["pad"] == at["pad"] == "16px", "the phone keeps the 16 px padding"

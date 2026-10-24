@@ -46,7 +46,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Inter (variable) for text, Monaspace Neon (variable) for paths, hashes, commands, and the log. Both ship as Latin subset woff2 files under `ui/static/fonts/`.
 - The head preloads both files at its top and paints them with `font-display: block`. A reload never flashes a fallback face. Each pairs with a metric-matched local fallback face, Arial for Inter and Courier New for Monaspace Neon. Line boxes hold if a file fails to load.
 - Desktop ramp: `--fs-1` 12 px for metadata and mono details, `--fs-2` 13 px for controls and labels. `--fs-3` 14 px for body, names, and buttons, `--fs-4` 16 px for a view title, `--fs-5` 20 px for the page title.
-- Phone ramp at 640 px and below: body 12 to 15 px, fields 16 px, and title 19 px. The 16 px fields keep iOS from zooming.
+- Phone ramp at 640 px and below: body 12 to 15 px, fields 16 px, and title 20 px. The 16 px fields keep iOS from zooming.
 - Weights: 400, 520 to 640 for labels and names, 600 for headings and bold runs.
 
 ### Icons
@@ -64,9 +64,9 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ### Layout
 
 - Spacing scale: 2, 4, 6, 8, 10, 12, 16, 20, 24, and 32 px, with 1 px for borders.
-- Page padding `--pad`: 20 px, 16 px at 1200 px and below, 14 px at 640 px and below.
+- Page padding `--pad`: 20 px, 16 px at 1200 px and below.
 - Breakpoints, the nuu trio in em, one change each: 75em, 56.25em, and 40em. That is 1200, 900, and 640 px at the 16 px browser default, and the em unit moves each switch with the reader's font size. 1200 px stacks the options card over the run card and folds the repo rows into cards. It puts the settings in one column and tightens the padding. 900 px stacks the sidebar below the cards and the repo cards into one column, and the page scrolls as one. 640 px switches to the phone ramp, 44 px targets, and stacked rows. The options sit in one column at every width. No other width carries a rule.
-- Radius: 12 px for cards, 8 px for buttons and fields, and 999 px for pills. The tree select takes 6 px, the checkbox 4 px.
+- Radius: 12 px for cards, 8 px for buttons and fields, and 1000 px for pills. The tree select takes 6 px, the checkbox 4 px.
 
 ### Theme and motion
 
@@ -76,7 +76,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ## Components and contracts
 
 - `btn`: 34 px high, 12 px side padding, 8 px radius, and 44 px high on a phone. Variants: `primary`, `ghost`, and `icon-btn`. All of them are flat: a fill and a 1 px border, no highlight, and no shadow.
-- `pill`: dot and word, 999 px radius, `ok`, `warn`, `mono` variants.
+- `pill`: dot and word, 8 px gap, 1000 px radius, `ok`, `warn`, `mono` variants.
 - `commit`: grid `auto minmax(0, 1fr)`, the subject clamped to two lines with an ellipsis, the metadata on a second row. The row is a button with `aria-expanded`, and a tap shows the whole subject. The metadata carries the author's GitHub picture, 20 px and round, or a `user` glyph in the same disc when the server has none.
 - `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`. The selected row carries a 2 px accent bar and the text colour. The name reads `Pull from <branch>`. Rows and the timeout slider are 44 px high on a phone.
 - `arena-item`: the arena row and its `arena-del` icon button side by side. The trash glyph is dim until hover, then reads in the error tint. The name reads `Delete <branch>`.
@@ -191,3 +191,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: each sidebar arena row carries a trash control. A modal names the branch and asks first, with no warning about an open PR. Delete drops the branch on origin and refreshes the views.
 - Accepted 2026-10-23: the settings page is two columns above 1200 px. The help cards How git reaches GitHub and About fold at every width. The page drops from 2037 px to 1089 px at 1280, and from 2728 px to 2219 px at 360.
 - Accepted 2026-10-24: the three media queries read 75em, 56.25em, and 40em, after the nuu sheet moved its breakpoints to em. Same widths at the 16 px default, earlier switches for a larger browser font.
+- Accepted 2026-10-24: four values move to the 4 px scale after the nuu audit. Fields pad 12 px instead of 10, and the pill gap is 8 px instead of 6. The phone keeps the 16 px page padding instead of 14, and its title reads the 20 px ramp size instead of 19. The pill radius reads 1000 px, the same shape on the scale.

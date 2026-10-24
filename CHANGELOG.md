@@ -12,6 +12,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The three breakpoints read 75em, 56.25em, and 40em instead of 1200, 900,
   and 640 px, so the layouts follow the reader's browser font size. Same
   widths at the 16 px default.
+- Four values sit on the 4 px scale: fields pad 12 px, the pill gap is 8 px,
+  the phone keeps the 16 px page padding, and the phone title reads 20 px.
+  Pill radii read 1000 px, the same shape.
 
 ## [0.3.0] - 2026-10-23
 
