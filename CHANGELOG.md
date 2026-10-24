@@ -23,7 +23,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- The paddings and gaps the nuu audit found off the 4 px scale.
+- Paddings and gaps the nuu audit found off the 4 px scale.
   - The icon buttons and the path input drop the browser default padding.
   - Back pads 12 px, the phase rows and Browse gap 8 px, the step and log rows 12 px.
   - The brand link pads 8 px.

@@ -41,7 +41,7 @@ jobs:
       - run: uv run --no-sync ruff check arena-cleanup.py ui/server.py scripts/*.py tests
       - run: uv run --no-sync ruff format --check arena-cleanup.py ui/server.py scripts/*.py tests
       - run: uv run --no-sync shfmt -i 2 -d docker-entrypoint.sh
-      # The nemoizer reads the prose of every tracked text file, with acorn for JavaScript.
+      # nemoizer reads the prose of every tracked text file, with acorn for JavaScript.
       # A blocking finding fails the step, advisory ones print.
       - run: npm install --no-save --no-package-lock --no-audit --no-fund acorn@8.19.0
       - name: Nemoize prose
@@ -52,8 +52,8 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v24.2.0
         with:
           globs: "**/*.md"
-      # The browser download is the slow step, a warm cache leaves only the OS packages.
-      # The key follows the Playwright version, so a release bump keeps the cache.
+      # The browser download is the slow step, so a warm cache leaves only OS packages.
+      # The key follows the Playwright version, so a release bump keeps its cache.
       - name: Read the Playwright version
         id: playwright
         run: |

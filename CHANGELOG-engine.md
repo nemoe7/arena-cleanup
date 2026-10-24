@@ -9,7 +9,7 @@ and the engine uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.4] - 2026-10-24
 
-- The nemoizer markers name current rule IDs: NMO901 and STE901 at file
+- nemoizer markers name current rule IDs: NMO901 and STE901 at file
   scope, and the unknown NMO002 goes. No behaviour change.
 
 ## [0.3.3] - 2026-10-24
@@ -19,7 +19,7 @@ and the engine uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.2] - 2026-10-24
 
-- The comment above `__version__` names the split numbers and the version
+- The comment above `__version__` names the split numbers and version
   check. No behaviour change.
 
 ## [0.3.1] - 2026-10-24

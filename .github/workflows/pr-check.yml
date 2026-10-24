@@ -29,7 +29,7 @@ jobs:
           python-version: "3.13"
       - name: Check the commits, the title, and the body
         env:
-          # The values reach the script through the environment, never through the script text.
+          # Values reach the script through the environment, never through script text.
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BASE: ${{ github.event.pull_request.base.sha }}
           PR_HEAD: ${{ github.event.pull_request.head.sha }}

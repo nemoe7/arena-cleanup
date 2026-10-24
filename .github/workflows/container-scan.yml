@@ -41,7 +41,7 @@ jobs:
           load: true
           cache-from: type=gha,scope=scan
           cache-to: type=gha,mode=max,scope=scan
-      # Advisory: the findings land in the log, and the job stays green.
+      # Advisory: findings land in the log, and the job stays green.
       - uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: arena-cleanup:scan
