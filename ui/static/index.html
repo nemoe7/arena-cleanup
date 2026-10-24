@@ -126,6 +126,9 @@
   button, a, select, input, [role="button"] { touch-action: manipulation; }
   [hidden] { display: none !important; }
   html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scrollbar-gutter: stable; }
+  /* an open dialog sits in the top layer, so the page under it keeps its scroll
+     unless the root drops it: the stable gutter keeps the layout still */
+  html:has(dialog[open]) { overflow: hidden; }
   html, body { height: 100%; }
 
   /* one scrollbar look everywhere, and a gutter that is reserved up front so
@@ -599,7 +602,7 @@
   .phase-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   @media (hover: hover) { .phase-head:enabled:hover { background: var(--surface-2); } }
   .modal.wide { width: min(640px, calc(100vw - 32px)); }
-  .modal-body { max-height: 60vh; overflow: auto; margin: 0 0 16px; }
+  .modal-body { max-height: 60vh; overflow: auto; overscroll-behavior: contain; margin: 0 0 16px; }
   .step-list { list-style: none; margin: 0; padding: 0; }
   .step-list li { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 12px; min-height: 28px;
     align-items: baseline; border-top: 1px solid var(--line); padding: 4px 0; font-size: var(--fs-2); }

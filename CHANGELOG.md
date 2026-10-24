@@ -15,8 +15,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Three option tooltips, one UI comment, and one server docstring lose a
   nemoizer finding each. No behaviour change.
+
+### Fixed
+
 - The run timeline's running glyph spins amber, the colour of the checks
   modal spinner and the clean running pill, instead of accent blue.
+- The page no longer scrolls under an open dialog.
 
 ## [0.3.6] - 2026-10-24
 

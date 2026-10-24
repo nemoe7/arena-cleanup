@@ -178,7 +178,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - `arena-item`: the arena row with its `arena-checks` and `arena-del` icon buttons side by side. Its hover tint and its selected tint span the whole row, icon buttons included, and the icon buttons keep their own hover rings on top.
   - The trash glyph is dim until hover, then reads in the error tint.
   - The name reads `Delete <branch>`.
-- `modal`: a `dialog` of 420 px at most, with a title, one paragraph, and Cancel then Delete at the right.
+- `modal`: a `dialog` of 420 px at most, with a title, one paragraph, and Cancel then Delete at the right. The page under any open dialog cannot scroll.
   - The backdrop dims the page.
   - Escape and Cancel close it without a request.
 - `checks-modal`: a 640 px `dialog` for the checks of a PR, whose body scrolls past 60 vh.
@@ -464,6 +464,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - The server reads the job and its log through `gh api`. It caches the log for 30 s and serves 400 lines per page, last page first.
   - The log loads older pages on a scroll to the top. The steps refresh every 10 s while the job runs.
   - A check from an app keeps Open run, since only Actions has a job to show.
+- Accepted 2026-10-24: the page cannot scroll under an open dialog. The root hides its overflow while a `dialog` is open, and the modal body contains its overscroll.
 - Accepted 2026-10-24: the phase rows read the log as a forward-only timeline.
   - A line names the current phase or a later one.
   - Each phase starts where the last one ends, so the rows add up to the wall clock.
