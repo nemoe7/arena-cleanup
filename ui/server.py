@@ -77,6 +77,7 @@ STATUS_TTL = 8.0  # seconds a repo status lives before the server asks git again
 FETCH_PERIOD = 60.0
 FETCH_DEBOUNCE = 10.0
 FETCH_TIMEOUT = 120
+PR_TTL = 60.0  # seconds PR checks live, so the minute fetch is the one reader.
 STARTED = time.time()  # when this process came up, for /healthz
 GIT_TIMEOUT = 20
 AVATAR_TTL = 30 * 86400  # seconds a picture lives after its last use.
@@ -280,6 +281,7 @@ def register_path(
 class StatusCache:
   def __init__(self) -> None:
     self._cache: dict[str, tuple[float, dict[str, Any]]] = {}
+    self._prs: dict[str, tuple[float, dict[str, Any] | None]] = {}
     self._lock = threading.Lock()
 
   def get(self, repo: dict[str, Any]) -> dict[str, Any]:
@@ -293,14 +295,34 @@ class StatusCache:
       self._cache[key] = (time.time(), value)
     return value
 
+  def pr(
+    self, repo: dict[str, Any], branch: str, read: Callable[[], dict[str, Any] | None]
+  ) -> dict[str, Any] | None:
+    """The PR checks of `branch`: `read` runs once per PR_TTL, or sooner after a drop."""
+    key = repo["id"] + ":" + branch
+    with self._lock:
+      hit = self._prs.get(key)
+      if hit and time.time() - hit[0] < PR_TTL:
+        return hit[1]
+    value = read()
+    with self._lock:
+      self._prs[key] = (time.time(), value)
+    return value
+
   def drop(self, repo_id: str) -> None:
     with self._lock:
-      for key in [k for k in self._cache if k.startswith(repo_id + ":")]:
-        del self._cache[key]
+      self._forget(repo_id, self._cache, self._prs)
+
+  def _forget(self, repo_id: str, *tables: dict[str, Any]) -> None:
+    prefix = repo_id + ":"
+    for table in tables:
+      for key in [k for k in table if k.startswith(prefix)]:
+        del table[key]
 
   def clear(self) -> None:
     with self._lock:
       self._cache.clear()
+      self._prs.clear()
 
   def refresh(
     self, repos: list[dict[str, Any]], step: Callable[[], None] | None = None
@@ -317,6 +339,9 @@ class StatusCache:
         step()
       return value
 
+    with self._lock:
+      for repo in repos:
+        self._forget(repo["id"], self._prs)
     with ThreadPoolExecutor(max_workers=4) as pool:
       values = list(pool.map(read, repos))
     now = time.time()
@@ -735,7 +760,7 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
   authenticated = bool(gh["installed"] and gh["authenticated"])
   if authenticated:
     for name in arena[:4]:
-      info = pr_checks(name, cwd)
+      info = STATUS.pr(repo, name, lambda name=name: pr_checks(name, cwd))
       if info:
         checks[name] = info
 
@@ -1308,7 +1333,7 @@ def new_job(argv: list[str], repo: dict[str, Any], jobs_dir: Path) -> Job:
 
 # ---- Access: gh authentication, git credentials, and how git reaches GitHub - #
 
-AUTH_TTL = 20.0
+AUTH_TTL = 60.0
 AUTH_LOCK = threading.Lock()
 AUTH_CACHE: dict[str, Any] = {"at": 0.0, "value": None}
 

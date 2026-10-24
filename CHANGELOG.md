@@ -16,6 +16,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The Commits list shows the selected arena branch from origin instead of
   the clone HEAD, and reloads when the selection changes.
 
+### Changed
+
+- PR checks and the gh sign-in state stay cached for 60 s, so the minute
+  fetch is their one reader. A run end, Reload, login, and logout still drop
+  them at once.
+
 ### Fixed
 
 - The phase rows start on the engine's own lines. A branch or repo name with

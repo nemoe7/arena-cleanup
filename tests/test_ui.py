@@ -918,6 +918,35 @@ def test_a_finished_job_drops_the_status_cache(monkeypatch: pytest.MonkeyPatch) 
   server.STATUS.drop("fresh")
 
 
+def test_pr_checks_are_read_once_a_minute_and_again_after_a_drop_or_fetch(
+  monkeypatch: pytest.MonkeyPatch,
+) -> None:
+  # PR checks keep for the minute fetch, which reads them anew. A run end or
+  # a sign-in change drops them sooner.
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  assert server.PR_TTL >= server.FETCH_PERIOD, "the minute fetch is the one reader"
+  repo = {"id": "minute", "name": "minute", "path": "/tmp"}
+  reads: list[str] = []
+
+  def read() -> dict[str, int]:
+    reads.append("pr")
+    return {"number": 1}
+
+  assert server.STATUS.pr(repo, "arena/x", read) == {"number": 1}
+  assert server.STATUS.pr(repo, "arena/x", read) == {"number": 1}
+  assert reads == ["pr"], "the second read came from the cache"
+  server.STATUS.drop("minute")
+  server.STATUS.pr(repo, "arena/x", read)
+  assert reads == ["pr", "pr"], "a drop reads the checks again"
+  monkeypatch.setattr(server, "repo_status", lambda r: {"ok": True})
+  server.STATUS.refresh([repo])
+  server.STATUS.pr(repo, "arena/x", read)
+  assert reads == ["pr", "pr", "pr"], "the fetch refresh reads the checks again"
+  server.STATUS.drop("minute")
+
+
 def test_a_live_job_marks_its_repo_as_running() -> None:
   # The dashboard reads this flag, so a slow job must show while it runs and
   # leave with the process.
