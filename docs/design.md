@@ -35,7 +35,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - Remove: the trash glyph sits top right, bare at rest. A red frame comes on hover, on press, and while armed.
 - Repo: a 320 px sidebar, then the run card left and the options card right, and the log card below both.
   - Cards: the run card holds the status and the phase list. The log card holds the open log of the latest run and takes the height that is left, down to a 160 px floor. Both come back after a return to the view or a restart. The main column pins to the window like the sidebar, so only the log scrolls.
-  - Run button: the options card head carries the one run button. It reads Clean & Push while idle and Cancel while a run is live.
+  - Run button: the options card foot carries the one run button, bottom right. It reads Clean & Push while idle and Cancel while a run is live.
   - Options: each option is one row: label, control, and a trailing action or readout. No hint texts. Dry Run, Ignore PR Checks, Update Tags (checked by default), and No lease are checkboxes. No lease is the one danger-coloured option: checked, the run pushes with `git push --force` and no lease, and its tooltip names the two other effects of `-f`.
   - PR check timeout: a slider with the number beside it. It snaps to 0, 5, 10, 15, 20, 30, 45, 60, 90, or 120 minutes.
   - Target branch: it lists the default branch first and never an `arena/*` branch. Arena branch appears with two or more arena branches, newest tip first. Each option reads `branch · day`, and the full stamp sits in its title. The chosen one goes to the run as `--arena`.
@@ -47,6 +47,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Settings: two columns above 1200 px.
   - Columns: left, Identity (name, email, Save), Claimed commits (two chip lists, Save), About. Right, the GitHub card, then the signing cards. One column at 1200 px and below, in the order Identity, GitHub, signing, Claimed commits, About.
   - GitHub card: the sign-in state, the token scopes, the credential helper, and the ssh keys. A warning and Configure appear when a signed-in user has no helper. About folds, and opens on a click.
+  - Actions: Save, Re-check, Sign in, Configure, Create key, and Open GitHub keys sit bottom right in the foot of their card.
   - Signing cards: gpg banner when gpg is missing, key list, create card, GitHub key steps. Disabled: Create key while gpg is missing.
   - Error: the banner names the failed check. Each card loads on its own.
 - Offline: the service worker serves the shell. Data requests fail with the normal error banner.
@@ -123,6 +124,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - `card.fold`: a `details` card. The `summary` is the card head with a `show` or `hide` mark at the right, and the body opens below it. Closed, the head has no bottom border.
 - `banner`: `err`, `warn`, `ok` variants with an icon and one sentence of action.
 - `run button`: one button with `data-state` idle, starting, or running. Idle reads Clean & Push and is the primary. Starting is disabled until the job id arrives. Running reads Cancel as a plain button.
+- `card-foot`: the action row of a card, right-aligned with an 8 px gap and 16 px of padding. Every card action sits there, so the x alone stays top right. The options foot hides on a phone, where the tab bar runs.
 - `tree`: the path selector.
   - Rows are `treeitem`s with `aria-level`. A folder row carries `aria-expanded` and loads its children on the first open.
   - The trailing `tree-select` button toggles the path and reports `aria-pressed`. Rows and select buttons grow to 44 px on a phone.
@@ -246,3 +248,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-24: every `:hover` rule sits in its own `@media (hover: hover)` block in place, nuu clause 9. The cascade order stays, and `:focus-visible` and `:active` apply on every device.
 - Accepted 2026-10-24: the 36 colour literals below `:root` moved onto 29 role tokens, nuu clause 3. The pills and the banners share one text, line, and tint per tone, a shift of at most two per cent in alpha.
 - Accepted 2026-10-24: the How git reaches GitHub fold goes. Its one control, Configure, already sat in the GitHub card. That card takes the helper and ssh rows and the helper warning, and the README takes the SSH mount hint.
+- Accepted 2026-10-24: every card action sits bottom right in a `card-foot`, nuu clause 15. The run button leaves the options card head, and the Save, Re-check, Sign in, Configure, and key buttons leave their bodies. Create key takes its natural width.

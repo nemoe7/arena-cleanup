@@ -14,6 +14,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The How git reaches GitHub fold is gone. The GitHub card shows the
   credential helper, the ssh keys, and the helper warning with Configure under
   the sign-in state, and the README carries the SSH mount hint.
+- Every card action sits bottom right in a card foot: the run button under
+  the options, both Save buttons, Re-check, Sign in, Configure, Create key at
+  its natural width, and Open GitHub keys.
 
 ## [0.3.1] - 2026-10-24
 

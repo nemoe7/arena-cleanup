@@ -455,6 +455,9 @@
   .card-head h2 { margin: 0; font-size: var(--fs-2); font-weight: 600; }
   .card-head .hint { color: var(--dim); font-size: var(--fs-1); }
   .card-body { padding: 16px; }
+  /* every card action sits bottom right in a foot; the close x alone stays top right */
+  .card-foot { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 0 16px 16px; }
+  #options-card .card-foot { padding-top: 6px; }
 
   /* one column: the card shares its row with the run card. No vertical padding
      and no rule under the last row, so the rows sit like the phase rows */
@@ -754,7 +757,7 @@
     .field, .mono-field, input, select, textarea { font-size: 16px; }
     .addbar .field { flex: 0 0 auto; height: 48px; padding: 0 12px; }
     .addbar .btn { height: 48px; font-size: 15px; }
-    #start { display: none; }  /* the tab bar carries the run controls on a phone */
+    #start, #options-card .card-foot { display: none; }  /* the tab bar carries the run controls on a phone */
     .main-col { padding: 12px; }
     .sidebar { padding-bottom: 88px; }
     .wrap { padding: 16px var(--pad) 88px; }
@@ -891,8 +894,6 @@
         <section class="card" id="options-card">
           <div class="card-head">
             <h2>Options</h2>
-            <div class="grow"></div>
-            <button class="btn primary clean" id="start" data-state="idle"><span class="ico-svg" data-icon="broom-sparkles" aria-hidden="true"></span>Clean &amp; Push</button>
           </div>
           <div class="card-body options" id="options">
             <div class="opt row" id="opt-branch">
@@ -922,6 +923,9 @@
               <label class="check" title="Moves the tags to the rewritten commits. Unchecked, they stay on the old ones."><input type="checkbox" data-opt="update_tags" checked>Update Tags</label>
               <label class="check danger" title="Pushes with git push --force and no lease, so it lands even when the default branch moved during the run. Also runs with uncommitted changes, which the final reset discards, and pushes over commits the run would drop."><input type="checkbox" data-opt="force">No lease</label>
             </div>
+          </div>
+          <div class="card-foot">
+            <button class="btn primary clean" id="start" data-state="idle"><span class="ico-svg" data-icon="broom-sparkles" aria-hidden="true"></span>Clean &amp; Push</button>
           </div>
         </section>
         </div>
@@ -2153,8 +2157,8 @@
       el("div", { class: "card-head" }, el("h2", {}, "Identity"), el("span", { class: "hint" }, "git config user.name, user.email")),
       el("div", { class: "card-body", style: "display:grid;gap:10px" },
         el("div", { class: "hint" }, "Every commit a run claims gets this author and committer."),
-        el("div", { class: "sign-fields" }, name, email),
-        el("div", {}, save))));
+        el("div", { class: "sign-fields" }, name, email)),
+      el("div", { class: "card-foot" }, save)));
   }
 
   // A list of values as pills with one text field: Enter or a comma adds the
@@ -2212,8 +2216,8 @@
         el("div", { class: "claim-label" }, "Emails"), emails.box,
         el("div", { class: "claim-label" }, "Names"), names.box,
         el("div", { class: "hint" }, "An empty list falls back to the built-in rule: ",
-          el("code", {}, c.defaults.emails.join(", ")), " and ", el("code", {}, c.defaults.names.join(", ")), "."),
-        el("div", {}, save))));
+          el("code", {}, c.defaults.emails.join(", ")), " and ", el("code", {}, c.defaults.names.join(", ")), ".")),
+      el("div", { class: "card-foot" }, save)));
   }
 
   async function renderAccess() {
@@ -2227,6 +2231,7 @@
     const g = a.git || {};
     const nodes = [];
     const ghNodes = [];
+    const ghFoot = [];
     // how git gets in: the helper and the keys, shown under the sign-in state
     const gitRows = [
       pillRow("credential helper", g.credentials_for_gh
@@ -2256,14 +2261,14 @@
           el("div", {}, el("b", {}, "git has no credential helper yet."),
             " Cloning and pushing over HTTPS will fail. One click fixes it, and applies to every repo here.")));
       }
-      ghNodes.push(el("div", { style: "display:flex;gap:8px;margin-top:10px" },
+      ghFoot.push(
+        g.credentials_for_gh ? null : el("button", { class: "btn ghost", onclick: setupGit }, "Configure git credentials"),
         el("button", { class: "btn", onclick: async () => {
           await post("/api/auth", { action: "check" });
           await refreshAuth();
           renderAccess();
           toast("re-checked");
-        } }, icon("refresh-cw"), "Re-check"),
-        g.credentials_for_gh ? null : el("button", { class: "btn ghost", onclick: setupGit }, "Configure git credentials")));
+        } }, icon("refresh-cw"), "Re-check"));
     } else {
       ghNodes.push(banner("warn", {},
         el("div", {}, el("b", {}, "Not signed in to GitHub."),
@@ -2273,9 +2278,8 @@
         onkeydown: (e) => { if (e.key === "Enter") submitToken(); } });
       ghNodes.push(el("label", { for: "token-input", class: "opt-label", style: "margin-top:10px" },
         "Personal access token", el("span", { class: "desc" }, "repo, read:org")));
-      ghNodes.push(el("div", { style: "display:flex;gap:8px;margin-top:6px" },
-        input,
-        el("button", { class: "btn primary", id: "token-btn", onclick: submitToken }, "Sign in")));
+      ghNodes.push(el("div", { style: "margin-top:6px" }, input));
+      ghFoot.push(el("button", { class: "btn primary", id: "token-btn", onclick: submitToken }, "Sign in"));
       ghNodes.push(el("div", { class: "hint", style: "margin-top:8px" },
         "Create one at ",
         el("a", { href: "https://github.com/settings/tokens/new?scopes=repo,read:org&description=arena-cleanup", target: "_blank", rel: "noopener", style: "text-decoration:underline" }, "github.com/settings/tokens"),
@@ -2286,9 +2290,10 @@
       ghNodes.push(...gitRows);
     }
 
-    nodes.push(el("div", { class: "card" },
+    nodes.push(el("div", { class: "card", id: "card-github" },
       el("div", { class: "card-head" }, el("h2", {}, "GitHub")),
-      el("div", { class: "card-body" }, ...ghNodes)));
+      el("div", { class: "card-body" }, ...ghNodes),
+      el("div", { class: "card-foot" }, ...ghFoot)));
 
     body.replaceChildren(...nodes);
   }
@@ -2424,16 +2429,16 @@
       createBtn.title = "gpg is not installed";
     }
 
-    nodes.push(el("div", { class: "card" },
+    nodes.push(el("div", { class: "card", id: "card-create-key" },
       el("div", { class: "card-head" }, el("h2", {}, s.keys.length ? "Create another key" : "Create a key"), el("span", { class: "hint" }, "ed25519, no passphrase, generated inside the container")),
       el("div", { class: "card-body", style: "display:grid;gap:10px" },
         el("div", { class: "sign-fields" }, name, email),
-        createBtn,
         el("div", { class: "hint" }, "The private key stays in /home/arena/.gnupg inside this container's volume. Export it if you also want to sign on your laptop."),
-      )));
+      ),
+      el("div", { class: "card-foot" }, createBtn)));
 
     // steps
-    nodes.push(el("div", { class: "card" },
+    nodes.push(el("div", { class: "card", id: "card-github-keys" },
       el("div", { class: "card-head" }, el("h2", {}, "Add the public key to GitHub")),
       el("div", { class: "card-body" },
         stepList([
@@ -2441,10 +2446,10 @@
           "Open <a href=\"https://github.com/settings/gpg/new\" target=\"_blank\" rel=\"noopener\">github.com/settings/gpg/new</a>.",
           "Paste the block that starts with <code>-----BEGIN PGP PUBLIC KEY BLOCK-----</code>.",
           "Add the key, then come back here and press <b>Re-check</b>.",
-        ]),
-        el("div", { style: "margin-top:12px;display:flex;gap:8px;flex-wrap:wrap" },
-          el("button", { class: "btn", onclick: async () => { await loadSigning(); toast("re-checked"); } }, icon("refresh-cw"), "Re-check"),
-          el("a", { class: "btn ghost", href: "https://github.com/settings/keys", target: "_blank", rel: "noopener" }, "Open GitHub keys")))));
+        ])),
+      el("div", { class: "card-foot" },
+        el("button", { class: "btn", onclick: async () => { await loadSigning(); toast("re-checked"); } }, icon("refresh-cw"), "Re-check"),
+        el("a", { class: "btn ghost", href: "https://github.com/settings/keys", target: "_blank", rel: "noopener" }, "Open GitHub keys"))));
 
     body.replaceChildren(...nodes);
   }
