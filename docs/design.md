@@ -135,6 +135,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - The favicon and the regular PWA pictures carry the accent glyph alone on a transparent ground.
   - Maskable picture and Apple touch icon add the `--surface` background, full bleed, with the glyph inside the safe zone.
 - No text glyphs stand in for icons. The licence sits beside the page in `ui/static/LICENSE-lucide.txt`.
+- One Octicon, `github`, draws the remote link mark filled on its 16 px grid. Its MIT notice is `ui/static/LICENSE-octicons.txt`.
 
 ### Layout
 
