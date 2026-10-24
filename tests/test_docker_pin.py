@@ -16,7 +16,7 @@ STEERING = {".agents/skills/x/SKILL.md": "x", "ARENA.md": "rules", "AGENTS.md": 
 
 
 def pin_script() -> str:
-  """The shell of the `Pin the tested commit` step, lifted out of the workflow."""
+  """Shell of the `Pin the tested commit` step, lifted out of the workflow."""
   text = WORKFLOW.read_text()
   start = text.index("- name: Pin the tested commit")
   body = text[text.index("run: |", start) + len("run: |") :]

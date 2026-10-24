@@ -37,7 +37,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Dashboard: sort select and Reload button in the head, add bar.
   - Rows and cards: one repo row per repo above 1200 px, repo cards at 1200 px and below.
     - A row or card shows the branch.
-    - The repo name is a button that opens the repo, and a click on the card body does the same.
+    - The repo name is a button that opens the repo, and a click on its card body does the same.
     - The card itself has no role.
   - Empty: a hint with the add command. Error: a banner above the rows.
   - Arena rows: each has two lines at every width, the branch name, then `↑ N` and the PR pill.
@@ -87,7 +87,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Actions: Save, Re-check, Sign in, Configure, Create key, and Open GitHub keys sit bottom right in the foot of their card.
   - Signing cards: gpg banner when gpg is missing, key list, create card, GitHub key steps. Disabled: Create key while gpg is missing.
   - Error: the banner names the failed check. Each card loads on its own.
-- Offline: the service worker serves the shell. Data requests fail with the normal error banner.
+- Offline: the service worker serves the shell. Data requests fail with their normal error banner.
 - Loading and permission states: not run as separate checks.
 
 ## Design system and tokens
@@ -326,7 +326,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - One Back leaves a sub-view, the next one leaves the page.
 - Accepted 2026-10-22: no command switch on the repo page. A local rewrite without a push is a terminal task, so `strip` lives in the CLI alone.
 - Accepted 2026-10-22: the whole options card folds, not the Target branch row alone.
-  - The select names the default branch first, keeps the empty value, and lists no `arena/*` branch.
+  - The select names the default branch first, keeps its empty value, and lists no `arena/*` branch.
   - The server refuses one too.
 - Accepted 2026-10-22: with two or more arena branches the page selects one, newest tip first, in the options card.
   - The engine gained `--arena NAME` for it and keeps the full flow.
@@ -379,7 +379,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-23: three icon size tokens at every width, 14, 16, and 18 px.
   - The glyphs no longer follow the text size.
   - That rule left most of them at 12 or 13 px on a desktop.
-- Accepted 2026-10-23: the arena row on a card is two lines at every width, the name first. The dots before the name and in the PR pill are gone, the pill colour is the signal.
+- Accepted 2026-10-23: the arena row on a card is two lines at every width, name first. The dots before the name and in the PR pill are gone, the pill colour is the signal.
 - Accepted 2026-10-23: the ahead chip shows the net count and hides below 1. Absorbed commits read 0, and a default branch that moved on reads below 0.
 - Accepted 2026-10-23: the repo name is the control that opens the repo. The card lost its button role, so Remove and Clean & Push no longer sit inside a control.
 - Accepted 2026-10-23: Monaspace Neon replaces JetBrains Mono for monospace, Inter stays for prose. Both load by the offline fonts recipe: one subset variable file each, preloaded, `font-display: block`, and a metric-matched local fallback face.
@@ -438,7 +438,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the 36 colour literals below `:root` moved onto 29 role tokens, nuu clause 3. The pills and the banners share one text, line, and tint per tone, a shift of at most two per cent in alpha.
 - Accepted 2026-10-24: the How git reaches GitHub fold goes.
   - Its one control, Configure, already sat in the GitHub card.
-  - That card takes the helper and ssh rows and the helper warning, and the README takes the SSH mount hint.
+  - That card takes the helper and ssh rows and their warning, and the README takes the SSH mount hint.
 - Accepted 2026-10-24: every card action sits bottom right in a `card-foot`, nuu clause 15.
   - The run button leaves the options card head, and the Save, Re-check, Sign in, Configure, and key buttons leave their bodies.
   - Create key takes its natural width.

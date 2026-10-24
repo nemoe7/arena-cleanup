@@ -1,7 +1,7 @@
 """A reload off the dashboard paints the named screen first.
 
 The boot sequence loads the environment, sign-in state, and repos
-before it applies the hash. The hash picks the visible view before that
+before it applies the hash. The hash selects the visible view before that
 work starts, so the dashboard never shows as an interstitial.
 """
 

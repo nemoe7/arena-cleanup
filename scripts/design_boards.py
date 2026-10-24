@@ -146,7 +146,7 @@ def app_css() -> str:
 
 
 def icon_script() -> str:
-  """The ICONS table of index.html, so the boards draw the app's own glyphs."""
+  """ICONS table of index.html, so the boards draw the app's own glyphs."""
   match = ICONS_RE.search(INDEX.read_text())
   if not match:
     raise RuntimeError("no ICONS table in index.html")

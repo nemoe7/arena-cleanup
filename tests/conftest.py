@@ -409,7 +409,7 @@ class World:
     stdin: str | None = None,
     timeout: int = 180,
   ) -> Result:
-    """Run the engine CLI the way the shim does and capture its merged output."""
+    """Run the engine CLI as the shim does and capture its merged output."""
     started = time.monotonic()
     proc = subprocess.run(
       [sys.executable, str(ENGINE), *args],

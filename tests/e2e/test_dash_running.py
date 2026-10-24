@@ -41,7 +41,7 @@ def test_a_live_job_marks_its_row(desktop: Walker) -> None:
     reads.append(len(repos))
     route.fulfill(response=reply, body=json.dumps(repos))
 
-  # the first paint comes from the fetch, later reads from the list
+  # first paint comes from the fetch, later reads from the list
   page.route("**/api/fetch", flag)
   page.route("**/api/repos", flag)
   try:
@@ -56,7 +56,7 @@ def test_a_live_job_marks_its_row(desktop: Walker) -> None:
     }
     other = page.eval_on_selector(".repo-card:has-text('billing-api')", ROW)
     assert other["busy"] is None and other["pill"] is None, "one row alone"
-    # the repo view and back: the return reads the statuses once more
+    # repo view and back: the return reads the statuses once more
     before = len(reads)
     desktop.click(f"{CARD} .repo-name", 600)
     desktop.click("#back", 600)

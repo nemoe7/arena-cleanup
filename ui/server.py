@@ -813,7 +813,7 @@ def set_global_config_all(key: str, values: list[str]) -> None:
 
 
 def settings_report() -> dict[str, Any]:
-  """The identity and the claim rules a run will use, plus the built-in fallbacks."""
+  """The identity and claim rules a run will use, plus the built-in fallbacks."""
   return {
     "identity": {
       "name": global_config("user.name"),

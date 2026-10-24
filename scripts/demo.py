@@ -489,20 +489,20 @@ def make_origin(
 
 
 def clone_repo(name: str, later: bool, registry: Registry, env: dict[str, str]) -> None:
-  """Clone by URL into the managed directory, the way the add bar does."""
+  """Clone by URL into the managed directory, as the add bar does."""
   page = f"{PAGE_BASE}/{name}"
   target = registry.clones / name
   run("git", "clone", "--quiet", page, str(target), env=env)
   entry, err = register_path(str(target), registry, source=page, managed=True)
   if not entry:
     raise SystemExit(f"demo: could not register {target}: {err}")
-  if later:  # the clone has not pulled, so the card shows the drift too
+  if later:  # the clone has not pulled, so its card shows drift too
     behind = f"HEAD~{len(MAIN_LATER)}"
     run("git", "reset", "--quiet", "--hard", behind, cwd=target, env=env)
 
 
 def build(root: Path) -> dict[str, str]:
-  """Create the fixture under root, and return the environment the server needs."""
+  """Create a fixture under root, and return the environment for the server."""
   home = root / "home"
   bin_dir = root / "bin"
   gh_state = root / "gh"

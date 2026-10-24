@@ -987,7 +987,7 @@
           <div class="card-body options" id="options">
             <div class="opt row" id="opt-branch">
               <label for="branch">Target branch</label>
-              <select class="field mono-field" id="branch" title="The default branch runs via the arena branch. A named branch is cleaned in place."></select>
+              <select class="field mono-field" id="branch" title="The default branch runs via the arena branch. The run cleans a named branch in place."></select>
             </div>
             <div class="opt row" id="opt-arena" hidden>
               <label for="arena">Arena branch</label>
@@ -1003,13 +1003,13 @@
             </div>
             <div class="opt row" id="opt-timeout">
               <label for="timeout">PR check timeout</label>
-              <input class="slider" id="timeout" type="range" min="0" max="9" step="1" value="3" title="How long the run waits for the PR checks; 0 does not wait.">
+              <input class="slider" id="timeout" type="range" min="0" max="9" step="1" value="3" title="How long the run waits for the PR checks. At 0 it does not wait.">
               <output class="readout" id="timeout-out" for="timeout">15 min</output>
             </div>
             <div class="opt checks" id="checks">
               <label class="check" title="Prints every step it would take and writes nothing."><input type="checkbox" data-opt="dry_run">Dry Run</label>
               <label class="check" title="Pushes even when the PR still has running or failing checks."><input type="checkbox" data-opt="skip_pr_check">Ignore PR Checks</label>
-              <label class="check" title="Moves the tags to the rewritten commits. Unchecked, they stay on the old ones."><input type="checkbox" data-opt="update_tags" checked>Update Tags</label>
+              <label class="check" title="Moves tags to the rewritten commits. Unchecked, they stay on the old ones."><input type="checkbox" data-opt="update_tags" checked>Update Tags</label>
               <label class="check danger" title="Pushes with git push --force and no lease, so it lands even when the default branch moved during the run. Also runs with uncommitted changes, which the final reset discards, and pushes over commits the run would drop."><input type="checkbox" data-opt="force">No lease</label>
               <button class="btn primary clean" id="start" data-state="idle"><span class="ico-svg" data-icon="broom-sparkles" aria-hidden="true"></span>Clean &amp; Push</button>
             </div>
@@ -3103,7 +3103,7 @@
   });
 
   async function boot() {
-    // the hash picks the first frame, so a reload off the dashboard never
+    // the hash selects the first frame, so a reload off the dashboard never
     // paints the dashboard while the status loads
     const first = location.hash === "#/settings" ? "settings" : /^#\/repo\//.test(location.hash) ? "repo" : "dashboard";
     for (const name of ["dashboard", "repo", "settings"]) $("view-" + name).hidden = name !== first;

@@ -831,7 +831,7 @@ def test_authentication(ui: UI, world: World) -> None:
   assert "pr_checked" in ui.get("/api/repos")[0]["status"]
 
   # the test can sign the fake gh out. That state used to look like
-  # "these branches have no pull request".
+  # "these branches have no PR".
   world.gh_auth(False)
   signed_out = ui.post("/api/auth", {"action": "check"})
   assert signed_out["gh"]["authenticated"] is False

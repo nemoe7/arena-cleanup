@@ -126,8 +126,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
-      contents: read # the default, named so the write stands out
-      packages: write # the tag and the prune
+      contents: read # default, named so the write stands out
+      packages: write # tag and prune
     concurrency:
       group: docker-latest
       cancel-in-progress: true

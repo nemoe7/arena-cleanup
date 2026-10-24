@@ -92,7 +92,7 @@ def test_one_default_branch_moved_on_after_its_session(
   moved = [name for name, _branches, later in demo.REPOS if later]
   assert moved == ["infra-tools"]
   assert ahead == {name: len(demo.MAIN_LATER) if name in moved else 0 for name in repos}
-  assert behind == ahead  # the clone has not pulled, so the card shows the drift
+  assert behind == ahead  # the clone has not pulled, so its card shows drift
 
 
 def test_one_repo_keeps_two_arena_branches(

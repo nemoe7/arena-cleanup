@@ -1,5 +1,5 @@
-# Keep the build context to what the image actually needs: the version file,
-# the CLI, UI, and entrypoint.
+# Keep the build context to what the image needs: version file, CLI, UI,
+# and entrypoint.
 # Tests, docs, screenshots, caches, git metadata, and the Windows launcher
 # arena-cleanup.cmd stay out.
 *

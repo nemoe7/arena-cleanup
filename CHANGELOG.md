@@ -9,6 +9,13 @@ The engine, `arena-cleanup.py`, carries its own number and its own file,
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.7] - 2026-10-24
+
+### Changed
+
+- Three option tooltips, one UI comment, and one server docstring lose a
+  nemoizer finding each. No behaviour change.
+
 ## [0.3.6] - 2026-10-24
 
 ### Added
@@ -50,7 +57,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- The loading bar shows on the dashboard alone. The repo view and Settings keep it hidden, the minute fetch included.
+- The loading bar shows on the dashboard alone. Repo view and Settings keep it hidden, the minute fetch included.
 
 ## [0.3.3] - 2026-10-24
 
@@ -308,7 +315,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - In `infra-tools` main moved on by two commits after the session, and `data-pipeline` keeps two arena branches.
   - The origins answer to `https://github.com/demo/<name>`, so the page shows live-looking remotes.
   - The fixture clones them by URL under its data directory.
-  - The stub `gh` is signed in as the configured identity, the credential helper is set, and the host's tokens are gone.
+  - The stub `gh` is signed in as the configured identity, a credential helper is set, and the host's tokens are gone.
 - `docs/design.md`: the design record with the type ramp, spacing scale, breakpoints, and accepted decisions.
 - Prose rules for comments, docstrings, and docs: sentences of 20 words or fewer, paragraphs of four sentences or fewer.
 - `/api/access` storage rows that name their origin under `source`.
@@ -352,7 +359,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Show log carries the fold caret.
 - The page matches its design record after an audit.
   - Every banner leads with its glyph.
-  - Pointer targets are at least 24 px: Browse, the chip X, the tree select, the check rows, and the slider.
+  - Pointer targets are at least 24 px: Browse, chip X, tree select, check rows, and slider.
   - The version chip weighs 520 and bold runs 600.
   - A dead brand size rule goes, and two paddings sit on the scale.
 - The repo wireframe board grows its blocks with their text, and its marks are glyphs instead of font symbols.
@@ -368,7 +375,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The repo page runs the full flow only. The Rewrite locally switch is gone, and `strip` stays a CLI command.
 - The card Remove X sits top right as a bare glyph. A red frame comes on hover, on press, and while armed.
 - The primary button reads Clean & Push on the card, run card, and phone bar.
-- The options card folds from its head. Closed, the head shows the branch pill and what differs from the defaults.
+- The options card folds from its head. Closed, it shows the branch pill and what differs from the defaults.
 - Target branch lists the default branch first and never an `arena/*` branch. The page API answers 400 for one.
 - Browse under Remove paths opens the HEAD tree of the clone, one level per request.
   - A click on a row or its plus adds the path chip.

@@ -83,7 +83,7 @@ def git(*args: str) -> str:
 
 
 def changed(base: str, head: str) -> set[str]:
-  """The paths the head changed since it left the base."""
+  """Paths the head changed since it left the base."""
   return set(git("diff", "--name-only", f"{base}...{head}").splitlines())
 
 

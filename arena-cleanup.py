@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# nonemo: NMO901; nonemo: STE901
+# nonemo: NMO901; nonemo: STE901; nonemo: HMN904
 """
 arena-cleanup - Arena branch cleanup + history rewrite in one file.
 
@@ -45,7 +45,7 @@ from typing import Any
 
 # the engine's own number. pyproject.toml carries the UI's, and
 # scripts/check_versions.py asks for one step per changed part.
-__version__ = "0.3.4"
+__version__ = "0.3.5"
 PROG = "arena-cleanup"
 
 # ==== Defaults: edit these, or override per run with the matching flags ======
@@ -745,8 +745,8 @@ def force_push(
   Publish HEAD onto origin/<default>.
 
   Without `force` the push spells the lease out, as
-  `--force-with-lease=refs/heads/<default>:<sha>` with the value fetched at the
-  start of the run. The guard pins the one ref we overwrite. Nothing
+  `--force-with-lease=refs/heads/<default>:<sha>` with the value fetched at
+  run start. The guard pins the one ref we overwrite. Nothing
   moves under us between the fetch and the push. With `force` the push is a
   plain `git push --force`, which lands even when origin/<default> moved.
   """
