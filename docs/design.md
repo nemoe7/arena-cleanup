@@ -97,6 +97,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ### Theme and motion
 
 - Transitions of 120 to 180 ms on transform, opacity, border, and background. `prefers-reduced-motion` stops them.
+- Enter motion on GSAP 3.15.0, vendored as `ui/static/gsap.min.js`. The first cards of the grid, the first commits of a repo, and a dialog fade in and rise 8 px. A view only fades, as a transform would unpin the fixed tab bar inside it. The tween takes 180 ms on `power2.out`, with a 30 ms stagger in a list. `prefers-reduced-motion: reduce` skips the tweens.
 - Scroll-edge fade, the nuu recipe: the commit list and the log carry `scroll-panel`.
   - A scrolled edge fades over 12 px, and the fade grows and shrinks over a 192 px scroll ramp. A panel that does not scroll stays unmasked.
   - The rule needs `animation-timeline: scroll(self)` and no reduced-motion preference. Other scrolling regions keep their edges.
@@ -142,7 +143,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - Copy follows ASD-STE100: short sentences, one action per banner, no jargon beyond git and GitHub terms.
 - Locale: English only. Dates use the browser locale.
-- Fonts: Inter and Monaspace Neon, SIL Open Font License 1.1, see `ui/static/fonts/LICENSE.txt`. Icons: Lucide, ISC, see `ui/static/LICENSE-lucide.txt`.
+- Fonts: Inter and Monaspace Neon, SIL Open Font License 1.1, see `ui/static/fonts/LICENSE.txt`. Icons: Lucide, ISC, see `ui/static/LICENSE-lucide.txt`. Motion: GSAP 3.15.0, the standard no-charge licence, see `ui/static/LICENSE-gsap.txt`.
 
 ## Behavior and data
 
@@ -260,3 +261,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-24: the phase rows read the log as a forward-only timeline. A line names the current phase or a later one. The next phase starts where the last one ends, so the rows add up to the wall clock. The word tests stay, with `stale` in Prepare and the commit scan in Rewrite.
 - Accepted 2026-10-24: a reload of the repo list reads the pending cards after its wait. A clone refused during the reload has left the list by then, so the reload does not bring its card back.
 - Accepted 2026-10-24: the phase modals read the run from its log. Prepare, PR checks, and Clean up list their stamped lines, each with the time to the next line. Rewrite and sign fetches the commits after the rewrite. Push reads the old hash from the pull line, the new one from the pushed line, and the tags from the moved lines. Finish reads Clean up, as the row names the wrap-up steps.
+- Accepted 2026-10-24: the motion set runs on a vendored GSAP, nuu clause 8. One helper fades an entering view, card, commit, or dialog in over 180 ms on one curve. All but the view also rise 8 px. A reduced-motion preference turns it off. The service worker caches the script with the shell.

@@ -1061,6 +1061,7 @@
 </dialog>
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
+<script src="/gsap.min.js"></script>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
@@ -1122,6 +1123,27 @@
     copy: svg('<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>' + paths("M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2")),
     "folder-tree": svg(paths("M20 10a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2.5a1 1 0 0 1-.8-.4l-.9-1.2A1 1 0 0 0 15 3h-2a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1Z", "M20 21a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1h-2.9a1 1 0 0 1-.88-.55l-.42-.85a1 1 0 0 0-.92-.6H13a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1Z", "M3 5a2 2 0 0 0 2 2h3", "M3 3v13a2 2 0 0 0 2 2h3")),
   };
+  // ------------------------------------------------------------------ motion
+  // One curve over 180 ms, the nuu motion rule, on the vendored GSAP. A
+  // reduced-motion preference turns every tween off: the page paints at once.
+  const MOTION = { duration: 0.18, ease: "power2.out" };
+  function motionOff() {
+    return !window.gsap || matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+  // a card, a commit, or a dialog enters: it fades in and rises 8 px. A view
+  // only fades: a transform on it would unpin the fixed tab bar inside
+  function enter(targets, stagger = 0, rise = 8) {
+    const nodes = [targets].flat().filter(Boolean);
+    if (motionOff() || !nodes.length) return;
+    gsap.killTweensOf(nodes);
+    gsap.fromTo(nodes, { opacity: 0, y: rise },
+      { opacity: 1, y: 0, ...MOTION, stagger, clearProps: "opacity,transform", overwrite: true });
+  }
+  function openModal(dlg) {
+    dlg.showModal();
+    enter(dlg);
+  }
+
   function icon(name, cls = "ico-svg") {
     const box = el("span", { class: cls, "aria-hidden": "true" });
     box.innerHTML = ICONS[name] || "";
@@ -1182,6 +1204,7 @@
     for (const name of ["dashboard", "repo", "settings"]) {
       $("view-" + name).hidden = name !== view;
     }
+    if (state.view !== view) enter($("view-" + view), 0, 0);
     // remember where we are, so a sub-view can send you back to the place you
     // actually came from instead of guessing from whatever was open last
     state.view = view;
@@ -1272,7 +1295,7 @@
     renderChecks();
     const dlg = $("checks-modal");
     dlg.onclose = () => { state.checksOpen = null; };
-    dlg.showModal();
+    openModal(dlg);
   }
   function renderChecks() {
     if (!state.checksOpen) return;
@@ -1415,7 +1438,10 @@
   }
 
   function renderGrid() {
-    $("repo-grid").replaceChildren(...sortedRepos().map(repoCard));
+    const grid = $("repo-grid");
+    const first = grid.children.length === 0;
+    grid.replaceChildren(...sortedRepos().map(repoCard));
+    if (first) enter([...grid.children], 0.03);
     renderChecks();
   }
 
@@ -1677,7 +1703,7 @@
         toast(err.message);
       }
     };
-    dlg.showModal();
+    openModal(dlg);
   }
 
   // the row leaves before the reply and comes back on a failure
@@ -2118,7 +2144,7 @@
     renderPhase();
     const dlg = $("phase-modal");
     dlg.onclose = () => { state.phaseOpen = null; };
-    dlg.showModal();
+    openModal(dlg);
   }
   function secsText(secs) {
     return secs < 0.1 ? "<0.1s" : secs.toFixed(1) + "s";
@@ -2327,6 +2353,7 @@
         return;
       }
       box.replaceChildren(...data.commits.map(commitRow));
+      enter([...box.children].slice(0, 12), 0.03);
       box.scrollTop = 0;
       state.commitsNext = data.next;
     } catch (err) {

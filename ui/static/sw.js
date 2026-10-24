@@ -1,9 +1,10 @@
 /* The arena-cleanup service worker caches the app shell, so the icon opens at once and on
    a flaky connection. Every /api/ request goes to the network, a cached status would lie. */
 
-const SHELL = "arena-shell-v2";
+const SHELL = "arena-shell-v3";
 const SHELL_FILES = [
   "/",
+  "/gsap.min.js",
   "/manifest.webmanifest",
   "/icons/icon-192.png",
   "/icons/icon-512.png",

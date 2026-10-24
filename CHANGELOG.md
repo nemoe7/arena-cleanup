@@ -11,6 +11,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A motion set on a vendored GSAP 3.15.0: a view fades in, and the first
+  cards, the first commits, and a dialog fade in with an 8 px rise, 180 ms on
+  one curve. A reduced-motion preference paints at once. The licence sits in
+  `ui/static/LICENSE-gsap.txt`.
 - Each run phase row opens a modal with its detail. Prepare, PR checks,
   and Clean up list their steps with a clock stamp and the time each took.
   Rewrite and sign lists the commits after the rewrite under the engine's

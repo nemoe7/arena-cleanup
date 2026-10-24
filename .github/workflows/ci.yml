@@ -47,7 +47,7 @@ jobs:
       - name: Nemoize prose
         run: |
           uv run --no-sync python .agents/skills/nemoizer/scripts/nemoize.py \
-            $(git ls-files | grep -v '^\.agents/\|^ARENA.md\|^LICENSE.md\|\.png$\|\.svg$\|\.ico$\|LICENSE-lucide.txt\|manifest.webmanifest')
+            $(git ls-files | grep -v '^\.agents/\|^ARENA.md\|^LICENSE.md\|\.png$\|\.svg$\|\.ico$\|LICENSE-lucide.txt\|LICENSE-gsap.txt\|gsap.min.js\|manifest.webmanifest')
       - name: Lint Markdown
         uses: DavidAnson/markdownlint-cli2-action@v24.2.0
         with:
