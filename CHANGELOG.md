@@ -28,6 +28,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The rows fold into cards by measurement: the page lays the table out at
   its natural width and folds it once that outgrows the room, on each
   render and on each resize. A fixed 1200 px fold no longer applies.
+- The README dashboard image is the demo dashboard view at 1360 by 900 px,
+  the same shot the views board frames.
 
 ## [0.3.9] - 2026-10-24
 

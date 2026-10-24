@@ -297,7 +297,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - See the decision below.
 - Readiness: implemented. The spacing audit runs in `tests/e2e/`, the walk from `scripts/walk.py`.
 - Boards: `docs/boards.json` names the seven boards below. Six are HTML fragments in `docs/boards/`, styled by the live stylesheet, and one frames the demo views.
-  - Shoot the views: `uv run scripts/walk.py --views --out docs/walk/views`.
+  - Shoot the views: `uv run scripts/walk.py --views --out docs/walk/views`. Its `dashboard` view doubles as `docs/ui-overview.png` in README: copy it over.
   - Render: `nuu board -T design -s docs/boards.json -o docs/design` after a token, glyph, or component change. Edit the fragment when a token or glyph joins `index.html`.
 
 ### Boards
