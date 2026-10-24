@@ -12,6 +12,7 @@ from scripts.walk import Demo, Walker
 from ..conftest import ROOT
 
 NAMED = {1200, 900, 640}
+EM = 16  # the browser default the em queries read
 PAGE = ROOT / "ui" / "static" / "index.html"
 PROBE = """() => {
   const cols = (s) => getComputedStyle(document.querySelector(s)).gridTemplateColumns.split(' ').length;
@@ -27,10 +28,9 @@ PROBE = """() => {
 
 
 def test_only_the_named_widths_carry_rules() -> None:
-  widths = {
-    int(w) for w in re.findall(r"@media \(max-width: (\d+)px\)", PAGE.read_text())
-  }
-  assert widths == NAMED
+  queries = re.findall(r"@media \(max-width: ([\d.]+)(px|em)\)", PAGE.read_text())
+  assert {unit for _, unit in queries} == {"em"}, "em, so the switch follows the font"
+  assert {int(float(w) * EM) for w, _ in queries} == NAMED
 
 
 def probe(browser: Any, demo: Demo, width: int) -> dict[str, Any]:

@@ -27,6 +27,8 @@ SERVER = ROOT / "ui" / "server.py"
 STARTUP_SECONDS = 15
 JOB_SECONDS = 20
 MIN_FONT_BYTES = 20_000
+# the nuu trio in em, so the layouts follow the reader's browser font size
+BREAKPOINTS = ("75em", "56.25em", "40em")
 MINUTE = 60.0
 TICK_SECONDS = 1.0
 MIN_LOG_LINES = 5
@@ -264,6 +266,10 @@ def test_env_and_page(ui: UI) -> None:
     assert code == 200
     assert headers["content-type"] == "font/woff2"
     assert len(font) > MIN_FONT_BYTES
+  widths = re.findall(r"@media \(max-width: ([^)]+)\)", page)
+  assert set(widths) == set(BREAKPOINTS), "three named widths, em only"
+  assert len(widths) == 4, "1200 twice: the phone-first block and the rest"
+  assert not re.search(r"@media \([^)]*width: \d+px", page)
   assert "font-display: swap" not in page
   assert "Fallback" in page
   assert 'id="view-settings"' in page

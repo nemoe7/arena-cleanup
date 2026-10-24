@@ -5,6 +5,14 @@ This file documents all notable changes to this project.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-10-24
+
+### Changed
+
+- The three breakpoints read 75em, 56.25em, and 40em instead of 1200, 900,
+  and 640 px, so the layouts follow the reader's browser font size. Same
+  widths at the 16 px default.
+
 ## [0.3.0] - 2026-10-23
 
 ### Added

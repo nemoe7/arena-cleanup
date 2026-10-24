@@ -44,7 +44,7 @@ from typing import Any
 
 # the one version of this file. pyproject.toml carries the same number for the
 # web app, and tests/test_cli.py keeps the two equal.
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 PROG = "arena-cleanup"
 
 # ==== Defaults: edit these, or override per run with the matching flags ======

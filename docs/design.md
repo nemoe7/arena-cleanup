@@ -65,7 +65,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - Spacing scale: 2, 4, 6, 8, 10, 12, 16, 20, 24, and 32 px, with 1 px for borders.
 - Page padding `--pad`: 20 px, 16 px at 1200 px and below, 14 px at 640 px and below.
-- Breakpoints, the nuu trio, one change each. 1200 px stacks the options card over the run card and folds the repo rows into cards. It puts the settings in one column and tightens the padding. 900 px stacks the sidebar below the cards and the repo cards into one column, and the page scrolls as one. 640 px switches to the phone ramp, 44 px targets, and stacked rows. The options sit in one column at every width. No other width carries a rule.
+- Breakpoints, the nuu trio in em, one change each: 75em, 56.25em, and 40em. That is 1200, 900, and 640 px at the 16 px browser default, and the em unit moves each switch with the reader's font size. 1200 px stacks the options card over the run card and folds the repo rows into cards. It puts the settings in one column and tightens the padding. 900 px stacks the sidebar below the cards and the repo cards into one column, and the page scrolls as one. 640 px switches to the phone ramp, 44 px targets, and stacked rows. The options sit in one column at every width. No other width carries a rule.
 - Radius: 12 px for cards, 8 px for buttons and fields, and 999 px for pills. The tree select takes 6 px, the checkbox 4 px.
 
 ### Theme and motion
@@ -190,3 +190,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: the commit hint is the count alone, with thousands separators. The list pages 30 at a time, a scroll near the end loads the older page, and Reload restarts.
 - Accepted 2026-10-23: each sidebar arena row carries a trash control. A modal names the branch and asks first, with no warning about an open PR. Delete drops the branch on origin and refreshes the views.
 - Accepted 2026-10-23: the settings page is two columns above 1200 px. The help cards How git reaches GitHub and About fold at every width. The page drops from 2037 px to 1089 px at 1280, and from 2728 px to 2219 px at 360.
+- Accepted 2026-10-24: the three media queries read 75em, 56.25em, and 40em, after the nuu sheet moved its breakpoints to em. Same widths at the 16 px default, earlier switches for a larger browser font.

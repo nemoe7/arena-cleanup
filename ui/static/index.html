@@ -595,7 +595,7 @@
   /* two columns above 1200 px; below, the columns dissolve and the sections keep one order */
   #settings-body { grid-template-columns: 1fr 1fr; align-items: start; }
   #view-settings .wrap { max-width: 1180px; }
-  @media (max-width: 1200px) {
+  @media (max-width: 75em) {
     #settings-body { grid-template-columns: 1fr; }
     .settings-col { display: contents; }
     #identity-body { order: 1; } #access-body { order: 2; } #signing-body { order: 3; }
@@ -649,7 +649,7 @@
 
   /* Three named widths, one change each: 1200 stacks the options over the run card and folds the repo rows into
      cards, 900 stacks the page, 640 is the phone. */
-  @media (max-width: 1200px) {
+  @media (max-width: 75em) {
     :root { --pad: 16px; }
     .work { grid-template-columns: 1fr; }
     #options-card { order: -1; }
@@ -671,7 +671,7 @@
     .arena-row { flex-direction: column; align-items: stretch; gap: 4px; }
     .card-actions { align-self: end; justify-self: end; }
   }
-  @media (max-width: 900px) {
+  @media (max-width: 56.25em) {
     /* One column: the run first, then the sidebar with the facts and the commits. */
     .detail { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: start; }
     .sidebar { order: 2; position: static; height: auto; overflow: visible; border-right: 0; border-top: 1px solid var(--line); }
@@ -680,7 +680,7 @@
     .logwrap .log { max-height: 52vh; }
     .grid { grid-template-columns: 1fr; }
   }
-  @media (max-width: 640px) {
+  @media (max-width: 40em) {
     :root { --pad: 14px; }
     /* one scale on a phone: 15 body, 13 controls, 12 metadata. Before this the
        page mixed 11.5, 12, 12.5, 13, and 14 in the same view */
