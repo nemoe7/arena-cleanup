@@ -28,9 +28,27 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 ## Screens and states
 
-- Dashboard: sort select and Reload button in the head, add bar. One repo row per repo above 1200 px, repo cards at 1200 px and below. Empty: a hint with the add command. Error: a banner above the rows. A row or card shows the branch. The repo name is a button that opens the repo, and a click on the card body does the same. The card itself has no role. Each arena row has two lines at every width: the branch name, then `↑ N` and the PR pill. `↑ N` is the net count, the commits that branch holds beyond `origin/<default>` minus the commits `origin/<default>` holds beyond it, with a tooltip. The chip hides below 1, so absorbed work and a default branch that moved on show no chip. No dot sits before the name or in the PR pill, the pill colour carries the state. The Remove trash glyph sits top right, bare at rest. A red frame comes on hover, on press, and while armed.
-- Repo: a 320 px sidebar, then the run card left and the options card right, and the log card below both. The run card holds the status and the phase list. The log card holds the open log of the latest run and takes the height that is left, down to a 160 px floor. Both come back after a return to the view or a restart. The main column pins to the window like the sidebar, so only the log scrolls. The options card head carries the one run button. It reads Clean & Push while idle and Cancel while a run is live. Each option is one row: label, control, and a trailing action or readout. No hint texts. Dry Run, Ignore PR Checks, Update Tags (checked by default), and No lease are checkboxes. No lease is the one danger-coloured option: checked, the run pushes with `git push --force` and no lease, and its tooltip names the two other effects of `-f`. PR check timeout is a slider with the number beside it. It snaps to 0, 5, 10, 15, 20, 30, 45, 60, 90, or 120 minutes. Target branch lists the default branch first and never an `arena/*` branch. Arena branch appears with two or more arena branches, newest tip first. Each option reads `branch · day`, and the full stamp sits in its title. The chosen one goes to the run as `--arena`. The sidebar holds the repo facts and the arena rows on top. The commit list fills the rest and scrolls on its own. Its hint is the commit count with thousands separators. The list holds 30 commits a page, and a scroll near the end appends the older page. Each row shows hash, subject, author, and date. Reload sits in its label. Each arena row shows the PR state and is a button that selects the branch to pull from. The page runs the full flow only. `strip` is a CLI command. Browse under Remove paths opens the HEAD tree of the clone, one level per request. A click on a row or its plus adds the chip. Log rows show the clock of the browser. Remove on a card arms on the first click and deletes the URL clone on the second. States: idle, running, done, failed, cancelled. A managed clone goes back to origin before every run. The server fetches, checks out the default branch, resets hard, and drops local `arena/*` copies.
-- Settings: two columns above 1200 px. Left: Identity (name, email, Save), Claimed commits (two chip lists, Save), About. Right: GitHub sign-in, How git reaches GitHub, signing cards. One column at 1200 px and below, in the order Identity, GitHub, signing, Claimed commits, About. How git reaches GitHub and About fold, and open on a click. The first opens on its own when git has no credential helper. Signing cards: gpg banner when gpg is missing, key list, create card, GitHub key steps. Disabled: Create key while gpg is missing. Error: the banner names the failed check. Each card loads on its own.
+- Dashboard: sort select and Reload button in the head, add bar.
+  - Rows and cards: one repo row per repo above 1200 px, repo cards at 1200 px and below. A row or card shows the branch. The repo name is a button that opens the repo, and a click on the card body does the same. The card itself has no role.
+  - Empty: a hint with the add command. Error: a banner above the rows.
+  - Arena rows: each has two lines at every width, the branch name, then `↑ N` and the PR pill. `↑ N` is the net count, the commits that branch holds beyond `origin/<default>` minus the commits `origin/<default>` holds beyond it, with a tooltip. The chip hides below 1, so absorbed work and a default branch that moved on show no chip. No dot sits before the name or in the PR pill, the pill colour carries the state.
+  - Remove: the trash glyph sits top right, bare at rest. A red frame comes on hover, on press, and while armed.
+- Repo: a 320 px sidebar, then the run card left and the options card right, and the log card below both.
+  - Cards: the run card holds the status and the phase list. The log card holds the open log of the latest run and takes the height that is left, down to a 160 px floor. Both come back after a return to the view or a restart. The main column pins to the window like the sidebar, so only the log scrolls.
+  - Run button: the options card head carries the one run button. It reads Clean & Push while idle and Cancel while a run is live.
+  - Options: each option is one row: label, control, and a trailing action or readout. No hint texts. Dry Run, Ignore PR Checks, Update Tags (checked by default), and No lease are checkboxes. No lease is the one danger-coloured option: checked, the run pushes with `git push --force` and no lease, and its tooltip names the two other effects of `-f`.
+  - PR check timeout: a slider with the number beside it. It snaps to 0, 5, 10, 15, 20, 30, 45, 60, 90, or 120 minutes.
+  - Target branch: it lists the default branch first and never an `arena/*` branch. Arena branch appears with two or more arena branches, newest tip first. Each option reads `branch · day`, and the full stamp sits in its title. The chosen one goes to the run as `--arena`.
+  - Sidebar: the repo facts and the arena rows on top. The commit list fills the rest and scrolls on its own. Its hint is the commit count with thousands separators. Reload sits in its label.
+  - Commit list: 30 commits a page, and a scroll near the end appends the older page. Each row shows hash, subject, author, and date. Each arena row shows the PR state and is a button that selects the branch to pull from.
+  - Flow: the page runs the full flow only. `strip` is a CLI command. Browse under Remove paths opens the HEAD tree of the clone, one level per request. A click on a row or its plus adds the chip.
+  - Runs: log rows show the clock of the browser. Remove on a card arms on the first click and deletes the URL clone on the second. States: idle, running, done, failed, cancelled.
+  - Reset: a managed clone goes back to origin before every run. The server fetches, checks out the default branch, resets hard, and drops local `arena/*` copies.
+- Settings: two columns above 1200 px.
+  - Columns: left, Identity (name, email, Save), Claimed commits (two chip lists, Save), About. Right, GitHub sign-in, How git reaches GitHub, signing cards. One column at 1200 px and below, in the order Identity, GitHub, signing, Claimed commits, About.
+  - Folds: How git reaches GitHub and About fold, and open on a click. The first opens on its own when git has no credential helper.
+  - Signing cards: gpg banner when gpg is missing, key list, create card, GitHub key steps. Disabled: Create key while gpg is missing.
+  - Error: the banner names the failed check. Each card loads on its own.
 - Offline: the service worker serves the shell. Data requests fail with the normal error banner.
 - Loading and permission states: not run as separate checks.
 
@@ -53,7 +71,9 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ### Icons
 
 - Lucide 1.61.0, vendored one glyph at a time into the `ICONS` map in `index.html`. Each glyph keeps its 24 px grid and its 2 px stroke in the text color.
-- Three size tokens set the glyph box per place at every width. `--ico-s` is 14 px for inline glyphs: the commit check, the stand-in for a missing author picture, the chip X, and the pill arrow. Buttons, phase rows, tree rows, and banners take `--ico-m`, 16 px. Icon buttons, the card mark, and the brand mark take `--ico-l`, 18 px. A glyph in running text stays at 1 em.
+- Three size tokens set the glyph box per place at every width.
+  - `--ico-s` is 14 px for inline glyphs: the commit check, the stand-in for a missing author picture, the chip X, and the pill arrow.
+  - Buttons, phase rows, tree rows, and banners take `--ico-m`, 16 px. Icon buttons, the card mark, and the brand mark take `--ico-l`, 18 px. A glyph in running text stays at 1 em.
 - Navigation and file glyphs in use: arrow-left, settings, arrow-up, arrow-down, chevron-right, folder, folder-tree, file, and plus.
 - State and action glyphs in use: check, x, triangle-alert, minus, circle-small, loader-circle, git-branch, refresh-cw, copy, user, and broom-sparkles.
 - Buttons with a glyph: Reload is `refresh-cw` alone, named `Reload commits` in `aria-label` and `title`. Copy log is `copy` alone, named `Copy log` the same way. Re-check and Retry lead with `refresh-cw`, Copy public key with `copy`, and Browse with `folder-tree`. Every other button keeps its word alone.
@@ -66,13 +86,19 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 
 - Spacing scale: 2, 4, 6, 8, 10, 12, 16, 20, 24, and 32 px, with 1 px for borders.
 - Page padding `--pad`: 20 px, 16 px at 1200 px and below.
-- Breakpoints, the nuu trio in em, one change each: 75em, 56.25em, and 40em. That is 1200, 900, and 640 px at the 16 px browser default, and the em unit moves each switch with the reader's font size. 1200 px stacks the options card over the run card and folds the repo rows into cards. It puts the settings in one column and tightens the padding. 900 px stacks the sidebar below the cards and the repo cards into one column, and the page scrolls as one. 640 px switches to the phone ramp, 44 px targets, and stacked rows. The options sit in one column at every width. No other width carries a rule.
+- Breakpoints, the nuu trio in em, one change each: 75em, 56.25em, and 40em.
+  - Pixels: 1200, 900, and 640 px at the 16 px browser default, and the em unit moves each switch with the reader's font size.
+  - 1200 px stacks the options card over the run card and folds the repo rows into cards. It puts the settings in one column and tightens the padding.
+  - 900 px stacks the sidebar below the cards and the repo cards into one column, and the page scrolls as one.
+  - 640 px switches to the phone ramp, 44 px targets, and stacked rows. The options sit in one column at every width. No other width carries a rule.
 - Radius: 12 px for cards, 8 px for buttons and fields, and 1000 px for pills. The tree select takes 6 px, the checkbox 4 px.
 
 ### Theme and motion
 
 - Transitions of 120 to 180 ms on transform, opacity, border, and background. `prefers-reduced-motion` stops them.
-- Scroll-edge fade, the nuu recipe: the commit list and the log carry `scroll-panel`. A scrolled edge fades over 12 px, and the fade grows and shrinks over a 192 px scroll ramp. A panel that does not scroll stays unmasked. The rule needs `animation-timeline: scroll(self)` and no reduced-motion preference. Other scrolling regions keep their edges.
+- Scroll-edge fade, the nuu recipe: the commit list and the log carry `scroll-panel`.
+  - A scrolled edge fades over 12 px, and the fade grows and shrinks over a 192 px scroll ramp. A panel that does not scroll stays unmasked.
+  - The rule needs `animation-timeline: scroll(self)` and no reduced-motion preference. Other scrolling regions keep their edges.
 
 ## Components and contracts
 
@@ -82,15 +108,24 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`, two lines: the dot and the name, then the tail under the name. The selected row carries a 2 px accent bar and the text colour. The name reads `Pull from <branch>`. Rows and the timeout slider are 44 px high on a phone.
 - `arena-item`: the arena row and its `arena-del` icon button side by side. The trash glyph is dim until hover, then reads in the error tint. The name reads `Delete <branch>`.
 - `modal`: a `dialog` of 420 px at most, with a title, one paragraph, and Cancel then Delete at the right. The backdrop dims the page. Escape and Cancel close it without a request.
-- `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout. `check`: a label with a drawn checkbox. The box is 16 px, 20 px on a phone, with a 4 px radius and the surface-2 fill. Checked, it takes the accent fill and a white Lucide check. `danger` fills a checked destructive option with the warn colour and a dark check. On a phone the checkboxes form a grid with 160 px columns. Browse, the fold head, and the 16 px path field are 44 px targets there.
-- `phase`: a row with the state glyph, the name, a count, and the time. The count comes from the engine's lines. PR checks reads `passed/total`. Rewrite and sign reads `collecting N commits`, then `signing X/Y`, then `signed X commits`. Push reads `moving`, `pushing`, then `pushed X tags`, and stays empty without a tag. A dry run reads `would sign` and `would move`. Before a count the row carries the name alone.
-- `repo-card`: above 1200 px a subgrid row on the columns of `grid`, so the columns align across rows. Left to right: the icon, the name, the branch pill, the arena rows stacked behind a hairline, Clean, and Remove with the trash glyph. The arena area takes the free width, so the buttons sit at the right edge. In a row an arena row is one line: the name, the ahead chip, and the PR pill. At 1200 px and below a grid card. The icon, the name, and Remove sit on top on one centre line, then the arena rows, and Clean & Push bottom right. The branch chip stays in the rows, and an unavailable card shows its reason in the arena area. A pending card, the clone still running, dims behind a `cloning` pill and leads the grid.
+- `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout.
+  - `check`: a label with a drawn checkbox. The box is 16 px, 20 px on a phone, with a 4 px radius and the surface-2 fill. Checked, it takes the accent fill and a white Lucide check. `danger` fills a checked destructive option with the warn colour and a dark check.
+  - Phone: the checkboxes form a grid with 160 px columns. Browse, the fold head, and the 16 px path field are 44 px targets there.
+- `phase`: a row with the state glyph, the name, a count, and the time.
+  - Counts: the count comes from the engine's lines. PR checks reads `passed/total`. Rewrite and sign reads `collecting N commits`, then `signing X/Y`, then `signed X commits`.
+  - Push reads `moving`, `pushing`, then `pushed X tags`, and stays empty without a tag. A dry run reads `would sign` and `would move`. Before a count the row carries the name alone.
+- `repo-card`: above 1200 px a subgrid row on the columns of `grid`, so the columns align across rows.
+  - Row, left to right: the icon, the name, the branch pill, and the arena rows stacked behind a hairline. Then Clean, and Remove with the trash glyph. The arena area takes the free width, so the buttons sit at the right edge. In a row an arena row is one line: the name, the ahead chip, and the PR pill.
+  - Card: at 1200 px and below a grid card. The icon, the name, and Remove sit on top on one centre line, then the arena rows, and Clean & Push bottom right. The branch chip stays in the rows, and an unavailable card shows its reason in the arena area.
+  - Pending: a pending card, the clone still running, dims behind a `cloning` pill and leads the grid.
 - `sign-row`: label column of 120 px and a value column. On a phone the label takes a full row.
 - `sign-fields`: name and e-mail side by side, one column on a phone.
 - `card.fold`: a `details` card. The `summary` is the card head with a `show` or `hide` mark at the right, and the body opens below it. Closed, the head has no bottom border.
 - `banner`: `err`, `warn`, `ok` variants with an icon and one sentence of action.
 - `run button`: one button with `data-state` idle, starting, or running. Idle reads Clean & Push and is the primary. Starting is disabled until the job id arrives. Running reads Cancel as a plain button.
-- `tree`: the path selector. Rows are `treeitem`s with `aria-level`. A folder row carries `aria-expanded` and loads its children on the first open. The trailing `tree-select` button toggles the path and reports `aria-pressed`. Rows and select buttons grow to 44 px on a phone.
+- `tree`: the path selector.
+  - Rows are `treeitem`s with `aria-level`. A folder row carries `aria-expanded` and loads its children on the first open.
+  - The trailing `tree-select` button toggles the path and reports `aria-pressed`. Rows and select buttons grow to 44 px on a phone.
 
 ## Accessibility and inclusion
 
@@ -109,7 +144,9 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - The repo registry and settings live on the server under `ARENA_DATA`. The page keeps no state beyond the open view.
 - Pictures: the server keeps the GitHub picture of each author under `ARENA_DATA/avatars/`, one lookup per address. A noreply address names the user, any other costs one `gh api` call. A picture lives 30 days after its last use, a use renews it, and expired ones get pruned. The page loads them from the server, never from GitHub.
 - Commits: the commits API answers 30 a page with a `next` cursor, the sha of the last commit of a full page. `before=<sha>` answers the page after it. Reload starts at the first page again.
-- Latest run: the server keeps the newest run of each repo in memory and writes the finished one to `ARENA_DATA/jobs/`. The repo view asks for it on open. A live run streams on from its first line. A finished run paints at once with its log, phases, and status. A removed repo takes its saved run with it.
+- Latest run: the server keeps the newest run of each repo in memory and writes the finished one to `ARENA_DATA/jobs/`.
+  - The repo view asks for it on open. A live run streams on from its first line. A finished run paints at once with its log, phases, and status.
+  - A removed repo takes its saved run with it.
 - Defaults: PR check timeout 15 minutes, dry run off.
 - Validation: the add bar accepts a clone URL, a GitHub page address, or a path. Another shape gets an error line under the field, with `aria-invalid` and `aria-describedby` on the field until the next keystroke. The server answers errors as text the banner shows.
 - Retries: none automatic. Re-check and Reload buttons repeat a read.
@@ -150,9 +187,13 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-22: no command switch on the repo page. A local rewrite without a push is a terminal task, so `strip` lives in the CLI alone.
 - Accepted 2026-10-22: the whole options card folds, not the Target branch row alone. The select names the default branch first, keeps the empty value, and lists no `arena/*` branch. The server refuses one too.
 - Accepted 2026-10-22: with two or more arena branches the page selects one, newest tip first, in the options card. The engine gained `--arena NAME` for it and keeps the full flow. The page never passes `-b arena/*`.
-- Accepted 2026-10-22: the sidebar grows to 320 px. The commit list sits below the repo facts and the arena rows. The HEAD block goes. The hash leads each commit row. Below 900 px the sidebar stacks under the run card instead of hiding. The commit list then grows with the page: one scroll per screen.
+- Accepted 2026-10-22: the sidebar grows to 320 px.
+  - The commit list sits below the repo facts and the arena rows. The HEAD block goes. The hash leads each commit row.
+  - Below 900 px the sidebar stacks under the run card instead of hiding. The commit list then grows with the page: one scroll per screen.
 - Accepted 2026-10-22: a click on a sidebar arena row selects the arena branch the run pulls from. The Arena branch select follows the row and the row follows the select. The marked row never sets the target branch. With one arena branch the row only shows which branch that is.
-- Accepted 2026-10-22: the options card loses its hint texts and the task note above it. Each option is one row. The switches become checkboxes with Title Case labels. Update Tags is the positive form of `--no-tags`. Keep arena branch goes. The reset before every run drops local copies, so a kept branch never reaches the next run. The timeout is a slider with ten stops and a readout.
+- Accepted 2026-10-22: the options card loses its hint texts and the task note above it.
+  - Each option is one row. The switches become checkboxes with Title Case labels. Update Tags is the positive form of `--no-tags`.
+  - Keep arena branch goes. The reset before every run drops local copies, so a kept branch never reaches the next run. The timeout is a slider with ten stops and a readout.
 - Accepted 2026-10-22: a managed clone holds nothing of its own. The server resets it to origin before every run and drops local `arena/*` copies. The page loses the Reset button, the dirty chip, and On divergence. `--on-divergence` stays a CLI flag.
 - Accepted 2026-10-22: the card and the sidebar show how far each arena branch is ahead of the default branch. The clone's own drift stays out of sight. Nobody commits in the container, and the engine handles that divergence itself.
 - Accepted 2026-10-22: the primary button reads Clean & Push. The phase list keeps Publish for the push, tags, and cleanup step.
@@ -185,7 +226,10 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-23: the app icon and the brand mark are the Lucide `broom-sparkles` glyph in the accent. The regular pictures are the glyph alone, the maskable picture and the Apple touch icon get the dark ground.
 - Accepted 2026-10-23: the scroll-edge fade applies to the commit list and the log alone.
 - Accepted 2026-10-23: human-facing text says push, not publish, and PR, not pull request. Identifiers, API fields, and the history above keep their words.
-- Accepted 2026-10-23: above 1200 px the dashboard shows one full-width row per repo on shared columns. The arena area takes the free width, and Clean and Remove sit at the right edge. An arena row is one line there, and two branches stack. At 1200 px and below the repos stay cards with two-line arena rows. Remove carries the trash glyph at every width. The spread beats the nuu ink ratio: the arena area of a one-branch row reads 0.21 to 0.24, under the 0.25 line.
+- Accepted 2026-10-23: above 1200 px the dashboard shows one full-width row per repo on shared columns.
+  - The arena area takes the free width, and Clean and Remove sit at the right edge. An arena row is one line there, and two branches stack.
+  - At 1200 px and below the repos stay cards with two-line arena rows. Remove carries the trash glyph at every width.
+  - The spread beats the nuu ink ratio: the arena area of a one-branch row reads 0.21 to 0.24, under the 0.25 line.
 - Accepted 2026-10-23: the dashboard sorts the repos by the newest arena tip, by name, or by PR state with failures first. The select sits beside Reload and the browser keeps the choice.
 - Accepted 2026-10-23: the dashboard Clean & Push button reads the glyph and the words again in rows and cards. A card puts it bottom right and drops the branch chip.
 - Accepted 2026-10-23: the commit hint is the count alone, with thousands separators. The list pages 30 at a time, a scroll near the end loads the older page, and Reload restarts.
