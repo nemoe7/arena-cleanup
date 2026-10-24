@@ -16,6 +16,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A dashboard row shows a clean in flight: an amber pill, a greyed Clean & Push that names the reason, and `aria-busy`.
 - The remote fact of the repo view shows a GitHub remote as the GitHub mark and `owner/repo`. It opens the repo page in a new tab.
 
+### Fixed
+
+- The target branch select no longer offers an arena branch as `current`. A clone parked on one gets the default branch alone.
+
 ## [0.3.4] - 2026-10-24
 
 ### Changed

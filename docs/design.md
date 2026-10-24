@@ -57,6 +57,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - No lease is the one danger-coloured option: checked, the run pushes with `git push --force` and no lease, and its tooltip names the two other effects of `-f`.
   - PR check timeout: a slider with the number beside it. It snaps to 0, 5, 10, 15, 20, 30, 45, 60, 90, or 120 minutes.
   - Target branch: it lists the default branch first and never an `arena/*` branch.
+    - A clone parked on an arena branch gets the default branch alone, sent as `-b`.
     - Arena branch appears with two or more arena branches, newest tip first.
     - Each option reads `branch · day`, and the full stamp sits in its title.
     - The chosen one goes to the run as `--arena`.

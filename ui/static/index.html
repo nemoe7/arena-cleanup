@@ -1770,8 +1770,11 @@
     // The default branch leads: a run on it finds the arena branch itself, so
     // the value stays empty. A clone parked on another branch keeps that
     // branch as "current" and offers the default branch cleaned in place.
+    // Parked on an arena branch, the clone gets the default branch alone.
+    const parked = !onDefault && !s.branch.startsWith("arena/");
     const options = [el("option", { value: onDefault ? "" : main }, `${main} (default)`)];
-    if (!onDefault) options.push(el("option", { value: "" }, `current (${s.branch})`));
+    if (parked) options.push(el("option", { value: "" }, `current (${s.branch})`));
+    if (!onDefault && !parked && state.branch !== main) state.branch = main;
     $("branch").replaceChildren(...options);
     $("branch").value = state.branch;
   }
