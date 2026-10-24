@@ -529,6 +529,7 @@ def components_board(_: dict[str, bytes]) -> str:
     + pill("ok", "clean")
     + pill("err", "failing")
     + pill("warn", "running")
+    + pill("warn busy", f"{icon('loader-circle')}clean running", dot=False)
     + pill("mono", "6f5a842", dot=False)
     + "</div>"
     + '<div class="row" style="gap:8px"><span class="chip">0.1.0</span>'
@@ -538,7 +539,9 @@ def components_board(_: dict[str, bytes]) -> str:
     '<div class="col" style="width:320px"><input class="field" placeholder="Paste a repo URL…">'
     '<input class="field" value="https://github.com/acme/example.git">'
     '<input class="field" value="disabled" disabled>'
-    '<select class="field"><option>main (default)</option></select></div>'
+    '<select class="field"><option>main (default)</option></select>'
+    '<dl class="kv"><dt>remote</dt><dd class="mono">'
+    f'<a class="remote-link" href="#">{icon("github")}<span>acme/example</span></a></dd></dl></div>'
   )
   checks = (
     '<div class="checks">'
@@ -664,7 +667,7 @@ def style_board(_: dict[str, bytes]) -> str:
       for name in names
     )
     + '</div><p class="cap">Lucide glyphs inlined in index.html, drawn at 1 em in the text colour.'
-    + " broom-sparkles is also the app icon.</p>"
+    + " github is the Octicons mark, and broom-sparkles is also the app icon.</p>"
   )
   body = (
     '<div class="row">'
