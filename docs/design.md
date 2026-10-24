@@ -172,10 +172,10 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - The row is a button with `aria-expanded`, and a tap shows the whole subject.
   - The metadata carries the author's GitHub picture, 20 px and round, or a `user` glyph in the same disc when the server has none.
 - `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`, two lines: the dot and the name, then the tail under the name.
-  - The selected row carries a 2 px accent bar and the text colour.
+  - A selected row carries text colour. Its tint and 2 px accent bar sit on its `arena-item`.
   - The name reads `Pull from <branch>`.
   - Rows and the timeout slider are 44 px high on a phone.
-- `arena-item`: the arena row and its `arena-del` icon button side by side.
+- `arena-item`: the arena row with its `arena-checks` and `arena-del` icon buttons side by side. Its hover tint and its selected tint span the whole row, icon buttons included, and the icon buttons keep their own hover rings on top.
   - The trash glyph is dim until hover, then reads in the error tint.
   - The name reads `Delete <branch>`.
 - `modal`: a `dialog` of 420 px at most, with a title, one paragraph, and Cancel then Delete at the right.
@@ -484,3 +484,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the Prepare modal names three steps instead of its log lines. Later steps show only once the phase reaches them.
 - Accepted 2026-10-24: Clean & Push greys only when a clean would overwrite commits on the default branch, read from the net count. An absorbed branch keeps the button live, and the run reports nothing to push.
 - Accepted 2026-10-24: dates read in 24-hour time. The shared formatter sets `hourCycle` to `h23`, so a commit date reads `Oct 24, 18:11`, and the log stamps keep their `HH:MM:SS`.
+- Accepted 2026-10-24: the hover tint and the selected mark of a sidebar arena row span the whole row, icon buttons included. The icon buttons keep their own hover rings on top of the row tint.

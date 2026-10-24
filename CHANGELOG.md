@@ -15,6 +15,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Commit dates and branch activity labels read in 24-hour time, `Oct 24, 18:11`. Log stamps were 24-hour already.
 
+### Fixed
+
+- The hover tint and the selected mark of a sidebar arena row span the whole row, the checks and trash icon buttons included.
+
 ## [0.3.5] - 2026-10-24
 
 ### Added

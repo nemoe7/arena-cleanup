@@ -431,12 +431,15 @@
   @media (hover: hover) { .row-btn:hover { background: var(--surface-2); color: var(--text); } }
   .row-btn .txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: var(--fs-1); }
   /* an arena row selects the branch the run pulls from; the selected row keeps its mark */
-  .row-btn.select[aria-pressed="true"] { background: var(--surface-2); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
+  .row-btn.select[aria-pressed="true"] { color: var(--text); }
   .row-btn.select:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .row-btn .meta { flex: none; color: var(--dim); font: var(--fs-1) var(--mono); }
-  /* an arena row and its delete control side by side; the control opens the modal */
-  .arena-item { display: flex; align-items: stretch; gap: 4px; }
+  /* an arena row and its icon buttons side by side; the tint and the mark span the row */
+  .arena-item { display: flex; align-items: stretch; gap: 4px; border-radius: 6px; }
   .arena-item .row-btn { flex: 1 1 auto; min-width: 0; }
+  .arena-item.selected { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
+  @media (hover: hover) { .arena-item:hover { background: var(--surface-2); } .arena-item:hover .row-btn { color: var(--text); } }
+  @media (hover: hover) { .arena-item .row-btn:hover { background: none; } }
   .arena-del { flex: none; align-self: center; color: var(--dim); background: none; border-color: transparent; }
   .arena-del:focus-visible { color: var(--err-text); background: var(--err-tint); border-color: var(--err-line); }
   .arena-checks { flex: none; align-self: center; color: var(--dim); background: none; border-color: transparent; }
@@ -1688,7 +1691,7 @@
     const branches = el("div", { class: "side-group" },
       el("div", { class: "side-label" }, "Arena branches", el("span", {}, String((s.arena || []).length))),
       ...((s.arena && s.arena.length)
-        ? s.arena.map((b) => el("div", { class: "arena-item" },
+        ? s.arena.map((b) => el("div", { class: selectedArena(s) === b ? "arena-item selected" : "arena-item" },
            el("button", { type: "button", class: "row-btn select", "data-branch": b,
              "aria-pressed": String(selectedArena(s) === b), "aria-label": `Pull from ${b}`,
              title: "Pull from this arena branch",
