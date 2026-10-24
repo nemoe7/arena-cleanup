@@ -148,7 +148,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - At 1200 px and below the repos stay cards with two-line arena rows.
 - The Remove button carries the trash glyph in place of the X.
 - Human-facing text says push, not publish, and PR, not pull request: the
-  page, the engine log lines, the CLI help, the README, and the design record.
+  page, the engine log lines, CLI help, README, and design record.
   Identifiers, API fields, and past entries keep their words.
 - The Force Push option reads No lease.
   - Checked, or with `-f`, the run pushes with `git push --force` and no lease, so it lands even when the default branch moved during the run.
@@ -334,7 +334,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `POST /api/repos/<id>/reset`: fetch, check out the default branch, and reset it hard. Untracked files stay.
 - The repo page runs the full flow only. The Rewrite locally switch is gone, and `strip` stays a CLI command.
 - The card Remove X sits top right as a bare glyph. A red frame comes on hover, on press, and while armed.
-- The primary button reads Clean & Push on the card, the run card, and the phone bar.
+- The primary button reads Clean & Push on the card, run card, and phone bar.
 - The options card folds from its head. Closed, the head shows the branch pill and what differs from the defaults.
 - Target branch lists the default branch first and never an `arena/*` branch. The page API answers 400 for one.
 - Browse under Remove paths opens the HEAD tree of the clone, one level per request.

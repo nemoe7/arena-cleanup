@@ -7,7 +7,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 ## Purpose and status
 
 - Goal: clean an arena branch (rewrite, sign, push) from a browser, on a phone or a desktop.
-- Scope: the dashboard, the repo view, and the settings view.
+- Scope: the dashboard, repo view, and settings view.
 - Constraints: one HTML file, no build step, and a dark theme only. Fonts and icons ship with the page, so nothing loads from the network.
 - Acceptance checks: the pytest suite in `tests/`, screenshots at 1280 and 360 px, and the nemo-ui-ux measure reports.
 - Design status: accepted for the four views. The audit findings of 2026-10-22 are fixed.
@@ -79,7 +79,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - Columns: left, Identity (name, email, Save), Claimed commits (two chip lists, Save), About.
     - Right, the GitHub card, then the signing cards.
     - One column at 1200 px and below, in the order Identity, GitHub, signing, Claimed commits, About.
-  - GitHub card: the sign-in state, the token scopes, the credential helper, and the ssh keys.
+  - GitHub card: the sign-in state, token scopes, credential helper, and ssh keys.
     - A warning and Configure appear when a signed-in user has no helper.
     - About folds, and opens on a click.
   - Actions: Save, Re-check, Sign in, Configure, Create key, and Open GitHub keys sit bottom right in the foot of their card.
@@ -198,7 +198,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
     - A dry run reads `would sign` and `would move`.
     - Before a count the row carries the name alone.
 - `repo-card`: above 1200 px a subgrid row on the columns of `grid`, so the columns align across rows.
-  - Row, left to right: the icon, the name, the branch pill, and the arena rows stacked behind a hairline.
+  - Row, left to right: the icon, name, branch pill, and arena rows stacked behind a hairline.
     - Then Clean, and Remove with the trash glyph.
     - The arena area takes the free width, so the buttons sit at the right edge.
     - In a row an arena row is one line: the name, the ahead chip, and the PR pill.
@@ -417,7 +417,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - The arena row leaves on Delete, the card leaves on Remove, and Add puts a dimmed pending card first.
   - A refused call puts the row back with the error, a lost connection sends the write once more.
 - Accepted 2026-10-24: no surface casts a drop shadow, nuu clause 6.
-  - The toast and the jump button lost theirs, so the primary button, the cards, and the floats are all flat.
+  - The toast and the jump button lost theirs, so the primary button, cards, and floats are all flat.
   - The 3 px focus rings stay.
 - Accepted 2026-10-24: every transition takes `--fast`, 160 ms, on `--ease`, one curve, nuu clause 8. The spinners and the LED pulse are CSS animations and keep their own timing, and reduced motion stops them all.
 - Accepted 2026-10-24: the delete modal carries an `x` icon button top right, nuu clause 15. It submits `cancel` like the Cancel button, which keeps the first focus.
@@ -433,7 +433,7 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - The boot sequence hides the views the hash does not name before it loads the environment and the repos.
   - A reload off the dashboard shows no dashboard interstitial.
 - Accepted 2026-10-24: Clean & Push rests when no arena branch is ahead on origin.
-  - The dashboard button, the run button, and the phone bar grey out and name the reason.
+  - The dashboard button, run button, and phone bar grey out and name the reason.
   - A named target branch is cleaned in place, so it keeps the run button live, and the status refresh wakes the buttons.
 - Accepted 2026-10-24: the repo fetch shows a loading bar under the header.
   - The server counts two steps per repo and serves the count.

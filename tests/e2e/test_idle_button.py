@@ -1,7 +1,7 @@
 """Clean & Push is disabled when no arena branch is ahead.
 
 The default branch runs through an arena branch. With none ahead on origin
-the dashboard card, the repo view, and the phone bar grey the button. Its
+the dashboard card, repo view, and phone bar grey the button. Its
 tooltip names the reason. The status refresh after a reload turns it back on.
 """
 

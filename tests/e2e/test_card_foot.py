@@ -1,7 +1,7 @@
 """Every card action sits bottom right in a card foot, at both widths.
 
 nuu puts the close x top right and every other action button bottom right.
-The run button, the two Save buttons, and the GitHub and signing actions
+The run button, two Save buttons, and GitHub and signing actions
 all live in a `.card-foot` row. The phone keeps its tab
 bar as the run control, so the options foot hides there.
 """

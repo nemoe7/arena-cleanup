@@ -1,4 +1,4 @@
-"""The page's feedback: the offline banner, the phase list, and the add bar."""
+"""The page's feedback: the offline banner, phase list, and add bar."""
 
 from __future__ import annotations
 
