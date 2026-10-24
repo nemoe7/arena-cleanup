@@ -14,6 +14,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - Commit dates and branch activity labels read in 24-hour time, `Oct 24, 18:11`. Log stamps were 24-hour already.
+- The views board in `docs/design/` shows the four demo views at full size, two to a row.
 
 ### Fixed
 

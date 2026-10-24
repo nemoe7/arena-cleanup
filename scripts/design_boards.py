@@ -87,6 +87,7 @@ BOARD_CSS = """
 .board *, .board *::before, .board *::after { animation: none !important; transition: none !important; }
 .board { padding: 32px; background: var(--bg); color: var(--text); font-family: var(--sans);
   width: max-content; max-width: 1536px; }
+.board.wide { max-width: 2816px; }
 .board h1 { font-size: var(--fs-5); font-weight: 640; margin: 0 0 4px; }
 .board .lede { color: var(--muted); font-size: var(--fs-2); margin: 0 0 24px; max-width: 720px; }
 .board .row { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
@@ -427,30 +428,31 @@ def views_board(shots: dict[str, bytes]) -> str:
     + frame(
       "Default view",
       "Five remembered repos, the add bar focused, the tool dots green.",
-      img(shots, "dashboard", 460),
+      img(shots, "dashboard", 1360),
     )
     + frame(
       "Signed out",
       "The banner offers Connect GitHub. Every arena row reads checks unavailable, never no PR.",
-      img(shots, "signed-out", 460),
+      img(shots, "signed-out", 1360),
     )
     + frame(
       "After a run",
       "Five phases with their results and times, the raw log open under them.",
-      img(shots, "after-run", 460),
+      img(shots, "after-run", 1360),
     )
     + frame(
       "Settings",
       "Identity, GitHub access, signing, and the claim rules, then the informing cards.",
-      img(shots, "settings", 460),
+      img(shots, "settings", 1360),
     )
     + "</div>"
   )
   return board(
     "Example views",
-    "Full views at 1360 px, straight from the demo fixture. "
+    "Full views at 1360 px, straight from the demo fixture, two to a row. "
     "A new view is only documented when an event changes the whole page.",
     body,
+    "wide",
   )
 
 
