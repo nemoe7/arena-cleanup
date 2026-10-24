@@ -1265,8 +1265,10 @@
       }
     }
 
+    const idle = Boolean(s.ok) && !hasWork(s);
     const actions = el("div", { class: "card-actions" },
-      el("button", { class: "btn primary clean", title: "Clean & Push", onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, icon("broom-sparkles"), "Clean & Push"));
+      el("button", { class: "btn primary clean", disabled: idle, title: idle ? NO_WORK : "Clean & Push",
+        onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, icon("broom-sparkles"), "Clean & Push"));
 
     return el("div", { class: "repo-card", onclick: () => openRepo(repo.id) },
       head, meta, arena, actions, removeButton(repo));
@@ -1704,11 +1706,24 @@
     return parts.join(" ");
   }
 
+  const NO_WORK = "nothing to clean or push";
+  // the default branch runs through an arena branch, so it needs one that is ahead
+  const hasWork = (s) => Object.values((s && s.ahead) || {}).some((n) => Number(n) > 0);
+  function runHasWork() {
+    const s = state.repo?.status;
+    if (!s || !s.ok) return true;
+    const target = state.branch || s.branch || s.default;
+    return target !== s.default || hasWork(s);
+  }
   function renderCommand() {
     const line = commandLine();
+    const work = runHasWork();
     for (const id of ["start", "start-mobile"]) {
-      $(id).dataset.argv = line;
-      if ($(id).dataset.state === "idle") $(id).title = `Runs: ${line}`;
+      const btn = $(id);
+      btn.dataset.argv = line;
+      if (btn.dataset.state !== "idle") continue;
+      btn.disabled = !work;
+      btn.title = work ? `Runs: ${line}` : NO_WORK;
     }
   }
 
@@ -2570,7 +2585,7 @@
   document.addEventListener("keydown", (ev) => {
     if ((ev.metaKey || ev.ctrlKey) && ev.key === "Enter" && !$("view-repo").hidden) {
       ev.preventDefault();
-      if ($("start").dataset.state === "idle") startJob(payload());
+      if ($("start").dataset.state === "idle" && !$("start").disabled) startJob(payload());
     }
   });
 

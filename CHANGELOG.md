@@ -17,6 +17,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Every card action sits bottom right in a card foot: the run button under
   the options, both Save buttons, Re-check, Sign in, Configure, Create key at
   its natural width, and Open GitHub keys.
+- Clean & Push rests when no arena branch is ahead on origin: the dashboard
+  button, the run button, and the phone bar grey out with the tooltip nothing
+  to clean or push. A named target branch keeps the run button live.
 
 ### Fixed
 
