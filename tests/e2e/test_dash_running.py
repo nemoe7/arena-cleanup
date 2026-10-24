@@ -1,9 +1,9 @@
 """A dashboard row shows a clean in flight on its repo.
 
-The server flags a repo with a live job. The row answers with an amber pill,
-a greyed Clean & Push that names the reason, and aria-busy. The return from
-the repo view reads the list again, so the row shows a run started there
-(docs/design.md).
+The server flags a repo with a live job. Its Clean & Push button turns into
+Running: disabled, an amber spinning glyph, and the same box. The reason is
+its title, and the row carries aria-busy. The return from the repo view reads
+the list again, so the row shows a run started there (docs/design.md).
 """
 
 from __future__ import annotations
@@ -20,12 +20,19 @@ pytestmark = pytest.mark.e2e
 
 REPO = "shop-web"
 CARD = f".repo-card:has-text('{REPO}')"
-ROW = (
-  "(card) => ({ busy: card.getAttribute('aria-busy'),"
-  " pill: (card.querySelector('.pill.busy') || {}).textContent || null,"
-  " disabled: card.querySelector('button.clean').disabled,"
-  " title: card.querySelector('button.clean').title })"
-)
+ROW = """(card) => {
+  const btn = card.querySelector('button.clean');
+  const glyph = getComputedStyle(btn.querySelector('.busy .ico-svg'));
+  const warn = getComputedStyle(document.documentElement).getPropertyValue('--warn').trim();
+  return { busy: card.getAttribute('aria-busy'), pills: card.querySelectorAll('.repo-meta .pill').length,
+    running: btn.classList.contains('running'), label: btn.innerText.trim(),
+    disabled: btn.disabled, title: btn.title, amber: glyph.color === warn || glyph.color === hex(warn),
+    spins: glyph.animationName === 'spin', box: [btn.offsetWidth, btn.offsetHeight] };
+  function hex(c) {
+    const m = /^#([0-9a-f]{6})$/i.exec(c);
+    return m ? `rgb(${[0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16)).join(', ')})` : c;
+  }
+}"""
 REASON = "a clean is running on this repo"
 
 
@@ -46,21 +53,27 @@ def test_a_live_job_marks_its_row(desktop: Walker) -> None:
   page.route("**/api/repos", flag)
   try:
     desktop.goto(1200)
-    page.wait_for_selector(f"{CARD} .pill.busy")
+    page.wait_for_selector(f"{CARD} button.clean.running")
     row = page.eval_on_selector(CARD, ROW)
+    other = page.eval_on_selector(".repo-card:has-text('billing-api')", ROW)
     assert row == {
       "busy": "true",
-      "pill": "clean running",
+      "pills": 1,
+      "running": True,
+      "label": "Running",
       "disabled": True,
       "title": REASON,
-    }
-    other = page.eval_on_selector(".repo-card:has-text('billing-api')", ROW)
-    assert other["busy"] is None and other["pill"] is None, "one row alone"
+      "amber": True,
+      "spins": True,
+      "box": other["box"],
+    }, "the button carries the run, no pill, and the same box as an idle one"
+    assert other["busy"] is None and other["label"] == "Clean & Push", "one row alone"
+    assert other["spins"] is False
     # repo view and back: the return reads the statuses once more
     before = len(reads)
     desktop.click(f"{CARD} .repo-name", 600)
     desktop.click("#back", 600)
-    page.wait_for_selector(f"{CARD} .pill.busy")
+    page.wait_for_selector(f"{CARD} button.clean.running")
     deadline = time.monotonic() + 5
     while len(reads) < before + 1 and time.monotonic() < deadline:
       page.wait_for_timeout(100)
@@ -70,4 +83,6 @@ def test_a_live_job_marks_its_row(desktop: Walker) -> None:
     page.unroute("**/api/fetch")
   desktop.goto(1200)
   page.wait_for_selector(CARD)
-  assert page.eval_on_selector(CARD, ROW)["pill"] is None, "a plain reload clears it"
+  assert page.eval_on_selector(CARD, ROW)["running"] is False, (
+    "a plain reload clears it"
+  )

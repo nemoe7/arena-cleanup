@@ -216,7 +216,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Then Clean, and Remove with the trash glyph.
     - The arena area takes the free width, so Clean and Remove sit at the right edge.
     - In a row an arena row is one line: the name, the ahead chip, and the PR pill.
-    - A clean in flight adds an amber `clean running` pill after the branch pill, greys Clean & Push with the reason, and sets `aria-busy`.
+    - A clean in flight turns Clean & Push into Running: disabled, an amber spinning glyph, the same box, and the reason as its title. The row carries `aria-busy`.
   - Card: at 1200 px and below a grid card.
     - The icon, the name, and Remove sit on top on one centre line, then the arena rows, and Clean & Push bottom right.
     - The branch chip stays in the rows, and an unavailable card shows its reason in the arena area.
@@ -516,4 +516,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: above 1200 px the repos are one table, not row-shaped cards, and the cards below 1200 px keep their shape.
   - A header line reads Repo, Branch, Arena branches, and Actions. Rules of 1 px split the rows, cells pad 12 px, a hovered row tints, and the Sort select stays.
 - Accepted 2026-10-24: a button that leads to GitHub shows the GitHub mark instead of the word. Its title and accessible name keep the phrase.
+- Accepted 2026-10-24: the Clean & Push button carries a live run itself, as Running with an amber spinning glyph, and the `clean running` pill is gone. Both labels share one grid cell, so the button keeps its width and height across states.
   - A running job refreshes on every poll, and its first read after the end replaces the short log.

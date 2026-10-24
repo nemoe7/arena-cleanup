@@ -1326,10 +1326,16 @@ def test_every_clean_button_carries_the_broom_glyph() -> None:
     )
     assert match is not None, button_id
     assert match.group(1) == CLEAN_GLYPH + "Clean &amp; Push", button_id
-  assert 'class: "btn primary clean", disabled: Boolean(stale) || busy,' in page
+  assert (
+    'class: busy ? "btn primary clean twin running" : "btn primary clean twin", '
+    "disabled: Boolean(stale) || busy,"
+  ) in page
   assert 'title: busy ? CLEAN_RUNNING : stale || "Clean & Push",' in page
-  assert 'icon("broom-sparkles"), "Clean & Push"));' in page, (
-    "the card button has words"
+  assert (
+    'el("span", { class: "idle" }, icon("broom-sparkles"), "Clean & Push"),' in page
+  ), "the card button has words"
+  assert 'el("span", { class: "busy" }, icon("loader-circle"), "Running")));' in page, (
+    "the busy face names the run"
   )
   assert 'running ? ["Cancel"] : [icon("broom-sparkles"), "Clean & Push"]' in page
   assert ".clean .sparkles { opacity: 0;" in page

@@ -259,6 +259,13 @@
   }
   @media (hover: hover) { .btn:hover { background: var(--surface-3); border-color: var(--line-hover); } }
   .btn.icon { width: 34px; padding: 0; --ico: var(--ico-l); }
+  /* a twin button has an idle face and a busy face in one grid cell, so its
+     box holds while the label swaps. The row's Clean & Push shows Running */
+  .btn.twin { display: inline-grid; }
+  .btn.twin > span { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn.twin:not(.running) > .busy, .btn.twin.running > .idle { visibility: hidden; }
+  .btn.twin.running:disabled { opacity: 1; cursor: progress; background: var(--surface-2); border-color: var(--line-2); color: var(--dim); }
+  .btn.twin.running .busy .ico-svg { color: var(--warn); animation: spin 1s linear infinite; }
   .clean .sparkles { opacity: 0; transition: opacity var(--fast) var(--ease); }
   .clean:focus-visible .sparkles { opacity: 1; }
   @media (hover: hover) { .clean:hover .sparkles { opacity: 1; } }
@@ -473,7 +480,7 @@
   .check-list .passed > .ico-svg { color: var(--ok); }
   .check-list .failed > .ico-svg { color: var(--err); }
   .check-list .running > .ico-svg { color: var(--warn); }
-  .check-list .running > .ico-svg, .pill.busy .ico-svg { animation: spin 1s linear infinite; }
+  .check-list .running > .ico-svg { animation: spin 1s linear infinite; }
   .check-list { margin-bottom: 0; }
   .check-list li { flex-wrap: wrap; }
   .check-row { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0;
@@ -1560,9 +1567,6 @@
     } else {
       meta.append(el("span", { class: "pill mono" }, s.branch));
     }
-    if (repo.running) {
-      meta.append(el("span", { class: "pill warn busy", title: CLEAN_RUNNING }, icon("loader-circle"), "clean running"));
-    }
 
     let arena = null;
     if (s.ok) {
@@ -1592,9 +1596,11 @@
     const stale = s.ok ? overwriteReason(s) : "";
     const busy = Boolean(repo.running);
     const actions = el("div", { class: "card-actions" },
-      el("button", { class: "btn primary clean", disabled: Boolean(stale) || busy,
+      el("button", { class: busy ? "btn primary clean twin running" : "btn primary clean twin", disabled: Boolean(stale) || busy,
         title: busy ? CLEAN_RUNNING : stale || "Clean & Push",
-        onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } }, icon("broom-sparkles"), "Clean & Push"));
+        onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } },
+        el("span", { class: "idle" }, icon("broom-sparkles"), "Clean & Push"),
+        el("span", { class: "busy" }, icon("loader-circle"), "Running")));
 
     return el("div", { class: "repo-card", "aria-busy": busy, onclick: () => openRepo(repo.id) },
       head, meta, arena, actions, removeButton(repo));

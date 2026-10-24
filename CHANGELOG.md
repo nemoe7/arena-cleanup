@@ -9,6 +9,14 @@ The engine, `arena-cleanup.py`, carries its own number and its own file,
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.10] - 2026-10-24
+
+### Changed
+
+- A clean in flight shows on the Clean & Push button itself: disabled, an
+  amber spinning glyph, and the label Running, at the same width and height.
+  The `clean running` pill is gone.
+
 ## [0.3.9] - 2026-10-24
 
 ### Added

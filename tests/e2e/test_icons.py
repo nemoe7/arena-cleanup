@@ -56,9 +56,7 @@ def test_clean_buttons_carry_the_broom_and_sparkle_on_hover(desktop: Walker) -> 
     f"() => getComputedStyle(document.querySelector('{CARD_CLEAN} .sparkles')).opacity === '1'"
   )
   assert idle == 0
-  assert (
-    page.eval_on_selector(CARD_CLEAN, "e => e.textContent.trim()") == "Clean & Push"
-  )
+  assert page.eval_on_selector(CARD_CLEAN, "e => e.innerText.trim()") == "Clean & Push"
   desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
   assert page.eval_on_selector("#start .ico-svg", BOX) == BUTTON
   assert page.eval_on_selector("#start .sparkles", OPACITY) == 0
