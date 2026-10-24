@@ -45,7 +45,11 @@ jobs:
         with:
           persist-credentials: false
           ref: main
+          # the tip and its parent: a steering sync is one amended commit
+          fetch-depth: 2
 
+      # The tip may sit one steering sync ahead of the tested commit. CI skips
+      # those paths, and the image leaves them out, so that delta passes.
       - name: Pin the tested commit
         env:
           EXPECTED: ${{ github.event.workflow_run.head_sha || github.sha }}
@@ -54,10 +58,22 @@ jobs:
           set -euo pipefail
 
           actual="$(git rev-parse HEAD)"
-          if [[ "$actual" != "$EXPECTED" ]]; then
-            echo "main is at $actual, but CI tested $EXPECTED" >&2
+          if [[ "$actual" == "$EXPECTED" ]]; then
+            exit 0
+          fi
+          if ! git merge-base --is-ancestor "$EXPECTED" HEAD 2>/dev/null; then
+            echo "main is at $actual, which does not contain the tested $EXPECTED" >&2
             exit 1
           fi
+          shipped="$(git diff --name-only "$EXPECTED" HEAD -- . ':!.agents' ':!ARENA.md' ':!AGENTS.md')"
+          if [[ -n "$shipped" ]]; then
+            {
+              echo "main moved past the tested $EXPECTED with shipped changes:"
+              echo "$shipped"
+            } >&2
+            exit 1
+          fi
+          echo "main is at $actual, steering files only since the tested $EXPECTED"
 
       - uses: docker/setup-buildx-action@v4.4.1
       - uses: docker/login-action@v4.6.0
