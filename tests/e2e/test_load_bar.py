@@ -56,3 +56,29 @@ def test_the_bar_fills_from_the_counter_and_leaves_with_the_reply(
   bar = page.evaluate(BAR)
   assert bar["busy"] == "false"
   assert bar["now"] == "100", "the bar filled before it left"
+
+
+def test_the_bar_belongs_to_the_dashboard(desktop: Walker) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  held: list[Any] = []
+  page.route("**/api/fetch", lambda r: held.append(r))
+  page.route(
+    "**/api/progress",
+    lambda r: r.fulfill(status=200, content_type="application/json", body=PROGRESS),
+  )
+  try:
+    page.click("#repos-refresh")
+    page.wait_for_function(f"({BAR})().ratio > 0.29")
+    page.click(".repo-card:has-text('shop-web') .repo-name")
+    assert page.evaluate(BAR)["hidden"] is True, "the repo view hides it at once"
+    page.wait_for_timeout(900)
+    assert page.evaluate(BAR)["hidden"] is True, "the counter does not bring it back"
+    desktop.click("#back", 900)
+    assert page.evaluate(BAR)["hidden"] is False, "the dashboard shows it again"
+  finally:
+    for r in held:
+      r.continue_()
+    page.unroute("**/api/fetch")
+    page.unroute("**/api/progress")
+  page.wait_for_function("document.getElementById('load-bar').hidden")

@@ -15,6 +15,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The claim inputs show the built-in fallback as their placeholder while the list is empty. The sentence under them is gone.
 
+### Fixed
+
+- The loading bar shows on the dashboard alone. The repo view and Settings keep it hidden, the minute fetch included.
+
 ## [0.3.3] - 2026-10-24
 
 ### Fixed

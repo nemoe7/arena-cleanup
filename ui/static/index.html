@@ -1213,6 +1213,7 @@
     for (const name of ["dashboard", "repo", "settings"]) {
       $("view-" + name).hidden = name !== view;
     }
+    if (view !== "dashboard") $("load-bar").hidden = true;
     if (state.view !== view) enter($("view-" + view), 0, 0);
     // remember where we are, so a sub-view can send you back to the place you
     // actually came from instead of guessing from whatever was open last
@@ -1471,10 +1472,11 @@
     };
   }
 
-  // the bar under the header follows the server's fetch counter while a fetch runs
+  // the bar under the header follows the server's fetch counter while a fetch
+  // runs, on the dashboard alone: the repo view and Settings never show it
   function loadBar(percent) {
     const bar = $("load-bar");
-    bar.hidden = percent == null;
+    bar.hidden = percent == null || state.view !== "dashboard";
     $("repos-refresh").setAttribute("aria-busy", percent == null ? "false" : "true");
     if (percent == null) return;
     bar.querySelector("i").style.width = `${percent}%`;

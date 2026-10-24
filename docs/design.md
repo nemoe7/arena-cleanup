@@ -212,7 +212,8 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - The `summary` is the card head with a `show` or `hide` mark at the right, and the body opens below it.
   - Closed, the head has no bottom border.
 - `banner`: `err`, `warn`, `ok` variants with an icon and one sentence of action.
-- `load-bar`: a 2 px accent bar on the bottom edge of the top bar. It shows while the page follows a fetch, filled by the server counter, and the Reload glyph spins with it.
+- `load-bar`: a 2 px accent bar on the bottom edge of the top bar. It shows on the dashboard while the page follows a fetch, filled by the server counter, and the Reload glyph spins with it.
+  - The repo view and Settings never show it, the minute fetch included.
 - `run button`: one button with `data-state` idle, starting, or running.
   - Idle reads Clean & Push and is the primary.
   - Starting is disabled until the job id arrives.
@@ -472,3 +473,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - A fixed per-row delay left the rows after the twelfth solid while earlier rows were still transparent.
 - Accepted 2026-10-24: below 40em a step row is two lines: the stamp with the duration, then the text at full width.
 - Accepted 2026-10-24: the claim inputs carry the built-in fallback as their placeholder while empty, so the card needs no sentence for it.
+- Accepted 2026-10-24: the loading bar belongs to the dashboard. Other views hide it, the minute fetch included.
