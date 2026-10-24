@@ -331,32 +331,32 @@
   .mono-field { font-family: var(--mono); font-size: var(--fs-2); }
   select.field { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--dim) 50%), linear-gradient(135deg, var(--dim) 50%, transparent 50%); background-position: right 12px center, right 8px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 24px; }
 
-  /* above 1200 the repos are one table: a header line, then one row per repo on shared columns, the icon, the
-     name, its branch, the arena rows, the Clean button, and Remove. Content sizes the first columns, the arena
+  /* above 1200 the repos are one table: a header row, then one row per repo with four cells, the icon and
+     name, the default branch, the arena rows, and the actions. Content sizes the first columns, the arena
      cell takes the free width. Cells pad 12 px, 1 px rules split the rows, and a hovered row tints */
   .grid {
-    display: grid; margin-top: 20px;
-    grid-template-columns: auto minmax(0, max-content) minmax(0, max-content) minmax(0, 1fr) auto auto;
+    width: 100%; margin-top: 20px; border-collapse: separate; border-spacing: 0;
     border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
   }
-  .grid-head { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; color: var(--dim); font-size: var(--fs-1); font-weight: 600; }
-  .grid-head > span { padding: 12px; }
-  .grid-head > span:first-child { grid-column: 1 / 3; }
-  .grid-head > span:last-child { grid-column: 5 / 7; }
+  .grid th { padding: 12px; text-align: left; color: var(--dim); font-size: var(--fs-1); font-weight: 600; white-space: nowrap; }
+  .grid td { padding: 0; border-top: 1px solid var(--line); vertical-align: middle; }
+  .grid .wide { width: 100%; }
+  .grid .cell-actions { white-space: nowrap; }
+  /* a table column sizes to its longest word, so the name stays on one line and clips past 280 px */
+  .grid td .repo-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .repo-card {
-    grid-column: 1 / -1; display: grid; grid-template-columns: subgrid;
-    grid-template-areas: "ico name meta arena actions rm"; align-items: center;
-    border-top: 1px solid var(--line); text-align: left; cursor: pointer; color: inherit;
+    text-align: left; cursor: pointer; color: inherit;
     transition: border-color var(--fast) var(--ease), background var(--fast) var(--ease), transform var(--fast) var(--ease);
   }
-  .repo-card:last-child { border-radius: 0 0 12px 12px; }
+  .repo-card:last-child td:first-child { border-bottom-left-radius: 12px; }
+  .repo-card:last-child td:last-child { border-bottom-right-radius: 12px; }
   @media (hover: hover) { .repo-card:hover { background: var(--card-hover); } }
   .repo-name:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
   @media (hover: hover) { .repo-card:hover .repo-name { text-decoration: underline; text-underline-offset: 3px; } }
   .repo-card.pending { opacity: .6; pointer-events: none; }
-  .repo-head { display: contents; }
+  .repo-head, .repo-card.pending .repo-meta { display: inline-flex; align-items: center; vertical-align: middle; min-width: 0; }
   .repo-head > div { grid-area: name; max-width: 280px; padding: 12px; }
-  .repo-card > .rm { grid-area: rm; margin: 12px 12px 12px 0; }
+  .repo-card .rm { grid-area: rm; margin: 12px 12px 12px 0; vertical-align: middle; }
   .repo-ico {
     --ico: var(--ico-l); grid-area: ico; margin: 12px 0 12px 12px;
     width: 30px; height: 30px; border-radius: 8px; flex: none; font-size: 16px;
@@ -404,7 +404,7 @@
 
   /* what the selected task will do, in one sentence */
   /* pinned to the card bottom, so the buttons line up across a grid row */
-  .card-actions { grid-area: actions; display: flex; gap: 8px; align-items: center; padding: 12px; }
+  .card-actions { grid-area: actions; display: inline-flex; gap: 8px; align-items: center; padding: 12px; vertical-align: middle; }
   .card-actions .btn { height: 30px; font-size: var(--fs-2); padding: 0 12px; }
   .card-actions .btn.icon { width: 30px; padding: 0; }
 
@@ -791,12 +791,16 @@
     :root { --pad: 16px; }
     .work { grid-template-columns: 1fr; }
     #options-card { order: -1; }
-    .grid { grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; border: 0; border-radius: 0; background: none; }
-    .grid-head { display: none; }
+    /* the table turns into cards: the header row goes, the body is the card grid, and each cell
+       hands its content to the card, so the row lays the parts out by area */
+    .grid { display: block; border: 0; border-radius: 0; background: none; }
+    .grid thead { display: none; }
+    .grid tbody { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
+    .grid td, .repo-head, .repo-card.pending .repo-meta { display: contents; }
     /* a card: the icon, the name, and Remove on top, the arena rows, and the button bottom right.
        The branch chip stays in the rows; an unavailable repo shows its reason where the arena rows go */
     .repo-card {
-      grid-column: auto; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto 1fr auto;
+      display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto 1fr auto;
       grid-template-areas: "ico name rm" "arena arena arena" "actions actions actions";
       gap: 12px 10px; align-items: start; padding: 16px;
       border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
@@ -804,14 +808,15 @@
     @media (hover: hover) { .repo-card:hover { border-color: var(--card-hover-line); } }
     .repo-card:active { transform: translateY(1px); }
     .repo-head > div { max-width: none; padding: 0; }
+    .grid td .repo-name { white-space: normal; overflow: visible; }
     /* the icon, the name, and Remove share one centre line, 44 px Remove on a phone included */
-    .repo-ico, .repo-head > div, .repo-card > .rm { align-self: center; margin: 0; }
+    .repo-ico, .repo-head > div, .repo-card .rm { align-self: center; margin: 0; }
     .repo-meta { grid-area: arena; align-self: start; padding: 0; }
     .repo-meta.branch { display: none; }
     .repo-meta .pill { max-width: 100%; }
     .arena-list { justify-content: flex-start; padding: 12px 0 0; border-top: 1px solid var(--line); }
     .arena-row { flex-direction: column; align-items: stretch; gap: 4px; }
-    .card-actions { align-self: end; justify-self: end; padding: 0; }
+    .card-actions { display: flex; align-self: end; justify-self: end; padding: 0; }
   }
   @media (max-width: 56.25em) {
     /* One column: the run first, then the sidebar with the facts and the commits. */
@@ -820,7 +825,7 @@
     .side-commits .commits { overflow: visible; min-height: 0; }  /* one scroll: the page */
     .main-col { height: auto; overflow: visible; }
     .logwrap .log { max-height: 52vh; }
-    .grid { grid-template-columns: 1fr; }
+    .grid tbody { grid-template-columns: 1fr; }
   }
   @media (max-width: 40em) {
     /* one scale on a phone: 15 body, 13 controls, 12 metadata. Before this the
@@ -966,7 +971,10 @@
       <p class="field-error" id="add-error" role="alert" hidden></p>
 
       <p class="loading-line" id="repo-loading" role="status">Loading repos…</p>
-      <div class="grid" id="repo-grid"></div>
+      <table class="grid" id="repo-table" hidden>
+        <thead><tr><th scope="col">Repo</th><th scope="col">Default</th><th scope="col" class="wide">Arena Branches</th><th scope="col">Actions</th></tr></thead>
+        <tbody id="repo-grid"></tbody>
+      </table>
       <div class="empty-state" id="repo-empty" hidden>
         <strong>No repos yet</strong>
         <span>Paste a repo URL above to clone it into this instance.</span>
@@ -1551,13 +1559,15 @@
     return btn;
   }
 
+  const cell = (cls, ...parts) => el("td", cls ? { class: cls } : {}, ...parts);
   function repoCard(repo) {
     if (repo.pending) {
-      return el("div", { class: "repo-card pending", "aria-busy": "true" },
-        el("div", { class: "repo-head" },
-          el("span", { class: "repo-ico", "aria-hidden": "true" }, icon("git-branch")),
-          el("div", { style: "min-width:0" }, el("span", { class: "repo-name" }, repo.name))),
-        el("div", { class: "repo-meta" }, el("span", { class: "pill mono" }, "cloning…")));
+      return el("tr", { class: "repo-card pending", "aria-busy": "true" },
+        el("td", { colspan: "4" },
+          el("div", { class: "repo-head" },
+            el("span", { class: "repo-ico", "aria-hidden": "true" }, icon("git-branch")),
+            el("div", { style: "min-width:0" }, el("span", { class: "repo-name" }, repo.name))),
+          el("div", { class: "repo-meta" }, el("span", { class: "pill mono" }, "cloning…"))));
     }
     const s = repo.status || {};
     const head = el("div", { class: "repo-head" },
@@ -1608,8 +1618,8 @@
         el("span", { class: "idle" }, icon("broom-sparkles"), "Clean & Push"),
         el("span", { class: "busy" }, icon("loader-circle"), "Running")));
 
-    return el("div", { class: "repo-card", "aria-busy": busy, onclick: () => openRepo(repo.id) },
-      head, meta, arena, actions, removeButton(repo));
+    return el("tr", { class: "repo-card", "aria-busy": busy, onclick: () => openRepo(repo.id) },
+      cell("", head), cell("", meta), cell("wide", arena), cell("cell-actions", actions, removeButton(repo)));
   }
 
   // fresh: ask the server to fetch every origin first. The dashboard Reload
@@ -1642,18 +1652,16 @@
     return state.repos.map((repo, at) => ({ repo, at })).sort(first).map((x) => x.repo);
   }
 
-  // the header line of the table above 1200: decorative, the rows name their own parts
-  const gridHead = () => el("div", { class: "grid-head", "aria-hidden": "true" },
-    ...["Repo", "Branch", "Arena branches", "Actions"].map((t) => el("span", {}, t)));
   function renderGrid() {
     const grid = $("repo-grid");
     const first = grid.children.length === 0;
-    grid.replaceChildren(gridHead(), ...sortedRepos().map(repoCard));
-    if (first) enter([...grid.children].slice(1), { amount: 0.12 });
+    grid.replaceChildren(...sortedRepos().map(repoCard));
+    $("repo-table").hidden = grid.children.length === 0;
+    if (first) enter([...grid.children], { amount: 0.12 });
     renderChecks();
   }
 
-  // the grid and its empty state together, for a load and for a list edited before the reply
+  // the table and its empty state together, for a load and for a list edited before the reply
   function renderRepos() {
     renderGrid();
     $("repo-empty").hidden = state.unreachable || state.repos.length > 0;

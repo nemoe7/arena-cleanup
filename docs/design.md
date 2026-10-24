@@ -36,7 +36,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 
 - Dashboard: sort select and Reload button in the head, add bar.
   - Table and cards: one table with one row per repo above 1200 px, repo cards at 1200 px and below.
-    - The header line reads Repo, Branch, Arena branches, and Actions. Rules of 1 px split the rows, cells pad 12 px, and a hovered row tints.
+    - The header row reads Repo, Default, Arena Branches, and Actions. Rules of 1 px split the rows, cells pad 12 px, and a hovered row tints.
     - A row or card shows the branch.
     - The repo name is a button that opens the repo, and a click on its card body does the same.
     - The card itself has no role.
@@ -211,9 +211,9 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Push reads `moving`, `pushing`, then `pushed X tags`, and stays empty without a tag.
     - A dry run reads `would sign` and `would move`.
     - Before a count the row carries the name alone.
-- `repo-card`: above 1200 px a subgrid row on the columns of `grid`, the table, so the columns align across rows under the header line.
-  - Row, left to right: the icon, name, branch pill, and arena rows stacked in one cell.
-    - Then Clean, and Remove with the trash glyph.
+- `repo-card`: a `tr` of `grid`, a real `table` with `th` header cells, so the columns align across rows under the header row. At 1200 px and below the cells hand their content to the row, which lays the card out by area.
+  - Row, left to right, four cells: the icon and name, the default branch pill, the arena rows stacked, and the actions.
+    - The actions cell holds Clean, and Remove with the trash glyph.
     - The arena area takes the free width, so Clean and Remove sit at the right edge.
     - In a row an arena row is one line: the name, the ahead chip, and the PR pill.
     - A clean in flight turns Clean & Push into Running: disabled, an amber spinning glyph, the same box, and the reason as its title. The row carries `aria-busy`.
@@ -516,6 +516,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the design boards render through `nuu board -T design` from `docs/boards.json`, and the project script that drew them is gone. The boards keep their markup, chrome, and sizes.
 - Accepted 2026-10-24: above 1200 px the repos are one table, not row-shaped cards, and the cards below 1200 px keep their shape.
   - A header line reads Repo, Branch, Arena branches, and Actions. Rules of 1 px split the rows, cells pad 12 px, a hovered row tints, and the Sort select stays.
+- Accepted 2026-10-24: the rows view is a real `table` element with `th` header cells, and the header reads Repo, Default, Arena Branches, and Actions.
 - Accepted 2026-10-24: a button that leads to GitHub shows the GitHub mark instead of the word. Its title and accessible name keep the phrase.
 - Accepted 2026-10-24: the Clean & Push button carries a live run itself, as Running with an amber spinning glyph, and the `clean running` pill is gone. Both labels share one grid cell, so the button keeps its width and height across states.
 - Accepted 2026-10-24: every amber dot pulses like the LED: a running check, a running job step, and the sidebar dot of a running PR. The run timeline glyph, the Running button, and Re-check keep their spinners.

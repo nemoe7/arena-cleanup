@@ -1,4 +1,4 @@
-"""Dashboard rows: above 1200 the repos are one table, at 1200 and below they are cards."""
+"""Dashboard rows: above 1200 the repos are one table element, at 1200 and below they are cards."""
 
 from __future__ import annotations
 
@@ -20,21 +20,30 @@ PROBE = """(card) => {
     const r = e.getBoundingClientRect();
     return { x: Math.round(r.left), y: Math.round(r.top + r.height / 2) };
   };
+  const lines = (e) => {
+    const range = document.createRange();
+    range.selectNodeContents(e);
+    return range.getClientRects().length;
+  };
   const rows = [...card.querySelectorAll('.arena-row')].map(box);
-  const grid = getComputedStyle(card.parentElement).gridTemplateColumns.split(' ').length;
-  const head = card.parentElement.querySelector('.grid-head');
+  const table = card.closest('table');
+  const ths = [...table.querySelectorAll('thead th')];
   const style = getComputedStyle(card);
   const pad = (s) => getComputedStyle(card.querySelector(s)).padding;
   return {
-    grid,
+    tag: card.tagName,
+    cells: card.children.length,
+    display: style.display,
+    bodyColumns: getComputedStyle(card.parentElement).gridTemplateColumns.split(' ').length,
     width: box(card).width,
-    gridWidth: box(card.parentElement).width,
-    gridInner: card.parentElement.clientWidth,
-    gridBorder: getComputedStyle(card.parentElement).borderTopWidth,
-    headShown: Boolean(head) && getComputedStyle(head).display !== 'none',
-    headLabels: head ? [...head.children].map((e) => e.textContent) : [],
-    headLefts: head ? [...head.children].map((e) => box(e).left + 12) : [],
-    rule: [style.borderTopWidth, style.borderLeftWidth, style.borderRadius],
+    gridWidth: box(table).width,
+    gridInner: box(table).width - 2 * parseFloat(getComputedStyle(table).borderLeftWidth),
+    gridBorder: getComputedStyle(table).borderTopWidth,
+    headShown: getComputedStyle(table.tHead).display !== 'none',
+    headLabels: ths.map((e) => e.textContent),
+    headScopes: ths.map((e) => e.getAttribute('scope')),
+    headLefts: ths.map((e) => box(e).left + 12),
+    rule: [getComputedStyle(card.firstElementChild).borderTopWidth, style.borderLeftWidth, style.borderRadius],
     pads: [pad('.repo-head > div'), pad('.repo-meta'), pad('.arena-list'), pad('.card-actions')],
     branchLeft: box(card.querySelector('.repo-meta .pill')).left,
     cleanLeft: box(card.querySelector('.card-actions .btn')).left,
@@ -46,6 +55,7 @@ PROBE = """(card) => {
     icoLeft: box(card.querySelector('.repo-ico')).left,
     nameLeft: box(card.querySelector('.repo-name')).left,
     nameRight: box(card.querySelector('.repo-name')).right,
+    nameLines: lines(card.querySelector('.repo-name')),
     arenaLeft: box(card.querySelector('.arena-list')).left,
     actionsLeft: box(card.querySelector('.card-actions')).left,
     actionsRight: box(card.querySelector('.card-actions')).right,
@@ -73,12 +83,13 @@ def probe(browser: Any, demo: Demo, width: int) -> dict[str, Any]:
 
 def test_above_1200_a_repo_is_one_table_row(browser: Any, demo: Demo) -> None:
   row = probe(browser, demo, 1201)
-  assert row["grid"] == 6, "one column per cell, shared by every row"
+  assert (row["tag"], row["display"], row["cells"]) == ("TR", "table-row", 4)
   assert row["width"] == row["gridInner"], "a full-width row inside the table frame"
   assert row["gridBorder"] == "1px", "one frame around the table"
-  # a header line names each column, and its labels start where cell content does
+  # a header row names each column, and its labels start where cell content does
   assert row["headShown"]
-  assert row["headLabels"] == ["Repo", "Branch", "Arena branches", "Actions"]
+  assert row["headLabels"] == ["Repo", "Default", "Arena Branches", "Actions"]
+  assert row["headScopes"] == ["col"] * 4
   assert row["headLefts"] == [
     row["icoLeft"],
     row["branchLeft"],
@@ -94,6 +105,7 @@ def test_above_1200_a_repo_is_one_table_row(browser: Any, demo: Demo) -> None:
   assert row["bname"]["y"] == row["tail"]["y"], "one line: the name, then the pills"
   assert row["bname"]["x"] < row["tail"]["x"]
   # left to right: name, arena rows, the button, then remove
+  assert row["nameLines"] == 1, "the name stays on one line in its column"
   assert row["nameRight"] < row["arenaLeft"] < row["actionsLeft"] < row["removeLeft"]
   assert row["removeLeft"] - row["actionsRight"] <= 12
   # spread: the arena area takes all free width, Remove ends at the padding
@@ -117,9 +129,10 @@ def test_a_hovered_table_row_tints(desktop: Walker) -> None:
 
 def test_at_1200_the_repos_are_cards(browser: Any, demo: Demo) -> None:
   card = probe(browser, demo, 1200)
-  assert card["grid"] > 1
+  assert card["display"] == "grid", "the row is the card"
+  assert card["bodyColumns"] > 1, "the body is the card grid"
   assert card["width"] < card["gridWidth"] / 2
-  assert not card["headShown"], "no header line over cards"
+  assert not card["headShown"], "no header row over cards"
   assert card["gridBorder"] == "0px" and card["rule"][2] == "12px", "a card, not a row"
   assert card["rowTops"][0] < card["rowTops"][1], "arena rows stacked"
   assert card["rowLefts"][0] == card["rowLefts"][1]
