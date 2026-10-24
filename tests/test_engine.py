@@ -15,6 +15,8 @@ import pytest
 
 from .conftest import LOG_LINE, ME_EMAIL, SEED_COMMITS, World, engine_version
 
+SHORT_SHA = 7  # the GitHub short SHA the engine prints
+
 MAIN_ONLY = 1
 ARENA_COMMITS = SEED_COMMITS - MAIN_ONLY
 FAST_SECONDS = 5
@@ -115,6 +117,7 @@ def test_full_run_from_the_default_branch(world: World) -> None:
   assert res.rc == 0, res.text
   assert res.says("switching to arena/session-1")
   assert res.says("pushing (with lease)")
+  assert res.says(f"pushed {world.rev('origin/main')[:SHORT_SHA]} to origin/main")
   assert world.git("branch", "--show-current") == "main"
   assert world.rev("main") == world.rev("origin/main")
   assert not world.has_ref("refs/heads/arena/stale")

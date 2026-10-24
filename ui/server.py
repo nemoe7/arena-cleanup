@@ -68,6 +68,7 @@ LOG = logging.getLogger("arena-ui")
 
 COMMANDS = {"run"}
 MAX_LINES = 4000
+SHORT_SHA = 7
 LATEST = ["jobs", "latest"]  # the route tail of the latest run.
 STATUS_TTL = 8.0  # seconds a repo status lives before the server asks git again.
 
@@ -731,7 +732,9 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
       if gh["installed"]
       else "gh is not installed, so PRs and checks cannot be read"
     ),
-    "head": git("log", "-1", "--format=%h%x09%s", cwd=cwd),
+    "head": git(
+      "-c", f"core.abbrev={SHORT_SHA}", "log", "-1", "--format=%h%x09%s", cwd=cwd
+    ),
     "remote": git("config", "--get", "remote.origin.url", cwd=cwd),
   }
 
@@ -986,23 +989,23 @@ def commits_report(
   cwd = repo["path"]
   branch = git("rev-parse", "--abbrev-ref", "HEAD", cwd=cwd) or "(detached)"
   total = git("rev-list", "--count", "HEAD", cwd=cwd).strip()
-  fmt = "%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%aI%x1f%G?"
+  fmt = "%H%x1f%s%x1f%an%x1f%ae%x1f%aI%x1f%G?"
   count = limit + 1 if before else limit
   out = git("log", f"-{count}", f"--format={fmt}", before or "HEAD", cwd=cwd)
   commits = []
   emails: dict[str, str] = {}
   for line in out.splitlines():
     fields = line.split("\x1f")
-    if len(fields) != 7:
+    if len(fields) != 6:
       continue
-    sha, short, subject, author, email, date, sig = fields
+    sha, subject, author, email, date, sig = fields
     if before and not commits and sha.startswith(before):
       continue
     emails.setdefault(email, sha)
     commits.append(
       {
         "sha": sha,
-        "short": short,
+        "short": sha[:SHORT_SHA],
         "subject": subject,
         "author": author,
         "email": email,

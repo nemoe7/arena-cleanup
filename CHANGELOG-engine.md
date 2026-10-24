@@ -7,6 +7,11 @@ file, `CHANGELOG.md`.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the engine uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.6] - 2026-10-24
+
+- Log lines print commit hashes at 7 characters, the GitHub short SHA,
+  instead of git's own abbreviation.
+
 ## [0.3.5] - 2026-10-24
 
 - The file marker suppresses HMN904 for the usage list, and the push

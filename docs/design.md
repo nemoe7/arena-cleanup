@@ -67,7 +67,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Its hint is the commit count with thousands separators.
     - Reload sits in its label.
   - Commit list: 30 commits a page, and a scroll near the end appends the older page.
-    - Each row shows hash, subject, author, and date.
+    - Each row shows hash, subject, author, and date. The hash reads 7 characters, the GitHub short SHA.
     - Each arena row shows the PR state and is a button that selects the branch to pull from.
   - Flow: the page runs the full flow only.
     - `strip` is a CLI command.
@@ -502,3 +502,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: dates read in 24-hour time. The shared formatter sets `hourCycle` to `h23`, so a commit date reads `Oct 24, 18:11`, and the log stamps keep their `HH:MM:SS`.
 - Accepted 2026-10-24: the hover tint and the selected mark of a sidebar arena row span the whole row, icon buttons included. The icon buttons keep their own hover rings on top of the row tint.
 - Accepted 2026-10-24: Clean & Push ends the checkbox row of the options card, and drops under the boxes, right-aligned, when the row is narrow. The button keeps the 34 px control height, and the phone keeps its tab bar.
+- Accepted 2026-10-24: every commit hash reads 7 characters, the GitHub short SHA, in the commits list, the run log, and the phase modals. Git's own abbreviation grows with the clone.

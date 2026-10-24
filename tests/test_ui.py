@@ -1023,7 +1023,9 @@ def test_the_commit_list_and_the_page_shell(ui: UI, ids: dict[str, str]) -> None
   assert len(commits["commits"]) == 2
   assert commits["total"] >= 2
   assert all(COMMIT_FIELDS <= set(c) for c in commits["commits"])
-  assert len(commits["commits"][0]["short"]) >= SHORT_SHA
+  assert all(len(c["short"]) == SHORT_SHA for c in commits["commits"]), (
+    "GitHub short SHA"
+  )
   assert commits["branch"] != ""
   assert len(ui.get(f"/api/repos/{repo}/commits?limit=0")["commits"]) == 1
   assert ui.status("GET", f"/api/repos/{repo}/commits?limit=100000") == 200

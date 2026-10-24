@@ -45,7 +45,7 @@ from typing import Any
 
 # the engine's own number. pyproject.toml carries the UI's, and
 # scripts/check_versions.py asks for one step per changed part.
-__version__ = "0.3.5"
+__version__ = "0.3.6"
 PROG = "arena-cleanup"
 
 # ==== Defaults: edit these, or override per run with the matching flags ======
@@ -377,8 +377,15 @@ def current_branch() -> str:
   return git("branch", "--show-current", check=False).text
 
 
+SHORT_SHA = 7  # the GitHub short SHA
+
+
+def short(sha: str) -> str:
+  return sha[:SHORT_SHA]
+
+
 def head_short(rev: str = "HEAD") -> str:
-  return git("rev-parse", "--short", rev, check=False).text or "?"
+  return git("rev-parse", f"--short={SHORT_SHA}", rev, check=False).text or "?"
 
 
 def local_arena_branches() -> list[str]:
@@ -1497,7 +1504,7 @@ def rewrite_history(
             detail = (exc.err or "").splitlines()
             raise Fail(
               "could not sign commit {}: {}\n    {}".format(
-                sha[:8],
+                short(sha),
                 detail[-1] if detail else "gpg failed",
                 "fix your GPG setup, or set SIGN_COMMITS = False "
                 "at the top of this file",
@@ -1505,7 +1512,7 @@ def rewrite_history(
             )
           raise
         if not new_sha:
-          raise Fail(f"commit-tree returned no hash for {sha[:8]}")
+          raise Fail(f"commit-tree returned no hash for {short(sha)}")
         mapping[sha] = new_sha
         stats.rewritten += 1
         if claim and cfg.sign:
@@ -1698,7 +1705,7 @@ def sync_tags(log: Log, cfg: Settings, before: dict[str, str]) -> None:
   for ref in pushable:
     name = ref[len("refs/tags/") :]
     git("push", f"--force-with-lease={ref}:{ahead[ref]}", "origin", ref)
-    log.ok(f"moved tag {name} {ahead[ref][:8]} -> {rows[ref][0][:8]}")
+    log.ok(f"moved tag {name} {short(ahead[ref])} -> {short(rows[ref][0])}")
   log.ok(f"updated {len(pushable)} tag(s) on origin")
 
 
@@ -1992,7 +1999,7 @@ def at_risk_on_origin(
   candidates = git(
     "log",
     "--reverse",
-    "--format=%H|%h|%s|%at",
+    "--format=%H|%s|%at",
     f"{rev}..origin/{default}",
     check=False,
   ).lines()
@@ -2001,15 +2008,15 @@ def at_risk_on_origin(
   twins = set(git("log", "--format=%s|%at", rev, check=False).lines())
   at_risk = []
   for line in candidates:
-    parts = line.split("|", 3)
-    if len(parts) != 4:
+    parts = line.split("|", 2)
+    if len(parts) != 3:
       continue
-    full, short, subject, when = parts
+    full, subject, when = parts
     if ignore and full in ignore:
       continue  # went away with the removed paths, not a surprise
     if f"{subject}|{when}" in twins:
       continue  # same commit, rewritten elsewhere
-    at_risk.append(f"{short} {subject} {when}")
+    at_risk.append(f"{short(full)} {subject} {when}")
   return at_risk
 
 
