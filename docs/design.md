@@ -61,6 +61,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Each option reads `branch · day`, and the full stamp sits in its title.
     - The chosen one goes to the run as `--arena`.
   - Sidebar: the repo facts and the arena rows on top.
+    - A GitHub remote reads as the GitHub mark and `owner/repo`, a link to the repo page in a new tab. Other remotes stay plain text.
     - The commit list fills the rest and scrolls on its own.
     - Its hint is the commit count with thousands separators.
     - Reload sits in its label.
@@ -240,7 +241,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Copy follows ASD-STE100: short sentences, one action per banner, no jargon beyond git and GitHub terms.
 - Locale: English only. Dates use the browser locale.
 - Fonts: Inter and Monaspace Neon, SIL Open Font License 1.1, see `ui/static/fonts/LICENSE.txt`.
-  - Icons: Lucide, ISC, see `ui/static/LICENSE-lucide.txt`.
+  - Icons: Lucide, ISC, see `ui/static/LICENSE-lucide.txt`. The GitHub mark: Octicons, MIT, see `ui/static/LICENSE-octicons.txt`.
   - Motion: GSAP 3.15.0, the standard no-charge licence, see `ui/static/LICENSE-gsap.txt`.
 
 ## Behavior and data
@@ -476,3 +477,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the claim inputs carry the built-in fallback as their placeholder while empty, so the card needs no sentence for it.
 - Accepted 2026-10-24: the loading bar belongs to the dashboard. Other views hide it, the minute fetch included.
 - Accepted 2026-10-24: a dashboard row shows a clean in flight with a pill and a greyed button that names the reason. The server flags the repo on every list read.
+- Accepted 2026-10-24: the remote fact links a GitHub remote as the GitHub mark and `owner/repo` in a new tab. The mark is the one filled glyph, from Octicons.

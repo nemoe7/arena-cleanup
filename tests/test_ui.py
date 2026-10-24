@@ -942,10 +942,11 @@ def test_pwa_assets(ui: UI) -> None:
   assert "serviceWorker.register" in page
 
 
-def test_the_icon_licence_ships_beside_the_page(ui: UI) -> None:
-  code, _, raw = ui.request("GET", "/LICENSE-lucide.txt")
-  assert code == 200
-  assert raw.startswith(b"ISC License")
+def test_the_icon_licences_ship_beside_the_page(ui: UI) -> None:
+  for name, head in (("lucide", b"ISC License"), ("octicons", b"MIT License")):
+    code, _, raw = ui.request("GET", f"/LICENSE-{name}.txt")
+    assert code == 200, name
+    assert raw.startswith(head), name
 
 
 def test_repos_survive_a_restart_and_can_be_forgotten(
