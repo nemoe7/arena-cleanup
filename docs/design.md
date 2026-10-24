@@ -202,7 +202,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Checked, it takes the accent fill and a white Lucide check.
     - `danger` fills a checked destructive option with the warn colour and a dark check.
   - Phone: the checkboxes form a grid with 160 px columns. Browse, the fold head, and the 16 px path field are 44 px targets there.
-- `phase`: a row with the state glyph, a name, a count, and the time.
+- `phase`: a row with the state glyph, a name, a count, and the time. The running glyph spins in `warn`.
   - Counts: the count comes from the engine's lines.
     - PR checks reads `passed/total`.
     - Rewrite and sign reads `collecting N commits`, then `signing X/Y`, then `signed X commits`.
@@ -421,6 +421,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - The phone keeps the 16 px page padding instead of 14, and its title reads the 20 px ramp size instead of 19.
   - The pill radius reads 1000 px, the same shape on this scale.
 - Accepted 2026-10-24: the PR pill and the sidebar dot paint running checks amber, the GitHub pending colour, instead of blue.
+- Accepted 2026-10-24: the run timeline's running glyph is amber too, so every spinner in the app shares the `warn` role. The status led keeps the accent pulse.
   - A PR without checks gets a grey dot.
   - The `info` token keeps the debug log rows.
 - Accepted 2026-10-24: a sidebar arena row takes two lines, as the cards do.

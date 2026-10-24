@@ -52,19 +52,26 @@ MODAL = """() => {
     link: !document.getElementById('phase-link').hidden };
 }"""
 PATTERN = "**/api/repos/*/jobs/latest"
+JOB = "**/api/jobs/fake"
 PREPARE_STEPS = ["Fetched", "Located remote arena branch", "Pulled arena/session-4"]
 
 
-def open_run(walker: Walker, lines: list[tuple[str, str]] | None) -> None:
-  """Open infra-tools, with `lines` as its latest run when given."""
+def open_run(
+  walker: Walker, lines: list[tuple[str, str]] | None, status: str = "done"
+) -> None:
+  """Open infra-tools, with `lines` as its latest run when given.
+
+  A `running` run answers the job poll too, since the live page reads its
+  lines there once the event stream fails.
+  """
   if lines is None:
     walker.goto(1200)
     walker.click(".repo-card:has-text('infra-tools') .repo-name", 800)
     return
   snap = {
     "id": "fake",
-    "status": "done",
-    "exit": 0,
+    "status": status,
+    "exit": 0 if status == "done" else None,
     "cancelled": False,
     "elapsed": float(len(lines) - 1),
     "lines": [
@@ -72,12 +79,14 @@ def open_run(walker: Walker, lines: list[tuple[str, str]] | None) -> None:
       for i, (level, text) in enumerate(lines)
     ],
   }
-  walker.page.route(
-    PATTERN,
-    lambda route: route.fulfill(
-      status=200, content_type="application/json", body=json.dumps(snap)
-    ),
-  )
+  patterns = [PATTERN] + ([JOB] if status == "running" else [])
+  for pattern in patterns:
+    walker.page.route(
+      pattern,
+      lambda route: route.fulfill(
+        status=200, content_type="application/json", body=json.dumps(snap)
+      ),
+    )
   try:
     walker.goto(1200)
     walker.click(".repo-card:has-text('infra-tools') .repo-name", 800)
@@ -192,3 +201,27 @@ def test_the_last_row_reads_clean_up_and_lists_its_steps(desktop: Walker) -> Non
 def test_idle_rows_do_not_open(desktop: Walker) -> None:
   open_run(desktop, None)
   assert desktop.count(".phase-head:disabled") == 5
+
+
+RUN_GLYPH = """() => {
+  const ico = document.querySelector('.phase[data-state="run"] .phase-ico');
+  const style = getComputedStyle(ico);
+  const warn = getComputedStyle(document.documentElement).getPropertyValue('--warn').trim();
+  const probe = document.createElement('span');
+  probe.style.color = warn;
+  document.body.append(probe);
+  const want = getComputedStyle(probe).color;
+  probe.remove();
+  return { color: style.color, want, animation: getComputedStyle(ico.querySelector('svg')).animationName };
+}"""
+
+
+def test_a_running_row_spins_its_glyph_amber(desktop: Walker) -> None:
+  """The live row takes the warn role, like every other spinner."""
+  open_run(desktop, RUN[:8], status="running")
+  desktop.page.wait_for_selector('.phase[data-state="run"] .phase-ico svg')
+  glyph = desktop.page.evaluate(RUN_GLYPH)
+  assert glyph["color"] == glyph["want"], "the running glyph is amber"
+  assert glyph["animation"] == "spin"
+  desktop.page.unroute(JOB)
+  desktop.click("#back", 600)
