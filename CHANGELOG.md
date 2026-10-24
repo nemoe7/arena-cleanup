@@ -33,6 +33,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- The run phases measure one contiguous timeline. A line names the current
+  phase or a later one, never an earlier one, and the next phase starts where
+  the last one ends. A stale branch deleted in Prepare no longer starts
+  Finish, and the commit scan no longer stretches Prepare.
 - The ahead chip pads the arrow ink and the count the same: the icon moves
   2 px in and the gap narrows to 6 px, so the chip reads centred.
 - A reload at `#/settings` or in a repo view paints that screen first. The

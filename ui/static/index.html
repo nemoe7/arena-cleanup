@@ -1862,10 +1862,10 @@
     { id: "sync", name: "Finish", sub: "" },
   ];
   const PHASE_TESTS = [
-    ["prepare", /^arena-cleanup \d|^claimed |^dry run:/],
+    ["prepare", /^arena-cleanup \d|^claimed |^dry run:|stale/],
     ["sync", /^done(,|$)/],
     ["pr", /(^|\s)pr\b|pull request|check|gate|status rollup/],
-    ["rewrite", /rewrit|claim|sign|filter-repo|remov|empty commit|--path|identity=/],
+    ["rewrite", /rewrit|claim|sign|filter-repo|remov|empty commit|--path|identity=|commit\(s\) as/],
     ["publish", /push|tag|lease|force/],
     ["sync", /return|delet|done|finished|cleanup/],
     ["prepare", /fetch|branch|switch|checkout|scan|stale|pull|prune|starting/],
@@ -1880,6 +1880,13 @@
     const msg = msgOf(text);
     for (const [id, re] of PHASE_TESTS) if (re.test(msg)) return id;
     return null;
+  }
+
+  // A run moves forward only: a line names the current phase or a later one.
+  function phaseAfter(current, text) {
+    const hit = phaseFor(text);
+    const rank = (id) => PHASES.findIndex((p) => p.id === id);
+    return hit && rank(hit) > rank(current) ? hit : current || "prepare";
   }
 
   function plural(n, word) {
@@ -2021,13 +2028,19 @@
       const text = line.text ?? "";
       const node = classify(text);
       log.append(node);
-      const id = phaseFor(text) || state.phase || "prepare";
-      state.phase = id;
+      const id = phaseAfter(state.phase, text);
+      const t = line.t || Date.now() / 1000;
       const phase = state.phases.find((p) => p.id === id);
       if (!phase) continue;
+      if (id !== state.phase) {
+        // the next phase starts where the last one ends, so the rows add up
+        const prev = state.phases.find((p) => p.id === state.phase);
+        if (prev && prev.start) prev.end = t;
+      }
+      state.phase = id;
       phase.lines += 1;
-      phase.start = phase.start || line.t || Date.now() / 1000;
-      phase.end = line.t || phase.end || Date.now() / 1000;
+      phase.start = phase.start || t;
+      phase.end = t;
       countFrom(text);
       if (phase.state === "idle") phase.state = "run";
       markEarlierDone(id);
