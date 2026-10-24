@@ -2227,6 +2227,17 @@
     const g = a.git || {};
     const nodes = [];
     const ghNodes = [];
+    // how git gets in: the helper and the keys, shown under the sign-in state
+    const gitRows = [
+      pillRow("credential helper", g.credentials_for_gh
+        ? el("span", { class: "pill ok" }, el("i", { class: "dot" }), "gh auth git-credential")
+        : (g.credential_helpers && g.credential_helpers.length
+          ? el("span", { class: "mono" }, g.credential_helpers.join(", "))
+          : el("span", { class: "pill warn" }, "none"))),
+      pillRow("ssh keys", g.ssh_keys && g.ssh_keys.length
+        ? el("span", { class: "mono" }, g.ssh_keys.join(", "))
+        : el("span", { class: "hint" }, "none in this container")),
+    ];
 
     // -- gh -------------------------------------------------------------
     if (!gh.installed) {
@@ -2239,7 +2250,13 @@
         const missing = !/\brepo\b/.test(gh.scopes) ? " · no repo scope, so private repos and PR checks are invisible" : "";
         ghNodes.push(pillRow("token scopes", el("span", { class: "mono", style: "color:var(--muted)" }, gh.scopes + missing)));
       }
-      ghNodes.push(el("div", { style: "display:flex;gap:8px;margin-top:4px" },
+      ghNodes.push(...gitRows);
+      if (!g.credentials_for_gh) {
+        ghNodes.push(banner("warn", { style: "margin-top:10px" },
+          el("div", {}, el("b", {}, "git has no credential helper yet."),
+            " Cloning and pushing over HTTPS will fail. One click fixes it, and applies to every repo here.")));
+      }
+      ghNodes.push(el("div", { style: "display:flex;gap:8px;margin-top:10px" },
         el("button", { class: "btn", onclick: async () => {
           await post("/api/auth", { action: "check" });
           await refreshAuth();
@@ -2266,39 +2283,12 @@
       ghNodes.push(el("div", { class: "hint", style: "margin-top:6px" },
         "Prefer a browser login? Run ", el("code", {}, "docker exec -it arena-cleanup gh auth login"),
         " next to this app, or set ", el("code", {}, "GH_TOKEN"), " when starting the container."));
+      ghNodes.push(...gitRows);
     }
 
     nodes.push(el("div", { class: "card" },
       el("div", { class: "card-head" }, el("h2", {}, "GitHub")),
       el("div", { class: "card-body" }, ...ghNodes)));
-
-    // -- how git gets in -------------------------------------------------
-    const gitRows = [
-      pillRow("credential helper", g.credentials_for_gh
-        ? el("span", { class: "pill ok" }, el("i", { class: "dot" }), "gh auth git-credential")
-        : (g.credential_helpers && g.credential_helpers.length
-          ? el("span", { class: "mono" }, g.credential_helpers.join(", "))
-          : el("span", { class: "pill warn" }, "none"))),
-      pillRow("ssh keys", g.ssh_keys && g.ssh_keys.length
-        ? el("span", { class: "mono" }, g.ssh_keys.join(", "))
-        : el("span", { class: "hint" }, "none in this container")),
-    ];
-    const gitBanner = gh.authenticated && !g.credentials_for_gh
-      ? banner("warn", { style: "margin-bottom:10px" },
-          el("div", {}, el("b", {}, "git has no credential helper yet."),
-            " Cloning and pushing over HTTPS will fail. One click fixes it, and applies to every repo here."))
-      : null;
-    nodes.push(el("details", { class: "card fold", open: Boolean(gitBanner) },
-      el("summary", { class: "card-head" }, el("h2", {}, "How git reaches GitHub"),
-        el("span", { class: "fold-mark", "aria-hidden": "true" })),
-      el("div", { class: "card-body" },
-        gitBanner || el("div", {}),
-        gh.authenticated && !g.credentials_for_gh
-          ? el("button", { class: "btn", style: "margin-bottom:10px", onclick: setupGit }, "Configure") : null,
-        ...gitRows,
-        el("div", { class: "hint", style: "margin-top:10px" },
-          "Repos cloned with a ", el("code", {}, "git@github.com:"), " URL use SSH instead and ignore the credential helper. To use your own SSH key, mount it: ",
-          el("code", {}, "-v ~/.ssh:/home/arena/.ssh:ro")))));
 
     body.replaceChildren(...nodes);
   }

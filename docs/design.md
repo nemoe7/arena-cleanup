@@ -45,8 +45,8 @@ The one design record for the arena-cleanup web app. The sections follow the nem
   - Runs: log rows show the clock of the browser. Remove on a card arms on the first click and deletes the URL clone on the second. States: idle, running, done, failed, cancelled.
   - Reset: a managed clone goes back to origin before every run. The server fetches, checks out the default branch, resets hard, and drops local `arena/*` copies.
 - Settings: two columns above 1200 px.
-  - Columns: left, Identity (name, email, Save), Claimed commits (two chip lists, Save), About. Right, GitHub sign-in, How git reaches GitHub, signing cards. One column at 1200 px and below, in the order Identity, GitHub, signing, Claimed commits, About.
-  - Folds: How git reaches GitHub and About fold, and open on a click. The first opens on its own when git has no credential helper.
+  - Columns: left, Identity (name, email, Save), Claimed commits (two chip lists, Save), About. Right, the GitHub card, then the signing cards. One column at 1200 px and below, in the order Identity, GitHub, signing, Claimed commits, About.
+  - GitHub card: the sign-in state, the token scopes, the credential helper, and the ssh keys. A warning and Configure appear when a signed-in user has no helper. About folds, and opens on a click.
   - Signing cards: gpg banner when gpg is missing, key list, create card, GitHub key steps. Disabled: Create key while gpg is missing.
   - Error: the banner names the failed check. Each card loads on its own.
 - Offline: the service worker serves the shell. Data requests fail with the normal error banner.
@@ -245,3 +245,4 @@ The one design record for the arena-cleanup web app. The sections follow the nem
 - Accepted 2026-10-24: the delete modal carries an `x` icon button top right, nuu clause 15. It submits `cancel` like the Cancel button, which keeps the first focus.
 - Accepted 2026-10-24: every `:hover` rule sits in its own `@media (hover: hover)` block in place, nuu clause 9. The cascade order stays, and `:focus-visible` and `:active` apply on every device.
 - Accepted 2026-10-24: the 36 colour literals below `:root` moved onto 29 role tokens, nuu clause 3. The pills and the banners share one text, line, and tint per tone, a shift of at most two per cent in alpha.
+- Accepted 2026-10-24: the How git reaches GitHub fold goes. Its one control, Configure, already sat in the GitHub card. That card takes the helper and ssh rows and the helper warning, and the README takes the SSH mount hint.

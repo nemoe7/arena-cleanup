@@ -7,6 +7,14 @@ The engine, `arena-cleanup.py`, carries its own number and its own file,
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-10-24
+
+### Changed
+
+- The How git reaches GitHub fold is gone. The GitHub card shows the
+  credential helper, the ssh keys, and the helper warning with Configure under
+  the sign-in state, and the README carries the SSH mount hint.
+
 ## [0.3.1] - 2026-10-24
 
 ### Changed

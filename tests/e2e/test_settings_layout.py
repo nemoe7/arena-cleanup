@@ -58,7 +58,11 @@ def test_the_help_cards_fold(desktop: Walker) -> None:
   page.goto(f"{desktop.url}/#/settings", wait_until="networkidle")
   page.wait_for_selector("#card-identity")
   folds = dict(page.evaluate(PROBE, SECTIONS)["folds"])
-  assert folds == {"How git reaches GitHub": False, "About": False}
+  assert folds == {"About": False}
+  # the helper and the keys read in the GitHub card, no fold of their own
+  assert desktop.count("#access-body .card") == 1
+  assert "credential helper" in desktop.text("#access-body")
+  assert "ssh keys" in desktop.text("#access-body")
   desktop.click("#info-body details.fold > summary", 200)
   assert (
     page.evaluate("() => document.querySelector('#info-body details.fold').open")
