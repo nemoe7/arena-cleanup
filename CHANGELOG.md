@@ -15,6 +15,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Three option tooltips, one UI comment, and one server docstring lose a
   nemoizer finding each. No behaviour change.
+- The loading bar marks the first repo list load alone. A fetch of repo states
+  spins the Reload glyph.
 
 ### Fixed
 

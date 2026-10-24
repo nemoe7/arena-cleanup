@@ -225,7 +225,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - The `summary` is the card head with a `show` or `hide` mark at the right, and its body opens below.
   - Closed, the head has no bottom border.
 - `banner`: `err`, `warn`, `ok` variants with an icon and one sentence of action.
-- `load-bar`: a 2 px accent bar on the bottom edge of the top bar. It shows on the dashboard while the page follows a fetch, filled by the server counter, and the Reload glyph spins with it.
+- `load-bar`: a 2 px accent bar on the bottom edge of the top bar, shown on the dashboard while the first list read runs. A 30% fill sweeps it, and a fetch of the repo states spins the Reload glyph instead.
   - The repo view and Settings never show it, the minute fetch included.
 - `run button`: one button with `data-state` idle, starting, or running.
   - Idle reads Clean & Push and is the primary.
@@ -493,6 +493,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: below 40em a step row is two lines: the stamp with the duration, then the text at full width.
 - Accepted 2026-10-24: the claim inputs carry the built-in fallback as their placeholder while empty, so the card needs no sentence for it.
 - Accepted 2026-10-24: the loading bar belongs to the dashboard. Other views hide it, the minute fetch included.
+- Accepted 2026-10-24: the loading bar marks the first list load alone, a 30% fill that sweeps it until the list lands. A fetch of the repo states spins the Reload glyph with no bar, and reduced motion holds the fill still.
 - Accepted 2026-10-24: a dashboard row shows a clean in flight with a pill and a greyed button that names the reason. The server flags the repo on every list read.
 - Accepted 2026-10-24: the remote fact links a GitHub remote as the GitHub mark and `owner/repo` in a new tab. The mark is the one filled glyph, from Octicons.
 - Accepted 2026-10-24: the Prepare modal names three steps instead of its log lines. Later steps show only once the phase reaches them.

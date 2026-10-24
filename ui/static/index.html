@@ -212,10 +212,10 @@
     position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden;
     background: color-mix(in srgb, var(--accent) 20%, transparent);
   }
-  .load-bar i {
-    display: block; height: 100%; width: 0; background: var(--accent);
-    transition: width var(--fast) var(--ease);
-  }
+  /* the list load has no counter: a 30% fill sweeps the bar until the list lands */
+  .load-bar i { display: block; height: 100%; width: 30%; background: var(--accent); animation: sweep 1.2s ease-in-out infinite; }
+  @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(334%); } }
+  @media (prefers-reduced-motion: reduce) { .load-bar i { animation: none; } }
   .icon-btn[aria-busy="true"] .ico-svg { animation: spin 1s linear infinite; }
   .brand {
     display: flex; align-items: center; gap: 8px; align-self: stretch; font-weight: 620; font-size: var(--fs-3);
@@ -917,8 +917,7 @@
     <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings">
       <span class="ico-svg" data-icon="settings" aria-hidden="true"></span>
     </button>
-    <div class="load-bar" id="load-bar" role="progressbar" aria-label="Fetching repos"
-         aria-valuemin="0" aria-valuemax="100" hidden><i></i></div>
+    <div class="load-bar" id="load-bar" role="progressbar" aria-label="Loading repos" hidden><i></i></div>
   </header>
 
   <main id="main" tabindex="-1">
@@ -1253,7 +1252,7 @@
     for (const name of ["dashboard", "repo", "settings"]) {
       $("view-" + name).hidden = name !== view;
     }
-    if (view !== "dashboard") $("load-bar").hidden = true;
+    $("load-bar").hidden = view !== "dashboard" || !state.loadingList;
     if (state.view !== view) enter($("view-" + view), 0, 0);
     // remember where we are, so a sub-view can send you back to the place you
     // actually came from instead of guessing from whatever was open last
@@ -1628,52 +1627,44 @@
     };
   }
 
-  // the bar under the header follows the server's fetch counter while a fetch
-  // runs, on the dashboard alone: the repo view and Settings never show it
-  function loadBar(percent) {
-    const bar = $("load-bar");
-    bar.hidden = percent == null || state.view !== "dashboard";
-    $("repos-refresh").setAttribute("aria-busy", percent == null ? "false" : "true");
-    if (percent == null) return;
-    bar.querySelector("i").style.width = `${percent}%`;
-    bar.setAttribute("aria-valuenow", String(Math.round(percent)));
+  // the bar under the header marks the first list load, on the dashboard alone:
+  // the repo view and Settings never show it, and a fetch spins the Reload glyph instead
+  function loadBar(on) {
+    state.loadingList = on;
+    $("load-bar").hidden = !on || $("view-dashboard").hidden;
   }
-  async function fetchWithBar(force) {
-    loadBar(0);
-    const clock = setInterval(async () => {
-      const p = await api("/api/progress").catch(() => null);
-      if (p && p.active && p.total) loadBar(100 * p.done / p.total);
-    }, 400);
+  const spinReload = (on) => $("repos-refresh").setAttribute("aria-busy", on ? "true" : "false");
+  async function fetchRepos(force) {
+    spinReload(true);
     try {
       return await post("/api/fetch", { force });
     } finally {
-      clearInterval(clock);
-      loadBar(100);
-      setTimeout(() => loadBar(null), 300);
+      spinReload(false);
     }
   }
   // the server fetches at the top of each minute: look once, follow a live one
   async function followClockFetch() {
     let p = await api("/api/progress").catch(() => null);
     if (!p || !p.active) return;
-    loadBar(0);
+    spinReload(true);
     while (p && p.active) {
-      if (p.total) loadBar(100 * p.done / p.total);
       await new Promise((r) => setTimeout(r, 400));
       p = await api("/api/progress").catch(() => null);
     }
-    loadBar(100);
-    setTimeout(() => loadBar(null), 300);
+    spinReload(false);
     await loadRepos();
   }
   async function loadRepos(fresh = false) {
+    // the bar runs while the first list read shows its text line
+    const waiting = !fresh && !$("repo-loading").hidden;
+    if (waiting) loadBar(true);
     if (!state.auth) await refreshAuth();
     // a card whose clone is still running outlives every reload of the list,
     // read after the wait: a clone refused meanwhile has left already
     const pending = () => state.repos.filter((r) => r.pending);
     try {
       const repos = fresh
-        ? await fetchWithBar(fresh === "force")
+        ? await fetchRepos(fresh === "force")
         : await api("/api/repos");
       state.repos = [...pending(), ...repos];
       state.unreachable = false;
@@ -1683,6 +1674,7 @@
       state.repos = pending();
       state.unreachable = true;
     }
+    if (waiting) loadBar(false);
     $("repo-loading").hidden = true;
     const grid = $("repo-grid");
     renderRepos();
