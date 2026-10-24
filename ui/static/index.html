@@ -76,6 +76,9 @@
     --warn: #d6a032;
     --err: #f0574f;
     --info: #5aa2f7;
+    /* motion: one curve and one band for every transition */
+    --ease: cubic-bezier(.22, 1, .36, 1);
+    --fast: 160ms;
     --sans: "Inter", "Inter Fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --mono: "Monaspace Neon", "Monaspace Neon Fallback", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     --pad: 20px;
@@ -130,7 +133,7 @@
     position: fixed; left: 8px; top: -60px; z-index: 40; padding: 12px 16px;
     background: var(--surface-3); border: 1px solid var(--accent); border-radius: 8px;
     color: var(--text); text-decoration: none; font-weight: 600; font-size: var(--fs-2);
-    transition: top .12s ease-out;
+    transition: top var(--fast) var(--ease);
   }
   .skip:focus { top: 8px; }
   /* Scroll-edge fade (nuu recipe): the commit list and the log fade 12 px at the edge
@@ -210,11 +213,11 @@
     height: 34px; padding: 0 12px; border-radius: 8px; cursor: pointer;
     border: 1px solid var(--line-2); background: var(--surface-2); color: var(--text);
     font-weight: 560; font-size: var(--fs-2); white-space: nowrap;
-    transition: background .12s, border-color .12s;
+    transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
   }
   .btn:hover { background: var(--surface-3); border-color: #313842; }
   .btn.icon { width: 34px; padding: 0; --ico: var(--ico-l); }
-  .clean .sparkles { opacity: 0; transition: opacity .12s; }
+  .clean .sparkles { opacity: 0; transition: opacity var(--fast) var(--ease); }
   .clean:hover .sparkles, .clean:focus-visible .sparkles { opacity: 1; }
   .btn:active { transform: translateY(.5px); }
   .btn:disabled { opacity: .45; cursor: not-allowed; }
@@ -258,7 +261,7 @@
   .addbar {
     display: flex; gap: 8px; align-items: center; padding: 6px 6px 6px 12px;
     border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface-2);
-    transition: border-color .12s, box-shadow .12s;
+    transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
   }
   .addbar:focus-within { border-color: #3d4655; box-shadow: 0 0 0 3px var(--accent-soft); }
   .addbar .field { flex: 1; min-width: 0; height: 34px; border: 0; background: transparent; padding: 0; }
@@ -288,7 +291,7 @@
     grid-template-areas: "ico name meta arena actions rm"; align-items: center;
     border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
     padding: 12px 16px; text-align: left; cursor: pointer; color: inherit;
-    transition: border-color .12s, background .12s, transform .12s;
+    transition: border-color var(--fast) var(--ease), background var(--fast) var(--ease), transform var(--fast) var(--ease);
   }
   .repo-card:hover { border-color: #2c333c; background: #0f1216; }
   .repo-card:hover .repo-name, .repo-name:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
@@ -439,10 +442,10 @@
   .check input {
     appearance: none; width: 16px; height: 16px; margin: 0; flex: none; display: inline-grid; place-content: center;
     border: 1px solid #3d4655; border-radius: 4px; background: var(--surface-2); cursor: pointer;
-    transition: background .12s, border-color .12s;
+    transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
   }
   .check input::after {
-    content: ""; width: 12px; height: 12px; background: #fff; opacity: 0; transition: opacity .12s;
+    content: ""; width: 12px; height: 12px; background: #fff; opacity: 0; transition: opacity var(--fast) var(--ease);
     -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>") center / contain no-repeat;
     mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>") center / contain no-repeat;
   }
@@ -472,7 +475,7 @@
   .tree-row { display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 4px 0 calc(4px + (var(--depth) - 1) * 16px); border-radius: 6px; cursor: pointer; color: var(--text); }
   .tree-row:hover { background: var(--surface-3); }
   .tree-row { --ico: var(--ico-m); }
-  .tree-caret { width: 16px; display: inline-flex; color: var(--dim); transition: transform .12s; }
+  .tree-caret { width: 16px; display: inline-flex; color: var(--dim); transition: transform var(--fast) var(--ease); }
   .tree-row[aria-expanded="true"] .tree-caret { transform: rotate(90deg); }
   .tree-ico { display: inline-flex; color: var(--muted); }
   .tree-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -642,7 +645,7 @@
   .toast {
     position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(10px);
     background: var(--surface-3); border: 1px solid var(--line-2); padding: 8px 16px; border-radius: 10px;
-    font-size: var(--fs-2); opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s;
+    font-size: var(--fs-2); opacity: 0; pointer-events: none; transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease);
     z-index: 60; max-width: calc(100vw - 32px); text-align: center;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }

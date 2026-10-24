@@ -468,6 +468,18 @@ def test_no_surface_casts_a_drop_shadow(ui: UI) -> None:
     assert value.startswith(("0 0 0 3px", "inset", "none")), value
 
 
+def test_every_transition_shares_one_curve_and_one_band(ui: UI) -> None:
+  """nuu rule 8: one curve over 160 to 220 ms, so each transition names the tokens."""
+  page = ui.text("/")
+  assert "--ease: cubic-bezier(.22, 1, .36, 1);" in page
+  assert re.search(r"--fast: (16\d|1[7-9]\d|2[01]\d|220)ms;", page)
+  transitions = re.findall(r"transition: ([^;]+);", page)
+  assert len(transitions) >= 5
+  for value in transitions:
+    for part in value.split(","):
+      assert part.strip().endswith("var(--fast) var(--ease)"), value
+
+
 def test_the_fetch_clock_is_aligned_and_ticks(
   ui: UI, world: World, ids: dict[str, str]
 ) -> None:

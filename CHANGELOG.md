@@ -33,6 +33,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   stretching to the height of its two-line row.
 - The toast and the log's jump button lose their drop shadows. Every surface
   is flat, the nuu rule, and the focus rings stay.
+- Every transition runs 160 ms on one curve, from two tokens, instead of
+  120 or 180 ms on the browser default.
 
 ## [0.3.0] - 2026-10-23
 
