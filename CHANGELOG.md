@@ -32,6 +32,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   WebKit pseudo-elements are unknown. The page root reserves no gutter.
 - The dashboard measures its rows once more when the fonts are ready, so a
   table measured in the fallback face still folds to cards when it must.
+- The loading bar follows the nuu recipe: it shows 200 ms into the first
+  list read, grows from the left, and marks the dashboard view busy. The
+  30% sweep is gone, and reduced motion holds a still bar.
 
 ### Fixed
 

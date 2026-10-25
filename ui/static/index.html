@@ -208,14 +208,19 @@
     background: var(--glass);
     backdrop-filter: saturate(160%) blur(12px);
   }
+  /* the nuu loading recipe: 200 ms in, the bar grows from the left and slows
+     towards the right edge, until the list lands and hides it */
   .load-bar {
-    position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden;
-    background: color-mix(in srgb, var(--accent) 20%, transparent);
+    position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent);
+    opacity: 0; pointer-events: none; transform-origin: left center; transform: scaleX(0);
+    animation: edge-loading 1.6s 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
-  /* the list load has no counter: a 30% fill sweeps the bar until the list lands */
-  .load-bar i { display: block; height: 100%; width: 30%; background: var(--accent); animation: sweep 1.2s ease-in-out infinite; }
-  @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(334%); } }
-  @media (prefers-reduced-motion: reduce) { .load-bar i { animation: none; } }
+  @keyframes edge-loading {
+    0% { opacity: 0.85; transform: scaleX(0.05); }
+    40% { opacity: 0.85; transform: scaleX(0.55); }
+    100% { opacity: 0.85; transform: scaleX(0.92); }
+  }
+  @media (prefers-reduced-motion: reduce) { .load-bar { opacity: 0.45; animation: none; transform: none; } }
   .icon-btn[aria-busy="true"] .ico-svg { animation: spin 1s linear infinite; }
   .brand {
     display: flex; align-items: center; gap: 8px; align-self: stretch; font-weight: 620; font-size: var(--fs-3);
@@ -950,7 +955,7 @@
     <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings">
       <span class="ico-svg" data-icon="settings" aria-hidden="true"></span>
     </button>
-    <div class="load-bar" id="load-bar" role="progressbar" aria-label="Loading repos" hidden><i></i></div>
+    <div class="load-bar" id="load-bar" hidden></div>
   </header>
 
   <main id="main" tabindex="-1">
@@ -1747,6 +1752,7 @@
   function loadBar(on) {
     state.loadingList = on;
     $("load-bar").hidden = !on || $("view-dashboard").hidden;
+    $("view-dashboard").setAttribute("aria-busy", on ? "true" : "false");
   }
   const spinReload = (on) => $("repos-refresh").setAttribute("aria-busy", on ? "true" : "false");
   async function fetchRepos(force) {

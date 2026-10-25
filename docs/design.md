@@ -236,7 +236,10 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - The `summary` is the card head with a `show` or `hide` mark at the right, and its body opens below.
   - Closed, the head has no bottom border.
 - `banner`: `err`, `warn`, `ok` variants with an icon and one sentence of action.
-- `load-bar`: a 2 px accent bar on the bottom edge of the top bar, shown on the dashboard while the first list read runs. A 30% fill sweeps it, and a fetch of the repo states spins the Reload glyph instead.
+- `load-bar`: a 2 px accent bar on the bottom edge of the top bar, the nuu loading recipe. It shows 200 ms into the first list read, on the dashboard alone.
+  - It grows from the left on a transform and slows towards the right edge, at 85% opacity, until the list lands. Reduced motion holds a still full bar at 45%.
+  - The dashboard view carries `aria-busy` while its read runs. Our bar is decorative and carries no role, since our loading line announces that read.
+  - A fetch of the repo states spins the Reload glyph instead.
   - The repo view and Settings never show it, the minute fetch included.
 - `run button`: one button with `data-state` idle, starting, or running.
   - Idle reads Clean & Push and is the primary.
@@ -539,4 +542,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: in checks and phase modals, opening focus lands on the body. The nuu modal recipe keeps it off the x.
 - Accepted 2026-10-25: a removal in flight stays out of every repo list reload. A refused one brings its row back from the server list.
 - Accepted 2026-10-25: scrollbars follow the nuu recipe in full, with the hover tint kept. The page root drops its reserved gutter, which cost 10 px on every desktop view.
+- Accepted 2026-10-25: the loading bar follows the nuu recipe. A 200 ms delay, growth from the left on a transform, and `aria-busy` on the dashboard view replace the 30% sweep.
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.
