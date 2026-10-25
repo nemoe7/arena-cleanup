@@ -41,7 +41,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - The repo name is a button that opens the repo, and a click on its card body does the same.
     - The card itself has no role.
   - Empty: a hint with the add command. Error: a banner above the rows.
-  - Arena rows: each has two lines at every width, the branch name, then `↑ N` and the PR pill.
+  - Arena rows: each has two lines at every width, the branch name, then `↑ N` and the PR pill. A name shaped `arena/<slug>-<repo>` reads as its slug, with the full name in the title.
     - `↑ N` is the net count, the commits that branch holds beyond `origin/<default>` minus the commits `origin/<default>` holds beyond it, with a tooltip.
     - The chip hides below 1, so absorbed work and a default branch that moved on show no chip.
     - No dot sits before the name or in the PR pill, its colour carries the state.
@@ -177,7 +177,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - `commit`: grid `auto minmax(0, 1fr)`, the subject clamped to two lines with an ellipsis, the metadata on a second row.
   - The row is a button with `aria-expanded`, and a tap shows the whole subject.
   - The metadata carries the author's GitHub picture, 20 px and round, or a `user` glyph in the same disc when the server has none.
-- `row-btn.select`: a sidebar arena row that is a button with `aria-pressed`, two lines: the dot and the name, then the tail under the name. The amber dot of a running PR pulses.
+- `row-btn.select`: a sidebar arena row, a button with `aria-pressed`, two lines: the dot and the branch slug, then the tail under it. The amber dot of a running PR pulses.
   - A selected row carries text colour. Its tint and 2 px accent bar sit on its `arena-item`.
   - The name reads `Pull from <branch>`.
   - Rows and the timeout slider are 44 px high on a phone.
@@ -545,6 +545,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: a removal in flight stays out of every repo list reload. A refused one brings its row back from the server list.
 - Accepted 2026-10-25: scrollbars follow the nuu recipe in full, with the hover tint kept. The page root drops its reserved gutter, which cost 10 px on every desktop view.
 - Accepted 2026-10-25: the loading bar follows the nuu recipe. A 200 ms delay, growth from the left on a transform, and `aria-busy` on the dashboard view replace the 30% sweep.
+- Accepted 2026-10-25: an arena branch named `arena/<slug>-<repo>` reads as its slug, since the tail repeats the repo name. The full name stays in the title, in the delete dialog, and in every command.
 - Accepted 2026-10-25: the Running button shows its dot bare. The busy face narrows the glyph box to 6 px, so dot and label centre as a pair with an 8 px gap.
 - Accepted 2026-10-25: the dashboard names how long ago a repo was last active, the newest of check completion, arena tip commit, and PR edit. The compact nuu form sits after the name, the full form and the source in its title.
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.

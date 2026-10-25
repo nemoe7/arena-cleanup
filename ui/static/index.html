@@ -1244,6 +1244,13 @@
   for (const slot of document.querySelectorAll("[data-icon]")) slot.innerHTML = ICONS[slot.dataset.icon] || "";
   // a live check or job step: a pulsing dot in the glyph slot
   const liveDot = () => el("span", { class: "ico-svg", "aria-hidden": "true" }, el("i", { class: "dot" }));
+  // an arena branch reads as its slug, since arena/<slug>-<repo> repeats the repo name
+  const slugOf = (name, repo) => {
+    const full = String(name || "");
+    const tail = "-" + repo;
+    const fits = full.startsWith("arena/") && full.endsWith(tail) && full.length > 6 + tail.length;
+    return fits ? full.slice(6, -tail.length) : full;
+  };
   // every banner leads with its glyph: a check for ok, the alert triangle otherwise
   const banner = (tone, attrs, ...kids) =>
     el("div", { class: "banner " + tone, ...attrs }, el("span", { class: "ico" }, icon(tone === "ok" ? "check" : "triangle-alert")), ...kids);
@@ -1624,7 +1631,8 @@
     if (!s.ok) {
       meta.append(el("span", { class: "pill err" }, el("i", { class: "dot" }), s.reason || "unavailable"));
     } else {
-      meta.append(el("span", { class: "pill mono" }, s.branch));
+      const short = slugOf(s.branch, repo.name);
+      meta.append(el("span", { class: "pill mono", title: short === s.branch ? null : s.branch }, short));
     }
 
     let arena = null;
@@ -1636,7 +1644,7 @@
         for (const name of s.arena.slice(0, 3)) {
           const pr = (s.pr || {})[name];
           arena.append(el("div", { class: "arena-row" },
-            el("span", { class: "bname", title: name }, name),
+            el("span", { class: "bname", title: name }, slugOf(name, repo.name)),
             el("div", { class: "arena-tail" },
               aheadPill((s.ahead || {})[name], s.default),
               pr && pr.total
@@ -2006,10 +2014,10 @@
         ? s.arena.map((b) => el("div", { class: selectedArena(s) === b ? "arena-item selected" : "arena-item" },
            el("button", { type: "button", class: "row-btn select", "data-branch": b,
              "aria-pressed": String(selectedArena(s) === b), "aria-label": `Pull from ${b}`,
-             title: "Pull from this arena branch",
+             title: `Pull from ${b}`,
              onclick: () => selectArena(b) },
              prDot((s.pr || {})[b]),
-             el("span", { class: "txt" }, b),
+             el("span", { class: "txt" }, slugOf(b, state.repo.name)),
              el("span", { class: "tail" },
                aheadPill((s.ahead || {})[b], s.default, "meta ahead"),
                el("span", { class: "meta" }, metaFor((s.pr || {})[b], s.pr_checked)))),

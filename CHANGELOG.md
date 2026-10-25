@@ -11,6 +11,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.12] - 2026-10-25
 
+### Changed
+
+- An arena branch named `arena/<slug>-<repo>` reads as its slug on the card
+  row and in the sidebar. The full name stays in the title, in the delete
+  dialog, and in every command.
+
 ### Fixed
 
 - The Running button centres its dot and label as a pair. The dot's glyph box
