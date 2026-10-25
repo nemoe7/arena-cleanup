@@ -73,3 +73,64 @@ def test_a_removal_in_flight_stays_out_of_a_status_refresh(desktop: Walker) -> N
   finally:
     page.evaluate(RESTORE)
     page.unroute_all(behavior="ignoreErrors")
+
+
+def test_a_tick_that_changed_nothing_keeps_focus_and_an_armed_remove(
+  desktop: Walker,
+) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  rm = f"{CARD.format(name='billing-api')} .rm"
+  desktop.click(rm, 100)
+  assert page.eval_on_selector(
+    rm, "e => e.classList.contains('armed') && e === document.activeElement"
+  )
+  page.evaluate(ONLINE)
+  page.wait_for_timeout(800)
+  assert page.eval_on_selector(rm, "e => e.classList.contains('armed')"), (
+    "the tick disarmed Remove"
+  )
+  assert page.eval_on_selector(rm, "e => e === document.activeElement"), (
+    "the tick dropped focus"
+  )
+  page.keyboard.press("Escape")
+  page.wait_for_timeout(4200)
+
+
+def test_a_changed_list_keeps_the_focus_on_the_same_control(desktop: Walker) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  name = f"{CARD.format(name='docs-site')} .repo-name"
+  page.focus(name)
+  page.route(lambda url: url.endswith("/api/repos"), dirty("docs-site"))
+  try:
+    page.evaluate(ONLINE)
+    page.wait_for_timeout(800)
+    assert page.eval_on_selector(name, "e => e === document.activeElement"), (
+      "focus fell off the card"
+    )
+  finally:
+    page.unroute_all(behavior="ignoreErrors")
+
+
+def test_a_changed_list_keeps_the_job_log_scroll(desktop: Walker) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  desktop.click(f"{CARD.format(name='billing-api')} button.pill", 300)
+  page.wait_for_selector("#checks-modal[open]")
+  desktop.click("#checks-list li:has-text('test') .check-row", 300)
+  pre = "#checks-list li.open .job-log"
+  page.wait_for_selector(pre)
+  page.eval_on_selector(pre, "e => { e.scrollTop = Math.floor(e.scrollHeight / 2); }")
+  before = page.eval_on_selector(pre, "e => e.scrollTop")
+  assert before > 0
+  page.route(lambda url: url.endswith("/api/repos"), dirty("billing-api"))
+  try:
+    page.evaluate(ONLINE)
+    page.wait_for_timeout(800)
+    assert abs(page.eval_on_selector(pre, "e => e.scrollTop") - before) <= 2, (
+      "the render moved the log"
+    )
+  finally:
+    page.unroute_all(behavior="ignoreErrors")
+    page.keyboard.press("Escape")

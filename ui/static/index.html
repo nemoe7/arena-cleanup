@@ -1413,6 +1413,9 @@
     $("checks-pr").href = pr.url;
     const glyph = { passed: "check", failed: "x" };
     const mark = (c) => c.result === "running" ? liveDot() : icon(glyph[c.result] || "circle-small");
+    // the open pane moves into the new list with its log where the reader left it
+    const pre = state.pane && state.pane.pane.querySelector(".job-log");
+    const top = pre ? pre.scrollTop : 0;
     $("checks-list").replaceChildren(...(pr.checks || []).map((c) => {
       const name = checkName(c);
       const phrase = checkPhrase(c);
@@ -1437,6 +1440,7 @@
               "aria-label": `Open the run of ${c.name}` }, "Open run")
           : null);
     }));
+    if (pre) pre.scrollTop = top;
   }
 
   // One Actions job open at a time: its steps, then the newest page of its log.
@@ -1673,7 +1677,8 @@
         el("span", { class: "idle" }, icon("broom-sparkles"), "Clean & Push"),
         el("span", { class: "busy" }, liveDot(), "Running")));
 
-    return el("tr", { class: "repo-card", "aria-busy": busy, onclick: () => openRepo(repo.id) },
+    return el("tr", { class: "repo-card", "data-id": repo.id, "aria-busy": busy,
+        onclick: () => openRepo(repo.id) },
       cell("", head), cell("", meta), cell("wide", arena), cell("cell-actions", actions, removeButton(repo)));
   }
 
@@ -1702,8 +1707,8 @@
   function sinceStamp(s) {
     const { at, what } = lastActive(s);
     if (!at) return null;
-    return el("span", { class: "repo-since", title: `Last active ${relativeTime(at)}: ${what}` },
-      relativeTime(at, true));
+    return el("span", { class: "repo-since", "data-at": at, "data-what": what,
+      title: `Last active ${relativeTime(at)}: ${what}` }, relativeTime(at, true));
   }
   // The nuu relative form: `3h ago` compact, `3 hours ago` in full, no seconds
   function relativeTime(stamp, compact = false, now = Date.now()) {
@@ -1744,14 +1749,45 @@
     return withoutGone(state.repos).map((repo, at) => ({ repo, at })).sort(first).map((x) => x.repo);
   }
 
+  // What the grid shows. A tick that changed nothing leaves the cards alone,
+  // so focus, an armed Remove, and the open job pane's scroll stay put.
+  let shown = "";
   function renderGrid() {
     const grid = $("repo-grid");
+    const next = JSON.stringify([$("repo-sort").value, withoutGone(state.repos)]);
+    if (next === shown && grid.children.length) {
+      refreshStamps();
+      return;
+    }
+    shown = next;
     const first = grid.children.length === 0;
+    const refocus = keepFocus(grid);
     grid.replaceChildren(...sortedRepos().map(repoCard));
+    refocus();
     $("repo-table").hidden = grid.children.length === 0;
     fitRows();
     if (first) enter([...grid.children], { amount: 0.12 });
     renderChecks();
+  }
+  // the focused control of a card comes back after a render: same card, same place
+  function keepFocus(grid) {
+    const active = document.activeElement;
+    const card = active && grid.contains(active) ? active.closest(".repo-card") : null;
+    if (!card) return () => {};
+    const at = [...card.querySelectorAll("button, a")].indexOf(active);
+    return () => {
+      const again = grid.querySelector(`.repo-card[data-id="${card.dataset.id}"]`);
+      const control = again && [...again.querySelectorAll("button, a")][at];
+      if (control) control.focus({ preventScroll: true });
+    };
+  }
+  // the `3h ago` stamps move with the clock while the cards stay
+  function refreshStamps() {
+    for (const node of $("repo-grid").querySelectorAll(".repo-since[data-at]")) {
+      const at = Number(node.dataset.at);
+      node.textContent = relativeTime(at, true);
+      node.title = `Last active ${relativeTime(at)}: ${node.dataset.what}`;
+    }
   }
 
   // the rows fold into cards when the table, laid out at its natural width, outgrows

@@ -45,6 +45,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   repo view until its fresh status lands. The one-click run waits for it too.
 - A removal still in flight stays out of a status refresh and of every
   render, not only of the list reload.
+- A list read that changed nothing leaves the cards alone, so focus, an
+  armed Remove, and the open job log's scroll stay where they were. The `3h
+  ago` stamps still move with the clock, and a changed list gives the focus
+  back to the same control.
 
 ## [0.3.11] - 2026-10-25
 

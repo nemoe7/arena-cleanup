@@ -553,6 +553,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: the loading bar follows the nuu recipe. A 200 ms delay, growth from the left on a transform, and `aria-busy` on the dashboard view replace the 30% sweep.
 - Accepted 2026-10-25: an arena branch named `arena/<slug>-<repo>` reads as its slug, since the tail repeats the repo name. The full name stays in the title, in the delete dialog, and in every command.
 - Accepted 2026-10-25: the demo names arena branches `arena/<slug>-<repo>`, as real sessions do, so every board and the README image show the slug form.
+- Accepted 2026-10-25: the dashboard repaints its cards only when a list read changed something. Focus, an armed Remove, and an open job log's scroll survive a tick, and the relative stamps update in place.
 - Accepted 2026-10-25: a repo view opens on its list entry and greys Clean & Push, `reading the branch state`, until the fresh status lands. A click never runs on a status older than that read.
 - Accepted 2026-10-25: Cancel toasts `cancelling` when the server took the request, and the error when it did not. Only the status line says `cancelled`, once the run ended.
 - Accepted 2026-10-25: the Running button shows its dot bare. The busy face narrows the glyph box to 6 px, so dot and label centre as a pair with an 8 px gap.
