@@ -152,7 +152,7 @@
   }
   ::selection { background: var(--selection); }
   button, input, select, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   /* view headings take focus so a screen reader lands on the new screen;
      they are not controls, so they do not wear a ring */
   .view h1:focus-visible, .view h2:focus-visible { outline: none; }
@@ -944,6 +944,8 @@
     .status, #statustext, .phase-ico, .commit .sig, .commit .sha { font-size: 12px; }
     .brand .name, .repo-card .btn, .card-actions .btn, .run-foot .btn { font-size: 14px; }
   }
+  /* the ring marks keyboard travel: Tab or an arrow key sets the flag, a pointer clears it */
+  :root:not([data-keyboard-nav="true"]) :focus-visible { outline: none; }
 </style>
 </head>
 <body>
@@ -3508,6 +3510,12 @@
     log.scrollTop = log.scrollHeight;
     $("jump").classList.remove("show");
   };
+
+  // the focus ring follows the keyboard: Tab or an arrow key sets the flag, a pointer clears it
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Tab" || ev.key.startsWith("Arrow")) document.documentElement.dataset.keyboardNav = "true";
+  });
+  document.addEventListener("pointerdown", () => { delete document.documentElement.dataset.keyboardNav; });
 
   document.addEventListener("keydown", (ev) => {
     if ((ev.metaKey || ev.ctrlKey) && ev.key === "Enter" && !$("view-repo").hidden) {

@@ -261,6 +261,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 
 - Target: WCAG 2.2 AA for keyboard use and names.
   - Applied so far: a skip link, `aria-label` on icon buttons, `role="status"` for the run state, and focus rings.
+  - Focus rings follow the keyboard. Tab or an arrow key sets `data-keyboard-nav` on the root, a pointer press clears it, and `:focus-visible` draws its ring under the flag alone.
   - Targets are 44 px on a phone and at least 24 px under a pointer.
 - Test methods: the browser walk in `scripts/walk.py` (keyboard and names) and the measure reports (target sizes).
 - Not run: screen reader sessions, contrast measurement.
@@ -566,3 +567,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.
 - Accepted 2026-10-25: a step row in the job pane is a toggle for its own log lines, as on GitHub's job page. The first failed step opens on its last page, a passed job opens no step, and each open log pages on its own.
   - The server splits the job log on the step start times. Lines in a second that two steps share stay with the earlier step until the later step's opening line.
+- Accepted 2026-10-25: the focus ring shows on keyboard travel alone, nuu clause 9. A script focus or a pointer press draws none, and the generic ring no longer rounds a control's corners on focus.

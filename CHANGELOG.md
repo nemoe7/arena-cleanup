@@ -19,6 +19,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The server splits a job log by step on the step start times. Two steps that
   share a second split at the later step's opening line.
 - The demo job log carries a few lines for every step, so each row has lines.
+- The focus ring shows after keyboard travel alone: Tab or an arrow key arms it,
+  a pointer press disarms it, and the ring no longer changes a control's corners.
 
 ### Fixed
 
