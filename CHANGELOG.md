@@ -20,6 +20,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   pointer hovers it or presses it.
 - A check row reads like GitHub's PR checks list: `Workflow / Job`, the state
   glyph, and a phrase such as `Successful in 41 s` or `In progress`.
+- A dashboard card puts Clean & Push on the arena line, at the right edge,
+  and breaks it under the rows when the line is too short.
 
 ## [0.3.10] - 2026-10-24
 

@@ -805,26 +805,27 @@
   .grid.cards thead { display: none; }
   .grid.cards tbody { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
   .cards td, .cards .repo-head, .cards .repo-card.pending .repo-meta { display: contents; }
-  /* a card: the icon, the name, and Remove on top, the arena rows, and the button bottom right.
-     The branch chip stays in the rows; an unavailable repo shows its reason where the arena rows go */
+  /* a card: the icon, the name, and Remove on top, then a rule. The arena rows share the next line
+     with the button, which breaks under them when the line is too short. The ::after forces the rule */
   .cards .repo-card {
-    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto 1fr auto;
-    grid-template-areas: "ico name rm" "arena arena arena" "actions actions actions";
-    gap: 12px 10px; align-items: start; padding: 16px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; padding: 16px;
     border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
   }
+  .cards .repo-card::after { content: ""; order: 1; flex-basis: 100%; height: 0; margin-top: 12px; border-top: 1px solid var(--line); }
+  .cards .repo-card.pending::after { display: none; }
+  .cards .repo-meta, .cards .arena-list, .cards .card-actions { order: 2; margin-top: 12px; }
   @media (hover: hover) { .cards .repo-card:hover { border-color: var(--card-hover-line); } }
   .cards .repo-card:active { transform: translateY(1px); }
-  .cards .repo-head > div { max-width: none; padding: 0; }
+  .cards .repo-head > div { flex: 1 1 auto; max-width: none; padding: 0; }
   .cards td .repo-name { white-space: normal; overflow: visible; }
   /* the icon, the name, and Remove share one centre line, 44 px Remove on a phone included */
   .cards .repo-ico, .cards .repo-head > div, .cards .repo-card .rm { align-self: center; margin: 0; }
-  .cards .repo-meta { grid-area: arena; align-self: start; padding: 0; }
+  .cards .repo-meta { padding: 0; }
   .cards .repo-meta.branch { display: none; }
   .cards .repo-meta .pill { max-width: 100%; }
-  .cards .arena-list { justify-content: flex-start; padding: 12px 0 0; border-top: 1px solid var(--line); }
+  .cards .arena-list { flex: 1 1 auto; min-width: 0; justify-content: flex-start; padding: 0; }
   .cards .arena-row { flex-direction: column; align-items: stretch; gap: 4px; }
-  .cards .card-actions { display: flex; align-self: end; justify-self: end; padding: 0; }
+  .cards .card-actions { display: flex; align-self: flex-end; margin-left: auto; padding: 0; }
   @media (max-width: 56.25em) {
     /* One column: the run first, then the sidebar with the facts and the commits. */
     .detail { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: start; }

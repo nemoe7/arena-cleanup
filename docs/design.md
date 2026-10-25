@@ -219,8 +219,9 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - The arena area takes the free width, so Clean and Remove sit at the right edge.
     - In a row an arena row is one line: the name, the ahead chip, and the PR pill.
     - A clean in flight turns Clean & Push into Running: disabled, an amber pulsing dot, the same box, and the reason as its title. The row carries `aria-busy`.
-  - Card: a grid card once the table, laid out at its natural width, no longer fits its room. The page measures after each render and on each resize.
-    - The icon, the name, and Remove sit on top on one centre line, then the arena rows, and Clean & Push bottom right.
+  - Card: a wrapping flex card once the table, laid out at its natural width, no longer fits its room. The page measures after each render and on each resize.
+    - The icon, the name, and Remove sit on top on one centre line, then a rule. The arena rows share the next line with Clean & Push at the right edge.
+    - Clean & Push breaks under the arena rows when the line is too short for both.
     - The branch chip stays in the rows, and an unavailable card shows its reason in the arena area.
   - Pending: a pending card, the clone still running, dims behind a `cloning` pill and leads the grid.
 - `sign-row`: label column of 120 px and a value column. On a phone the label takes a full row.
@@ -526,4 +527,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: every amber state is a live state and pulses the dot. The run timeline glyph and the Running button drop their amber spinners, and Re-check keeps its neutral one, since a fetch is no amber state.
 - Accepted 2026-10-25: the close x of a dialog head has no idle fill and no idle border. Its surface shows on hover and while pressed, so the head reads as a title with one quiet control.
 - Accepted 2026-10-25: a check row reads like GitHub's PR checks list: `Workflow / Job`, the state glyph, and the state phrase with its duration. No GitHub mark per row, and the row still opens its steps and log.
+- Accepted 2026-10-25: a card puts Clean & Push on the arena line, right-aligned, and breaks it under the rows on a short line. A button alone on its own line read as wasted ink.
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.

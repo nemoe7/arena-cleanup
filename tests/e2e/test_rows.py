@@ -60,6 +60,9 @@ PROBE = """(card) => {
     arenaLeft: box(card.querySelector('.arena-list')).left,
     actionsLeft: box(card.querySelector('.card-actions')).left,
     actionsRight: box(card.querySelector('.card-actions')).right,
+    actionsTop: box(card.querySelector('.card-actions')).top,
+    actionsBottom: Math.round(card.querySelector('.card-actions').getBoundingClientRect().bottom),
+    arenaBottom: Math.round(card.querySelector('.arena-list').getBoundingClientRect().bottom),
     removeLeft: box(card.querySelector('.rm')).left,
     removeRight: box(card.querySelector('.rm')).right,
     arenaRight: box(card.querySelector('.arena-list')).right,
@@ -93,9 +96,12 @@ def lengthen(route: Any) -> None:
 
 
 def probe(
-  browser: Any, demo: Demo, width: int, long_branch: bool = False
+  browser: Any, demo: Demo, width: int, long_branch: bool = False, phone: bool = False
 ) -> dict[str, Any]:
-  context = browser.new_context(viewport={"width": width, "height": 900})
+  # a phone draws its scrollbar over the page, so cards keep the full width
+  context = browser.new_context(
+    viewport={"width": width, "height": 900}, is_mobile=phone, has_touch=phone
+  )
   walker = None
   try:
     walker = Walker(context, demo.url)
@@ -166,7 +172,7 @@ def test_the_rows_fold_into_cards_when_the_table_outgrows_its_room(
   assert (row["tag"], row["display"]) == ("TR", "table-row")
   # a branch name wider than the window pushes the natural table past its room
   card = probe(browser, demo, 1200, long_branch=True)
-  assert card["display"] == "grid", "the row is the card"
+  assert card["display"] == "flex", "the row is the card"
   assert card["bodyColumns"] > 1, "the body is the card grid"
   assert card["width"] < card["gridWidth"] / 2
   assert not card["headShown"], "no header row over cards"
@@ -174,18 +180,29 @@ def test_the_rows_fold_into_cards_when_the_table_outgrows_its_room(
   assert card["rowTops"][0] < card["rowTops"][1], "arena rows stacked"
   assert card["rowLefts"][0] == card["rowLefts"][1]
   assert card["bname"]["y"] < card["tail"]["y"], "two lines: the name over the pills"
-  # one left edge: icon and arena rows. The button sits bottom right
+  # one left edge: icon and arena rows. The button sits at the right edge
   assert card["icoLeft"] == card["rowLefts"][0]
   assert card["cardRight"] - card["actionsRight"] <= 17
   assert card["actionsLeft"] > card["nameLeft"]
   assert card["icoLeft"] < card["nameLeft"] < card["removeLeft"]
   assert card["removeTop"] <= card["icoTop"], "remove sits top right"
   assert max(card["headMids"]) - min(card["headMids"]) <= 1, "one centre line on top"
-  phone = probe(browser, demo, 360)
-  assert phone["display"] == "grid" and phone["bodyColumns"] == 1, "one column"
+  # a wide branch name fills its line, so Clean & Push breaks under it
+  assert card["actionsTop"] >= card["arenaBottom"], "the button under a full arena line"
+  # with room for both, the button shares the arena line and ends with it
+  roomy = probe(browser, demo, 700)
+  assert roomy["display"] == "flex" and roomy["bodyColumns"] == 1
+  assert roomy["actionsLeft"] >= roomy["arenaRight"], (
+    "the button right of the arena rows"
+  )
+  assert roomy["actionsTop"] >= roomy["rowTops"][-1], "level with the last arena row"
+  assert abs(roomy["actionsBottom"] - roomy["arenaBottom"]) <= 1, "both end on one line"
+  phone = probe(browser, demo, 360, phone=True)
+  assert phone["display"] == "flex" and phone["bodyColumns"] == 1, "one column"
   assert max(phone["headMids"]) - min(phone["headMids"]) <= 1, (
     "44 px remove, same centre"
   )
+  assert phone["actionsLeft"] >= phone["arenaRight"], "the button on the arena line"
 
 
 def test_a_resized_window_folds_and_unfolds_the_rows(browser: Any, demo: Demo) -> None:
@@ -198,7 +215,7 @@ def test_a_resized_window_folds_and_unfolds_the_rows(browser: Any, demo: Demo) -
     assert page.eval_on_selector(CARD, MODE) == "table-row"
     page.set_viewport_size({"width": 600, "height": 900})
     page.wait_for_function(f"{TABLE}.classList.contains('cards')")
-    assert page.eval_on_selector(CARD, MODE) == "grid", "a narrow window folds the rows"
+    assert page.eval_on_selector(CARD, MODE) == "flex", "a narrow window folds the rows"
     page.set_viewport_size({"width": 1400, "height": 900})
     page.wait_for_function(f"!{TABLE}.classList.contains('cards')")
     assert page.eval_on_selector(CARD, MODE) == "table-row", "a wide one unfolds them"
