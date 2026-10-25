@@ -1668,7 +1668,7 @@
       }
     }
 
-    const stale = s.ok ? overwriteReason(s) : "";
+    const stale = s.ok ? cleanBlock(s) : "";
     const busy = Boolean(repo.running);
     const actions = el("div", { class: "card-actions" },
       el("button", { class: busy ? "btn primary clean twin running" : "btn primary clean twin", disabled: Boolean(stale) || busy,
@@ -2343,18 +2343,23 @@
     const moved = name && Number(ahead[name]) < 0;
     return moved ? `a clean would overwrite commits on ${s.default || "the default branch"}` : "";
   }
-  // why the idle button is grey: a run just ended and the branch state is on its
-  // way, a clean would overwrite the default branch, or nothing is ahead
+  // why Clean & Push is grey for a status, on the card as in the repo view:
+  // a clean would overwrite the default branch, or nothing is ahead
+  function cleanBlock(s, chosen = "") {
+    const reason = overwriteReason(s, chosen);
+    if (reason) return reason;
+    const name = runArena(s, chosen);
+    return name && s.ahead?.[name] === 0 ? `nothing to clean on ${name}` : "";
+  }
+  // the repo view adds its own reasons: a run just ended and the branch state
+  // is on its way, or the target is not the default branch
   function runBlock() {
     if (state.settling) return "reading the branch state";
     const s = state.repo?.status;
     if (!s || !s.ok) return "";
     const target = state.branch || s.branch || s.default;
     if (target !== s.default) return "";
-    const reason = overwriteReason(s, state.arena);
-    if (reason) return reason;
-    const name = runArena(s, state.arena);
-    return name && s.ahead?.[name] === 0 ? `nothing to clean on ${name}` : "";
+    return cleanBlock(s, state.arena);
   }
   function renderCommand() {
     const line = commandLine();

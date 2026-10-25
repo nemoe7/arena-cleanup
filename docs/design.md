@@ -556,6 +556,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: the demo names arena branches `arena/<slug>-<repo>`, as real sessions do, so every board and the README image show the slug form.
 - Accepted 2026-10-25: the dashboard repaints its cards only when a list read changed something. Focus, an armed Remove, and an open job log's scroll survive a tick, and the relative stamps update in place.
 - Accepted 2026-10-25: an error toast stays 5 s and a receipt 2.2 s. A refused clone reports under the add field, as a bad source does.
+- Accepted 2026-10-25: a dashboard card greys Clean & Push for overwrite and nothing-ahead reasons, through one guard shared with its repo view. That view alone adds `reading the branch state`.
 - Accepted 2026-10-25: a repo view opens on its list entry and greys Clean & Push, `reading the branch state`, until the fresh status lands. A click never runs on a status older than that read.
 - Accepted 2026-10-25: Cancel toasts `cancelling` when the server took the request, and the error when it did not. Only the status line says `cancelled`, once the run ended.
 - Accepted 2026-10-25: the Running button shows its dot bare. The busy face narrows the glyph box to 6 px, so dot and label centre as a pair with an 8 px gap.

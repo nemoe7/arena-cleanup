@@ -59,6 +59,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   fetch, the clock follow, and a Reload click no longer stop it for each other.
 - The add bar passes an absolute path to the server, as the README and the
   server allow. A path that is no git work tree reports under the field.
+- A dashboard card greys Clean & Push with `nothing to clean on <branch>`
+  once `main` absorbed its arena branch, as the repo view does. One guard
+  serves card and view.
 
 ## [0.3.11] - 2026-10-25
 

@@ -1,9 +1,9 @@
-"""Clean & Push greys only when a clean would overwrite commits on the default.
+"""Clean & Push greys when a clean would overwrite the default, or when nothing is ahead.
 
 The default branch runs through the newest arena branch. With origin's default
-moved past that branch, the dashboard card, repo view, and phone bar grey the
-button. Its tooltip names the reason. Without an arena branch, or with one
-ahead, the button stays live (docs/design.md).
+past that branch or at its tip, card, repo view, and phone bar grey the button.
+Its tooltip names the reason. Without an arena branch, or with one ahead, the
+button stays live (docs/design.md).
 """
 
 from __future__ import annotations
@@ -70,8 +70,25 @@ def default_moved(demo: Demo) -> Iterator[None]:
     subprocess.run([*git, "update-ref", "refs/heads/main", main], check=True)
 
 
+@pytest.fixture
+def default_absorbed(demo: Demo) -> Iterator[None]:
+  """origin/main moves to the arena tip, so the branch reads 0."""
+  git = origin_git(demo)
+  main = ref(git, "refs/heads/main")
+  tip = ref(git, f"refs/heads/{BRANCH}")
+  subprocess.run([*git, "update-ref", "refs/heads/main", tip], check=True)
+  try:
+    yield
+  finally:
+    subprocess.run([*git, "update-ref", "refs/heads/main", main], check=True)
+
+
 def refresh(walker: Walker) -> None:
+  """Reload, and wait for the button to come back: the fetched list is on screen."""
   walker.page.click("#repos-refresh")
+  walker.page.wait_for_function(
+    "() => !document.getElementById('repos-refresh').disabled"
+  )
 
 
 def check_block(walker: Walker, reason: str) -> None:
@@ -99,6 +116,16 @@ def test_the_button_rests_when_the_default_moved_past_the_branch(
   refresh(walker)
   walker.page.wait_for_selector(f"{CARD} .arena-row .ahead", state="detached")
   check_block(walker, OVERWRITE)
+
+
+@pytest.mark.parametrize("width", ["desktop", "phone"])
+def test_the_button_rests_when_the_default_absorbed_the_branch(
+  request: pytest.FixtureRequest, default_absorbed: None, width: str
+) -> None:
+  walker: Walker = request.getfixturevalue(width)
+  walker.goto(1200)
+  refresh(walker)
+  check_block(walker, f"nothing to clean on {BRANCH}")
 
 
 def test_the_button_stays_live_without_an_arena_branch(
