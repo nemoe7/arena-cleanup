@@ -23,6 +23,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The Running button centres its dot and label as a pair. The dot's glyph box
   shrinks to the dot, so the pair no longer sits 3 px right with a 14 px gap.
+- The checks modal keeps its open job pane in its own state, so expanding a
+  job during a run no longer drops the run from its view and its button.
 
 ## [0.3.11] - 2026-10-25
 

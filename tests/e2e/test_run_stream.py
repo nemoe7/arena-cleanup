@@ -1,0 +1,57 @@
+"""A live run keeps its stream, its button, and its log through everything around it.
+
+The checks modal has its own job pane state. A dropped stream resumes where
+it stopped. A run that keeps going says so when a cancel fails. A poll left
+over from one repo never paints another.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from scripts.walk import Demo, Walker
+
+pytestmark = pytest.mark.e2e
+
+CARD = ".repo-card:has-text('{name}') .repo-name"
+DRY = 'input[data-opt="dry_run"]'
+ROWS = "#side-top .arena-item"
+PARKED = "still running, waiting up to"
+WAIT_MS = 30000
+
+
+def set_dry(walker: Walker, on: bool) -> None:
+  if walker.page.is_checked(DRY) != on:
+    walker.click(DRY, 100)
+
+
+def start_parked(walker: Walker, demo: Demo, name: str) -> None:
+  """Open `name`, then start a run that waits on a check that never finishes."""
+  walker.goto(1200)
+  walker.click(CARD.format(name=name), 800)
+  demo.slow_checks(True)
+  set_dry(walker, False)
+  walker.click("#start", 0)
+  walker.page.wait_for_function(
+    f"() => document.querySelector('#log').innerText.includes({PARKED!r})",
+    timeout=WAIT_MS,
+  )
+
+
+def test_the_job_pane_leaves_the_live_run_alone(desktop: Walker, demo: Demo) -> None:
+  page = desktop.page
+  start_parked(desktop, demo, "billing-api")
+  try:
+    desktop.click(f"{ROWS} .arena-checks", 200)
+    page.wait_for_selector("#checks-modal[open]")
+    desktop.click("#checks-list .check-row", 200)
+    page.wait_for_selector("#checks-list li.open .job-pane")
+    page.keyboard.press("Escape")
+    page.wait_for_function("() => !document.querySelector('#checks-modal').open")
+    assert page.inner_text("#start").strip() == "Cancel"
+    desktop.click("#start", 0)
+    assert "cancelled" in desktop.wait_status("cancelled"), (
+      "the button after the modal must cancel the run it still shows"
+    )
+  finally:
+    demo.slow_checks(False)

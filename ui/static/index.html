@@ -1174,6 +1174,7 @@
     branch: "",
     arena: "",
     job: null,
+    pane: null,  // the open Actions job in the checks modal, apart from the live run
     jobs: new Map(),
     es: null,
     opened: 0,
@@ -1413,7 +1414,7 @@
       const name = checkName(c);
       const phrase = checkPhrase(c);
       const title = `${name}: ${phrase.toLowerCase()}`;
-      const open = Boolean(state.job && state.job.url === c.url);
+      const open = Boolean(state.pane && state.pane.url === c.url);
       // an Actions job opens in place; any other check keeps its outbound link
       if (JOB_LINK.test(c.url || "")) {
         return el("li", { class: c.result + (open ? " open" : "") },
@@ -1422,7 +1423,7 @@
               onclick: () => toggleJob(repoId, c.url) },
             el("span", { class: "name" }, name), el("span", { class: "phrase" }, phrase),
             icon("chevron-right", "ico-svg chev")),
-          open ? state.job.pane : null);
+          open ? state.pane.pane : null);
       }
       return el("li", { class: c.result },
         mark(c),
@@ -1464,8 +1465,8 @@
   const STEP_GLYPH = { success: "check", failure: "x", cancelled: "x", skipped: "minus" };
   const jobSecs = (secs) => secs == null ? "" : secs < 60 ? `${secs} s` : `${Math.floor(secs / 60)} min ${secs % 60} s`;
   function closeJob() {
-    if (state.job) clearTimeout(state.job.timer);
-    state.job = null;
+    if (state.pane) clearTimeout(state.pane.timer);
+    state.pane = null;
   }
   function keepJob(job) {
     if (!job.job || job.job.status !== "completed") return;
@@ -1474,7 +1475,7 @@
     while (state.jobs.size > JOBS_KEPT) state.jobs.delete(state.jobs.keys().next().value);
   }
   function toggleJob(repoId, url) {
-    const reopen = !(state.job && state.job.url === url);
+    const reopen = !(state.pane && state.pane.url === url);
     closeJob();
     if (reopen) {
       const pane = el("div", { class: "job-pane" },
@@ -1483,33 +1484,33 @@
         el("ul", { class: "job-steps" }),
         el("p", { class: "job-note" }));
       const kept = state.jobs.get(url);
-      state.job = { repoId, url, pane, job: kept ? kept.job : null, log: kept ? kept.log : null, timer: 0 };
+      state.pane = { repoId, url, pane, job: kept ? kept.job : null, log: kept ? kept.log : null, timer: 0 };
     }
     renderChecks();
     if (!reopen) return;
-    if (state.job.job) {
+    if (state.pane.job) {
       // a finished job paints from its kept detail, with no request
       renderJob();
-      state.job.pane.closest("li").scrollIntoView({ block: "nearest" });
+      state.pane.pane.closest("li").scrollIntoView({ block: "nearest" });
     } else {
       loadJob();
     }
   }
   function jobPath(before, withLog) {
-    const q = new URLSearchParams({ url: state.job.url, log: withLog ? "1" : "0" });
+    const q = new URLSearchParams({ url: state.pane.url, log: withLog ? "1" : "0" });
     if (before != null) q.set("before", String(before));
-    return `/api/repos/${state.job.repoId}/job?${q}`;
+    return `/api/repos/${state.pane.repoId}/job?${q}`;
   }
   async function loadJob() {
-    const job = state.job;
+    const job = state.pane;
     let body;
     try {
       body = await api(jobPath(null, !job.log));
     } catch (err) {
-      if (state.job === job) job.pane.querySelector(".job-note").textContent = err.message;
+      if (state.pane === job) job.pane.querySelector(".job-note").textContent = err.message;
       return;
     }
-    if (state.job !== job) return;
+    if (state.pane !== job) return;
     const first = !job.job;
     job.job = body.job;
     if (body.log) job.log = body.log;
@@ -1519,13 +1520,13 @@
     if (job.job && job.job.status !== "completed") job.timer = setTimeout(loadJob, JOB_POLL);
   }
   async function loadOlderLog() {
-    const job = state.job;
+    const job = state.pane;
     const pre = job.pane.querySelector(".job-log");
     if (!job.log || job.log.start === 0 || job.loading) return;
     job.loading = true;
     try {
       const body = await api(jobPath(job.log.start, true));
-      if (state.job !== job || !body.log) return;
+      if (state.pane !== job || !body.log) return;
       const before = pre.scrollHeight;
       job.log = { ...body.log, lines: body.log.lines.concat(job.log.lines) };
       keepJob(job);
@@ -1539,7 +1540,7 @@
   const logText = (lines) => lines.map((line) => line.replace(LOG_STAMP, "$1 ")).join("\n");
   const logRange = (log) => `lines ${log.start + 1} to ${log.total} of ${log.total}`;
   function renderJob() {
-    const { pane, job, log } = state.job;
+    const { pane, job, log } = state.pane;
     const note = pane.querySelector(".job-note");
     if (!job) {
       pane.querySelector(".job-state").textContent = "unavailable";
