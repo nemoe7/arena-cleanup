@@ -562,7 +562,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: a dashboard card greys Clean & Push for overwrite and nothing-ahead reasons, through one guard shared with its repo view. That view alone adds `reading the branch state`.
 - Accepted 2026-10-25: a repo view opens on its list entry and greys Clean & Push, `reading the branch state`, until the fresh status lands. A click never runs on a status older than that read.
 - Accepted 2026-10-25: Cancel toasts `cancelling` when the server took the request, and the error when it did not. Only the status line says `cancelled`, once the run ended.
-- Accepted 2026-10-25: the Running button shows its dot bare. The busy face narrows the glyph box to 6 px, so dot and label centre as a pair with an 8 px gap.
+- Accepted 2026-10-25: the Running button shows its dot bare. The busy face narrows the glyph box to the dot, so dot and label centre as a pair with an 8 px gap.
 - Accepted 2026-10-25: the dashboard names how long ago a repo was last active, the newest of check completion, arena tip commit, and PR edit. The compact nuu form sits after the name, the full form and the source in its title.
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.
 - Accepted 2026-10-25: a step row in the job pane is a toggle for its own log lines, as on GitHub's job page. The first failed step opens on its last page, a passed job opens no step, and each open log pages on its own.
@@ -573,3 +573,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - nuu-deviation: settings-column-ink: the settings column inks 0.13 of 1280 px, two cards over a sparse page
   - nuu-deviation: add-bar-width: the add bar field spans its row at 1280 px, a URL or an absolute path needs the room
 - Accepted 2026-10-25: the timeout slider follows the nuu range recipe. A tick marks each of its ten stops, both ends read 0 and 120 min in mono, and the readout stays beside the track.
+- Accepted 2026-10-26: the live dot in every pill and button grows from 6 to 8 px, the nuu live-dot default. The header tool dots keep 6 px, the recipe's small size for a dense row.

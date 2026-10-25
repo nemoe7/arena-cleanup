@@ -272,7 +272,7 @@
   .btn.twin.running:disabled { opacity: 1; cursor: progress; background: var(--surface-2); border-color: var(--line-2); color: var(--dim); }
   .btn.twin.running .busy .ico-svg { color: var(--warn); }
   /* the busy face narrows the glyph box to the dot, so dot and label centre as a pair */
-  .btn.twin .busy .ico-svg { width: 6px; }
+  .btn.twin .busy .ico-svg { width: 8px; }
   /* the hidden busy face holds still, so an idle row runs no animation */
   .btn.twin:not(.running) .busy .dot { animation: none; }
   .clean .sparkles { opacity: 0; transition: opacity var(--fast) var(--ease); }
@@ -395,7 +395,7 @@
   /* the arrow glyph keeps 3 px of blank in its box: pull it in on the even scale */
   .pill.ahead { gap: 6px; }
   .pill.ahead .ico-svg { margin-left: -2px; }
-  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
 
   .arena-list { grid-area: arena; align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 12px; }
   /* one line in a row: the name, the ahead chip, and the PR pill. A card breaks it after the name */

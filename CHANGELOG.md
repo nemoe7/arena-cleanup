@@ -23,6 +23,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   a pointer press disarms it, and the ring no longer changes a control's corners.
 - The PR check timeout slider draws a tick per stop and names its two ends, 0
   and 120 min, under the track, as the nuu range recipe asks.
+- The live dot in every pill and button grows from 6 to 8 px, the nuu default.
+  The header tool dots keep 6 px.
 
 ### Fixed
 

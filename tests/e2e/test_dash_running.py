@@ -32,13 +32,14 @@ ROW = """(card) => {
     dot: Boolean(dot) && !slot.querySelector('svg'),
     pulses: dot ? getComputedStyle(dot).animationName === 'pulse' : false,
     box: [btn.offsetWidth, btn.offsetHeight], pair: pair() };
-  // the visible pair, dot to label end, sits on the button centre with an 8 px gap
+  // the visible pair, dot box to label end, sits on the button centre with an 8 px
+  // gap. The box stands still while the pulse scales the dot inside it
   function pair() {
     const busy = btn.querySelector('.busy');
     const range = document.createRange();
     range.selectNodeContents([...busy.childNodes].find((n) => n.nodeType === 3));
     const text = range.getBoundingClientRect();
-    const d = dot.getBoundingClientRect();
+    const d = slot.getBoundingClientRect();
     const b = btn.getBoundingClientRect();
     const skew = (d.left + text.right) / 2 - (b.left + b.width / 2);
     return [Math.round(text.left - d.right), Math.abs(skew) <= 1];
