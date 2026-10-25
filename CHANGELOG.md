@@ -33,6 +33,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   when it did not. Only the status line reports `cancelled in N s`.
 - A slow status answer stays with its repo. A view that moved to another
   repo keeps that repo's heading, sidebar, and title.
+- The commits list follows the selected arena branch and its tip through a
+  delete, a run's end, and every status refresh.
 
 ## [0.3.11] - 2026-10-25
 

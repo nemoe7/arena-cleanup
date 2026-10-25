@@ -52,3 +52,38 @@ def test_a_slow_status_answer_stays_with_its_repo(desktop: Walker) -> None:
     ]
   finally:
     page.evaluate(RESTORE)
+
+
+def subjects(walker: Walker, rid: str, ref: str) -> list[str]:
+  res = walker.page.request.get(
+    f"{walker.url}/api/repos/{rid}/commits?limit=3&ref={ref}"
+  )
+  return [c["subject"] for c in res.json()["commits"]]
+
+
+def test_a_deleted_branch_takes_its_commits_off_the_list(desktop: Walker) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  rid = repo_id(desktop, "data-pipeline")
+  desktop.click(CARD.format(name="data-pipeline"), 800)
+  page.wait_for_selector(ROWS)
+  desktop.click(f"{ROWS}:not(.selected) .select", 700)
+  chosen = page.get_attribute(f"{ROWS}.selected .select", "data-branch")
+  other = page.get_attribute(f"{ROWS}:not(.selected) .select", "data-branch")
+  assert (
+    page.inner_text("#commits .commit .subject") == subjects(desktop, rid, chosen)[0]
+  )
+  # other tests need this branch on the server, so this route answers its delete
+  page.route(
+    "**/api/repos/*/arena/delete",
+    lambda route: route.fulfill(status=200, content_type="application/json", body="{}"),
+  )
+  try:
+    desktop.click(f"{ROWS}.selected .arena-del", 300)
+    desktop.click("#confirm-go", 0)
+    want = subjects(desktop, rid, other)[0]
+    page.wait_for_function(
+      f"document.querySelector('#commits .commit .subject').textContent === {want!r}"
+    )
+  finally:
+    page.unroute_all(behavior="ignoreErrors")
