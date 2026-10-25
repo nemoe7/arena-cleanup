@@ -15,7 +15,7 @@ Use this guide and its Markdown references for instructions. Do not read shipped
 
 1. Run `<skill>/scripts/install.sh` from repo root at session start and after skill source changes, and restart running preview server after source changes, before next CLI call/preview start.
 2. Start the preview as Setup step 3 describes.
-3. After initial visibility response, read references/survey.json and submit fresh answers via arena-preview survey '<json>'. Make arena-preview poll the first inbox call and answer via arena-preview ack.
+3. After initial visibility response, read references/survey.json and submit fresh answers via arena-preview survey '<json>'. Start repo tooling installs (MUST include `pip install -e` on `nuu` when present) via `arena-preview run start` and any demo/presentation server via `start_process`, then make arena-preview poll the first inbox call and answer via arena-preview ack.
 4. Before a proxy `fetch_page` call, after a 401, or on an owner question, run `arena-preview key` and check that its stamp is not expired. With no live preview server, it fails with the restart line.
 5. Try `fetch_page` on the actual source URL first; use [proxy routes](#proxy-access) via `fetch_page` only if that call cannot return needed data.
 
@@ -52,7 +52,7 @@ Omit survey answers and answer-key details from summaries and handoffs.
 - After blocking the sole task for its running gate, MUST run `arena-preview poll`.
 - NEVER wait for a gate with `arena-preview poll` unless only that gate's blocked task remains.
 - When several queued tasks each edit files, declare each task's paths, then start the root gate before that file work.
-- During a local root gate, use `arena-preview worktree start` for unrelated edits on non-overlapping task paths; NEVER wait read-only. A remote PR CI watch alone needs no worktree.
+- During a local root gate, use `arena-preview worktree start` for unrelated edits on non-overlapping task paths; NEVER wait read-only; remote PR CI watch alone needs no worktree; PR checks = ALWAYS priority 1.
 - NEVER start a gate, commit or push in the detached worktree; only collect its diff after the root gate passes, then validate it on the root.
 
 ## Read, acknowledge, and track work
@@ -96,7 +96,7 @@ ALWAYS report a workaround or bypass through a preview report when it bypasses a
 ALWAYS report reproducible skill defects or unresolved skill failures through a preview report with evidence and a suggested fix; corrected routine command-input validation errors get a brief notice, not a separate report or rule proposal.
 
 - Run `task list` at turn start.
-- Before implementation, record approved work: `task set <kebab-title-id> "<title>" [details ...] --type <type>`; set current task first with `--order 1`; update status (`upcoming` or `finished` only) and details as work changes; put task ID in backticks in every ack to link it.
+- Before implementation, break larger tasks into smaller ones and NEVER combine tasks unless they share the same scope. Record approved work: `task set <kebab-title-id> "<title>" [details ...] --type <type>`; update status (`upcoming` or `finished` only) and details as work changes; put task ID in backticks in every ack to link it.
 - Create tasks with explicit `--type`: `report`, `code`, `docs`, `ops`, or `misc`; no default. Keep stored type if an update omits it.
 - For a task from a note or report answer, use `--msg-id <full-message-id>`; queue and acknowledge it in the same tool block.
 - The task marker does not replace `ack`.
