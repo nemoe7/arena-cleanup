@@ -2692,6 +2692,12 @@
   function follow(id) {
     const es = new EventSource(`/api/jobs/${id}/events`);
     state.es = es;
+    // the lines on screen so far: a poll after a dropped stream asks for the rest
+    let seen = 0;
+    const take = (snap) => {
+      appendLines(snap.lines || []);
+      seen = snap.next ?? seen + (snap.lines || []).length;
+    };
     // the button stays grey from the run end until the branch state answers, and
     // the commits reload after the status, which names the arena branches left
     const finish = async (snap) => {
@@ -2708,7 +2714,7 @@
     };
     es.onmessage = (ev) => {
       const snap = JSON.parse(ev.data);
-      appendLines(snap.lines || []);
+      take(snap);
       if (snap.status === "done") {
         es.close();
         state.es = null;
@@ -2720,8 +2726,8 @@
       if (!state.job) return;
       const poll = async () => {
         try {
-          const snap = await api(`/api/jobs/${id}`);
-          appendLines(snap.lines || []);
+          const snap = await api(`/api/jobs/${id}`, { headers: { "Last-Event-Id": String(seen) } });
+          take(snap);
           if (snap.status === "done") {
             finish(snap);
             return;

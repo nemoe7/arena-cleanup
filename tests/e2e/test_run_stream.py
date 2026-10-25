@@ -55,3 +55,24 @@ def test_the_job_pane_leaves_the_live_run_alone(desktop: Walker, demo: Demo) -> 
     )
   finally:
     demo.slow_checks(False)
+
+
+def test_a_dropped_stream_resumes_without_repeating_lines(desktop: Walker) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  desktop.click(CARD.format(name="shop-web"), 800)
+  page.route("**/api/jobs/*/events", lambda route: route.abort())
+  try:
+    set_dry(desktop, True)
+    desktop.click("#start", 0)
+    desktop.wait_status("exit")
+    page.wait_for_timeout(300)
+    rows = page.eval_on_selector_all("#log .log-row", "els => els.length")
+    repos = page.request.get(f"{desktop.url}/api/repos").json()
+    repo_id = next(r["id"] for r in repos if r["name"] == "shop-web")
+    snap = page.request.get(f"{desktop.url}/api/repos/{repo_id}/jobs/latest").json()
+    assert rows == len(snap["lines"]), (
+      "each line once: the poll asks for the lines it lacks"
+    )
+  finally:
+    page.unroute_all(behavior="ignoreErrors")
