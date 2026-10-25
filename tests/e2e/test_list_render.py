@@ -134,3 +134,11 @@ def test_a_changed_list_keeps_the_job_log_scroll(desktop: Walker) -> None:
   finally:
     page.unroute_all(behavior="ignoreErrors")
     page.keyboard.press("Escape")
+
+
+def test_a_return_from_settings_reads_the_list_again(desktop: Walker) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  desktop.click("#settings-btn", 400)
+  with page.expect_request(lambda r: r.url.endswith("/api/repos")):
+    desktop.click("#settings-back", 0)

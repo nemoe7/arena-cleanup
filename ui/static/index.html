@@ -1351,13 +1351,14 @@
     await loadRepos();
   }
 
-  // Back from a sub-view: return to the screen that opened it. A repo view
-  // reads its status again, since Settings can change what a status says.
+  // Back from a sub-view: return to the screen that opened it, and read it
+  // again, since Settings can change what a status says.
   function goBack() {
     // a repo closed behind the settings view cannot be returned to
     const to = state.returnTo === "repo" && state.repo ? "repo" : "dashboard";
     show(to);
     if (to === "repo") refreshStatus();
+    else loadRepos();
   }
 
   // -------------------------------------------------------------- dashboard

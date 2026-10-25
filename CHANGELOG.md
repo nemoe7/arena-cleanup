@@ -49,6 +49,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   armed Remove, and the open job log's scroll stay where they were. The `3h
   ago` stamps still move with the clock, and a changed list gives the focus
   back to the same control.
+- A return from Settings to the dashboard reads the list again, on a
+  deep-linked page as on any other.
 
 ## [0.3.11] - 2026-10-25
 
