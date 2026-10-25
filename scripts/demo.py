@@ -247,7 +247,7 @@ def with_url(pr: dict) -> dict:
     checks.append({"workflowName": "CI", **times, **c,
                    "detailsUrl": c.get("detailsUrl") or job %% (repo, pr["number"], pr["number"] * 10 + i)})
   url = "https://github.com/demo/%%s/pull/%%d" %% (repo, pr["number"])
-  return {**pr, "url": url, "statusCheckRollup": checks}
+  return {**pr, "url": url, "updatedAt": pr.get("updatedAt") or "2026-10-24T09:30:00Z", "statusCheckRollup": checks}
 
 
 STEP_NAMES = ["Set up job", "Checkout", "Install uv", "Run uv run --no-sync pytest", "Post Checkout", "Complete job"]

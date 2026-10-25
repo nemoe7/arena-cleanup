@@ -362,7 +362,8 @@
   @media (hover: hover) { .repo-card:hover .repo-name { text-decoration: underline; text-underline-offset: 3px; } }
   .repo-card.pending { opacity: .6; pointer-events: none; }
   .repo-head, .repo-card.pending .repo-meta { display: inline-flex; align-items: center; vertical-align: middle; min-width: 0; }
-  .repo-head > div { grid-area: name; max-width: 280px; padding: 12px; }
+  .repo-head > div { grid-area: name; display: flex; align-items: baseline; gap: 8px; max-width: 280px; padding: 12px; }
+  .repo-since { flex: none; font-size: var(--fs-1); color: var(--dim); white-space: nowrap; }
   .repo-card .rm { grid-area: rm; margin: 12px 12px 12px 0; vertical-align: middle; }
   .repo-ico {
     --ico: var(--ico-l); grid-area: ico; margin: 12px 0 12px 12px;
@@ -1613,7 +1614,8 @@
       el("span", { class: "repo-ico", "aria-hidden": "true" }, icon("git-branch")),
       el("div", { style: "min-width:0" },
         el("button", { type: "button", class: "repo-name", title: "Open the repo",
-          onclick: (e) => { e.stopPropagation(); openRepo(repo.id); } }, repo.name)),
+          onclick: (e) => { e.stopPropagation(); openRepo(repo.id); } }, repo.name),
+        sinceStamp(s)),
     );
 
     const meta = el("div", { class: s.ok ? "repo-meta branch" : "repo-meta" });
@@ -1671,6 +1673,43 @@
   const PR_RANK = { failing: 1, running: 2, passing: 3, none: 4 };
   function newestTip(repo) {
     return Math.max(0, ...Object.values((repo.status || {}).activity || {}));
+  }
+  // Last active: the newest of a check completion, an arena tip commit, and a PR edit
+  function lastActive(s) {
+    let best = { at: 0, what: "" };
+    const take = (at, what) => { if (at > best.at) best = { at, what }; };
+    for (const secs of Object.values(s.activity || {})) take(secs * 1000, "arena tip commit");
+    for (const pr of Object.values(s.pr || {})) {
+      take(Date.parse(pr.updated) || 0, `PR #${pr.number} edit`);
+      take(Date.parse(pr.checked) || 0, `PR #${pr.number} check`);
+    }
+    return best;
+  }
+  function sinceStamp(s) {
+    const { at, what } = lastActive(s);
+    if (!at) return null;
+    return el("span", { class: "repo-since", title: `Last active ${relativeTime(at)}: ${what}` },
+      relativeTime(at, true));
+  }
+  // The nuu relative form: `3h ago` compact, `3 hours ago` in full, no seconds
+  function relativeTime(stamp, compact = false, now = Date.now()) {
+    const minutes = Math.floor(Math.max(0, now - stamp) / 60000);
+    if (minutes < 1) return compact ? "now" : "just now";
+    if (minutes < 60) return compact ? `${minutes}min ago` : minutes === 1 ? "a minute ago" : `${minutes} minutes ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return compact ? `${hours}h ago` : hours === 1 ? "an hour ago" : `${hours} hours ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return compact ? `${days}d ago` : days === 1 ? "yesterday" : `${days} days ago`;
+    if (days < 30) {
+      const weeks = Math.floor(days / 7);
+      return compact ? `${weeks}wk ago` : weeks === 1 ? "last week" : `${weeks} weeks ago`;
+    }
+    if (days < 365) {
+      const months = Math.max(1, Math.floor(days / 30));
+      return compact ? `${months}mo ago` : months === 1 ? "last month" : `${months} months ago`;
+    }
+    const years = Math.max(1, Math.floor(days / 365));
+    return compact ? `${years}yr ago` : years === 1 ? "last year" : `${years} years ago`;
   }
   function prRank(repo) {
     const s = repo.status || {};

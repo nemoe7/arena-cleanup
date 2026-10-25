@@ -467,7 +467,13 @@ def test_the_pill_carries_each_check_with_its_run_link(
   ]
 
   def fake_gh(argv: list[str], **_: Any) -> tuple[int, str, str]:
-    pr = {"number": 7, "title": "t", "url": "u", "statusCheckRollup": rollup}
+    pr = {
+      "number": 7,
+      "title": "t",
+      "url": "u",
+      "updatedAt": "2026-10-25T09:20:00Z",
+      "statusCheckRollup": rollup,
+    }
     return 0, json.dumps([pr]), ""
 
   monkeypatch.setattr(server, "run_cmd", fake_gh)
@@ -493,6 +499,8 @@ def test_the_pill_carries_each_check_with_its_run_link(
   assert (test["workflow"], test["started"], test["completed"]) == ("", "", "")
   assert (deploy["workflow"], deploy["started"], deploy["completed"]) == ("", "", "")
   assert pr["total"] == len(pr["checks"])
+  assert pr["updated"] == "2026-10-25T09:20:00Z", "the PR edit stamp rides along"
+  assert pr["checked"] == fresh["completedAt"], "the newest check completion"
 
 
 def test_one_fetch_runs_at_a_time_and_the_rest_wait_for_it(

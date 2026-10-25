@@ -11,6 +11,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.11] - 2026-10-25
 
+### Added
+
+- A dashboard card names the time since the repo was last active, `3h ago`,
+  the newest of a check completion, an arena tip commit, and a PR edit.
+
 ### Changed
 
 - The run timeline's running row and the Running button show the amber

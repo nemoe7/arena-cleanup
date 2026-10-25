@@ -219,6 +219,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Before a count the row carries the name alone.
 - `repo-card`: a `tr` of `grid`, a real `table` with `th` header cells, so the columns align across rows under the header row. Once the table outgrows its room the cells hand their content to the row, which lays the card out by area.
   - Row, left to right, four cells: the icon and name, the default branch pill, the arena rows stacked, and the actions.
+    - After the name, a dim `repo-since` stamp names how long ago the repo was last active, in nuu relative form: `3h ago`.
+    - Last active is the newest of a check completion, an arena tip commit, and a PR edit. The title gives the full form and the source.
     - The actions cell holds Clean, and Remove with the trash glyph.
     - The arena area takes the free width, so Clean and Remove sit at the right edge.
     - In a row an arena row is one line: the name, the ahead chip, and the PR pill.
@@ -543,4 +545,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: a removal in flight stays out of every repo list reload. A refused one brings its row back from the server list.
 - Accepted 2026-10-25: scrollbars follow the nuu recipe in full, with the hover tint kept. The page root drops its reserved gutter, which cost 10 px on every desktop view.
 - Accepted 2026-10-25: the loading bar follows the nuu recipe. A 200 ms delay, growth from the left on a transform, and `aria-busy` on the dashboard view replace the 30% sweep.
+- Accepted 2026-10-25: the dashboard names how long ago a repo was last active, the newest of check completion, arena tip commit, and PR edit. The compact nuu form sits after the name, the full form and the source in its title.
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.
