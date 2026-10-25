@@ -765,7 +765,7 @@ def render_inline(markdown):
 	except ImportError:return html.escape(markdown)
 	parser=MarkdownIt('commonmark',{'html':False}).enable(['strikethrough']);highlight_markdown(parser);parser.add_render_rule('link_open',open_link);return parser.renderInline(markdown)
 def field_html(question):
-	prompt=html.escape(question['prompt'],quote=True);name=html.escape(question['id'],quote=True);body=f'<div class="question" data-field="{name}"';body+=f' data-type="{question["type"]}">';body+=f'<small class="question-id">Question ID: <code>{name}</code></small>'
+	prompt=html.escape(question['prompt'],quote=True);name=html.escape(question['id'],quote=True);body=f'<div class="question" id="report-question-{name}" data-field="{name}"';body+=f' data-type="{question["type"]}">';body+=f'<small class="question-id">Question ID: <code>{name}</code></small>'
 	if question['type']=='text':return f'{body}<textarea class="answer-text" rows="2" placeholder="Answer" aria-label="{prompt}"></textarea></div>'
 	control='radio'if question['type']=='choice'else'checkbox';group=f'<div class="options" role="group" aria-label="{prompt}">'
 	for option in question['options']:
@@ -1943,7 +1943,10 @@ def poll_inbox(store,sleeper=None):
 			if run_notices(store.path.parent):clear_poll_repeat(store);print('DO NOT END TURN. POLL AGAIN.',flush=True);return 0
 			open_tasks=[item for item in store.list_tasks()if item['status']=='upcoming'and not item['blocked']]
 			if open_tasks:listing['tasks']=open_tasks;names=', '.join(item['id']for item in open_tasks);continue_line=f"CONTINUE: UNBLOCKED TASK {names}. Start a worktree with: arena-preview worktree start --gate <gate> <name> <destination>.";print(continue_line,flush=True);print(format_task_list(listing.get('tasks',[])),flush=True);return 0
-			if store.take_board_wake():clear_poll_repeat(store);print('BOARD WAKE: session woken from the multi-session board. Read board entries and continue work before polling again.',flush=True);print(format_read(listing),flush=True);return 0
+			if store.take_board_wake():
+				clear_poll_repeat(store);print('BOARD WAKE: session woken from the multi-session board. Read board entries and continue work before polling again.',flush=True);board_now=store.board_state()
+				for entry in board_now.get('entries')or[]:payload=entry.get('payload');body_text=json.dumps(payload,ensure_ascii=False)if isinstance(payload,dict)else str(payload or'');print(f"[board {entry.get('id','')}] {entry.get('session_id','')} -> {entry.get('to','*')}: {body_text}",flush=True)
+				print(format_read(listing),flush=True);return 0
 			if skip_poll_ready(store):store.take_skip_poll();store.mark_turn_ended();print('SKIP: owner pressed Skip poll. End the turn, no second poll.',flush=True);print(format_read(listing),flush=True);return 0
 			if not announced_running:announced_running=True;run_notices(store.path.parent,show_running=True)
 			if index+1<POLL_MAX_LOOPS:
@@ -2486,13 +2489,14 @@ class Store:
 				row_sid=row['session_id']
 				if row_sid==sid and row_sid in by_sid:continue
 				by_sid[row_sid]=dict(row)
-			sessions=list(by_sid.values());seen_entry_ids=set();merged_entries=[]
+			sessions=list(by_sid.values());existing_entry_ids={str(item.get('id')or'')for item in entries if item.get('id')};seen_entry_ids=set();merged_entries=[]
 			for item in[*entries,*merged['entries']]:
 				row=dict(item);eid=str(row.get('id')or'')
 				if eid and eid in seen_entry_ids:continue
 				if eid:seen_entry_ids.add(eid)
 				if isinstance(row.get('file'),dict)and'content'in row['file']:row['file']=stage_board_file(self.path.parent,row['session_id'],row['file'])
 				merged_entries.append(row)
+				if eid and eid not in existing_entry_ids and row.get('session_id')!=sid and row.get('to')in('*',sid,'',None)and sid in allowed and ack_wakes.get(sid)!=eid:wakes[sid]=eid
 			entries=merged_entries
 			for(k,v)in merged['wakes'].items():
 				if k==sid and ack_wakes.get(sid)==v:continue

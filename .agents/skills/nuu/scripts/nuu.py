@@ -38,7 +38,7 @@ from measure import check as check_measurements
 from measure import main as measure_main
 from walk import main as walk_main
 
-NAMED_BREAKPOINTS = ("75em", "60em", "40em", "30em")
+NAMED_BREAKPOINTS = ("68em", "60em", "30em", "24em")
 DEVICE_BREAKPOINTS = NAMED_BREAKPOINTS
 MEDIA_BREAKPOINT_RE = re.compile(
   r"@media\b[^{]*?\(\s*(?:min|max)-(?:width|height)\s*:\s*([0-9.]+(?:em|rem|px))\s*\)",
@@ -46,7 +46,7 @@ MEDIA_BREAKPOINT_RE = re.compile(
 )
 HOME = Path(__file__).resolve().parent.parent
 CATALOG = HOME / "data" / "vendor" / "ui-ux-pro-max"
-WIDTHS = (1280, 360)
+WIDTHS = (1920, 1080, 958, 855, 411)
 SKIP = {
   ".agents",
   ".git",
@@ -173,7 +173,7 @@ KNOWN_NUU_RULES = {
 }
 NONUU_MARKER_RE = re.compile(r"\bnonuu:[ \t]*(.*?)(?=-->|\*/|;|\s|$|\bnonuu:)")
 DEVIATION_MARKER_RE = re.compile(
-  r"\bnuu-deviation:[ \t]*([A-Za-z0-9_.-]+)(?::[ \t]*(.*?))?(?=-->|\*/|$)"
+  r"\bnuu-deviation:[ \t]*(?:([A-Za-z0-9_.-]+):[ \t]*)?(.*?)(?=-->|\*/|$)"
 )
 
 
@@ -190,7 +190,14 @@ def collect_deviation_markers(path, lines):
     for match in DEVIATION_MARKER_RE.finditer(line):
       dev_id = (match[1] or "").strip()
       reason = (match[2] or "").strip()
-      mark_str = f"{path}:{number}: {dev_id}: {reason or '<no-reason>'}"
+      if not dev_id and reason and re.fullmatch(r"[A-Za-z0-9_.-]+", reason):
+        dev_id, reason = reason, ""
+      if not dev_id and not reason:
+        continue
+      label = (
+        f"{dev_id}: {reason or '<no-reason>'}" if dev_id else (reason or "<no-reason>")
+      )
+      mark_str = f"{path}:{number}: {label}"
       deviations.append(
         {
           "id": dev_id,
@@ -859,17 +866,18 @@ def browser(args):
     else {}
   )
   cfg_widths = cfg_audit.get("widths") or cfg_info["config"].get("widths") or []
-  extra_widths = (
-    args.widths
+  configured_widths = [w for w in cfg_widths if isinstance(w, int) and w > 0]
+  selected_widths = (
+    sorted({int(w) for w in args.widths if w > 0})
     if args.widths
-    else [w for w in cfg_widths if isinstance(w, int) and w > 0]
+    else sorted(set(configured_widths or WIDTHS))
   )
   typography = resolve_project_typography(project_root)
   request = {
     "command": args.command,
     "url": args.url,
     "output": str(Path(args.artifacts).resolve()),
-    "widths": sorted({*WIDTHS, *extra_widths}),
+    "widths": selected_widths,
     "selector": args.selector,
     "ready": getattr(args, "ready", None),
     "a11y": bool(getattr(args, "a11y", False) or args.command in {"a11y", "audit"}),
@@ -925,7 +933,13 @@ def browser(args):
       }
       result.setdefault("findings", []).extend(
         {
-          "rule": "NUM201",
+          "rule": (
+            "NUM202"
+            if ": font-size is " in finding or ": letter-spacing is " in finding
+            else "NUM203"
+            if ": border-radius" in finding
+            else "NUM201"
+          ),
           "severity": "review",
           "evidence": finding,
           "location": location,

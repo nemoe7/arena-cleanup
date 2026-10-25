@@ -39,26 +39,26 @@ One short specification for every page we ship, paired with a small command-line
 11. Each repository carries its own `docs/design.md` (or the custom path configured at `[design].path` in `nuu.toml`), updated in the same change as any visual work (`NUL004`).
 12. Read padding, margin, gap, and size per element from the rendered page, compare each with the sheet, and check the house viewports (`1920x957`, `1080x2437`, `958x958`, and `411x799`, plus `855x325` landscape).
 13. When a page needs a new pattern, add the entry, the house viewports (`1920x957`, `1080x2437`, `958x958`, and `411x799`, plus `855x325`), and screenshots in one PR.
-14. Inline suppression markers (`<!-- nonuu: RULE_ID -->`, `/* nonuu: RULE_ID */`, `// nonuu: RULE_ID`) silence false-positive findings for the named rule on that line and are reported in `nuu lint`, `nuu audit`, and `nuu collect` output. Approved house-style deviations use `nuu-deviation: <id>: <reason>` in CSS/HTML/JS comments or `docs/design.md` (`nuu collect --deviations`); agents MUST NEVER add `nuu-deviation:` automatically and ALWAYS require explicit user approval first.
+14. Inline suppression markers (`nonuu: RULE_ID`) silence false-positive findings on that line and appear in `lint`, `audit`, and `collect` output. Approved house-style deviations use `nuu-deviation: <reason>` in comments or `docs/design.md` (`nuu collect --deviations`). Agents MUST NEVER add `nuu-deviation:` without explicit user approval.
 
 Component and interaction patterns live in `references/recipes/`: [modal-manager.md](references/recipes/modal-manager.md) (top-right `.close-button` and delete confirmation), [range-sliders.md](references/recipes/range-sliders.md) (step ticks and `<output>` bubbles), [relative-timestamps.md](references/recipes/relative-timestamps.md) (tabular relative ages), [loading-bar.md](references/recipes/loading-bar.md) (200 ms delayed edge bar and fixed-slot controls), [scrollbars.md](references/recipes/scrollbars.md) (`10 px` rounded thumb without arrow buttons), and [overflow-and-clipping.md](references/recipes/overflow-and-clipping.md) (unclipped focus rings, shadows, and tooltips).
 
 ## Workflow
 
-1. Read `docs/design.md` in the target repository (or `[design].path` from `nuu.toml`). If none exists, create one from `references/design-template.md` (`scripts/nuu record init --root <repo>`).
+1. Read `docs/design.md` in the target repo (or `[design].path` from `nuu.toml`). If none exists, create one from `references/design-document.md`.
 2. Read `references/style.css` and copy only the declarations the page needs. Keep the custom-property names; change their values in `:root` only when `docs/design.md` records a palette or scale.
 3. Read `references/examples.md` and the matching recipe in `references/recipes/` when the change touches a clause or component pattern, so the correct and incorrect dark-mode forms are both in view.
-4. Build or edit the page. Run `scripts/nuu audit --root <repo>` for static and measure checks, or `scripts/nuu audit --root <repo> --url <http-url> --flows <flows.json> --ready <selector>` when a live server and browser engine are available.
+4. Build or edit the page. Run `scripts/nuu audit -p <repo>` for static and measure checks. Run `scripts/nuu audit -p <repo> -u <http-url> -f <flows.json> -r <selector>` when a live server is available.
 5. When reviewing screenshots in a pull request or report, annotate findings with `scripts/nuu annotate` (using `--crop <x,y,w,h|auto>` when focusing on a specific component) or assemble a numbered comparison board with `scripts/nuu board` (`--type panels` for before/after PNGs or `--type design --spec boards.json` for HTML/screenshot design boards; pass `-W` / `--wireframe` when structural bounding-box overlays are needed). Both commands automatically detect and embed the project's configured `@font-face` / `--font-sans` typography (`nuu.toml`, CSS, or HTML `<style>`).
 
 ## Reference files
 
 - `AGENTS.md`: mandatory agent workflow rules for `nuu` (`--wireframe` / `-W`, `nuu walk`, `nuu board`, and `nuu.toml`).
-- `references/nuu.toml`: default configuration (`Basel Grotesk` / `Basel Grotesk Mono` font stack, scale, and board defaults).
+- `references/nuu.toml`: default configuration (`Inter` / `Monaspace Neon` font stack, scale, and board defaults).
 - `references/nuu.md`: CLI flags, exit codes, rule codes (`NUL001`–`NUA309`), and recipe index.
 - `references/style.css`: house tokens, type ramp, `4 px` default scale (`8 px` opt-in via `:root[data-scale="8"]`), `.close-button`, and states.
 - `references/examples.md`: dark-mode correct and incorrect UI pairs per clause, recipe, and audit rule.
-- `references/design-template.md`: starter `docs/design.md` template for repositories.
+- `references/design-document.md`: sections and a filled example for `docs/design.md`.
 - `references/recipes/offline-fonts.md`: bundled and offline font loading without reload jitter.
 - `references/recipes/live-dot.md`: `8x8 px` pulsing dot (`NUA309`, `NUL005`) that occupies the idle glyph slot without shifting row height.
 - `references/recipes/loading-bar.md`: subtle `2px` edge loading bar (`200ms` delay, `aria-busy="true"`, compositor-only `scaleX`, static `prefers-reduced-motion` fallback) and fixed-slot inline control loading.
