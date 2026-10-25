@@ -3,8 +3,8 @@
 A tick that changed nothing keeps focus, an armed Remove, and the open job
 pane's scroll. A removal in flight stays out of a status refresh, and a
 return from Settings reads the list again. A refused remove reloads the
-list, and a refused clone reports under the field. The Reload glyph spins
-until the last fetch ends.
+list, and a refused clone reports under the field. An error toast stays to
+be read, and the Reload glyph spins until the last fetch ends.
 """
 
 from __future__ import annotations
@@ -158,5 +158,44 @@ def test_a_refused_remove_reloads_the_list(desktop: Walker) -> None:
       desktop.click(rm, 300)
     assert "origin refused" in desktop.text("#toast")
     assert desktop.count_settled(".repo-card", cards) == cards
+  finally:
+    page.unroute_all(behavior="ignoreErrors")
+
+
+def test_a_refused_clone_reports_under_the_field(desktop: Walker) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  page.route(
+    "**/api/repos",
+    lambda route: (
+      fail(route, "clone refused")
+      if route.request.method == "POST"
+      else route.continue_()
+    ),
+  )
+  try:
+    page.fill("#add-source", "https://github.com/acme/refused.git")
+    desktop.click("#add-btn", 600)
+    assert page.is_visible("#add-error")
+    assert desktop.text("#add-error") == "clone refused"
+    assert page.get_attribute("#add-source", "aria-invalid") == "true"
+    assert page.eval_on_selector("#toast", "e => e.classList.contains('show')") is False
+    assert desktop.count(".repo-card.pending") == 0
+  finally:
+    page.unroute_all(behavior="ignoreErrors")
+    page.fill("#add-source", "")
+
+
+def test_an_error_toast_stays_to_be_read(desktop: Walker) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  page.route("**/api/repos/*/remove", lambda route: fail(route, "origin refused"))
+  try:
+    rm = f"{CARD.format(name='docs-site')} .rm"
+    desktop.click(rm, 100)
+    desktop.click(rm, 3000)
+    assert page.eval_on_selector("#toast", "e => e.classList.contains('show')"), (
+      "the error toast went at the receipt's 2.2 s"
+    )
   finally:
     page.unroute_all(behavior="ignoreErrors")

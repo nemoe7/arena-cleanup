@@ -1256,12 +1256,13 @@
   const banner = (tone, attrs, ...kids) =>
     el("div", { class: "banner " + tone, ...attrs }, el("span", { class: "ico" }, icon(tone === "ok" ? "check" : "triangle-alert")), ...kids);
 
-  const toast = (msg) => {
+  // a receipt goes after a glance, an error stays long enough to read
+  const toast = (msg, long = false) => {
     const node = $("toast");
     node.textContent = msg;
     node.classList.add("show");
     clearTimeout(toast.t);
-    toast.t = setTimeout(() => node.classList.remove("show"), 2200);
+    toast.t = setTimeout(() => node.classList.remove("show"), long ? 5000 : 2200);
   };
 
   async function api(path, init) {
@@ -1606,7 +1607,7 @@
           await postOnce(`/api/repos/${repo.id}/remove`, { delete: true });
           toast("removed");
         } catch (err) {
-          toast(err.message);
+          toast(err.message, true);
         }
         settled(mark);
         loadRepos();
@@ -1949,7 +1950,7 @@
     } catch (err) {
       settle();
       renderRepos();
-      toast(err.message);
+      addError(err.message);
     } finally {
       btn.disabled = false;
       btn.textContent = "Add repo";
@@ -2109,7 +2110,7 @@
         settled(mark);
         if (state.repo === repo) showArena(repo, kept);
         else loadRepos();
-        toast(err.message);
+        toast(err.message, true);
       }
     };
     openModal(dlg);
@@ -2282,7 +2283,7 @@
       if (!kids) {
         kids = el("div", { class: "tree-kids", role: "group" });
         node.append(kids);
-        try { await treeLevel(kids, path, depth + 1); } catch (err) { toast(err.message); }
+        try { await treeLevel(kids, path, depth + 1); } catch (err) { toast(err.message, true); }
       }
       kids.hidden = false;
     };
@@ -2908,7 +2909,7 @@
       box.append(...data.commits.map(commitRow));
       state.commitsNext = data.next;
     } catch (err) {
-      toast(err.message);
+      toast(err.message, true);
     } finally {
       state.commitsLoading = false;
     }
@@ -3006,7 +3007,7 @@
         renderIdentity();
         renderClaims();
       } catch (err) {
-        toast(err.message);
+        toast(err.message, true);
         save.disabled = false;
       }
     } }, "Save");
@@ -3066,7 +3067,7 @@
         toast("claim rules saved");
         renderClaims();
       } catch (err) {
-        toast(err.message);
+        toast(err.message, true);
         save.disabled = false;
       }
     } }, "Save");
@@ -3182,7 +3183,7 @@
       renderAccess();
       toast("signed in");
     } catch (err) {
-      toast(err.message);
+      toast(err.message, true);
       btn.disabled = false;
       btn.removeAttribute("aria-busy");
       btn.textContent = "Sign in";
@@ -3196,7 +3197,7 @@
       renderAccess();
       toast("git credentials configured");
     } catch (err) {
-      toast(err.message);
+      toast(err.message, true);
     }
   }
 
@@ -3280,7 +3281,7 @@
         toast("key created");
         await loadSigning();
       } catch (err) {
-        toast(err.message);
+        toast(err.message, true);
       } finally {
         createBtn.disabled = !s.gpg;
         createBtn.textContent = "Create key";
@@ -3352,7 +3353,7 @@
     tree.hidden = !open;
     $("browse").setAttribute("aria-expanded", String(open));
     if (open && !tree.childElementCount) {
-      try { await treeLevel(tree, "", 1); } catch (err) { toast(err.message); closeTree(); }
+      try { await treeLevel(tree, "", 1); } catch (err) { toast(err.message, true); closeTree(); }
     }
   };
   $("pathin").onkeydown = (ev) => {
@@ -3381,7 +3382,7 @@
       await post(`/api/jobs/${state.job}/cancel`);
       toast("cancelling");
     } catch (err) {
-      toast(err.message);
+      toast(err.message, true);
     }
   };
   const runButton = () => (state.job ? cancelJob() : startJob(payload()));

@@ -543,7 +543,8 @@ def adding_a_bad_path_reports_an_error(w: Walker, demo: Demo) -> None:
   w.goto(1000)
   w.page.fill("#add-source", "/definitely/not/a/repo")
   w.click("#add-btn", 1200)
-  assert w.text("#toast").strip()
+  assert w.visible("#add-error")
+  assert w.text("#add-error").strip()
 
 
 @step("desktop")

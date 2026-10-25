@@ -53,6 +53,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   deep-linked page as on any other.
 - A refused remove reads the list again, so the card comes back as the
   server has it now, not as the page had it at the click.
+- A refused clone reports under the add field, as a bad source does, and an
+  error toast stays 5 s instead of 2.2 s. Receipts keep the short time.
 
 ## [0.3.11] - 2026-10-25
 

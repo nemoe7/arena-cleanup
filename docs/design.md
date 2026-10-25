@@ -295,7 +295,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Defaults: PR check timeout 15 minutes, dry run off.
 - Validation: the add bar accepts a clone URL, a GitHub page address, or a path.
   - Another shape gets an error line under the field, with `aria-invalid` and `aria-describedby` on the field until the next keystroke.
-  - The server answers errors as text the banner shows.
+  - A clone the server refused reports under the field too. Every other error goes to the toast, which holds an error 5 s and a receipt 2.2 s.
 - Retries: none automatic. Re-check and Reload buttons repeat a read.
 - Fetch: the server runs `git fetch --prune origin` in every repo at the top of each clock minute.
   - The timer aligns to the wall clock, so it never drifts.
@@ -554,6 +554,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: an arena branch named `arena/<slug>-<repo>` reads as its slug, since the tail repeats the repo name. The full name stays in the title, in the delete dialog, and in every command.
 - Accepted 2026-10-25: the demo names arena branches `arena/<slug>-<repo>`, as real sessions do, so every board and the README image show the slug form.
 - Accepted 2026-10-25: the dashboard repaints its cards only when a list read changed something. Focus, an armed Remove, and an open job log's scroll survive a tick, and the relative stamps update in place.
+- Accepted 2026-10-25: an error toast stays 5 s and a receipt 2.2 s. A refused clone reports under the add field, as a bad source does.
 - Accepted 2026-10-25: a repo view opens on its list entry and greys Clean & Push, `reading the branch state`, until the fresh status lands. A click never runs on a status older than that read.
 - Accepted 2026-10-25: Cancel toasts `cancelling` when the server took the request, and the error when it did not. Only the status line says `cancelled`, once the run ended.
 - Accepted 2026-10-25: the Running button shows its dot bare. The busy face narrows the glyph box to 6 px, so dot and label centre as a pair with an 8 px gap.
