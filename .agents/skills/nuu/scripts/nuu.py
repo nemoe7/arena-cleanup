@@ -449,17 +449,45 @@ def _has_custom_focus_ring(clean_css: str) -> bool:
   return False
 
 
-def _has_design_doc(root: Path) -> bool:
+def _resolve_design_doc_rel(root: Path) -> str:
+  try:
+    cfg = load_nuu_config(root).get("config") or {}
+  except Exception:
+    cfg = {}
+  if isinstance(cfg, dict):
+    design_tbl = cfg.get("design") if isinstance(cfg.get("design"), dict) else {}
+    audit_tbl = cfg.get("audit") if isinstance(cfg.get("audit"), dict) else {}
+    for candidate in (
+      design_tbl.get("path"),
+      design_tbl.get("doc"),
+      design_tbl.get("file"),
+      audit_tbl.get("design_doc"),
+      audit_tbl.get("design_path"),
+      cfg.get("design_doc"),
+      cfg.get("design_path"),
+    ):
+      if isinstance(candidate, str) and candidate.strip():
+        return candidate.strip()
+  return "docs/design.md"
+
+
+def _has_design_doc(root: Path, design_doc_rel: str | None = None) -> bool:
+  rel = (design_doc_rel or _resolve_design_doc_rel(root)).strip() or "docs/design.md"
+  rel_path = Path(rel)
+  if rel_path.is_absolute():
+    return rel_path.is_file()
   cur = Path(root).resolve()
   if cur.is_file():
     cur = cur.parent
   while True:
-    docs_dir = cur / "docs"
-    if (docs_dir / "design.md").is_file() or (
-      docs_dir.is_dir()
-      and any(p.is_file() and not p.is_symlink() for p in docs_dir.rglob("design.md"))
-    ):
+    if (cur / rel).is_file():
       return True
+    if rel == "docs/design.md":
+      docs_dir = cur / "docs"
+      if docs_dir.is_dir() and any(
+        p.is_file() and not p.is_symlink() for p in docs_dir.rglob("design.md")
+      ):
+        return True
     if (
       (cur / ".git").exists()
       or cur.parent == cur
@@ -548,17 +576,22 @@ def lint(root):
       ignored = file_ids | (line_ids[ln - 1] if 0 < ln <= len(line_ids) else set())
       if finding["rule"] not in ignored:
         findings.append(finding)
-  docs_dir = root / "docs"
-  if not _has_design_doc(root):
+  design_doc_rel = _resolve_design_doc_rel(root)
+  design_doc_path = (
+    Path(design_doc_rel)
+    if Path(design_doc_rel).is_absolute()
+    else (root / design_doc_rel)
+  )
+  if not _has_design_doc(root, design_doc_rel):
     findings.append(
       {
         "rule": "NUL004",
-        "path": str(docs_dir / "design.md"),
+        "path": str(design_doc_path),
         "line": 1,
         "column": 1,
         "severity": "review",
         "status": "source_candidate",
-        "evidence": "Missing docs/design.md",
+        "evidence": f"Missing {design_doc_rel}",
         "criterion": "clause-11",
       }
     )
@@ -657,6 +690,59 @@ def check_icons(root):
       ignored = set(re.findall(r"\bnonuu:\s*([A-Za-z0-9_-]+)", line))
       if finding["rule"] not in ignored:
         findings.append(finding)
+  for path in files(root, {".css"}):
+    text = path.read_text(encoding="utf-8")
+    clean = re.sub(
+      r"/\*[\s\S]*?\*/",
+      lambda m: "\n" * m.group(0).count("\n"),
+      text,
+    )
+    lines = text.splitlines()
+    for rule_match in re.finditer(r"([^{};]+)\{([^}]*)\}", clean):
+      selector = rule_match[1].strip()
+      body = rule_match[2]
+      is_control = bool(
+        re.search(
+          r"(?:^|[\s,>+~:])(?:select|button|input|summary)\b|\[role=",
+          selector,
+          re.IGNORECASE,
+        )
+      )
+      prop_match = re.search(
+        r"\b(?:background(?:-image)?\s*:[^;]*(?:(?:linear|radial|conic)-gradient|url)\s*\(|(?:-webkit-)?mask(?:-image)?\s*:[^;]*url\s*\()",
+        body,
+        re.IGNORECASE,
+      )
+      if not prop_match:
+        continue
+      if not is_control and not re.search(
+        r"(?:-webkit-)?mask(?:-image)?\s*:[^;]*url\s*\(",
+        prop_match.group(0),
+        re.IGNORECASE,
+      ):
+        continue
+      line_no = clean.count("\n", 0, rule_match.start(2) + prop_match.start()) + 1
+      rule_line = clean.count("\n", 0, rule_match.start(1)) + 1
+      ignored = set()
+      for check_ln in range(max(1, rule_line), min(len(lines), line_no) + 1):
+        ignored.update(re.findall(r"\bnonuu:\s*([A-Za-z0-9_-]+)", lines[check_ln - 1]))
+      counts["custom"] += 1
+      if "NUI002" not in ignored:
+        findings.append(
+          {
+            "rule": "NUI002",
+            "path": str(path),
+            "line": line_no,
+            "column": 1,
+            "severity": "advisory",
+            "blocking": False,
+            "evidence": (
+              "CSS background-image/mask-image control icon outside the "
+              "Lucide -> Simple Icons -> Phosphor ladder"
+            ),
+            "criterion": "clause-1",
+          }
+        )
   if sum(counts.values()) > 0 and not license_files:
     findings.append(
       {

@@ -835,7 +835,8 @@ const payload = JSON.parse(fs.readFileSync(0, "utf8"));
     let vh = Math.max(900, payload.height + 64);
     const context = await browser.newContext({
       viewport: { width: vw, height: vh },
-      deviceScaleFactor: 1
+      deviceScaleFactor: 1,
+      colorScheme: "dark"
     });
     const page = await context.newPage();
     await page.setContent(payload.html, { waitUntil: "load" });
@@ -2014,9 +2015,10 @@ def build_design_boards(
       style_attr = f' style="max-width:{max_frame_w + 64}px"'
 
     html_doc = (
-      "<!doctype html><html><head><meta charset='utf-8'><style>"
+      "<!doctype html><html data-theme='dark'><head><meta charset='utf-8'><style>"
       f"{typography['font_faces_css']}\n"
-      f":root {{ --nuu-font-sans: {typography['font_sans']}; --nuu-font-mono: {typography['font_mono']}; }}\n"
+      f":root {{ color-scheme: dark; --nuu-font-sans: {typography['font_sans']}; "
+      f"--nuu-font-mono: {typography['font_mono']}; }}\n"
       f"{app_css}\n"
       f"{DESIGN_BOARD_CSS}\n"
       "html, body { margin: 0; padding: 0; background: var(--bg, #08090b); }"

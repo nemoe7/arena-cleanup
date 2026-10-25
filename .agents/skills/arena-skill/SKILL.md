@@ -13,7 +13,7 @@ Use this guide and its Markdown references for instructions. Do not read shipped
 
 ## Start here
 
-1. Run `<skill>/scripts/install.sh` from repo root at session start and after skill source changes, and restart running preview server after source changes, before next CLI call/preview start.
+1. Run `<skill>/scripts/install.sh` from repo root at session start and after skill source changes, before next CLI call/preview start.
 2. Start the preview as Setup step 3 describes.
 3. After initial visibility response, read references/survey.json and submit fresh answers via arena-preview survey '<json>'. Start repo tooling installs (MUST include `pip install -e` on `nuu` when present) via `arena-preview run start` and any demo/presentation server via `start_process`, then make arena-preview poll the first inbox call and answer via arena-preview ack.
 4. Before a proxy `fetch_page` call, after a 401, or on an owner question, run `arena-preview key` and check that its stamp is not expired. With no live preview server, it fails with the restart line.

@@ -810,7 +810,7 @@ async function run() {
     for (const width of request.widths) {
       const height = Number(request.height || 900);
       const touch = width <= 768 || height <= 480;
-      for (const scheme of ['light', 'dark']) {
+      for (const scheme of ['dark', 'light']) {
         for (const motion of ['no-preference', 'reduce']) {
           const context = await browser.newContext({viewport: {width, height},
             hasTouch: touch, isMobile: touch,
