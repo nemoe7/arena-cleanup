@@ -142,3 +142,21 @@ def test_a_return_from_settings_reads_the_list_again(desktop: Walker) -> None:
   desktop.click("#settings-btn", 400)
   with page.expect_request(lambda r: r.url.endswith("/api/repos")):
     desktop.click("#settings-back", 0)
+
+
+def test_a_refused_remove_reloads_the_list(desktop: Walker) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  cards = desktop.count(".repo-card")
+  page.route("**/api/repos/*/remove", lambda route: fail(route, "origin refused"))
+  try:
+    with page.expect_request(
+      lambda r: r.url.endswith("/api/repos") and r.method == "GET"
+    ):
+      rm = f"{CARD.format(name='infra-tools')} .rm"
+      desktop.click(rm, 100)
+      desktop.click(rm, 300)
+    assert "origin refused" in desktop.text("#toast")
+    assert desktop.count_settled(".repo-card", cards) == cards
+  finally:
+    page.unroute_all(behavior="ignoreErrors")

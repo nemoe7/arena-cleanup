@@ -51,6 +51,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   back to the same control.
 - A return from Settings to the dashboard reads the list again, on a
   deep-linked page as on any other.
+- A refused remove reads the list again, so the card comes back as the
+  server has it now, not as the page had it at the click.
 
 ## [0.3.11] - 2026-10-25
 

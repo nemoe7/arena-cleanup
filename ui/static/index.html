@@ -1596,22 +1596,20 @@
           return;
         }
         clearTimeout(timer);
-        const kept = state.repos;
         const mark = { repo: repo.id };
         state.gone.push(mark);
         state.repos = state.repos.filter((r) => r.id !== repo.id);
         renderRepos();
+        // either way the server's list is the truth: a refusal reads it too,
+        // so the card comes back as it is now, not as it was at the click
         try {
           await postOnce(`/api/repos/${repo.id}/remove`, { delete: true });
-          settled(mark);
           toast("removed");
-          loadRepos();
         } catch (err) {
-          settled(mark);
-          state.repos = kept;
-          renderRepos();
           toast(err.message);
         }
+        settled(mark);
+        loadRepos();
       },
     }, icon("trash-2"));
     return btn;
