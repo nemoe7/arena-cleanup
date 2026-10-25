@@ -88,6 +88,25 @@ def test_the_add_bar_reports_a_bad_source_under_the_field(desktop: Walker) -> No
   assert page.get_attribute("#add-source", "aria-invalid") is None
 
 
+def test_the_add_bar_passes_a_path_whose_refusal_lands_under_the_field(
+  desktop: Walker,
+) -> None:
+  desktop.goto(1200)
+  page = desktop.page
+  page.fill("#add-source", "/definitely/not/a/repo")
+  with page.expect_response(
+    lambda r: bool(REPOS_LIST.search(r.url)) and r.request.method == "POST"
+  ) as answer:
+    desktop.click("#add-btn", 400)
+  assert answer.value.status == 400, "the server refused the path"
+  assert page.is_visible("#add-error")
+  assert desktop.text("#add-error").startswith("no such directory")
+  assert page.get_attribute("#add-source", "aria-invalid") == "true"
+  assert page.eval_on_selector("#toast", "e => e.classList.contains('show')") is False
+  assert desktop.count(".repo-card.pending") == 0
+  page.fill("#add-source", "")
+
+
 def test_the_log_stays_open_and_copy_is_a_glyph(desktop: Walker) -> None:
   desktop.goto(1200)
   desktop.click(".repo-card .repo-name", 800)

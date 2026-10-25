@@ -1932,8 +1932,8 @@
     const input = $("add-source");
     const source = input.value.trim();
     if (!source) return;
-    if (!/^(git@|ssh:|git:|https?:|(www\.)?github\.com\/)/i.test(source)) {
-      addError("Use a git URL: https://host/owner/repo.git, git@host:owner/repo.git, or github.com/owner/repo");
+    if (!/^(git@|ssh:|git:|https?:|(www\.)?github\.com\/|\/)/i.test(source)) {
+      addError("Use a git URL or an absolute path: https://host/owner/repo.git, git@host:owner/repo.git, github.com/owner/repo, or /path/to/repo");
       input.focus();
       return;
     }

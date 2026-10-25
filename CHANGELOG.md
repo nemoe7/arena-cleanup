@@ -57,6 +57,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   error toast stays 5 s instead of 2.2 s. Receipts keep the short time.
 - The Reload glyph spins until the last fetch in flight ends. The page-load
   fetch, the clock follow, and a Reload click no longer stop it for each other.
+- The add bar passes an absolute path to the server, as the README and the
+  server allow. A path that is no git work tree reports under the field.
 
 ## [0.3.11] - 2026-10-25
 

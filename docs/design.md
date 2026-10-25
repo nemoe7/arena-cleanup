@@ -293,9 +293,9 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - A finished run paints at once with its log, phases, and status.
   - A removed repo takes its saved run with it.
 - Defaults: PR check timeout 15 minutes, dry run off.
-- Validation: the add bar accepts a clone URL, a GitHub page address, or a path.
+- Validation: the add bar accepts a clone URL, a GitHub page address, or an absolute path.
   - Another shape gets an error line under the field, with `aria-invalid` and `aria-describedby` on the field until the next keystroke.
-  - A clone the server refused reports under the field too. Every other error goes to the toast, which holds an error 5 s and a receipt 2.2 s.
+  - A clone or a path the server refused reports under the field too. Every other error goes to the toast, which holds an error 5 s and a receipt 2.2 s.
 - Retries: none automatic. Re-check and Reload buttons repeat a read.
 - Fetch: the server runs `git fetch --prune origin` in every repo at the top of each clock minute.
   - The timer aligns to the wall clock, so it never drifts.
