@@ -110,3 +110,14 @@ def test_the_list_tick_refreshes_the_sidebar(desktop: Walker) -> None:
     )
   finally:
     page.unroute_all(behavior="ignoreErrors")
+
+
+def test_a_return_from_settings_reads_the_status_again(desktop: Walker) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  rid = repo_id(desktop, "docs-site")
+  desktop.click(CARD.format(name="docs-site"), 800)
+  desktop.click("#settings-btn", 400)
+  with page.expect_request(lambda r: r.url.endswith(f"/api/repos/{rid}")):
+    desktop.click("#settings-back", 0)
+  assert page.inner_text("#repo-title") == "docs-site"
