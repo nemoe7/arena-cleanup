@@ -1741,7 +1741,7 @@
   function sortedRepos() {
     const order = SORTS[$("repo-sort").value] || SORTS.newest;
     const first = (a, b) => Number(Boolean(b.repo.pending)) - Number(Boolean(a.repo.pending)) || order(a, b);
-    return state.repos.map((repo, at) => ({ repo, at })).sort(first).map((x) => x.repo);
+    return withoutGone(state.repos).map((repo, at) => ({ repo, at })).sort(first).map((x) => x.repo);
   }
 
   function renderGrid() {
@@ -2159,12 +2159,15 @@
       }
       return;
     }
+    // a removal still in flight stays out of this answer too
+    const [kept] = withoutGone([repo]);
     if (state.repos.some((r) => r.id === id)) {
-      state.repos = state.repos.map((r) => (r.id === id ? repo : r));
+      state.repos = state.repos.map((r) => (r.id === id ? kept || r : r));
     }
     if (state.repo?.id !== id) return;
     state.settling = false;
-    adopt(repo);
+    if (kept) adopt(kept);
+    else renderCommand();
   }
   // a fresh status of the open repo paints its heading and sidebar
   function adopt(repo) {

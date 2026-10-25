@@ -43,6 +43,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the next open paints the newer run, not the old one first.
 - Clean & Push stays grey with `reading the branch state` from the open of a
   repo view until its fresh status lands. The one-click run waits for it too.
+- A removal still in flight stays out of a status refresh and of every
+  render, not only of the list reload.
 
 ## [0.3.11] - 2026-10-25
 
