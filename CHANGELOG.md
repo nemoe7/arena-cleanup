@@ -31,6 +31,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   switch to another repo no longer paints that repo's view.
 - Cancel toasts `cancelling` once the server took its request, and an error
   when it did not. Only the status line reports `cancelled in N s`.
+- A slow status answer stays with its repo. A view that moved to another
+  repo keeps that repo's heading, sidebar, and title.
 
 ## [0.3.11] - 2026-10-25
 

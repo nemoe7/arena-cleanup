@@ -2127,23 +2127,32 @@
     $("arena").value = state.arena;
   }
 
+  // The fresh status of the open repo. An answer for a repo the view has left
+  // updates its list entry alone, so a slow read never repaints another repo.
   async function refreshStatus() {
     if (!state.repo) return;
+    const id = state.repo.id;
+    let repo;
     try {
-      const repo = await api(`/api/repos/${state.repo.id}`);
-      const kept = state.repo;
-      state.repo = repo;
-      if (state.repos.find((r) => r.id === repo.id)) {
-        state.repos = state.repos.map((r) => (r.id === repo.id ? repo : r));
-      }
-      if (!$("view-repo").hidden) {
-        $("repo-title").textContent = repo.name;
-        syncTitle();
-        renderBranchSelect();
-        renderArenaSelect();
-        renderSidebar();
-      }
-    } catch { /* keep the last good view */ }
+      repo = await api(`/api/repos/${id}`);
+    } catch {
+      return; // keep the last good view
+    }
+    if (state.repos.some((r) => r.id === id)) {
+      state.repos = state.repos.map((r) => (r.id === id ? repo : r));
+    }
+    if (state.repo?.id === id) adopt(repo);
+  }
+  // a fresh status of the open repo paints its heading and sidebar
+  function adopt(repo) {
+    state.repo = repo;
+    if ($("view-repo").hidden) return;
+    $("repo-title").textContent = repo.name;
+    syncTitle();
+    renderBranchSelect();
+    renderArenaSelect();
+    renderSidebar();
+    renderCommand();
   }
 
   function renderPaths() {
