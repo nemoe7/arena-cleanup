@@ -188,7 +188,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - One row per check, 36 px tall, with a glyph in the state colour, the `Workflow / Job` name, and a dim state phrase. A running check shows an amber pulsing dot in the glyph slot.
   - The phrase names the state and the run time, as GitHub lists them: `Successful in 41 s`, `Failed in 1 min 2 s`, `In progress`, `Queued`, `Skipped`. GitHub's rollup carries no event, so none shows.
   - A row that names an Actions job is a toggle with a chevron, and opens its `job-pane` under itself. Any other run keeps Open run.
-  - Open PR, with the GitHub mark, and Close sit at the right.
+  - Open PR, with the GitHub mark, sits alone at the right. The head x closes the dialog, as it does for `phase-modal`, whose foot shows only when it has Open.
+  - Its body takes the opening focus and draws no ring, so the x never holds it. Same for `phase-modal`.
 - `job-pane`: the job behind a check row, indented 24 px so its content lines up with the row name.
   - A head line with the verdict and the summed step time, then Open, with the GitHub mark, as a house 34 px button.
   - `job-steps`: one 28 px row per step with the state glyph, the name, and the seconds, or `running` behind an amber pulsing dot.
@@ -531,4 +532,6 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: a check row reads like GitHub's PR checks list: `Workflow / Job`, the state glyph, and the state phrase with its duration. No GitHub mark per row, and the row still opens its steps and log.
 - Accepted 2026-10-25: a card puts Clean & Push on the arena line, right-aligned, and breaks it under the rows on a short line. A button alone on its own line read as wasted ink.
 - Accepted 2026-10-25: folded cards flow in two columns whenever two 330 px cards fit. The one-column rule below 900 px is gone, since a lone column wasted the width of a tablet.
+- Accepted 2026-10-25: the checks and phase modals drop the foot Close, since the head x closes them. The foot keeps only Open PR or Open, and the delete confirm keeps Cancel beside Delete.
+- Accepted 2026-10-25: in checks and phase modals, opening focus lands on the body. The nuu modal recipe keeps it off the x.
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.

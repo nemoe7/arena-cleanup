@@ -49,7 +49,9 @@ MODAL = """() => {
       .map((li) => ['.t', '.msg', '.d'].map((c) => li.querySelector(c).textContent)),
     kv: [...body.querySelectorAll('.kv dt, .kv dd')].map((e) => e.textContent),
     commits: body.querySelectorAll('.commit').length,
-    link: !document.getElementById('phase-link').hidden };
+    link: !document.getElementById('phase-link').hidden,
+    foot: [...document.querySelectorAll('#phase-modal .modal-actions > *')]
+      .filter((e) => !e.hidden && !e.parentElement.hidden).map((e) => e.textContent.trim()) };
 }"""
 PATTERN = "**/api/repos/*/jobs/latest"
 JOB = "**/api/jobs/fake"
@@ -181,6 +183,7 @@ def test_the_push_row_shows_the_move_the_lease_and_the_tags(desktop: Walker) -> 
     "v1.0: 11111111 to 22222222",
   ]
   assert modal["link"] is True, "the demo origin is on GitHub"
+  assert modal["foot"] == ["Open"], "the foot holds Open alone, the head x closes"
   assert desktop.page.get_attribute("#phase-link", "href").endswith(
     "/infra-tools/commits/main"
   )
@@ -194,6 +197,7 @@ def test_the_last_row_reads_clean_up_and_lists_its_steps(desktop: Walker) -> Non
   modal = open_phase(desktop, "sync")
   assert modal["title"] == "Clean up"
   assert [s[1] for s in modal["steps"]] == [text for _, text in RUN[-3:]]
+  assert modal["foot"] == [], "no link, no foot"
   close_phase(desktop)
   desktop.click("#back", 600)
 

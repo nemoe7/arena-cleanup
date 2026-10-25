@@ -25,6 +25,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Folded dashboard cards flow in two columns whenever two 330 px cards fit.
   The one-column rule below 900 px is gone, and a card stretched beside a
   taller one packs its lines at the top.
+- The checks and phase modals drop the foot Close: the head x closes them,
+  and the foot keeps only Open PR or Open.
 
 ## [0.3.10] - 2026-10-24
 

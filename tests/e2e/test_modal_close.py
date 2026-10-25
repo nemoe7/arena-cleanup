@@ -2,7 +2,8 @@
 
 At rest it has no fill and no border, unlike the other icon buttons. Under a
 pointer, and while pressed, it paints `--surface-3` with the `--line-2`
-border (docs/design.md).
+border (docs/design.md). It is the one close control: the foot of the checks
+modal holds Open PR alone.
 """
 
 from __future__ import annotations
@@ -52,6 +53,23 @@ def test_the_close_x_rests_bare_and_fills_under_a_pointer(desktop: Walker) -> No
     pressed = page.evaluate(FACE, CLOSE)
     page.mouse.up()
     assert pressed["fill"] == pressed["surface"] and pressed["line"] == pressed["rule"]
+  finally:
+    if page.evaluate("document.getElementById('checks-modal').open"):
+      close_modal(desktop)
+
+
+def test_the_foot_holds_open_pr_alone_and_the_x_closes(desktop: Walker) -> None:
+  page = desktop.page
+  open_modal(desktop, BILLING)
+  try:
+    foot = page.eval_on_selector_all(
+      "#checks-modal .modal-actions > *", "els => els.map((e) => e.textContent.trim())"
+    )
+    assert foot == ["Open PR"], "no Close beside Open PR"
+    focused = page.evaluate("document.activeElement.className")
+    assert focused == "modal-body", "the body takes the opening focus, not the x"
+    page.click(CLOSE)
+    page.wait_for_function("!document.getElementById('checks-modal').open")
   finally:
     if page.evaluate("document.getElementById('checks-modal').open"):
       close_modal(desktop)
