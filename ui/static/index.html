@@ -3304,10 +3304,15 @@
     renderCommand();
   };
 
+  // the toast reports the request, the status line reports the end: `cancelled in N s`
   const cancelJob = async () => {
     if (!state.job) return;
-    await post(`/api/jobs/${state.job}/cancel`).catch(() => {});
-    toast("cancelled");
+    try {
+      await post(`/api/jobs/${state.job}/cancel`);
+      toast("cancelling");
+    } catch (err) {
+      toast(err.message);
+    }
   };
   const runButton = () => (state.job ? cancelJob() : startJob(payload()));
   $("start").onclick = runButton;

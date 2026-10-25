@@ -107,3 +107,20 @@ def test_a_poll_left_over_never_paints_another_repo(
   finally:
     demo.slow_checks(False)
     page.unroute_all(behavior="ignoreErrors")
+
+
+def test_a_failed_cancel_never_says_cancelled(desktop: Walker, demo: Demo) -> None:
+  page = desktop.page
+  start_parked(desktop, demo, "docs-site")
+  try:
+    page.route("**/api/jobs/*/cancel", lambda route: route.abort())
+    desktop.click("#start", 0)
+    page.wait_for_selector("#toast.show")
+    text = page.inner_text("#toast")
+    assert text != "cancelled" and desktop.status_text() == "running", text
+    page.unroute_all(behavior="ignoreErrors")
+    desktop.click("#start", 0)
+    assert "cancelled" in desktop.wait_status("cancelled")
+  finally:
+    demo.slow_checks(False)
+    page.unroute_all(behavior="ignoreErrors")
