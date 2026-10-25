@@ -28,6 +28,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The checks and phase modals drop the foot Close: the head x closes them,
   and the foot keeps only Open PR or Open.
 
+### Fixed
+
+- A card or arena row removed while its request runs stays gone through a
+  list reload, such as Back or the 20 s refresh. A refused removal reloads
+  the list from the server.
+
 ## [0.3.10] - 2026-10-24
 
 ### Changed

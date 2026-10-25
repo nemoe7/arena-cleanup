@@ -534,4 +534,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: folded cards flow in two columns whenever two 330 px cards fit. The one-column rule below 900 px is gone, since a lone column wasted the width of a tablet.
 - Accepted 2026-10-25: the checks and phase modals drop the foot Close, since the head x closes them. The foot keeps only Open PR or Open, and the delete confirm keeps Cancel beside Delete.
 - Accepted 2026-10-25: in checks and phase modals, opening focus lands on the body. The nuu modal recipe keeps it off the x.
+- Accepted 2026-10-25: a removal in flight stays out of every repo list reload. A refused one brings its row back from the server list.
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.

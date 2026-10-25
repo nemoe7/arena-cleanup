@@ -56,6 +56,33 @@ def test_the_arena_row_leaves_before_the_reply_and_returns_on_failure(
     page.unroute("**/api/repos/*/arena/delete")
 
 
+SHOP_ROW = f".repo-card:has-text('shop-web') .arena-row:has-text('{BRANCH}')"
+
+
+def test_a_reload_during_the_delete_keeps_the_branch_off_the_card(
+  desktop: Walker,
+) -> None:
+  page = desktop.page
+  held: list[Any] = []
+  page.route("**/api/repos/*/arena/delete", lambda route: held.append(route))
+  try:
+    desktop.goto(1200)
+    desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
+    desktop.click(f"{ROW} .arena-del", 300)
+    desktop.click("#confirm-go", SETTLE)
+    route = wait_for(held, page)
+    # Back reloads the list from a server that still has the branch
+    desktop.click("#back", 800)
+    assert desktop.count(".repo-card") > 0
+    assert desktop.count_settled(SHOP_ROW, 0) == 0, (
+      "a reload keeps the branch off the card"
+    )
+    fail(route)
+    assert desktop.count_settled(SHOP_ROW, 1) == 1, "a refused delete puts it back"
+  finally:
+    page.unroute("**/api/repos/*/arena/delete")
+
+
 def test_the_card_leaves_before_the_reply_and_returns_on_failure(
   desktop: Walker,
 ) -> None:

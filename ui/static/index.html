@@ -1160,6 +1160,7 @@
   const state = {
     repos: [],
     repo: null,
+    gone: [],  // removals still in flight: { repo } or { repo, branch }
     opts: { dry_run: false, skip_pr_check: false, no_tags: false, force: false },
     paths: [],
     branch: "",
@@ -1572,13 +1573,17 @@
         }
         clearTimeout(timer);
         const kept = state.repos;
+        const mark = { repo: repo.id };
+        state.gone.push(mark);
         state.repos = state.repos.filter((r) => r.id !== repo.id);
         renderRepos();
         try {
           await postOnce(`/api/repos/${repo.id}/remove`, { delete: true });
+          settled(mark);
           toast("removed");
           loadRepos();
         } catch (err) {
+          settled(mark);
           state.repos = kept;
           renderRepos();
           toast(err.message);
@@ -1706,6 +1711,19 @@
   }
   new ResizeObserver(fitRows).observe($("repo-table").parentElement);
 
+  // a removal still in flight stays gone through every reload of the list
+  function withoutGone(repos) {
+    const gone = (r, branch) => state.gone.some((g) => g.repo === r.id && g.branch === branch);
+    return repos.filter((r) => !gone(r, undefined)).map((r) => {
+      const arena = r.status?.arena || [];
+      const kept = arena.filter((b) => !gone(r, b));
+      return kept.length === arena.length ? r : { ...r, status: { ...r.status, arena: kept } };
+    });
+  }
+  function settled(mark) {
+    state.gone = state.gone.filter((g) => g !== mark);
+  }
+
   // the table and its empty state together, for a load and for a list edited before the reply
   function renderRepos() {
     renderGrid();
@@ -1762,7 +1780,7 @@
       const repos = fresh
         ? await fetchRepos(fresh === "force")
         : await api("/api/repos");
-      state.repos = [...pending(), ...repos];
+      state.repos = [...pending(), ...withoutGone(repos)];
       state.unreachable = false;
     } catch (err) {
       // "no repos" and "cannot ask the server" look identical on screen
@@ -1971,15 +1989,20 @@
     dlg.onclose = async () => {
       if (dlg.returnValue !== "delete" || state.repo !== repo) return;
       const kept = repo.status;
+      const mark = { repo: repo.id, branch: name };
+      state.gone.push(mark);
       if (state.arena === name) state.arena = "";
       showArena(repo, { ...kept, arena: (kept.arena || []).filter((b) => b !== name) });
       try {
         await postOnce(`/api/repos/${repo.id}/arena/delete`, { branch: name });
+        settled(mark);
         toast(`deleted ${name}`);
         await refreshStatus();
         loadRepos();
       } catch (err) {
+        settled(mark);
         if (state.repo === repo) showArena(repo, kept);
+        else loadRepos();
         toast(err.message);
       }
     };
