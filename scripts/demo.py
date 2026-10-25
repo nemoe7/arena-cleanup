@@ -65,7 +65,7 @@ REPOS = [
     "shop-web",
     [
       (
-        "arena/session-3",
+        "arena/3f7c2e1a-shop-web",
         {
           "number": 142,
           "title": "feat: checkout page",
@@ -90,7 +90,7 @@ REPOS = [
     "billing-api",
     [
       (
-        "arena/session-1",
+        "arena/1b9d4c7e-billing-api",
         {
           "number": 88,
           "title": "fix: proration rounding",
@@ -104,13 +104,13 @@ REPOS = [
     ],
     False,
   ),
-  ("docs-site", [("arena/session-2", None)], False),
+  ("docs-site", [("arena/2a6e8f3d-docs-site", None)], False),
   # main gained commits after the session: the publish guard stops this run
   (
     "infra-tools",
     [
       (
-        "arena/session-4",
+        "arena/4c3a9b5f-infra-tools",
         {
           "number": 57,
           "title": "chore: pin the base image",
@@ -128,7 +128,7 @@ REPOS = [
     "data-pipeline",
     [
       (
-        "arena/session-5",
+        "arena/5e1f7d2c-data-pipeline",
         {
           "number": 203,
           "title": "feat: incremental loads",
@@ -138,7 +138,7 @@ REPOS = [
           ],
         },
       ),
-      ("arena/session-6", None),
+      ("arena/6d8b3a4e-data-pipeline", None),
     ],
     False,
   ),

@@ -14,7 +14,7 @@ from scripts.walk import Walker
 pytestmark = pytest.mark.e2e
 
 FIRST = "() => document.querySelector('#commits .commit .subject').textContent"
-ROW = '#sidebar .row-btn[data-branch="arena/session-5"]'
+ROW = '#sidebar .row-btn[data-branch="arena/5e1f7d2c-data-pipeline"]'
 
 
 def subjects(walker: Walker, repo_id: str, ref: str) -> list[str]:
@@ -30,9 +30,12 @@ def test_the_list_shows_the_selected_arena_branch(desktop: Walker) -> None:
   repos = page.request.get(f"{desktop.url}/api/repos").json()
   repo_id = next(r["id"] for r in repos if r["name"] == "data-pipeline")
   desktop.click(".repo-card:has-text('data-pipeline') .repo-name", 800)
-  assert page.evaluate(FIRST) == subjects(desktop, repo_id, "arena/session-6")[0]
+  assert (
+    page.evaluate(FIRST)
+    == subjects(desktop, repo_id, "arena/6d8b3a4e-data-pipeline")[0]
+  )
   page.click(ROW)
-  want = subjects(desktop, repo_id, "arena/session-5")[0]
+  want = subjects(desktop, repo_id, "arena/5e1f7d2c-data-pipeline")[0]
   page.wait_for_function(
     f"document.querySelector('#commits .commit .subject').textContent === {want!r}"
   )

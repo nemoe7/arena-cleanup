@@ -17,9 +17,14 @@ from scripts.walk import Walker
 pytestmark = pytest.mark.e2e
 
 REPO = "shop-web"
-OLD = "arena/session-3"
 FULL = "arena/9f2c7a1e-shop-web"
 SLUG = "9f2c7a1e"
+PLAIN = "arena/session-2"
+# the probed repo takes a fresh slug name, and docs-site a name without the repo tail
+RENAMES = {
+  REPO: ("arena/3f7c2e1a-shop-web", FULL),
+  "docs-site": ("arena/2a6e8f3d-docs-site", PLAIN),
+}
 CARD = f".repo-card:has-text('{REPO}')"
 OTHER = ".repo-card:has-text('docs-site')"
 ROW = f'#sidebar .row-btn[data-branch="{FULL}"]'
@@ -27,17 +32,18 @@ NAME = "(e) => [e.textContent, e.title]"
 
 
 def rename(route: Any) -> None:
-  """The probed repo's first arena branch takes the real arena/<slug>-<repo> shape."""
+  """Each renamed repo's arena branch takes its new name in every status field."""
   reply = route.fetch()
   data = reply.json()
   for repo in data if isinstance(data, list) else [data]:
     status = repo.get("status") or {}
-    if repo.get("name") != REPO or OLD not in status.get("arena", []):
+    old, new = RENAMES.get(repo.get("name"), (None, None))
+    if old not in status.get("arena", []):
       continue
-    status["arena"] = [FULL if b == OLD else b for b in status["arena"]]
+    status["arena"] = [new if b == old else b for b in status["arena"]]
     for field in ("ahead", "pr", "tips"):
-      if OLD in status.get(field, {}):
-        status[field][FULL] = status[field].pop(OLD)
+      if old in status.get(field, {}):
+        status[field][new] = status[field].pop(old)
   route.fulfill(response=reply, body=json.dumps(data))
 
 
@@ -52,8 +58,8 @@ def test_an_arena_branch_reads_as_its_slug(desktop: Walker) -> None:
       "the card row shows the slug and keeps the full name as its title"
     )
     assert page.eval_on_selector(f"{OTHER} .arena-row .bname", NAME) == [
-      "arena/session-2",
-      "arena/session-2",
+      PLAIN,
+      PLAIN,
     ], "a branch without the repo name tail keeps its full name"
     desktop.click(f"{CARD} .repo-name", 600)
     page.wait_for_selector(ROW)

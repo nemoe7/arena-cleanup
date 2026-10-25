@@ -60,7 +60,7 @@ def test_the_pill_opens_the_checks_and_the_repo_view_shares_the_modal(
 
 def test_a_row_without_a_pr_keeps_its_plain_pill(desktop: Walker) -> None:
   desktop.goto(1200)
-  row = ".repo-card:has-text('data-pipeline') .arena-row:has-text('session-6')"
+  row = ".repo-card:has-text('data-pipeline') .arena-row:has-text('6d8b3a4e')"
   desktop.page.wait_for_selector(row)
   assert desktop.count(f"{row} span.pill:not(.ahead)") == 1
   assert desktop.count(f"{row} button.pill, {row} .prlink") == 0

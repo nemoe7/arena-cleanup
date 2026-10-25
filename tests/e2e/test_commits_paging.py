@@ -17,8 +17,8 @@ FIRST = "a" * 40
 LAST_OF_FIRST = "b" * 40
 LAST_OF_SECOND = "c" * 40
 ROWS = "() => document.querySelectorAll('#commits .commit').length"
-# shop-web opens with arena/session-3 selected, so every page names that ref
-REF = "&ref=arena%2Fsession-3"
+# shop-web opens with arena/3f7c2e1a-shop-web selected, so every page names that ref
+REF = "&ref=arena%2F3f7c2e1a-shop-web"
 
 
 def commit(i: int, sha: str) -> dict[str, Any]:

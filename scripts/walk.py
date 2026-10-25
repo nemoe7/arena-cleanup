@@ -363,7 +363,7 @@ def sidebar_and_branch_selector(w: Walker, demo: Demo) -> None:
   w.click(".repo-card .repo-name", 800)
   sidebar = w.text("#sidebar")
   assert "Repo" in sidebar
-  assert "arena/session-3" in sidebar
+  assert "3f7c2e1a" in sidebar, "the arena row names the branch by its slug"
   assert w.count('#sidebar button[data-branch][aria-pressed="true"]') == 1, (
     "one branch, one mark"
   )

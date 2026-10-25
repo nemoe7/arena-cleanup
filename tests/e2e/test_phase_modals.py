@@ -21,9 +21,12 @@ pytestmark = pytest.mark.e2e
 RUN = [
   ("INFO", "arena-cleanup 0.3.2 starting"),
   ("OK", "fetched and pruned origin"),
-  ("INFO", "switching to arena/session-4 (tracking origin/arena/session-4)"),
+  (
+    "INFO",
+    "switching to arena/4c3a9b5f-infra-tools (tracking origin/arena/4c3a9b5f-infra-tools)",
+  ),
   ("OK", "already up to date (de96315)"),
-  ("INFO", "checking PR status for arena/session-4"),
+  ("INFO", "checking PR status for arena/4c3a9b5f-infra-tools"),
   ("OK", 'check "lint": SUCCESS'),
   ("OK", "PR #57 checks ok"),
   ("INFO", "scanning 23 commit(s) as Nemo <nemo@example.com>"),
@@ -37,7 +40,7 @@ RUN = [
   ("OK", "moved tag v1.0 11111111 -> 22222222"),
   ("OK", "updated 1 tag(s) on origin"),
   ("INFO", "returning to main"),
-  ("OK", "deleted origin/arena/session-4"),
+  ("OK", "deleted origin/arena/4c3a9b5f-infra-tools"),
   ("OK", "done: 23 commits rewritten"),
 ]
 MODAL = """() => {
@@ -55,7 +58,11 @@ MODAL = """() => {
 }"""
 PATTERN = "**/api/repos/*/jobs/latest"
 JOB = "**/api/jobs/fake"
-PREPARE_STEPS = ["Fetched", "Located remote arena branch", "Pulled arena/session-4"]
+PREPARE_STEPS = [
+  "Fetched",
+  "Located remote arena branch",
+  "Pulled arena/4c3a9b5f-infra-tools",
+]
 
 
 def open_run(

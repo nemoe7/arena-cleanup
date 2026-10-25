@@ -22,7 +22,7 @@ BUTTONS = """() => ['start', 'start-mobile'].map((id) => {
   return { disabled: b.disabled, title: b.title };
 })"""
 REPO = "shop-web"
-BRANCH = "arena/session-3"
+BRANCH = "arena/3f7c2e1a-shop-web"
 LIST = "**/api/repos"
 FETCH = "**/api/fetch"
 ONE = "**/api/repos/*"

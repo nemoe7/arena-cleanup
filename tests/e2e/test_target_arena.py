@@ -16,7 +16,7 @@ from scripts.walk import Walker
 
 pytestmark = pytest.mark.e2e
 
-PARKED = {"shop-web": "arena/session-9", "billing-api": "feature/invoices"}
+PARKED = {"shop-web": "arena/9a0e5c3b-shop-web", "billing-api": "feature/invoices"}
 CARD = ".repo-card:has-text('{name}') .repo-name"
 ROUTES = ("**/api/fetch", "**/api/repos", "**/api/repos/*")
 SELECT = "(s) => ({ value: s.value, options: [...s.options].map((o) => [o.value, o.textContent]) })"

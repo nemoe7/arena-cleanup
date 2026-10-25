@@ -13,8 +13,8 @@ from scripts.walk import Walker
 
 pytestmark = pytest.mark.e2e
 
-BRANCH = "arena/session-5"
-OTHER = "arena/session-6"
+BRANCH = "arena/5e1f7d2c-data-pipeline"
+OTHER = "arena/6d8b3a4e-data-pipeline"
 ROW = f".arena-item:has(.row-btn[data-branch='{BRANCH}'])"
 OTHER_ROW = f".arena-item:has(.row-btn[data-branch='{OTHER}'])"
 CARD = ".repo-card:has-text('data-pipeline') .repo-name"

@@ -12,7 +12,7 @@ from scripts.walk import Walker
 
 pytestmark = pytest.mark.e2e
 
-BRANCH = "arena/session-3"
+BRANCH = "arena/3f7c2e1a-shop-web"
 ROW = f".arena-item:has(.row-btn[data-branch='{BRANCH}'])"
 CARD = ".repo-card:has-text('docs-site')"
 PENDING = ".repo-card.pending"
@@ -56,7 +56,7 @@ def test_the_arena_row_leaves_before_the_reply_and_returns_on_failure(
     page.unroute("**/api/repos/*/arena/delete")
 
 
-SHOP_ROW = f".repo-card:has-text('shop-web') .arena-row:has-text('{BRANCH}')"
+SHOP_ROW = f".repo-card:has-text('shop-web') .arena-row:has(.bname[title='{BRANCH}'])"
 
 
 def test_a_reload_during_the_delete_keeps_the_branch_off_the_card(

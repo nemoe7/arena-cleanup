@@ -23,8 +23,11 @@ RUN = [
   ("OK", "fetched and pruned origin"),
   ("INFO", "scanning local arena/* branches"),
   ("WARN", "deleting stale local branch arena/old"),
-  ("INFO", "switching to arena/session-4 (tracking origin/arena/session-4)"),
-  ("INFO", "checking PR status for arena/session-4"),
+  (
+    "INFO",
+    "switching to arena/4c3a9b5f-infra-tools (tracking origin/arena/4c3a9b5f-infra-tools)",
+  ),
+  ("INFO", "checking PR status for arena/4c3a9b5f-infra-tools"),
   ("OK", 'check "lint": SUCCESS'),
   ("OK", "PR #57 checks ok"),
   ("INFO", "scanning 23 commit(s) as Nemo <nemo@example.com>"),
@@ -35,7 +38,7 @@ RUN = [
   ("INFO", "pushing (with lease) HEAD -> refs/heads/main"),
   ("OK", "pushed 2222222 to origin/main"),
   ("INFO", "returning to main"),
-  ("OK", "deleted origin/arena/session-4"),
+  ("OK", "deleted origin/arena/4c3a9b5f-infra-tools"),
   ("OK", "done: 23 commits rewritten"),
 ]
 TIMES = {

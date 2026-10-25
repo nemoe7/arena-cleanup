@@ -52,8 +52,8 @@ def test_the_sidebar_dot_of_a_running_pr_pulses(desktop: Walker) -> None:
   desktop.goto(1200)
   desktop.click(f"{PIPELINE} .repo-name", 600)
   page.wait_for_selector(".arena-item .dot.live")
-  running = "[data-branch='arena/session-5']"
-  idle = "[data-branch='arena/session-6']"
+  running = "[data-branch='arena/5e1f7d2c-data-pipeline']"
+  idle = "[data-branch='arena/6d8b3a4e-data-pipeline']"
   assert page.evaluate(SIDE_DOT.format(row=running)) == "pulse"
   assert page.evaluate(SIDE_DOT.format(row=idle)) == "none", "no PR, no pulse"
   desktop.click("#back", 600)

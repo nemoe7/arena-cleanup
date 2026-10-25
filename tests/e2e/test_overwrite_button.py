@@ -19,7 +19,7 @@ from scripts.walk import Demo, Walker
 pytestmark = pytest.mark.e2e
 
 REPO = "billing-api"
-BRANCH = "arena/session-1"
+BRANCH = "arena/1b9d4c7e-billing-api"
 CARD = f".repo-card:has-text('{REPO}')"
 OVERWRITE = "a clean would overwrite commits on main"
 BUTTON = (
@@ -118,5 +118,5 @@ def test_the_button_is_live_when_a_branch_is_ahead(
   walker: Walker = request.getfixturevalue(width)
   walker.goto(1200)
   refresh(walker)
-  walker.page.wait_for_selector(f"{CARD} .arena-row:has-text('{BRANCH}')")
+  walker.page.wait_for_selector(f"{CARD} .arena-row:has(.bname[title='{BRANCH}'])")
   check_block(walker, "")

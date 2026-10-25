@@ -11,7 +11,7 @@ from scripts.walk import Walker
 
 pytestmark = pytest.mark.e2e
 
-BRANCH = "arena/session-3"
+BRANCH = "arena/3f7c2e1a-shop-web"
 ROW = f".arena-item:has(.row-btn[data-branch='{BRANCH}'])"
 OPEN = "() => document.querySelector('#confirm-delete').open"
 BOX = "e => { const b = e.getBoundingClientRect(); return [b.width, b.height]; }"

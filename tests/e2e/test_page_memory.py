@@ -40,10 +40,10 @@ def test_a_branch_seen_before_paints_its_commits_from_memory(desktop: Walker) ->
   page.wait_for_selector("#commits .commit")
   first = len(seen)
   assert first == 1, "one page for the selected branch"
-  desktop.click(ROW.format(branch="arena/session-5"), 600)
+  desktop.click(ROW.format(branch="arena/5e1f7d2c-data-pipeline"), 600)
   page.wait_for_selector("#commits .commit")
   assert len(seen) == first + 1, "a new branch reads its page"
-  desktop.click(ROW.format(branch="arena/session-6"), 600)
+  desktop.click(ROW.format(branch="arena/6d8b3a4e-data-pipeline"), 600)
   page.wait_for_selector("#commits .commit")
   assert len(seen) == first + 1, "a branch seen before paints from memory"
   desktop.click("#commits-refresh", 600)

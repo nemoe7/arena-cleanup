@@ -96,7 +96,7 @@ def squares(walker: Walker) -> list[list[float | str]]:
 def test_icon_only_buttons_are_square_on_a_desktop(desktop: Walker) -> None:
   seen = squares(desktop)
   assert {row[0] for row in seen} >= {
-    "Delete arena/session-5",
+    "Delete arena/5e1f7d2c-data-pipeline",
     "Reload repos",
     "Settings",
   }

@@ -16,6 +16,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - An arena branch named `arena/<slug>-<repo>` reads as its slug on the card
   row and in the sidebar. The full name stays in the title, in the delete
   dialog, and in every command.
+- The demo names its arena branches like real sessions, `arena/<slug>-<repo>`,
+  so boards and the README image show slugs.
 
 ### Fixed
 
