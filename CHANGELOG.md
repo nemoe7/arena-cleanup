@@ -22,6 +22,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   glyph, and a phrase such as `Successful in 41 s` or `In progress`.
 - A dashboard card puts Clean & Push on the arena line, at the right edge,
   and breaks it under the rows when the line is too short.
+- Folded dashboard cards flow in two columns whenever two 330 px cards fit.
+  The one-column rule below 900 px is gone, and a card stretched beside a
+  taller one packs its lines at the top.
 
 ## [0.3.10] - 2026-10-24
 

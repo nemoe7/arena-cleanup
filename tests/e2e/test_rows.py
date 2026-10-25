@@ -70,12 +70,13 @@ PROBE = """(card) => {
     icoTop: box(card.querySelector('.repo-ico')).top,
     headMids: ['.repo-ico', '.repo-name', '.rm'].map((s) => mid(card.querySelector(s)).y),
     cardRight: box(card).right,
+    // the head of every card against its card top: a stretched card packs its lines up
+    headGaps: [...table.querySelectorAll('.repo-card')].map((c) => box(c.querySelector('.repo-ico')).top - box(c).top),
   };
 }"""
 
 
 LONG_BRANCH = "arena/" + "session-with-a-very-long-name-" * 12
-MODE = "e => getComputedStyle(e).display"
 TABLE = "document.getElementById('repo-table')"
 
 
@@ -197,12 +198,27 @@ def test_the_rows_fold_into_cards_when_the_table_outgrows_its_room(
   )
   assert roomy["actionsTop"] >= roomy["rowTops"][-1], "level with the last arena row"
   assert abs(roomy["actionsBottom"] - roomy["arenaBottom"]) <= 1, "both end on one line"
+  # two 330 px cards share a row from 672 px of room, one below it, a phone included
+  pair = probe(browser, demo, 800, long_branch=True)
+  assert pair["display"] == "flex" and pair["bodyColumns"] == 2, "two columns at 800 px"
+  assert max(pair["headGaps"]) - min(pair["headGaps"]) <= 1, (
+    "a card stretched to its neighbour keeps its head at the top"
+  )
+  lone = probe(browser, demo, 600, long_branch=True)
+  assert lone["display"] == "flex" and lone["bodyColumns"] == 1, "one column at 600 px"
   phone = probe(browser, demo, 360, phone=True)
   assert phone["display"] == "flex" and phone["bodyColumns"] == 1, "one column"
   assert max(phone["headMids"]) - min(phone["headMids"]) <= 1, (
     "44 px remove, same centre"
   )
   assert phone["actionsLeft"] >= phone["arenaRight"], "the button on the arena line"
+
+
+# the list re-renders after each load, so the card is read fresh until it settles
+SETTLED = """(display) => {
+  const card = [...document.querySelectorAll('.repo-card')].find((e) => e.textContent.includes('data-pipeline'));
+  return Boolean(card) && getComputedStyle(card).display === display;
+}"""
 
 
 def test_a_resized_window_folds_and_unfolds_the_rows(browser: Any, demo: Demo) -> None:
@@ -212,12 +228,12 @@ def test_a_resized_window_folds_and_unfolds_the_rows(browser: Any, demo: Demo) -
     walker.goto(600)
     page = walker.page
     page.wait_for_selector(f"{CARD} .arena-row .arena-tail .pill")
-    assert page.eval_on_selector(CARD, MODE) == "table-row"
+    page.wait_for_function(SETTLED, arg="table-row")
     page.set_viewport_size({"width": 600, "height": 900})
     page.wait_for_function(f"{TABLE}.classList.contains('cards')")
-    assert page.eval_on_selector(CARD, MODE) == "flex", "a narrow window folds the rows"
+    page.wait_for_function(SETTLED, arg="flex")  # a narrow window folds the rows
     page.set_viewport_size({"width": 1400, "height": 900})
     page.wait_for_function(f"!{TABLE}.classList.contains('cards')")
-    assert page.eval_on_selector(CARD, MODE) == "table-row", "a wide one unfolds them"
+    page.wait_for_function(SETTLED, arg="table-row")  # a wide one unfolds them
   finally:
     context.close()

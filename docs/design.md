@@ -146,7 +146,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Breakpoints, the nuu trio in em, one change each: 75em, 56.25em, and 40em.
   - Pixels: 1200, 900, and 640 px at the 16 px browser default, and the em unit moves each switch with the reader's font size.
   - 1200 px stacks the options card over the run card. It puts the settings in one column and tightens the padding.
-  - 900 px stacks the sidebar below the cards and the repo cards, once folded, into one column, and the page scrolls as one.
+  - 900 px stacks the sidebar below the cards, and the page scrolls as one. Folded repo cards keep as many 330 px columns as fit.
   - 640 px switches to the phone ramp, 44 px targets, and stacked rows.
     - The options sit in one column at every width.
     - No other width carries a rule.
@@ -222,6 +222,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Card: a wrapping flex card once the table, laid out at its natural width, no longer fits its room. The page measures after each render and on each resize.
     - The icon, the name, and Remove sit on top on one centre line, then a rule. The arena rows share the next line with Clean & Push at the right edge.
     - Clean & Push breaks under the arena rows when the line is too short for both.
+    - A card stretched to the height of its neighbour packs its lines at the top.
+    - The cards flow in as many 330 px columns as fit: two share a row from 672 px of room, one below it.
     - The branch chip stays in the rows, and an unavailable card shows its reason in the arena area.
   - Pending: a pending card, the clone still running, dims behind a `cloning` pill and leads the grid.
 - `sign-row`: label column of 120 px and a value column. On a phone the label takes a full row.
@@ -528,4 +530,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: the close x of a dialog head has no idle fill and no idle border. Its surface shows on hover and while pressed, so the head reads as a title with one quiet control.
 - Accepted 2026-10-25: a check row reads like GitHub's PR checks list: `Workflow / Job`, the state glyph, and the state phrase with its duration. No GitHub mark per row, and the row still opens its steps and log.
 - Accepted 2026-10-25: a card puts Clean & Push on the arena line, right-aligned, and breaks it under the rows on a short line. A button alone on its own line read as wasted ink.
+- Accepted 2026-10-25: folded cards flow in two columns whenever two 330 px cards fit. The one-column rule below 900 px is gone, since a lone column wasted the width of a tablet.
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.

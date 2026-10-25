@@ -808,7 +808,7 @@
   /* a card: the icon, the name, and Remove on top, then a rule. The arena rows share the next line
      with the button, which breaks under them when the line is too short. The ::after forces the rule */
   .cards .repo-card {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; padding: 16px;
+    display: flex; flex-wrap: wrap; align-items: center; align-content: flex-start; gap: 0 10px; padding: 16px;
     border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
   }
   .cards .repo-card::after { content: ""; order: 1; flex-basis: 100%; height: 0; margin-top: 12px; border-top: 1px solid var(--line); }
@@ -833,7 +833,6 @@
     .side-commits .commits { overflow: visible; min-height: 0; }  /* one scroll: the page */
     .main-col { height: auto; overflow: visible; }
     .logwrap .log { max-height: 52vh; }
-    .grid.cards tbody { grid-template-columns: 1fr; }
   }
   @media (max-width: 40em) {
     /* one scale on a phone: 15 body, 13 controls, 12 metadata. Before this the
