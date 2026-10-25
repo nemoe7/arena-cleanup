@@ -1875,6 +1875,16 @@
     $("repo-empty").hidden = state.unreachable || state.repos.length > 0;
   }
 
+  // the card of a run this page started reads Running at once, behind the repo
+  // view, so Back finds it grey before the list confirms the run
+  let liveRepo = null;
+  function markRunning(repoId, render = true) {
+    const entry = state.repos.find((r) => r.id === repoId);
+    if (!entry || entry.running) return;
+    entry.running = true;
+    if (render) renderRepos();
+  }
+
   function restoreSort() {
     const select = $("repo-sort");
     try {
@@ -1933,6 +1943,8 @@
         : await api("/api/repos");
       state.repos = [...pending(), ...withoutGone(repos)];
       state.unreachable = false;
+      // a read from before the start cannot show the card of a run this page follows live
+      if (state.job && liveRepo) markRunning(liveRepo, false);
       // a repo seen running has a newer run than the one its view remembers
       for (const r of repos) if (r.running) lastRuns.delete(r.id);
       // the open repo reads its fresh entry too, so the sidebar keeps up with
@@ -2778,6 +2790,7 @@
       // another repo opened meanwhile: its view reattaches to this run on return
       if (opened !== state.opened) return;
       state.job = job.id;
+      markRunning(repo.id);
       setStatus("running", "running");
       setRunButton("running");
       follow(job.id, repo.id);
@@ -2830,6 +2843,7 @@
   function follow(id, repoId) {
     const es = new EventSource(`/api/jobs/${id}/events`);
     state.es = es;
+    liveRepo = repoId;
     const mine = () => state.job === id;
     // the lines on screen so far: a poll after a dropped stream asks for the rest
     let seen = 0;

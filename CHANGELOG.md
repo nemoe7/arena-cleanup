@@ -20,6 +20,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   share a second split at the later step's opening line.
 - The demo job log carries a few lines for every step, so each row has lines.
 
+### Fixed
+
+- A run started on this page marks its dashboard row Running at once, so Back
+  from the repo view finds Clean & Push grey before the list confirms the run.
+
 ## [0.3.12] - 2026-10-25
 
 ### Changed

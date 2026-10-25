@@ -14,7 +14,7 @@ from typing import Any
 
 import pytest
 
-from scripts.walk import Walker
+from scripts.walk import Demo, Walker
 
 pytestmark = pytest.mark.e2e
 
@@ -103,3 +103,51 @@ def test_a_live_job_marks_its_row(desktop: Walker) -> None:
   assert page.eval_on_selector(CARD, ROW)["running"] is False, (
     "a plain reload clears it"
   )
+
+
+def test_a_run_started_here_marks_its_row_before_the_list_answers(
+  desktop: Walker, demo: Demo
+) -> None:
+  """Back from the repo view finds the card grey, even on a stale list read."""
+  page = desktop.page
+  card = ".repo-card:has-text('docs-site')"
+  reads: list[int] = []
+
+  def stale(route: Any) -> None:
+    # the list as it stood before the run started
+    reply = route.fetch()
+    repos = reply.json()
+    for entry in repos:
+      entry["running"] = False
+    reads.append(len(repos))
+    route.fulfill(response=reply, body=json.dumps(repos))
+
+  desktop.goto(1200)
+  desktop.click(f"{card} .repo-name", 800)
+  demo.slow_checks(True)
+  page.route("**/api/repos", stale)
+  try:
+    box = 'input[data-opt="dry_run"]'
+    if page.is_checked(box):
+      desktop.click(box, 150)
+    desktop.click("#start", 0)
+    assert desktop.wait_status("running") == "running"
+    assert page.eval_on_selector(card, ROW)["running"] is True, (
+      "the card behind the repo view is marked at once"
+    )
+    desktop.click("#back", 600)
+    assert page.eval_on_selector(card, ROW)["running"] is True, "Back finds it grey"
+    deadline = time.monotonic() + 5
+    while not reads and time.monotonic() < deadline:
+      page.wait_for_timeout(100)
+    assert reads, "the return reads the list"
+    page.wait_for_timeout(200)
+    assert page.eval_on_selector(card, ROW)["running"] is True, (
+      "a read from before the start cannot undo it"
+    )
+    desktop.click(f"{card} .repo-name", 800)
+    desktop.click("#start", 0)
+    assert "cancelled" in desktop.wait_status("cancelled")
+  finally:
+    page.unroute("**/api/repos")
+    demo.slow_checks(False)
