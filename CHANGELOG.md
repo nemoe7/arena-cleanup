@@ -16,6 +16,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The run timeline's running row and the Running button show the amber
   pulsing dot instead of a spinner, so every amber state pulses the dot.
   Re-check keeps its neutral spinner.
+- The close x of a dialog head rests bare: no fill and no border until a
+  pointer hovers it or presses it.
 
 ## [0.3.10] - 2026-10-24
 

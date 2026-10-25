@@ -169,6 +169,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - `btn`: 34 px high, 12 px side padding, 8 px radius, and 44 px high on a phone.
   - Variants: `primary`, `ghost`, and `icon-btn`.
   - All of them are flat: a fill and a 1 px border, no highlight, and no shadow.
+  - The close x in a dialog head rests bare, no fill and no border, and shows the surface under a pointer and while pressed.
 - `pill`: dot and word, 8 px gap, 1000 px radius, `ok`, `warn`, `mono` variants.
 - `commit`: grid `auto minmax(0, 1fr)`, the subject clamped to two lines with an ellipsis, the metadata on a second row.
   - The row is a button with `aria-expanded`, and a tap shows the whole subject.
@@ -522,4 +523,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: the Clean & Push button carries a live run itself, as Running with an amber spinning glyph, and the `clean running` pill is gone. Both labels share one grid cell, so the button keeps its width and height across states.
 - Accepted 2026-10-24: every amber dot pulses like the LED: a running check, a running job step, and the sidebar dot of a running PR. The run timeline glyph, the Running button, and Re-check keep their spinners.
 - Accepted 2026-10-25: every amber state is a live state and pulses the dot. The run timeline glyph and the Running button drop their amber spinners, and Re-check keeps its neutral one, since a fetch is no amber state.
+- Accepted 2026-10-25: the close x of a dialog head has no idle fill and no idle border. Its surface shows on hover and while pressed, so the head reads as a title with one quiet control.
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.

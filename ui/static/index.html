@@ -468,6 +468,10 @@
     padding: 20px; width: min(420px, calc(100vw - 32px)); }
   .modal::backdrop { background: var(--scrim); }
   .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
+  /* the close x rests bare in the head, and shows its surface under a pointer and while pressed */
+  .modal-head .icon-btn { border-color: transparent; background: transparent; }
+  .modal-head .icon-btn:active { color: var(--text); border-color: var(--line-2); background: var(--surface-3); }
+  @media (hover: hover) { .modal-head .icon-btn:hover { border-color: var(--line-2); background: var(--surface-3); } }
   .modal h2 { margin: 0; font-size: var(--fs-4); font-weight: 640; }
   .modal p { margin: 0 0 16px; color: var(--muted); font-size: var(--fs-2); line-height: 1.5; }
   .modal code { font-family: var(--mono); color: var(--text); }
