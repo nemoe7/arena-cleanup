@@ -1843,7 +1843,12 @@
     $("load-bar").hidden = !on || $("view-dashboard").hidden;
     $("view-dashboard").setAttribute("aria-busy", on ? "true" : "false");
   }
-  const spinReload = (on) => $("repos-refresh").setAttribute("aria-busy", on ? "true" : "false");
+  // every fetch in flight holds the Reload glyph, and the last to end lets it go
+  let fetching = 0;
+  const spinReload = (on) => {
+    fetching = Math.max(0, fetching + (on ? 1 : -1));
+    $("repos-refresh").setAttribute("aria-busy", fetching ? "true" : "false");
+  };
   async function fetchRepos(force) {
     spinReload(true);
     try {

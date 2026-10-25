@@ -199,3 +199,26 @@ def test_an_error_toast_stays_to_be_read(desktop: Walker) -> None:
     )
   finally:
     page.unroute_all(behavior="ignoreErrors")
+
+
+def test_the_reload_glyph_spins_until_the_last_fetch_ends(desktop: Walker) -> None:
+  page = desktop.page
+  busy = "() => document.getElementById('repos-refresh').getAttribute('aria-busy')"
+  # the route holds each fetch until the test lets it through
+  held: list[Any] = []
+  page.route("**/api/fetch", lambda route: held.append(route))
+  try:
+    desktop.goto(600)
+    page.click("#repos-refresh")
+    page.wait_for_timeout(300)
+    assert len(held) == 2, "the page-load fetch and the Reload click are both in flight"
+    assert page.evaluate(busy) == "true"
+    held[0].continue_()
+    page.wait_for_timeout(600)
+    assert page.evaluate(busy) == "true", (
+      "the first fetch's end stopped the glyph early"
+    )
+    held[1].continue_()
+    page.wait_for_function(f"{busy} === 'false'", timeout=5000)
+  finally:
+    page.unroute_all(behavior="ignoreErrors")

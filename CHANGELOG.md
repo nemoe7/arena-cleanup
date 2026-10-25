@@ -55,6 +55,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   server has it now, not as the page had it at the click.
 - A refused clone reports under the add field, as a bad source does, and an
   error toast stays 5 s instead of 2.2 s. Receipts keep the short time.
+- The Reload glyph spins until the last fetch in flight ends. The page-load
+  fetch, the clock follow, and a Reload click no longer stop it for each other.
 
 ## [0.3.11] - 2026-10-25
 

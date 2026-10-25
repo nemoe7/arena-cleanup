@@ -300,6 +300,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Fetch: the server runs `git fetch --prune origin` in every repo at the top of each clock minute.
   - The timer aligns to the wall clock, so it never drifts.
   - A page load fetches once, and the dashboard Reload button fetches now.
+  - The Reload glyph spins while any fetch is in flight, and stops with the last one.
   - A repo with a run in flight waits for the next tick.
 - One fetch at a time: a fetch that arrives while one runs waits for it and skips its own.
   - The server skips a fetch within ten seconds of the last one, except from the Reload button.
