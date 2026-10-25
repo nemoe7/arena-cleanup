@@ -27,6 +27,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   job during a run no longer drops the run from its view and its button.
 - After a dropped event stream, the run view asks only for the lines it
   lacks, so the log no longer repeats itself every poll.
+- A run's late answers stay with the run: a poll or a start that outlives a
+  switch to another repo no longer paints that repo's view.
 
 ## [0.3.11] - 2026-10-25
 

@@ -284,6 +284,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Latest run: the server keeps the newest run of each repo in memory and writes the finished one to `ARENA_DATA/jobs/`.
   - The repo view asks for it on open.
     - A live run streams on from its first line.
+    - A dropped stream polls for the lines the view lacks, never for the whole log again.
+    - A run's answers stay with the run and its repo. A view that moved on paints none of them.
     - A finished run paints at once with its log, phases, and status.
   - A removed repo takes its saved run with it.
 - Defaults: PR check timeout 15 minutes, dry run off.

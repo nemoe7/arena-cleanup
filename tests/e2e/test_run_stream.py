@@ -76,3 +76,34 @@ def test_a_dropped_stream_resumes_without_repeating_lines(desktop: Walker) -> No
     )
   finally:
     page.unroute_all(behavior="ignoreErrors")
+
+
+def test_a_poll_left_over_never_paints_another_repo(
+  desktop: Walker, demo: Demo
+) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  desktop.click(CARD.format(name="billing-api"), 800)
+  page.route("**/api/jobs/*/events", lambda route: route.abort())
+  demo.slow_checks(True)
+  try:
+    set_dry(desktop, False)
+    desktop.click("#start", 0)
+    page.wait_for_function(
+      f"() => document.querySelector('#log').innerText.includes({PARKED!r})",
+      timeout=WAIT_MS,
+    )
+    # no e2e test runs infra-tools, so its view has no run of its own to show
+    desktop.click("#back", 300)
+    desktop.click(CARD.format(name="infra-tools"), 800)
+    page.wait_for_timeout(2600)
+    assert "billing-api" not in page.inner_text("#log"), "the old poll kept appending"
+    status = desktop.status_text()
+    demo.slow_checks(False)
+    page.wait_for_timeout(4000)
+    assert desktop.status_text() == status == "idle", (
+      "the old run's end painted this view"
+    )
+  finally:
+    demo.slow_checks(False)
+    page.unroute_all(behavior="ignoreErrors")
