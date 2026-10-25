@@ -96,6 +96,7 @@ def probe(
   browser: Any, demo: Demo, width: int, long_branch: bool = False
 ) -> dict[str, Any]:
   context = browser.new_context(viewport={"width": width, "height": 900})
+  walker = None
   try:
     walker = Walker(context, demo.url)
     if long_branch:
@@ -105,6 +106,9 @@ def probe(
     walker.page.wait_for_selector(f"{CARD} .arena-row .arena-tail .pill")
     return walker.page.eval_on_selector(CARD, PROBE)
   finally:
+    # a lengthen call still in flight must not surface once the context is gone
+    if long_branch and walker is not None:
+      walker.page.unroute_all(behavior="ignoreErrors")
     context.close()
 
 
