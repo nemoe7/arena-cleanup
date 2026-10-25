@@ -482,6 +482,7 @@
   .check-list li { display: flex; align-items: center; gap: 8px; min-height: 36px; border-top: 1px solid var(--line); }
   .check-list li:first-child { border-top: 0; }
   .check-list .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-2); }
+  .check-list .phrase { flex: none; color: var(--dim); font-size: var(--fs-1); white-space: nowrap; }
   .check-list li > .ico-svg { --ico: var(--ico-m); flex: none; }
   .check-list .passed > .ico-svg { color: var(--ok); }
   .check-list .failed > .ico-svg { color: var(--err); }
@@ -1393,7 +1394,9 @@
     const glyph = { passed: "check", failed: "x" };
     const mark = (c) => c.result === "running" ? liveDot() : icon(glyph[c.result] || "circle-small");
     $("checks-list").replaceChildren(...(pr.checks || []).map((c) => {
-      const title = `${c.name}: ${c.state.toLowerCase()}`;
+      const name = checkName(c);
+      const phrase = checkPhrase(c);
+      const title = `${name}: ${phrase.toLowerCase()}`;
       const open = Boolean(state.job && state.job.url === c.url);
       // an Actions job opens in place; any other check keeps its outbound link
       if (JOB_LINK.test(c.url || "")) {
@@ -1401,12 +1404,14 @@
           mark(c),
           el("button", { class: "check-row", type: "button", "aria-expanded": String(open), title,
               onclick: () => toggleJob(repoId, c.url) },
-            el("span", { class: "name" }, c.name), icon("chevron-right", "ico-svg chev")),
+            el("span", { class: "name" }, name), el("span", { class: "phrase" }, phrase),
+            icon("chevron-right", "ico-svg chev")),
           open ? state.job.pane : null);
       }
       return el("li", { class: c.result },
         mark(c),
-        el("span", { class: "name", title }, c.name),
+        el("span", { class: "name", title }, name),
+        el("span", { class: "phrase" }, phrase),
         c.url
           ? el("a", { class: "btn ghost", href: c.url, target: "_blank", rel: "noopener",
               "aria-label": `Open the run of ${c.name}` }, "Open run")
@@ -1417,6 +1422,25 @@
   // One Actions job open at a time: its steps, then the newest page of its log.
   // Older pages load when the log is scrolled to its top. While the job runs,
   // the steps refresh every JOB_POLL ms; GitHub serves the log once the job ends.
+  // A check row reads like GitHub's list: `Workflow / Job`, then the state phrase
+  // with the time the run took. The rollup carries no event, so none is shown.
+  const CHECK_WORDS = {
+    SUCCESS: ["Successful", "in"], FAILURE: ["Failed", "in"], ERROR: ["Failed", "in"],
+    STARTUP_FAILURE: ["Failed", "in"], TIMED_OUT: ["Timed out", "after"],
+    CANCELLED: ["Cancelled", "after"], CANCELED: ["Cancelled", "after"],
+    ACTION_REQUIRED: ["Action required", "after"], STALE: ["Stale", "after"],
+    NEUTRAL: ["Neutral"], SKIPPED: ["Skipped"], IN_PROGRESS: ["In progress"],
+    QUEUED: ["Queued"], PENDING: ["Queued"], WAITING: ["Waiting"],
+    EXPECTED: ["Expected"], REQUESTED: ["Queued"],
+  };
+  function checkName(c) {
+    return c.workflow && c.workflow !== c.name ? `${c.workflow} / ${c.name}` : c.name;
+  }
+  function checkPhrase(c) {
+    const [word, join] = CHECK_WORDS[c.state] || [c.state ? c.state.toLowerCase() : "In progress"];
+    const took = c.started && c.completed ? Date.parse(c.completed) - Date.parse(c.started) : NaN;
+    return join && took >= 0 ? `${word} ${join} ${jobSecs(Math.round(took / 1000))}` : word;
+  }
   const JOB_LINK = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/actions\/runs\/\d+\/jobs?\/\d+/;
   const LOG_STAMP = /^\d{4}-\d\d-\d\dT(\d\d:\d\d:\d\d)\.\d+Z /;
   const JOB_POLL = 10000;

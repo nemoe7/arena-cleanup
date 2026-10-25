@@ -25,9 +25,9 @@ MODAL = """() => {
     pr: document.getElementById('checks-pr').getAttribute('href') };
 }"""
 ROWS = [
-  ["passed", "lint", "job"],
-  ["failed", "test", "job"],
-  ["running", "build", "job"],
+  ["passed", "CI / lint", "job"],
+  ["failed", "CI / test", "job"],
+  ["running", "CI / build", "job"],
 ]
 
 

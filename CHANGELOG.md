@@ -18,6 +18,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Re-check keeps its neutral spinner.
 - The close x of a dialog head rests bare: no fill and no border until a
   pointer hovers it or presses it.
+- A check row reads like GitHub's PR checks list: `Workflow / Job`, the state
+  glyph, and a phrase such as `Successful in 41 s` or `In progress`.
 
 ## [0.3.10] - 2026-10-24
 

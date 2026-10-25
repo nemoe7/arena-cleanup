@@ -185,7 +185,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - The backdrop dims the page.
   - Escape and Cancel close it without a request.
 - `checks-modal`: a 640 px `dialog` for the checks of a PR, whose body scrolls past 60 vh.
-  - One row per check, 36 px tall, with a glyph in the state colour and the name. A running check shows an amber pulsing dot in the glyph slot.
+  - One row per check, 36 px tall, with a glyph in the state colour, the `Workflow / Job` name, and a dim state phrase. A running check shows an amber pulsing dot in the glyph slot.
+  - The phrase names the state and the run time, as GitHub lists them: `Successful in 41 s`, `Failed in 1 min 2 s`, `In progress`, `Queued`, `Skipped`. GitHub's rollup carries no event, so none shows.
   - A row that names an Actions job is a toggle with a chevron, and opens its `job-pane` under itself. Any other run keeps Open run.
   - Open PR, with the GitHub mark, and Close sit at the right.
 - `job-pane`: the job behind a check row, indented 24 px so its content lines up with the row name.
@@ -524,4 +525,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: every amber dot pulses like the LED: a running check, a running job step, and the sidebar dot of a running PR. The run timeline glyph, the Running button, and Re-check keep their spinners.
 - Accepted 2026-10-25: every amber state is a live state and pulses the dot. The run timeline glyph and the Running button drop their amber spinners, and Re-check keeps its neutral one, since a fetch is no amber state.
 - Accepted 2026-10-25: the close x of a dialog head has no idle fill and no idle border. Its surface shows on hover and while pressed, so the head reads as a title with one quiet control.
+- Accepted 2026-10-25: a check row reads like GitHub's PR checks list: `Workflow / Job`, the state glyph, and the state phrase with its duration. No GitHub mark per row, and the row still opens its steps and log.
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.

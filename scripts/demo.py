@@ -73,10 +73,11 @@ REPOS = [
             {"name": "lint", **SUCCESS},
             {"name": "test", **SUCCESS},
             {"name": "build", **SUCCESS},
-            # an app check, not an Actions job: the modal keeps its outbound link
+            # an app check, not an Actions job: no workflow, and the modal keeps its outbound link
             {
               "name": "e2e",
               **SUCCESS,
+              "workflowName": "",
               "detailsUrl": "https://ci.example.com/shop-web/e2e/142",
             },
           ],
@@ -234,10 +235,17 @@ def prs() -> list:
 
 
 def with_url(pr: dict) -> dict:
+  """Each check gets its job link, its workflow, and the times GitHub's rollup carries."""
   repo = pr.get("repo", "demo")
   job = "https://github.com/demo/%%s/actions/runs/%%d/job/%%d"
-  checks = [{**c, "detailsUrl": c.get("detailsUrl") or job %% (repo, pr["number"], pr["number"] * 10 + i)}
-            for i, c in enumerate(pr["statusCheckRollup"], 1)]
+  stamp = lambda secs: "2026-10-24T09:%%02d:%%02dZ" %% (12 + secs // 60, secs %% 60)
+  checks = []
+  for i, c in enumerate(pr["statusCheckRollup"], 1):
+    times = {"startedAt": stamp(0)}
+    if c["status"] == "COMPLETED":
+      times["completedAt"] = stamp(23 + 48 * i)
+    checks.append({"workflowName": "CI", **times, **c,
+                   "detailsUrl": c.get("detailsUrl") or job %% (repo, pr["number"], pr["number"] * 10 + i)})
   url = "https://github.com/demo/%%s/pull/%%d" %% (repo, pr["number"])
   return {**pr, "url": url, "statusCheckRollup": checks}
 

@@ -521,21 +521,40 @@ def pr_checks(branch: str, cwd: str) -> dict[str, Any] | None:
   }
 
 
+def rollup_state(item: dict[str, Any]) -> str:
+  """One rollup entry's state, read as the engine collapses them."""
+  return (
+    item.get("conclusion") or item.get("state") or item.get("status") or ""
+  ).upper()
+
+
 def check_rows(summary: Any, rollup: list[dict[str, Any]]) -> list[dict[str, Any]]:
-  """One row per resolved check, with the run link of its first rollup entry."""
-  urls: dict[str, str] = {}
+  """One row per resolved check: its link, workflow, and times from the rollup.
+
+  The entry that produced the resolved state supplies them. A passing re-run
+  shows its own times, not the stale attempt's. The first entry stands in when
+  no entry matches.
+  """
+  entries: dict[str, list[dict[str, Any]]] = {}
   for item in rollup:
     name = item.get("name") or item.get("context") or "(unnamed check)"
-    urls.setdefault(name, item.get("detailsUrl") or item.get("targetUrl") or "")
-  return [
-    {
-      "name": run.name,
-      "state": run.state,
-      "result": "passed" if run.passed else ("failed" if run.failed else "running"),
-      "url": urls.get(run.name, ""),
-    }
-    for run in summary.runs
-  ]
+    entries.setdefault(name, []).append(item)
+  rows = []
+  for run in summary.runs:
+    attempts = entries.get(run.name) or [{}]
+    item = next((a for a in attempts if rollup_state(a) == run.state), attempts[0])
+    rows.append(
+      {
+        "name": run.name,
+        "state": run.state,
+        "result": "passed" if run.passed else ("failed" if run.failed else "running"),
+        "url": item.get("detailsUrl") or item.get("targetUrl") or "",
+        "workflow": item.get("workflowName") or "",
+        "started": item.get("startedAt") or "",
+        "completed": item.get("completedAt") or "",
+      }
+    )
+  return rows
 
 
 JOB_URL = re.compile(

@@ -449,9 +449,19 @@ def test_the_pill_carries_each_check_with_its_run_link(
   sys.path.insert(0, str(ROOT))
   from ui import server
 
+  stale = {
+    "workflowName": "CI",
+    "startedAt": "2026-10-25T09:00:00Z",
+    "completedAt": "2026-10-25T09:00:05Z",
+  }
+  fresh = {
+    "workflowName": "CI",
+    "startedAt": "2026-10-25T09:10:00Z",
+    "completedAt": "2026-10-25T09:10:41Z",
+  }
   rollup = [
-    {**ROLLUPS["superseded-failing"][0], "detailsUrl": "https://ci/build/1"},
-    {**ROLLUPS["superseded-failing"][1], "detailsUrl": "https://ci/build/2"},
+    {**ROLLUPS["superseded-failing"][0], "detailsUrl": "https://ci/build/1", **stale},
+    {**ROLLUPS["superseded-failing"][1], "detailsUrl": "https://ci/build/2", **fresh},
     {**ROLLUPS["superseded-failing"][2], "detailsUrl": "https://ci/test/1"},
     {"name": "deploy", "status": "IN_PROGRESS", "conclusion": ""},
   ]
@@ -470,10 +480,18 @@ def test_the_pill_carries_each_check_with_its_run_link(
     ("deploy", "running"),
   ], "one row per name, the pass wins over the cancelled attempt"
   assert [c["url"] for c in pr["checks"]] == [
-    "https://ci/build/1",
+    "https://ci/build/2",
     "https://ci/test/1",
     "",
-  ]
+  ], "a row links the attempt that produced its state"
+  build, test, deploy = pr["checks"]
+  assert (build["workflow"], build["started"], build["completed"]) == (
+    "CI",
+    fresh["startedAt"],
+    fresh["completedAt"],
+  ), "the times of the passing attempt, not the cancelled one"
+  assert (test["workflow"], test["started"], test["completed"]) == ("", "", "")
+  assert (deploy["workflow"], deploy["started"], deploy["completed"]) == ("", "", "")
   assert pr["total"] == len(pr["checks"])
 
 
