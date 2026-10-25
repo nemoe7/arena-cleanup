@@ -27,6 +27,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   taller one packs its lines at the top.
 - The checks and phase modals drop the foot Close: the head x closes them,
   and the foot keeps only Open PR or Open.
+- Scrollbars follow the nuu recipe: an 8 px radius thumb on the page
+  background, no arrow buttons, and the standard properties only where the
+  WebKit pseudo-elements are unknown. The page root reserves no gutter.
+- The dashboard measures its rows once more when the fonts are ready, so a
+  table measured in the fallback face still folds to cards when it must.
 
 ### Fixed
 

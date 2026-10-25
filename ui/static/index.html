@@ -125,22 +125,22 @@
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   button, a, select, input, [role="button"] { touch-action: manipulation; }
   [hidden] { display: none !important; }
-  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scrollbar-gutter: stable; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   /* an open dialog sits in the top layer, so the page under it keeps its scroll
      unless the root drops it: the stable gutter keeps the layout still */
   html:has(dialog[open]) { overflow: hidden; }
   html, body { height: 100%; }
 
-  /* one scrollbar look everywhere, and a gutter that is reserved up front so
-     a view that grows a scrollbar does not shove the page 10px sideways */
-  * { scrollbar-width: thin; scrollbar-color: var(--thumb) transparent; }
+  /* one scrollbar look everywhere, the nuu recipe: each scrolling view reserves
+     its gutter up front, so a view that grows a scrollbar shoves nothing sideways */
   ::-webkit-scrollbar { width: 10px; height: 10px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    background: var(--thumb); border-radius: 1000px;
-    border: 2px solid transparent; background-clip: padding-box;
+  ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--thumb); border-radius: 8px; }
+  ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+  @media (hover: hover) { ::-webkit-scrollbar-thumb:hover { background: var(--thumb-hover); } }
+  @supports not selector(::-webkit-scrollbar) {
+    * { scrollbar-width: thin; scrollbar-color: var(--thumb) var(--bg); }
   }
-  @media (hover: hover) { ::-webkit-scrollbar-thumb:hover { background: var(--thumb-hover); background-clip: padding-box; } }
   body {
     margin: 0; background: var(--bg); color: var(--text);
     font: 400 var(--fs-3)/1.55 var(--sans);
@@ -1710,6 +1710,7 @@
     table.classList.toggle("cards", natural > room);
   }
   new ResizeObserver(fitRows).observe($("repo-table").parentElement);
+  document.fonts.ready.then(fitRows);
 
   // a removal still in flight stays gone through every reload of the list
   function withoutGone(repos) {

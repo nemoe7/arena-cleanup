@@ -160,6 +160,9 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - A view only fades, as a transform would unpin the fixed tab bar inside it.
   - The tween takes 180 ms on `power2.out`, and a list spreads its rows over 120 ms more.
   - `prefers-reduced-motion: reduce` skips the tweens.
+- Scrollbars, the nuu recipe: a 10 px bar with an 8 px radius thumb in `--thumb`, the `--bg` track, and no arrow buttons.
+  - `scrollbar-width` and `scrollbar-color` apply only where `::-webkit-scrollbar` is unknown, so Chromium keeps the drawn thumb.
+  - Each scrolling view reserves its gutter with `scrollbar-gutter: stable`. The page root reserves none, since on a desktop it never scrolls.
 - Scroll-edge fade, the nuu recipe: the commit list and log carry `scroll-panel`.
   - A scrolled edge fades over 12 px, and the fade grows and shrinks over a 192 px scroll ramp. A panel that does not scroll stays unmasked.
   - The rule needs `animation-timeline: scroll(self)` and no reduced-motion preference. Other scrolling regions keep their edges.
@@ -220,7 +223,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - The arena area takes the free width, so Clean and Remove sit at the right edge.
     - In a row an arena row is one line: the name, the ahead chip, and the PR pill.
     - A clean in flight turns Clean & Push into Running: disabled, an amber pulsing dot, the same box, and the reason as its title. The row carries `aria-busy`.
-  - Card: a wrapping flex card once the table, laid out at its natural width, no longer fits its room. The page measures after each render and on each resize.
+  - Card: a wrapping flex card once the table, laid out at its natural width, no longer fits its room. The page measures after each render, on each resize, and once more when the fonts are ready.
     - The icon, the name, and Remove sit on top on one centre line, then a rule. The arena rows share the next line with Clean & Push at the right edge.
     - Clean & Push breaks under the arena rows when the line is too short for both.
     - A card stretched to the height of its neighbour packs its lines at the top.
@@ -535,4 +538,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: the checks and phase modals drop the foot Close, since the head x closes them. The foot keeps only Open PR or Open, and the delete confirm keeps Cancel beside Delete.
 - Accepted 2026-10-25: in checks and phase modals, opening focus lands on the body. The nuu modal recipe keeps it off the x.
 - Accepted 2026-10-25: a removal in flight stays out of every repo list reload. A refused one brings its row back from the server list.
+- Accepted 2026-10-25: scrollbars follow the nuu recipe in full, with the hover tint kept. The page root drops its reserved gutter, which cost 10 px on every desktop view.
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.
