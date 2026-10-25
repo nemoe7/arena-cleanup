@@ -31,7 +31,9 @@ def test_an_empty_list_shows_the_fallback_and_an_entry_replaces_it(
   for box, key in BOXES:
     fallback = ", ".join(claims["defaults"][key])
     assert page.evaluate(PLACEHOLDER, box) == fallback
-    assert "falls back to the built-in rule" not in page.inner_text("#card-claims")
+    assert fallback not in page.inner_text("#card-claims"), (
+      "the defaults show only as the placeholder"
+    )
     page.fill(f"#{box} input", "someone")
     page.press(f"#{box} input", "Enter")
     assert page.evaluate(PLACEHOLDER, box) == "", "an entry replaces the fallback"
