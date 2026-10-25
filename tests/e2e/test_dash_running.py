@@ -31,7 +31,18 @@ ROW = """(card) => {
     disabled: btn.disabled, title: btn.title, amber: glyph.color === warn || glyph.color === hex(warn),
     dot: Boolean(dot) && !slot.querySelector('svg'),
     pulses: dot ? getComputedStyle(dot).animationName === 'pulse' : false,
-    box: [btn.offsetWidth, btn.offsetHeight] };
+    box: [btn.offsetWidth, btn.offsetHeight], pair: pair() };
+  // the visible pair, dot to label end, sits on the button centre with an 8 px gap
+  function pair() {
+    const busy = btn.querySelector('.busy');
+    const range = document.createRange();
+    range.selectNodeContents([...busy.childNodes].find((n) => n.nodeType === 3));
+    const text = range.getBoundingClientRect();
+    const d = dot.getBoundingClientRect();
+    const b = btn.getBoundingClientRect();
+    const skew = (d.left + text.right) / 2 - (b.left + b.width / 2);
+    return [Math.round(text.left - d.right), Math.abs(skew) <= 1];
+  }
   function hex(c) {
     const m = /^#([0-9a-f]{6})$/i.exec(c);
     return m ? `rgb(${[0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16)).join(', ')})` : c;
@@ -71,7 +82,8 @@ def test_a_live_job_marks_its_row(desktop: Walker) -> None:
       "dot": True,
       "pulses": True,
       "box": other["box"],
-    }, "the button carries the run, no pill, and the same box as an idle one"
+      "pair": [8, True],
+    }, "the button carries the run, no pill, an idle box, and a centred pair"
     assert other["busy"] is None and other["label"] == "Clean & Push", "one row alone"
     assert other["pulses"] is False
     # repo view and back: the return reads the statuses once more

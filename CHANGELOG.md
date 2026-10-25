@@ -9,6 +9,13 @@ The engine, `arena-cleanup.py`, carries its own number and its own file,
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.12] - 2026-10-25
+
+### Fixed
+
+- The Running button centres its dot and label as a pair. The dot's glyph box
+  shrinks to the dot, so the pair no longer sits 3 px right with a 14 px gap.
+
 ## [0.3.11] - 2026-10-25
 
 ### Added
