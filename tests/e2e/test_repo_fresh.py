@@ -47,9 +47,12 @@ def test_a_slow_status_answer_stays_with_its_repo(desktop: Walker) -> None:
     assert page.inner_text("#repo-title") == "shop-web", (
       "the late answer repainted the view"
     )
-    assert page.eval_on_selector_all(f"{ROWS} .select", BRANCHES) == [
-      "arena/3f7c2e1a-shop-web"
-    ]
+    # another test adds a shop-web branch, so read for the other repo's branch
+    branches = page.eval_on_selector_all(f"{ROWS} .select", BRANCHES)
+    assert "arena/3f7c2e1a-shop-web" in branches
+    assert "arena/1b9d4c7e-billing-api" not in branches, (
+      "the late answer repainted the sidebar"
+    )
   finally:
     page.evaluate(RESTORE)
 
