@@ -25,6 +25,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and 120 min, under the track, as the nuu range recipe asks.
 - The live dot in every pill and button grows from 6 to 8 px, the nuu default.
   The header tool dots keep 6 px.
+- The breakpoints move to the nuu clause set: 68em, 60em, and 30em, so the phone
+  layout starts at 480 px. Under 24em of height, a phone on its side, the top
+  bar and the sidebar scroll with the page.
 
 ### Fixed
 

@@ -78,10 +78,10 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Remove on a card arms on the first click and deletes the URL clone on the second.
     - States: idle, running, done, failed, cancelled.
   - Reset: a managed clone goes back to origin before every run. The server fetches, checks out the default branch, resets hard, and drops local `arena/*` copies.
-- Settings: two columns above 1200 px.
+- Settings: two columns above 1088 px.
   - Columns: left, Identity (name, email, Save), Claimed commits (two chip lists, Save), About.
     - Right, the GitHub card, then the signing cards.
-    - One column at 1200 px and below, in the order Identity, GitHub, signing, Claimed commits, About.
+    - One column at 1088 px and below, in the order Identity, GitHub, signing, Claimed commits, About.
   - GitHub card: the sign-in state, token scopes, credential helper, and ssh keys.
     - A warning and Configure appear when a signed-in user has no helper.
     - About folds, and opens on a click.
@@ -111,7 +111,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Each pairs with a metric-matched local fallback face, Arial for Inter and Courier New for Monaspace Neon.
   - Line boxes hold if a file fails to load.
 - Desktop ramp: `--fs-1` 12 px for metadata and mono details, `--fs-2` 13 px for controls and labels. `--fs-3` 14 px for body, names, and buttons, `--fs-4` 16 px for a view title, `--fs-5` 20 px for the page title.
-- Phone ramp at 640 px and below: body 12 to 15 px, fields 16 px, and title 20 px. The 16 px fields keep iOS from zooming.
+- Phone ramp at 480 px and below: body 12 to 15 px, fields 16 px, and title 20 px. The 16 px fields keep iOS from zooming.
 - Weights: 400, 520 to 640 for labels and names, 600 for headings and bold runs.
 
 ### Icons
@@ -142,12 +142,13 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 ### Layout
 
 - Spacing scale: 2, 4, 6, 8, 10, 12, 16, 20, 24, and 32 px, with 1 px for borders.
-- Page padding `--pad`: 20 px, 16 px at 1200 px and below.
-- Breakpoints, the nuu trio in em, one change each: 75em, 56.25em, and 40em.
-  - Pixels: 1200, 900, and 640 px at the 16 px browser default, and the em unit moves each switch with the reader's font size.
-  - 1200 px stacks the options card over the run card. It puts the settings in one column and tightens the padding.
-  - 900 px stacks the sidebar below the cards, and the page scrolls as one. Folded repo cards keep as many 330 px columns as fit.
-  - 640 px switches to the phone ramp, 44 px targets, and stacked rows.
+- Page padding `--pad`: 20 px, 16 px at 1088 px and below.
+- Breakpoints, the nuu clause set in em, one change each: 68em, 60em, and 30em, plus 24em of height.
+  - Pixels: 1088, 960, and 480 px wide, and 384 px tall, at the 16 px browser default. The em unit moves each switch with the reader's font size.
+  - 1088 px stacks the options card over the run card. It puts the settings in one column and tightens the padding.
+  - 960 px stacks the sidebar below the cards, and the page scrolls as one. Folded repo cards keep as many 330 px columns as fit.
+  - 480 px switches to the phone ramp, 44 px targets, and stacked rows.
+  - 384 px of height, a phone on its side: the top bar and the sidebar scroll with the page.
     - The options sit in one column at every width.
     - No other width carries a rule.
 - Radius: 12 px for cards, 8 px for buttons and fields, and 1000 px for pills. The tree select takes 6 px, the checkbox 4 px.
@@ -195,7 +196,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Its body takes the opening focus and draws no ring, so the x never holds it. Same for `phase-modal`.
 - `job-pane`: the job behind a check row, indented 24 px so its content lines up with the row name.
   - A head line with the verdict and the summed step time, then Open, with the GitHub mark, as a house 34 px button.
-  - `job-steps`: one 28 px row per step with the state glyph, the name, and the seconds, or `running` behind an amber pulsing dot. Each row is a toggle with a chevron, 44 px below 40em, and opens its own log under itself.
+  - `job-steps`: one 28 px row per step with the state glyph, the name, and the seconds, or `running` behind an amber pulsing dot. Each row is a toggle with a chevron, 44 px below 30em, and opens its own log under itself.
   - `job-log`: a `pre` in the mono face, 26 vh tall at most, with one step's lines, that opens on the last 400 lines. A scroll to its top prepends the page before, and the view keeps its place.
     - Each line drops the date and the fraction of its stamp, so `11:27:19` leads it.
     - The first failed step opens on its own. A passed job opens no step, and a step without lines says so under its row.
@@ -574,3 +575,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - nuu-deviation: add-bar-width: the add bar field spans its row at 1280 px, a URL or an absolute path needs the room
 - Accepted 2026-10-25: the timeout slider follows the nuu range recipe. A tick marks each of its ten stops, both ends read 0 and 120 min in mono, and the readout stays beside the track.
 - Accepted 2026-10-26: the live dot in every pill and button grows from 6 to 8 px, the nuu live-dot default. The header tool dots keep 6 px, the recipe's small size for a dense row.
+- Accepted 2026-10-26: the breakpoints move to the nuu clause set, 68em, 60em, and 30em, plus a 24em max-height query. The phone layout starts at 480 px, and on a phone held sideways the top bar and the sidebar scroll away.

@@ -751,7 +751,7 @@
   /* two columns above 1200 px; below, the columns dissolve and the sections keep one order */
   #settings-body { grid-template-columns: 1fr 1fr; align-items: start; }
   #view-settings .wrap { max-width: 1180px; }
-  @media (max-width: 75em) {
+  @media (max-width: 68em) {
     #settings-body { grid-template-columns: 1fr; }
     .settings-col { display: contents; }
     #identity-body { order: 1; } #access-body { order: 2; } #signing-body { order: 3; }
@@ -810,7 +810,7 @@
 
   /* Three named widths, one change each: 1200 stacks the options over the run card and folds the repo rows into
      cards, 900 stacks the page, 640 is the phone. */
-  @media (max-width: 75em) {
+  @media (max-width: 68em) {
     :root { --pad: 16px; }
     .work { grid-template-columns: 1fr; }
     #options-card { order: -1; }
@@ -843,7 +843,7 @@
   .cards .arena-list { flex: 1 1 auto; min-width: 0; justify-content: flex-start; padding: 0; }
   .cards .arena-row { flex-direction: column; align-items: stretch; gap: 4px; }
   .cards .card-actions { display: flex; align-self: flex-end; margin-left: auto; padding: 0; }
-  @media (max-width: 56.25em) {
+  @media (max-width: 60em) {
     /* One column: the run first, then the sidebar with the facts and the commits. */
     .detail { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: start; }
     .sidebar { order: 2; position: static; height: auto; overflow: visible; border-right: 0; border-top: 1px solid var(--line); }
@@ -851,7 +851,7 @@
     .main-col { height: auto; overflow: visible; }
     .logwrap .log { max-height: 52vh; }
   }
-  @media (max-width: 40em) {
+  @media (max-width: 30em) {
     /* one scale on a phone: 15 body, 13 controls, 12 metadata. Before this the
        page mixed 11.5, 12, 12.5, 13, and 14 in the same view */
     body { font-size: 15px; }
@@ -949,6 +949,12 @@
     .opt.row > label, .phase-name, .check { font-size: 13px; }
     .status, #statustext, .phase-ico, .commit .sig, .commit .sha { font-size: 12px; }
     .brand .name, .repo-card .btn, .card-actions .btn, .run-foot .btn { font-size: 14px; }
+  }
+  /* a phone on its side: the top bar scrolls away and the sidebar runs with the
+     page, so the 384 px of height go to the content */
+  @media (max-height: 24em) {
+    .topbar { position: static; }
+    .sidebar { position: static; height: auto; overflow: visible; }
   }
   /* the ring marks keyboard travel: Tab or an arrow key sets the flag, a pointer clears it */
   :root:not([data-keyboard-nav="true"]) :focus-visible { outline: none; }

@@ -1,4 +1,4 @@
-"""The settings page: two columns above 1200 px, one below, and folded help cards."""
+"""The settings page: two columns above 1088 px, one below, and folded help cards."""
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ def probe(browser: Any, demo: Demo, width: int) -> dict[str, Any]:
     context.close()
 
 
-def test_above_1200_the_settings_fill_two_columns(browser: Any, demo: Demo) -> None:
+def test_above_1088_the_settings_fill_two_columns(browser: Any, demo: Demo) -> None:
   wide = probe(browser, demo, 1280)
   identity, access, signing, claims, info = wide["tops"]
   assert identity == access, "the two columns start level"
@@ -47,7 +47,7 @@ def test_above_1200_the_settings_fill_two_columns(browser: Any, demo: Demo) -> N
   assert access < signing, "right: GitHub, then the keys"
   assert wide["lefts"][0] < wide["lefts"][1], "Identity left, GitHub right"
   assert wide["lefts"][0] == wide["lefts"][3] == wide["lefts"][4]
-  narrow = probe(browser, demo, 1200)
+  narrow = probe(browser, demo, 1088)
   assert narrow["tops"] == sorted(narrow["tops"]), "one column keeps the old order"
   assert len(set(narrow["lefts"])) == 1
   assert wide["height"] < narrow["height"], "two columns make a shorter page"
