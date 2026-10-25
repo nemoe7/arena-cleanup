@@ -265,7 +265,9 @@
   .btn.twin > span { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
   .btn.twin:not(.running) > .busy, .btn.twin.running > .idle { visibility: hidden; }
   .btn.twin.running:disabled { opacity: 1; cursor: progress; background: var(--surface-2); border-color: var(--line-2); color: var(--dim); }
-  .btn.twin.running .busy .ico-svg { color: var(--warn); animation: spin 1s linear infinite; }
+  .btn.twin.running .busy .ico-svg { color: var(--warn); }
+  /* the hidden busy face holds still, so an idle row runs no animation */
+  .btn.twin:not(.running) .busy .dot { animation: none; }
   .clean .sparkles { opacity: 0; transition: opacity var(--fast) var(--ease); }
   .clean:focus-visible .sparkles { opacity: 1; }
   @media (hover: hover) { .clean:hover .sparkles { opacity: 1; } }
@@ -480,8 +482,8 @@
   .check-list .passed > .ico-svg { color: var(--ok); }
   .check-list .failed > .ico-svg { color: var(--err); }
   .check-list .running > .ico-svg { color: var(--warn); }
-  /* an amber dot marks a live state, so it pulses like the LED: a running
-     check or step in its glyph slot, and a running PR in the sidebar */
+  /* an amber dot marks a live state, so it pulses like the LED: a running check,
+     step, or phase in its glyph slot, the Running button, and a running PR in the sidebar */
   .ico-svg > .dot { margin: auto; }
   .ico-svg > .dot, .dot.live, .pill.warn .dot { animation: pulse 1.4s ease-in-out infinite; }
   .check-list { margin-bottom: 0; }
@@ -634,7 +636,6 @@
     color: var(--dim); font-size: var(--fs-1); line-height: 1;
   }
   .phase[data-state="run"] .phase-ico { color: var(--warn); }
-  .phase[data-state="run"] .phase-ico svg { animation: spin .9s linear infinite; }
   .phase[data-state="done"] .phase-ico { color: var(--ok); }
   .phase[data-state="fail"] .phase-ico { color: var(--err); }
   .phase[data-state="skip"] .phase-ico { color: var(--dim); }
@@ -1192,7 +1193,6 @@
     user: svg(paths("M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2") + '<circle cx="12" cy="7" r="4"/>'),
     // the app icon; scripts/app_icon.py draws the same paths at every size
     "broom-sparkles": svg(paths("M13.5 10.5 22 2", "M14.734 13.841a2 2 0 00-.314-2.42L12.58 9.58a2 2 0 00-2.421-.314l-7.657 4.461A1 1 0 002.3 15.3l6.403 6.403a1 1 0 001.571-.204z", "m5 18 2-2", "m7.699 10.7 5.602 5.601") + '<g class="sparkles">' + paths("M11 2v2", "M12 3h-2", "M20 15v4", "M22 17h-4", "M4 4v4", "M6 6H2") + "</g>"),
-    "loader-circle": svg(paths("M21 12a9 9 0 1 1-6.219-8.56")),
     "git-branch": svg(paths("M15 6a9 9 0 0 0-9 9V3") + '<circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>'),
     "refresh-cw": svg(paths("M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8", "M21 3v5h-5", "M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16", "M8 16H3v5")),
     copy: svg('<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>' + paths("M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2")),
@@ -1617,7 +1617,7 @@
         title: busy ? CLEAN_RUNNING : stale || "Clean & Push",
         onclick: async (e) => { e.stopPropagation(); await oneClick(repo); } },
         el("span", { class: "idle" }, icon("broom-sparkles"), "Clean & Push"),
-        el("span", { class: "busy" }, icon("loader-circle"), "Running")));
+        el("span", { class: "busy" }, liveDot(), "Running")));
 
     return el("tr", { class: "repo-card", "aria-busy": busy, onclick: () => openRepo(repo.id) },
       cell("", head), cell("", meta), cell("wide", arena), cell("cell-actions", actions, removeButton(repo)));
@@ -2317,8 +2317,8 @@
     const node = phaseNode(p.id);
     if (!node) return;
     node.dataset.state = p.state;
-    node.querySelector(".phase-ico").replaceChildren(
-      icon({ done: "check", fail: "x", run: "loader-circle", skip: "minus" }[p.state] || "circle-small",
+    node.querySelector(".phase-ico").replaceChildren(p.state === "run" ? liveDot() :
+      icon({ done: "check", fail: "x", skip: "minus" }[p.state] || "circle-small",
         p.state === "idle" ? "ico-svg idle" : "ico-svg"));
     node.querySelector(".phase-sub").textContent = p.sub;
     const secs = p.start && p.end ? p.end - p.start : 0;

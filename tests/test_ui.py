@@ -1336,8 +1336,8 @@ def test_every_clean_button_carries_the_broom_glyph() -> None:
   assert (
     'el("span", { class: "idle" }, icon("broom-sparkles"), "Clean & Push"),' in page
   ), "the card button has words"
-  assert 'el("span", { class: "busy" }, icon("loader-circle"), "Running")));' in page, (
-    "the busy face names the run"
+  assert 'el("span", { class: "busy" }, liveDot(), "Running")));' in page, (
+    "the busy face names the run behind the live dot"
   )
   assert 'running ? ["Cancel"] : [icon("broom-sparkles"), "Clean & Push"]' in page
   assert ".clean .sparkles { opacity: 0;" in page

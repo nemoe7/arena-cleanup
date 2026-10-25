@@ -1,7 +1,7 @@
 """A dashboard row shows a clean in flight on its repo.
 
 The server flags a repo with a live job. Its Clean & Push button turns into
-Running: disabled, an amber spinning glyph, and the same box. The reason is
+Running: disabled, an amber pulsing dot, and the same box. The reason is
 its title, and the row carries aria-busy. The return from the repo view reads
 the list again, so the row shows a run started there (docs/design.md).
 """
@@ -22,12 +22,16 @@ REPO = "shop-web"
 CARD = f".repo-card:has-text('{REPO}')"
 ROW = """(card) => {
   const btn = card.querySelector('button.clean');
-  const glyph = getComputedStyle(btn.querySelector('.busy .ico-svg'));
+  const slot = btn.querySelector('.busy .ico-svg');
+  const glyph = getComputedStyle(slot);
+  const dot = slot.querySelector('.dot');
   const warn = getComputedStyle(document.documentElement).getPropertyValue('--warn').trim();
   return { busy: card.getAttribute('aria-busy'), pills: card.querySelectorAll('.repo-meta .pill').length,
     running: btn.classList.contains('running'), label: btn.innerText.trim(),
     disabled: btn.disabled, title: btn.title, amber: glyph.color === warn || glyph.color === hex(warn),
-    spins: glyph.animationName === 'spin', box: [btn.offsetWidth, btn.offsetHeight] };
+    dot: Boolean(dot) && !slot.querySelector('svg'),
+    pulses: dot ? getComputedStyle(dot).animationName === 'pulse' : false,
+    box: [btn.offsetWidth, btn.offsetHeight] };
   function hex(c) {
     const m = /^#([0-9a-f]{6})$/i.exec(c);
     return m ? `rgb(${[0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16)).join(', ')})` : c;
@@ -64,11 +68,12 @@ def test_a_live_job_marks_its_row(desktop: Walker) -> None:
       "disabled": True,
       "title": REASON,
       "amber": True,
-      "spins": True,
+      "dot": True,
+      "pulses": True,
       "box": other["box"],
     }, "the button carries the run, no pill, and the same box as an idle one"
     assert other["busy"] is None and other["label"] == "Clean & Push", "one row alone"
-    assert other["spins"] is False
+    assert other["pulses"] is False
     # repo view and back: the return reads the statuses once more
     before = len(reads)
     desktop.click(f"{CARD} .repo-name", 600)

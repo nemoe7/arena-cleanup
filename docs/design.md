@@ -123,7 +123,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Icon buttons, the card mark, and the brand mark take `--ico-l`, 18 px.
     - A glyph in running text stays at 1 em.
 - Navigation and file glyphs in use: arrow-left, settings, arrow-up, arrow-down, chevron-right, folder, folder-tree, file, and plus.
-- State and action glyphs in use: check, x, triangle-alert, minus, circle-small, loader-circle, git-branch, refresh-cw, copy, user, and broom-sparkles.
+- State and action glyphs in use: check, x, triangle-alert, minus, circle-small, git-branch, refresh-cw, copy, user, and broom-sparkles.
 - Buttons with a glyph: Reload is `refresh-cw` alone, named `Reload commits` in `aria-label` and `title`.
   - Copy log is `copy` alone, named `Copy log` the same way.
   - Re-check and Retry lead with `refresh-cw`, Copy public key with `copy`, and Browse with `folder-tree`.
@@ -204,7 +204,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Checked, it takes the accent fill and a white Lucide check.
     - `danger` fills a checked destructive option with the warn colour and a dark check.
   - Phone: the checkboxes form a grid with 160 px columns. Browse, the fold head, and the 16 px path field are 44 px targets there.
-- `phase`: a row with the state glyph, a name, a count, and the time. The running glyph spins in `warn`.
+- `phase`: a row with the state glyph, a name, a count, and the time. The running row holds the amber pulsing dot in its glyph slot.
   - Counts: the count comes from the engine's lines.
     - PR checks reads `passed/total`.
     - Rewrite and sign reads `collecting N commits`, then `signing X/Y`, then `signed X commits`.
@@ -216,7 +216,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - The actions cell holds Clean, and Remove with the trash glyph.
     - The arena area takes the free width, so Clean and Remove sit at the right edge.
     - In a row an arena row is one line: the name, the ahead chip, and the PR pill.
-    - A clean in flight turns Clean & Push into Running: disabled, an amber spinning glyph, the same box, and the reason as its title. The row carries `aria-busy`.
+    - A clean in flight turns Clean & Push into Running: disabled, an amber pulsing dot, the same box, and the reason as its title. The row carries `aria-busy`.
   - Card: a grid card once the table, laid out at its natural width, no longer fits its room. The page measures after each render and on each resize.
     - The icon, the name, and Remove sit on top on one centre line, then the arena rows, and Clean & Push bottom right.
     - The branch chip stays in the rows, and an unavailable card shows its reason in the arena area.
@@ -521,4 +521,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-24: a button that leads to GitHub shows the GitHub mark instead of the word. Its title and accessible name keep the phrase.
 - Accepted 2026-10-24: the Clean & Push button carries a live run itself, as Running with an amber spinning glyph, and the `clean running` pill is gone. Both labels share one grid cell, so the button keeps its width and height across states.
 - Accepted 2026-10-24: every amber dot pulses like the LED: a running check, a running job step, and the sidebar dot of a running PR. The run timeline glyph, the Running button, and Re-check keep their spinners.
+- Accepted 2026-10-25: every amber state is a live state and pulses the dot. The run timeline glyph and the Running button drop their amber spinners, and Re-check keeps its neutral one, since a fetch is no amber state.
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.

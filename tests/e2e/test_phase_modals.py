@@ -212,16 +212,20 @@ RUN_GLYPH = """() => {
   document.body.append(probe);
   const want = getComputedStyle(probe).color;
   probe.remove();
-  return { color: style.color, want, animation: getComputedStyle(ico.querySelector('svg')).animationName };
+  const dot = ico.querySelector('.ico-svg > .dot');
+  return { color: style.color, want, svg: Boolean(ico.querySelector('svg')), dot: Boolean(dot),
+    animation: dot ? getComputedStyle(dot).animationName : 'none',
+    amber: dot ? getComputedStyle(dot).backgroundColor === want : false };
 }"""
 
 
-def test_a_running_row_spins_its_glyph_amber(desktop: Walker) -> None:
-  """The live row takes the warn role, like every other spinner."""
+def test_a_running_row_pulses_an_amber_dot(desktop: Walker) -> None:
+  """The live row is an amber state, so its glyph slot holds the pulsing dot."""
   open_run(desktop, RUN[:8], status="running")
-  desktop.page.wait_for_selector('.phase[data-state="run"] .phase-ico svg')
+  desktop.page.wait_for_selector('.phase[data-state="run"] .phase-ico .dot')
   glyph = desktop.page.evaluate(RUN_GLYPH)
-  assert glyph["color"] == glyph["want"], "the running glyph is amber"
-  assert glyph["animation"] == "spin"
+  assert glyph["color"] == glyph["want"], "the running slot is amber"
+  assert glyph["dot"] and glyph["amber"] and not glyph["svg"], "a dot, no glyph"
+  assert glyph["animation"] == "pulse"
   desktop.page.unroute(JOB)
   desktop.click("#back", 600)

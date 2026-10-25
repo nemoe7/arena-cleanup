@@ -9,6 +9,14 @@ The engine, `arena-cleanup.py`, carries its own number and its own file,
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.11] - 2026-10-25
+
+### Changed
+
+- The run timeline's running row and the Running button show the amber
+  pulsing dot instead of a spinner, so every amber state pulses the dot.
+  Re-check keeps its neutral spinner.
+
 ## [0.3.10] - 2026-10-24
 
 ### Changed
