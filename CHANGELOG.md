@@ -35,6 +35,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   repo keeps that repo's heading, sidebar, and title.
 - The commits list follows the selected arena branch and its tip through a
   delete, a run's end, and every status refresh.
+- The repo view takes its status from the dashboard's 20 s list read, so its
+  sidebar keeps up with the cards without a click.
 
 ## [0.3.11] - 2026-10-25
 

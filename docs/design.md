@@ -281,6 +281,10 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Commits: the commits API answers 30 a page with a `next` cursor, the sha of the last commit of a full page.
   - `before=<sha>` answers the page after it.
   - Reload starts at the first page again.
+- Status: the dashboard reads every repo's status every 20 s, and the open repo view takes its entry from that read.
+  - Sidebar, branch selects, and button repaint only on a changed status.
+  - A live run, and its end until the branch state answers, keep the view as it is.
+  - The commits list follows the selected arena branch and its tip through every status change.
 - Latest run: the server keeps the newest run of each repo in memory and writes the finished one to `ARENA_DATA/jobs/`.
   - The repo view asks for it on open.
     - A live run streams on from its first line.

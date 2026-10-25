@@ -87,3 +87,26 @@ def test_a_deleted_branch_takes_its_commits_off_the_list(desktop: Walker) -> Non
     )
   finally:
     page.unroute_all(behavior="ignoreErrors")
+
+
+def test_the_list_tick_refreshes_the_sidebar(desktop: Walker) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  desktop.click(CARD.format(name="docs-site"), 800)
+  assert "clean" in page.inner_text("#side-top")
+
+  def dirty(route):  # a list read that says the clone has three changes
+    body = route.fetch().json()
+    for repo in body:
+      if repo["name"] == "docs-site":
+        repo["status"]["dirty"] = 3
+    route.fulfill(json=body)
+
+  page.route(lambda url: url.endswith("/api/repos"), dirty)
+  try:
+    page.evaluate("() => window.dispatchEvent(new Event('online'))")
+    page.wait_for_function(
+      "() => document.querySelector('#side-top').innerText.includes('3 uncommitted')"
+    )
+  finally:
+    page.unroute_all(behavior="ignoreErrors")

@@ -1839,6 +1839,11 @@
         : await api("/api/repos");
       state.repos = [...pending(), ...withoutGone(repos)];
       state.unreachable = false;
+      // the open repo reads its fresh entry too, so the sidebar keeps up with
+      // the cards. A live run, or its end, owns the view until it settles.
+      const entry = state.repo && !state.job && !state.settling
+        && state.repos.find((r) => r.id === state.repo.id);
+      if (entry && (entry.name !== state.repo.name || !same(entry.status, state.repo.status))) adopt(entry);
     } catch (err) {
       // "no repos" and "cannot ask the server" look identical on screen
       // unless we keep them apart - and an empty dashboard here would be a lie
