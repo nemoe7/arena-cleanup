@@ -41,6 +41,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   sign-in shows in the sidebar at once.
 - A repo seen running on the dashboard drops the run its view remembers, so
   the next open paints the newer run, not the old one first.
+- Clean & Push stays grey with `reading the branch state` from the open of a
+  repo view until its fresh status lands. The one-click run waits for it too.
 
 ## [0.3.11] - 2026-10-25
 

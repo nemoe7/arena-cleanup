@@ -1922,13 +1922,16 @@
   }
 
   // ------------------------------------------------------------- repo view
+  // The view paints from the list entry at once, up to a list tick old, and
+  // Clean & Push stays grey until the fresh status answers. Resolves with it.
   function openRepo(id) {
     const repo = state.repos.find((r) => r.id === id);
-    if (!repo) return;
+    if (!repo) return Promise.resolve();
     state.repo = repo;
     state.branch = "";
     state.arena = "";
     state.paths = [];
+    state.settling = true;
     closeTree();
     $("repo-title").textContent = repo.name;
     renderBranchSelect();
@@ -1943,9 +1946,10 @@
     state.job = null;
     setRunButton("idle");
     show("repo");
-    refreshStatus();
+    const status = refreshStatus();
     loadCommits();
     reattach(repo.id, ++state.opened);
+    return status;
   }
 
   // The last finished run of each repo, by repo id. Its snapshot paints before
@@ -2148,12 +2152,19 @@
     try {
       repo = await api(`/api/repos/${id}`);
     } catch {
-      return; // keep the last good view
+      // keep the last good view, and let the button follow it
+      if (state.repo?.id === id) {
+        state.settling = false;
+        renderCommand();
+      }
+      return;
     }
     if (state.repos.some((r) => r.id === id)) {
       state.repos = state.repos.map((r) => (r.id === id ? repo : r));
     }
-    if (state.repo?.id === id) adopt(repo);
+    if (state.repo?.id !== id) return;
+    state.settling = false;
+    adopt(repo);
   }
   // a fresh status of the open repo paints its heading and sidebar
   function adopt(repo) {
@@ -2697,8 +2708,8 @@
   };
 
   async function oneClick(repo) {
-    openRepo(repo.id);
-    await new Promise((r) => setTimeout(r, 30));
+    await openRepo(repo.id);
+    if (state.repo?.id !== repo.id) return;
     await startJob(state.arena ? { action: "clean", arena: state.arena } : { action: "clean" });
   }
 
@@ -2737,8 +2748,6 @@
       state.settling = true;
       setRunButton("idle");
       await refreshStatus();
-      state.settling = false;
-      renderCommand();
       loadRepos();
     };
     es.onmessage = (ev) => {

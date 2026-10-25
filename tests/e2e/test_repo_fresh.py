@@ -121,3 +121,20 @@ def test_a_return_from_settings_reads_the_status_again(desktop: Walker) -> None:
   with page.expect_request(lambda r: r.url.endswith(f"/api/repos/{rid}")):
     desktop.click("#settings-back", 0)
   assert page.inner_text("#repo-title") == "docs-site"
+
+
+def test_clean_and_push_waits_for_the_first_fresh_status(desktop: Walker) -> None:
+  page = desktop.page
+  desktop.goto(1200)
+  page.evaluate(DELAY, repo_id(desktop, "shop-web"))
+  try:
+    page.click(CARD.format(name="shop-web"))
+    page.wait_for_timeout(300)
+    assert page.eval_on_selector("#start", "e => e.disabled")
+    assert page.get_attribute("#start", "title") == "reading the branch state"
+    page.wait_for_function(
+      "() => !document.querySelector('#start').disabled", timeout=5000
+    )
+    assert page.get_attribute("#start", "title").startswith("Runs:")
+  finally:
+    page.evaluate(RESTORE)
