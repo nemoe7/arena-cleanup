@@ -16,6 +16,8 @@ import sys
 import zlib
 from pathlib import Path
 
+import tomllib
+
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 COLORS = {
   "red": (225, 29, 72, 255),
@@ -26,8 +28,9 @@ COLORS = {
   "black": (17, 24, 39, 255),
 }
 
-DEFAULT_FONT_SANS = 'system-ui, -apple-system, "Segoe UI", sans-serif'
-DEFAULT_FONT_MONO = 'ui-monospace, "SFMono-Regular", monospace'
+DEFAULT_NUU_TOML = Path(__file__).resolve().parent.parent / "references" / "nuu.toml"
+DEFAULT_FONT_SANS = '"Basel Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif'
+DEFAULT_FONT_MONO = '"Basel Grotesk Mono", ui-monospace, "SFMono-Regular", monospace'
 SKIP_DIRS = {
   ".git",
   ".agents",
@@ -127,8 +130,85 @@ def _iter_project_files(root: Path, suffixes: set[str]) -> list[Path]:
   return found
 
 
-def resolve_project_typography(project_root: Path | None = None) -> dict:
+def find_nuu_config(
+  project_root: Path | None = None, config_path: Path | None = None
+) -> Path | None:
+  env_cfg = os.environ.get("NUU_CONFIG")
+  if config_path is not None:
+    target = Path(config_path).resolve()
+    if not target.is_file():
+      raise ValueError(f"nuu config file does not exist: {config_path}")
+    return target
+  if env_cfg:
+    target = Path(env_cfg).resolve()
+    if target.is_file():
+      return target
+  cur = (Path(project_root) if project_root else Path.cwd()).resolve()
+  if cur.is_file():
+    cur = cur.parent
+  while True:
+    candidate = cur / "nuu.toml"
+    if candidate.is_file():
+      return candidate
+    if (cur / ".git").exists() or cur.parent == cur or cur == Path("/tmp"):
+      break
+    cur = cur.parent
+  return None
+
+
+def load_nuu_config(
+  project_root: Path | None = None, config_path: Path | None = None
+) -> dict:
+  found = find_nuu_config(project_root, config_path)
+  if found is None:
+    return {"path": None, "dir": None, "config": {}}
+  raw = tomllib.loads(found.read_text(encoding="utf-8"))
+  if not isinstance(raw, dict):
+    raise TypeError("nuu.toml must decode to a table")
+  return {"path": str(found), "dir": found.parent, "config": raw}
+
+
+def _first_str(mapping: dict, keys: tuple[str, ...]) -> str | None:
+  for key in keys:
+    val = mapping.get(key)
+    if isinstance(val, str) and val.strip():
+      return val.strip()
+  return None
+
+
+def _extract_primary_family(font_stack: str | None, fallback: str) -> str:
+  if not font_stack:
+    return fallback
+  first = font_stack.split(",", 1)[0].strip().strip("'\"")
+  return first or fallback
+
+
+def resolve_project_typography(
+  project_root: Path | None = None, config_path: Path | None = None
+) -> dict:
   root = (Path(project_root) if project_root else Path.cwd()).resolve()
+  cfg_info = load_nuu_config(root, config_path)
+  cfg = cfg_info["config"]
+  cfg_dir = cfg_info["dir"] or root
+  fonts_tbl = (
+    cfg.get("fonts")
+    if isinstance(cfg.get("fonts"), dict)
+    else cfg.get("font")
+    if isinstance(cfg.get("font"), dict)
+    else cfg.get("typography")
+    if isinstance(cfg.get("typography"), dict)
+    else {}
+  )
+  cfg_sans = _first_str(
+    fonts_tbl, ("font_sans", "sans", "default_font", "font_family", "family")
+  ) or _first_str(cfg, ("font_sans", "default_font", "font_family"))
+  cfg_mono = _first_str(fonts_tbl, ("font_mono", "mono", "monospace")) or _first_str(
+    cfg, ("font_mono",)
+  )
+  prefer_project_css = bool(
+    fonts_tbl.get("prefer_project_css", cfg.get("prefer_project_css", False))
+  )
+
   style_files = _iter_project_files(root, {".css", ".html"})
   font_Index: dict[str, Path] = {}
   for font_path in _iter_project_files(root, set(FONT_MIMES)):
@@ -147,6 +227,66 @@ def resolve_project_typography(project_root: Path | None = None) -> dict:
   source_css = None
   font_face_rules: list[str] = []
   seen_faces: set[tuple[str, str, str, str]] = set()
+
+  def _embed_font_file(
+    candidate: Path, family: str, weight: str = "400", fstyle: str = "normal"
+  ) -> None:
+    if not candidate.is_file():
+      return
+    ext = candidate.suffix.lower()
+    mime = FONT_MIMES.get(ext)
+    if not mime:
+      return
+    key = (family, weight, fstyle, candidate.name)
+    if key in seen_faces:
+      return
+    seen_faces.add(key)
+    b64 = base64.b64encode(candidate.read_bytes()).decode("ascii")
+    fmt = "woff2" if ext == ".woff2" else "woff" if ext == ".woff" else "truetype"
+    font_face_rules.append(
+      f'@font-face {{ font-family: "{family}"; src: url("data:{mime};base64,{b64}") format("{fmt}"); '
+      f"font-weight: {weight}; font-style: {fstyle}; font-display: block; }}"
+    )
+
+  raw_files = (
+    fonts_tbl.get("files")
+    or fonts_tbl.get("font_files")
+    or fonts_tbl.get("faces")
+    or fonts_tbl.get("path")
+    or cfg.get("font_files")
+    or cfg.get("font_path")
+  )
+  if raw_files is None and DEFAULT_NUU_TOML.is_file():
+    try:
+      default_raw = tomllib.loads(DEFAULT_NUU_TOML.read_text(encoding="utf-8"))
+      default_fonts = (
+        default_raw.get("fonts") if isinstance(default_raw.get("fonts"), dict) else {}
+      )
+      raw_files = default_fonts.get("files")
+    except (OSError, tomllib.TOMLDecodeError):
+      raw_files = None
+  if isinstance(raw_files, (str, dict)):
+    raw_files = [raw_files]
+  if isinstance(raw_files, list):
+    default_fam = _extract_primary_family(
+      cfg_sans or DEFAULT_FONT_SANS, "Basel Grotesk"
+    )
+    for item in raw_files:
+      if isinstance(item, str):
+        p = Path(item)
+        cand = p if p.is_absolute() else (cfg_dir / p).resolve()
+        if not cand.is_file():
+          cand = font_Index.get(p.name) or cand
+        _embed_font_file(cand, default_fam)
+      elif isinstance(item, dict) and item.get("path"):
+        p = Path(str(item["path"]))
+        cand = p if p.is_absolute() else (cfg_dir / p).resolve()
+        if not cand.is_file():
+          cand = font_Index.get(p.name) or cand
+        fam = str(item.get("family") or default_fam).strip()
+        w = str(item.get("weight") or "400").strip()
+        st = str(item.get("style") or "normal").strip()
+        _embed_font_file(cand, fam, w, st)
 
   for css_path in style_files:
     try:
@@ -200,26 +340,23 @@ def resolve_project_typography(project_root: Path | None = None) -> dict:
         candidate = font_Index.get(Path(raw_url).name)
       if not candidate or not candidate.is_file():
         continue
-      ext = candidate.suffix.lower()
-      mime = FONT_MIMES.get(ext)
-      if not mime:
-        continue
-      key = (family, weight, fstyle, candidate.name)
-      if key in seen_faces:
-        continue
-      seen_faces.add(key)
-      b64 = base64.b64encode(candidate.read_bytes()).decode("ascii")
-      fmt = "woff2" if ext == ".woff2" else "woff" if ext == ".woff" else "truetype"
-      font_face_rules.append(
-        f'@font-face {{ font-family: "{family}"; src: url("data:{mime};base64,{b64}") format("{fmt}"); '
-        f"font-weight: {weight}; font-style: {fstyle}; font-display: block; }}"
-      )
+      _embed_font_file(candidate, family, weight, fstyle)
+
+  resolved_sans = (
+    (font_sans or cfg_sans) if prefer_project_css else (cfg_sans or font_sans)
+  ) or DEFAULT_FONT_SANS
+  resolved_mono = (
+    (font_mono or cfg_mono) if prefer_project_css else (cfg_mono or font_mono)
+  ) or DEFAULT_FONT_MONO
+  if cfg_sans and (not prefer_project_css or not source_css):
+    source_css = cfg_info["path"]
 
   return {
-    "font_sans": font_sans or DEFAULT_FONT_SANS,
-    "font_mono": font_mono or DEFAULT_FONT_MONO,
+    "font_sans": resolved_sans,
+    "font_mono": resolved_mono,
     "font_faces_css": "\n".join(font_face_rules),
     "source_css": source_css,
+    "config_path": cfg_info["path"],
     "embedded_fonts": len(font_face_rules),
   }
 
@@ -379,25 +516,33 @@ def blit_rgba(
       if not (0 <= tx < dst_w):
         continue
       s_idx = (row * src_w + col) * 4
-      d_idx = (ty * dst_w + tx) * 4
-      dst[d_idx : d_idx + 4] = src[s_idx : s_idx + 4]
+      blend_pixel(dst, dst_w, dst_h, tx, ty, src[s_idx : s_idx + 4])
 
 
 def blend_pixel(rgba: bytearray, width: int, height: int, x: int, y: int, color):
   if not (0 <= x < width and 0 <= y < height):
     return
-  idx = (y * width + x) * 4
   sr, sg, sb, sa = color
+  if sa <= 0:
+    return
+  idx = (y * width + x) * 4
   if sa >= 255:
     rgba[idx : idx + 4] = bytes((sr, sg, sb, 255))
     return
   dr, dg, db, da = rgba[idx : idx + 4]
-  alpha = sa / 255.0
-  inv = 1.0 - alpha
-  rgba[idx] = int(sr * alpha + dr * inv)
-  rgba[idx + 1] = int(sg * alpha + dg * inv)
-  rgba[idx + 2] = int(sb * alpha + db * inv)
-  rgba[idx + 3] = min(255, int(sa + da * inv))
+  if da <= 0:
+    rgba[idx : idx + 4] = bytes((sr, sg, sb, sa))
+    return
+  sa_f = sa / 255.0
+  da_f = da / 255.0
+  out_a = sa_f + da_f * (1.0 - sa_f)
+  if out_a <= 0:
+    rgba[idx : idx + 4] = b"\x00\x00\x00\x00"
+    return
+  rgba[idx] = min(255, round((sr * sa_f + dr * da_f * (1.0 - sa_f)) / out_a))
+  rgba[idx + 1] = min(255, round((sg * sa_f + dg * da_f * (1.0 - sa_f)) / out_a))
+  rgba[idx + 2] = min(255, round((sb * sa_f + db * da_f * (1.0 - sa_f)) / out_a))
+  rgba[idx + 3] = min(255, round(out_a * 255.0))
 
 
 def fill_rect(rgba, width, height, x, y, w, h, color):
@@ -636,15 +781,24 @@ def _chromium_render_png(
     env["LD_LIBRARY_PATH"] = (
       f"/tmp/al2023/lib:{existing_ld}" if existing_ld else "/tmp/al2023/lib"
     )
+  repo_root = Path(__file__).resolve().parents[3]
+  cwd = Path.cwd().resolve()
   node_paths = [
     str(Path(__file__).resolve().parent),
+    str(cwd / "node_modules"),
+    str(cwd / "arena-state" / "chromium-env" / "node_modules"),
+    str(repo_root / "node_modules"),
+    str(repo_root / "arena-state" / "chromium-env" / "node_modules"),
+    "/home/user/clankers/arena-state/chromium-env/node_modules",
+    "/home/user/clankers/node_modules",
     "/home/user/node_modules",
   ]
   if env.get("NODE_PATH"):
     node_paths.append(env["NODE_PATH"])
-  env["NODE_PATH"] = ":".join(node_paths)
+  env["NODE_PATH"] = ":".join(dict.fromkeys(node_paths))
   script = """
 const fs = require("node:fs");
+const path = require("node:path");
 let pw = null;
 for (const mod of ["playwright-core", "playwright"]) {
   try { pw = require(mod); break; } catch {}
@@ -653,12 +807,28 @@ if (!pw || !pw.chromium) process.exit(2);
 const payload = JSON.parse(fs.readFileSync(0, "utf8"));
 (async () => {
   const pwExec = typeof pw.chromium.executablePath === "function" ? pw.chromium.executablePath() : "";
-  const execPath = payload.executable || pwExec;
+  let execPath = payload.executable || pwExec;
+  if (!execPath || !fs.existsSync(execPath) || !fs.existsSync("/tmp/al2023/lib")) {
+    try {
+      const chromium = require("@sparticuz/chromium");
+      const pkgDir = path.dirname(require.resolve("@sparticuz/chromium/package.json"));
+      const binDir = path.join(pkgDir, "bin");
+      if (!fs.existsSync("/tmp/al2023/lib")) {
+        const lambdafs = require("@sparticuz/chromium/build/cjs/lambdafs.js").default;
+        await lambdafs.inflate(path.join(binDir, "al2023.tar.br"));
+        await lambdafs.inflate(path.join(binDir, "fonts.tar.br"));
+      }
+      chromium.setupLambdaEnvironment("/tmp/al2023/lib");
+      if (!execPath || !fs.existsSync(execPath)) {
+        execPath = await chromium.executablePath(binDir);
+      }
+    } catch {}
+  }
   if (!execPath || !fs.existsSync(execPath)) process.exit(3);
   const browser = await pw.chromium.launch({
     executablePath: execPath,
     headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--single-process"]
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--no-zygote", "--disable-gpu"]
   });
   try {
     let vw = Math.max(1600, payload.width + 64);
@@ -687,7 +857,7 @@ const payload = JSON.parse(fs.readFileSync(0, "utf8"));
         height: Math.max(vh, rect.height + 64)
       });
     }
-    await root.screenshot({ path: payload.output });
+    await root.screenshot({ path: payload.output, omitBackground: true });
   } finally {
     await browser.close();
   }
@@ -823,7 +993,19 @@ def annotate_image(
     if not isinstance(loaded, dict):
       raise TypeError("annotate spec must be a JSON object")
     spec = loaded
-  resolved_scale = int(scale if scale is not None else spec.get("scale", 2))
+  cfg_info = load_nuu_config(project or src.parent)
+  cfg_ann = (
+    cfg_info["config"].get("annotate")
+    if isinstance(cfg_info["config"].get("annotate"), dict)
+    else {}
+  )
+  resolved_scale = int(
+    scale
+    if scale is not None
+    else spec.get("scale", cfg_ann.get("scale", cfg_info["config"].get("scale", 2)))
+  )
+  if renderer == "auto" and isinstance(cfg_ann.get("renderer"), str):
+    renderer = cfg_ann["renderer"]
   if not 1 <= resolved_scale <= 6:
     raise ValueError("annotate scale must be between 1 and 6")
   all_boxes = [parse_box(item) for item in [*(spec.get("boxes") or []), *(boxes or [])]]
@@ -1570,7 +1752,20 @@ def build_design_boards(
   )
   out_dir.mkdir(parents=True, exist_ok=True)
   typography = resolve_project_typography(project_root)
-  use_wireframe = bool(wireframe or loaded.get("wireframe"))
+  cfg_info = load_nuu_config(project_root)
+  cfg_board = (
+    cfg_info["config"].get("board")
+    if isinstance(cfg_info["config"].get("board"), dict)
+    else {}
+  )
+  use_wireframe = bool(
+    wireframe
+    or loaded.get("wireframe")
+    or cfg_board.get("wireframe")
+    or cfg_info["config"].get("wireframe")
+  )
+  if renderer == "auto" and isinstance(cfg_board.get("renderer"), str):
+    renderer = cfg_board["renderer"]
 
   board_entries: list[dict] = []
   writes: list[str] = []

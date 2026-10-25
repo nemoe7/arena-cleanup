@@ -18,7 +18,15 @@ from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 
-from annotate import annotate_image, build_board, build_design_boards
+import tomllib
+from annotate import (
+  annotate_image,
+  build_board,
+  build_design_boards,
+  find_nuu_config,
+  load_nuu_config,
+  resolve_project_typography,
+)
 from measure import (
   DEFAULT_SCALE,
   DEFAULT_SHEET,
@@ -28,8 +36,9 @@ from measure import (
 )
 from measure import check as check_measurements
 from measure import main as measure_main
+from walk import main as walk_main
 
-VERSION = "0.1.14"
+VERSION = "0.1.16"
 NAMED_BREAKPOINTS = ("75em", "60em", "40em", "30em")
 DEVICE_BREAKPOINTS = NAMED_BREAKPOINTS
 MEDIA_BREAKPOINT_RE = re.compile(
@@ -40,10 +49,128 @@ HOME = Path(__file__).resolve().parent.parent
 CATALOG = HOME / "data" / "vendor" / "ui-ux-pro-max"
 WIDTHS = (1280, 360)
 SKIP = {".git", ".venv", "node_modules", "dist", "build", "__pycache__"}
+KNOWN_NUU_RULES = {
+  *(f"NUL00{i}" for i in range(1, 6)),
+  *(f"NUI00{i}" for i in range(1, 4)),
+  *(f"NUM{i}" for i in range(201, 211)),
+  *(f"NUA{i}" for i in range(301, 310)),
+}
+RULE_DESCRIPTIONS = {
+  "NUL001": "Every <img> element must carry an explicit alt attribute.",
+  "NUL002": (
+    "Every form control (<input>, <select>, <textarea>) must have an accessible "
+    "name via <label>, aria-label, aria-labelledby, or title."
+  ),
+  "NUL003": (
+    "CSS rules must not suppress focus outlines with outline: none or outline: 0 "
+    "without a replacement focus indicator."
+  ),
+  "NUL004": (
+    "Every repository must maintain docs/design.md recording house-style "
+    "decisions and visual references."
+  ),
+  "NUL005": (
+    "Interactive state rules (:hover, :focus, :active, :disabled, [aria-busy]) "
+    "must not alter geometry (width, height, padding, border-width, font-size, line-height)."
+  ),
+  "NUI001": "Inline SVG icons require a companion license file in the repository.",
+  "NUI002": "Inline <svg> icons must follow the Lucide -> Simple Icons -> Phosphor icon ladder.",
+  "NUI003": "Inline SVG icons in one source file must use a single consistent icon size.",
+  "NUB101": "Interactive controls must meet the minimum 24x24 CSS px target size (WCAG 2.5.8).",
+  "NUB102": "Pages must not produce horizontal document overflow at audited viewport widths.",
+  "NUB103": "Visible text must meet WCAG AA contrast ratios (4.5:1 normal text, 3:1 large text).",
+  "NUB104": "Sibling elements must not unintentionally overlap in rendered layout.",
+  "NUM201": "Font sizes must match a named step on the house typographic scale.",
+  "NUM202": "Line-height ratios must fall within the house reading band for the element role.",
+  "NUM203": "Font weights must use approved house tokens (400, 500, 600, 700).",
+  "NUM204": "Prose line measure must stay within 60-75 characters (45-80 ch bounds).",
+  "NUM205": "Spacing, padding, and gaps must align to the 4 px / 8 px house spatial grid.",
+  "NUM206": "Border radii must match the house radius tokens.",
+  "NUM207": "Resolved colors must match declared house surface, text, border, or semantic tokens.",
+  "NUM208": "Rendered controls must be >= 24x24 px on desktop and >= 44x44 px on touch viewports.",
+  "NUM209": "Card density must stay within <= 4 data points per card, <= 3 cards per row, and >= 16 px gaps.",
+  "NUM210": "Above-the-fold viewport budget must keep >= 25% open background and <= 4 component groups.",
+  "NUA301": "Rendered pages must not overflow horizontally at house breakpoints.",
+  "NUA302": "Rendered text must satisfy WCAG AA contrast thresholds.",
+  "NUA303": "Interactive targets must be >= 24x24 px at desktop widths and >= 44x44 px at 360 px mobile width.",
+  "NUA304": "Rendered controls and images must expose non-empty accessible names.",
+  "NUA305": "Document heading levels (<h1>-<h6>) must not skip hierarchy levels.",
+  "NUA306": "Pages must expose a <main> landmark and a non-empty <title>.",
+  "NUA307": "Visible sibling elements must not collide or overlap in rendered layout.",
+  "NUA308": "Clipped text elements must provide a title or aria-label when truncated.",
+  "NUA309": "Modal dialogs and drawers must trap focus and expose an accessible close control.",
+}
+NONUU_MARKER_RE = re.compile(r"\bnonuu:[ \t]*(.*?)(?=-->|\*/|;|\s|$|\bnonuu:)")
+DEVIATION_MARKER_RE = re.compile(
+  r"\bnuu-deviation:[ \t]*([A-Za-z0-9_.-]+)(?::[ \t]*(.*?))?(?=-->|\*/|$)"
+)
+
+
+def enrich_finding_rule(finding: dict) -> dict:
+  code = finding.get("rule") or finding.get("id") or ""
+  if code and "rule_description" not in finding:
+    finding["rule_description"] = RULE_DESCRIPTIONS.get(str(code), f"House rule {code}")
+  return finding
+
+
+def collect_deviation_markers(path, lines):
+  deviations = []
+  for number, line in enumerate(lines, 1):
+    for match in DEVIATION_MARKER_RE.finditer(line):
+      dev_id = (match[1] or "").strip()
+      reason = (match[2] or "").strip()
+      mark_str = f"{path}:{number}: {dev_id}: {reason or '<no-reason>'}"
+      deviations.append(
+        {
+          "id": dev_id,
+          "reason": reason,
+          "path": str(path),
+          "line": number,
+          "source": line.strip(),
+          "mark": mark_str,
+        }
+      )
+  return deviations
+
+
+def collect_nonuu_markers(path, lines):
+  file_ids, line_ids, marks, suppressions = set(), [], [], []
+  for number, line in enumerate(lines, 1):
+    suppressed = set()
+    for marker in NONUU_MARKER_RE.finditer(line):
+      code = marker[1]
+      scope = "unknown"
+      if code in KNOWN_NUU_RULES:
+        suppressed.add(code)
+        before = line[: marker.start()].strip()
+        scope = (
+          "file"
+          if number <= 3 and not re.sub(r"^(?:#|/\*|<!--|//)\s*", "", before).strip()
+          else "line"
+        )
+        if scope == "file":
+          file_ids.add(code)
+      mark_str = f"{path}:{number}: {code or '<missing>'} {scope}: {line.strip()}"
+      marks.append(mark_str)
+      suppressions.append(
+        {
+          "path": str(path),
+          "line": number,
+          "rule": code or "<missing>",
+          "scope": scope,
+          "source": line.strip(),
+          "mark": mark_str,
+        }
+      )
+    line_ids.append(suppressed)
+  return file_ids, line_ids, marks, suppressions
 
 
 def load(path):
-  return json.loads(Path(path).read_text(encoding="utf-8"))
+  target = Path(path)
+  if target.suffix.lower() == ".toml":
+    return tomllib.loads(target.read_text(encoding="utf-8"))
+  return json.loads(target.read_text(encoding="utf-8"))
 
 
 def contained(root, name):
@@ -224,9 +351,14 @@ class SourcePage(HTMLParser):
 
 
 def lint(root):
-  findings, coverage = [], []
+  findings, coverage, marks, suppressions, deviations = [], [], [], [], []
   for path in files(root, {".html", ".css", ".js", ".jsx", ".ts", ".tsx"}):
     text = path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    file_ids, line_ids, file_marks, file_supps = collect_nonuu_markers(path, lines)
+    marks.extend(file_marks)
+    suppressions.extend(file_supps)
+    deviations.extend(collect_deviation_markers(path, lines))
     supported = path.suffix.lower() in {".html", ".css"}
     coverage.append(
       {
@@ -290,8 +422,8 @@ def lint(root):
             }
           )
     for finding in current:
-      line = text.splitlines()[finding["line"] - 1]
-      ignored = set(re.findall(r"\bnonuu:\s*([A-Za-z0-9_-]+)", line))
+      ln = finding["line"]
+      ignored = file_ids | (line_ids[ln - 1] if 0 < ln <= len(line_ids) else set())
       if finding["rule"] not in ignored:
         findings.append(finding)
   docs_dir = root / "docs"
@@ -312,8 +444,13 @@ def lint(root):
         "criterion": "clause-11",
       }
     )
+  for finding in findings:
+    enrich_finding_rule(finding)
   return {
     "findings": findings,
+    "marks": marks,
+    "suppressions": suppressions,
+    "deviations": deviations,
     "coverage": coverage,
     "limits": [
       "Source patterns do not prove accessible names or WCAG conformance.",
@@ -510,11 +647,25 @@ def browser(args):
     raise ValueError("live edits require live mode and --authorize-edit")
   if not shutil.which("node"):
     return {"status": "not_checked", "reason": "node_unavailable", "coverage": []}
+  project_root = getattr(args, "project", None) or Path.cwd()
+  cfg_info = load_nuu_config(project_root)
+  cfg_audit = (
+    cfg_info["config"].get("audit")
+    if isinstance(cfg_info["config"].get("audit"), dict)
+    else {}
+  )
+  cfg_widths = cfg_audit.get("widths") or cfg_info["config"].get("widths") or []
+  extra_widths = (
+    args.widths
+    if args.widths
+    else [w for w in cfg_widths if isinstance(w, int) and w > 0]
+  )
+  typography = resolve_project_typography(project_root)
   request = {
     "command": args.command,
     "url": args.url,
     "output": str(Path(args.artifacts).resolve()),
-    "widths": sorted({*WIDTHS, *args.widths}),
+    "widths": sorted({*WIDTHS, *extra_widths}),
     "selector": args.selector,
     "ready": getattr(args, "ready", None),
     "a11y": bool(getattr(args, "a11y", False) or args.command in {"a11y", "audit"}),
@@ -525,7 +676,16 @@ def browser(args):
     "edit": load(args.edit) if args.edit else None,
     "authorized_edit": args.authorize_edit,
     "overlaps": args.overlaps,
-    "wireframe": bool(getattr(args, "wireframe", False)),
+    "wireframe": bool(
+      getattr(args, "wireframe", False)
+      or cfg_audit.get("wireframe")
+      or cfg_info["config"].get("wireframe")
+    ),
+    "typography": {
+      "font_sans": typography["font_sans"],
+      "font_mono": typography["font_mono"],
+      "font_faces_css": typography["font_faces_css"],
+    },
   }
   process = subprocess.run(
     ["node", str(HOME / "scripts" / "browser.cjs")],
@@ -610,7 +770,8 @@ def doctor(root, manifest=None, config=None):
         "exit": process.returncode,
       }
     )
-  configuration = load(config) if config else {}
+  resolved_config = config or find_nuu_config(root)
+  configuration = load(resolved_config) if resolved_config else {}
   if not isinstance(configuration, dict):
     raise TypeError("configuration must be an object")
   if configuration.get("url"):
@@ -638,7 +799,8 @@ def doctor(root, manifest=None, config=None):
     "browser": runtime,
     "assets": asset_report,
     "configuration": {
-      "status": "checked" if config else "not_checked",
+      "status": "checked" if resolved_config else "not_checked",
+      "path": str(resolved_config) if resolved_config else None,
       "values": configuration,
     },
     "findings": mismatches + asset_report.get("findings", []),
@@ -649,6 +811,8 @@ def main(argv=None):
   raw_args = list(sys.argv[1:] if argv is None else argv)
   if raw_args and raw_args[0] in {"check", "ruler", "density"}:
     return measure_main(raw_args)
+  if raw_args and raw_args[0] == "walk":
+    return walk_main(raw_args[1:])
   parser = argparse.ArgumentParser(description=__doc__)
   commands = parser.add_subparsers(dest="command", required=True)
   for name in (
@@ -658,10 +822,12 @@ def main(argv=None):
     "extract",
     "annotate",
     "board",
+    "walk",
     "doctor",
     "inspect",
     "flow",
     "audit",
+    "collect",
     "a11y",
     "live",
     "check",
@@ -669,6 +835,12 @@ def main(argv=None):
     "ruler",
   ):
     command = commands.add_parser(name)
+    if name == "walk":
+      command.add_argument("target", nargs="?", default="http://127.0.0.1:1500")
+      command.add_argument("-s", "--script", type=Path, default=None)
+      command.add_argument("-V", "--views", action="store_true")
+      command.add_argument("-o", "--out", type=Path, default=Path("/tmp/walk"))
+      continue
     if name == "check":
       command.add_argument("report", type=Path)
       command.add_argument("-s", "--sheet", type=Path, default=DEFAULT_SHEET)
@@ -697,6 +869,7 @@ def main(argv=None):
       command.add_argument("-l", "--label", action="append", default=[])
       command.add_argument("-a", "--arrow", action="append", default=[])
       command.add_argument("-c", "--callout", action="append", default=[])
+      command.add_argument("-C", "--crop")
       command.add_argument("-s", "--spec", type=Path)
       command.add_argument("-S", "--scale", type=int)
     if name == "board":
@@ -727,8 +900,8 @@ def main(argv=None):
       command.add_argument("-f", "--fetch")
       command.add_argument("-d", "--destination")
       command.add_argument("-A", "--authorize-fetch", action="store_true")
-    if name in {"inspect", "flow", "audit", "a11y", "live"}:
-      command.add_argument("-u", "--url", required=name != "audit")
+    if name in {"inspect", "flow", "audit", "collect", "a11y", "live"}:
+      command.add_argument("-u", "--url", required=name not in {"audit", "collect"})
       command.add_argument("-d", "--artifacts", default="ui-evidence")
       command.add_argument("-w", "--widths", nargs="*", type=int, default=[])
       command.add_argument(
@@ -747,6 +920,7 @@ def main(argv=None):
       command.add_argument("-A", "--authorize-edit", action="store_true")
       command.add_argument("-O", "--overlaps", action="store_true")
       command.add_argument("-W", "--wireframe", action="store_true")
+      command.add_argument("-D", "--deviations", action="store_true")
   args = parser.parse_args(raw_args)
   root = args.project.resolve()
   if not root.is_dir():
@@ -780,6 +954,7 @@ def main(argv=None):
         spec_path=args.spec,
         scale=args.scale,
         project=root,
+        crop=args.crop,
       )
       args.output = None
     elif args.command == "board":
@@ -821,22 +996,55 @@ def main(argv=None):
         raise ValueError("timeout and widths must be positive")
       result = browser(args)
     else:
+      source_res = lint(root)
+      deviations = list(source_res.get("deviations", []))
+      if getattr(args, "deviations", False):
+        for extra_path in files(root, {".md", ".toml", ".py"}):
+          extra_lines = extra_path.read_text(encoding="utf-8").splitlines()
+          deviations.extend(collect_deviation_markers(extra_path, extra_lines))
+      rendered_res = (
+        browser(args)
+        if args.url
+        else {"status": "not_checked", "reason": "url_missing"}
+      )
+      for finding in rendered_res.get("findings", []):
+        if isinstance(finding, dict):
+          enrich_finding_rule(finding)
       result = {
-        "source": lint(root),
+        "source": source_res,
         "icons": check_icons(root),
         "design": extract(root),
-        "rendered": browser(args)
-        if args.url
-        else {"status": "not_checked", "reason": "url_missing"},
+        "marks": source_res.get("marks", []),
+        "suppressions": source_res.get("suppressions", []),
+        "deviations": deviations,
+        "deviation_marks": [d["mark"] for d in deviations],
+        "report_sections": [
+          "Status",
+          "Counts",
+          "Unrun Checks",
+          "Automated Findings",
+          "Visual Judgments",
+          "Deviations",
+          "Captures",
+        ],
+        "rendered": rendered_res,
         "visual_judgment": "not_run",
         "participant_research": "not_run",
         "real_device": "not_run",
       }
-    if args.command == "audit":
-      result["findings"] = result["source"]["findings"] + result["rendered"].get(
-        "findings", []
-      )
-      result["status"] = result["rendered"].get("status")
+    if args.command in {"audit", "collect"}:
+      if (
+        args.command == "collect"
+        and getattr(args, "deviations", False)
+        and not args.url
+      ):
+        result["findings"] = []
+        result["status"] = "checked"
+      else:
+        result["findings"] = result["source"]["findings"] + result["rendered"].get(
+          "findings", []
+        )
+        result["status"] = result["rendered"].get("status")
     result = {
       "tool": args.command,
       "version": VERSION,
