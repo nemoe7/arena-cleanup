@@ -381,7 +381,7 @@ def test_delete_an_arena_branch_on_origin(
   )
   page = ui.text("/")
   assert (
-    'id="confirm-delete"' in page
+    'id="tpl-confirm-delete"' in page
     and 'class="btn danger" type="submit" value="delete"' in page
   )
 

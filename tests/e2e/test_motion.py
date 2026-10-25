@@ -77,10 +77,10 @@ def test_a_dialog_enters_the_same_way(desktop: Walker) -> None:
   desktop.goto(1200)
   page.evaluate(HOOK)
   page.click(".repo-card:has-text('billing-api') button.pill")
-  assert entries(page, "#checks-modal") == [["checks-modal", 0.18, "power2.out", "0"]]
-  assert page.evaluate(OPACITY, "#checks-modal") == "1"
+  assert entries(page, "#modal") == [["modal", 0.18, "power2.out", "0"]]
+  assert page.evaluate(OPACITY, "#modal") == "1"
   page.keyboard.press("Escape")
-  page.wait_for_function("!document.getElementById('checks-modal').open")
+  page.wait_for_function("!document.getElementById('modal').open")
 
 
 def test_reduced_motion_paints_at_once(browser: Any, desktop: Walker) -> None:

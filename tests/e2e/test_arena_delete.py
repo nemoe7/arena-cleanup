@@ -13,9 +13,9 @@ pytestmark = pytest.mark.e2e
 
 BRANCH = "arena/3f7c2e1a-shop-web"
 ROW = f".arena-item:has(.row-btn[data-branch='{BRANCH}'])"
-OPEN = "() => document.querySelector('#confirm-delete').open"
+OPEN = "() => document.querySelector('#modal').open"
 BOX = "e => { const b = e.getBoundingClientRect(); return [b.width, b.height]; }"
-CANCEL = "#confirm-delete .modal-actions button[value='cancel']"
+CANCEL = "#modal .modal-actions button[value='cancel']"
 
 
 def test_the_modal_asks_before_the_branch_goes(desktop: Walker) -> None:
@@ -43,9 +43,9 @@ def test_the_modal_asks_before_the_branch_goes(desktop: Walker) -> None:
   assert bodies == []
   # the x top right closes it the same way, and it is a square icon button
   desktop.click(f"{ROW} .arena-del", 300)
-  box = page.eval_on_selector("#confirm-x", BOX)
+  box = page.eval_on_selector("#modal-x", BOX)
   assert box[0] == box[1] == 32
-  desktop.click("#confirm-x", 300)
+  desktop.click("#modal-x", 300)
   assert page.evaluate(OPEN) is False
   assert bodies == []
   # Escape closes it too
@@ -68,6 +68,6 @@ def test_the_phone_keeps_the_control_a_thumb_can_hit(phone: Walker) -> None:
   box = phone.page.eval_on_selector(f"{ROW} .arena-del", BOX)
   assert box[0] >= 44 and box[1] >= 44
   phone.click(f"{ROW} .arena-del", 300)
-  assert phone.page.eval_on_selector("#confirm-x", BOX) == [44, 44]
-  phone.click("#confirm-x", 300)
+  assert phone.page.eval_on_selector("#modal-x", BOX) == [44, 44]
+  phone.click("#modal-x", 300)
   assert phone.page.evaluate(OPEN) is False

@@ -117,7 +117,7 @@ def test_a_changed_list_keeps_the_job_log_scroll(desktop: Walker) -> None:
   page = desktop.page
   desktop.goto(1200)
   desktop.click(f"{CARD.format(name='billing-api')} button.pill", 300)
-  page.wait_for_selector("#checks-modal[open]")
+  page.wait_for_selector("#modal[open]")
   desktop.click("#checks-list li:has-text('test') .check-row", 300)
   pre = "#checks-list li.open .job-log"
   page.wait_for_selector(pre)

@@ -6,6 +6,8 @@ import pytest
 
 from scripts.walk import Demo, Walker
 
+from .test_phase_modals import RUN, close_phase, open_phase, open_run
+
 pytestmark = pytest.mark.e2e
 
 BILLING = ".repo-card:has-text('billing-api')"
@@ -26,7 +28,7 @@ def test_the_checks_modal_links_lead_with_the_mark(desktop: Walker) -> None:
   page = desktop.page
   desktop.goto(1200)
   page.click(f"{BILLING} button.pill")
-  page.wait_for_selector("#checks-modal[open]")
+  page.wait_for_selector("#modal[open]")
   try:
     assert marked(desktop, "#checks-pr") == [
       "0 0 16 16",
@@ -41,15 +43,20 @@ def test_the_checks_modal_links_lead_with_the_mark(desktop: Walker) -> None:
     ]
   finally:
     page.keyboard.press("Escape")
-    page.wait_for_function("!document.getElementById('checks-modal').open")
+    page.wait_for_function("!document.getElementById('modal').open")
 
 
 def test_the_phase_modal_link_leads_with_the_mark(desktop: Walker) -> None:
-  desktop.goto(1200)
-  assert desktop.page.evaluate(
-    "() => [document.querySelector('#phase-link .ico-svg svg').getAttribute('viewBox'),"
-    " document.getElementById('phase-link').textContent.trim()]"
-  ) == ["0 0 16 16", "Open"]
+  open_run(desktop, RUN)
+  open_phase(desktop, "prepare")
+  try:
+    assert desktop.page.evaluate(
+      "() => [document.querySelector('#phase-link .ico-svg svg').getAttribute('viewBox'),"
+      " document.getElementById('phase-link').textContent.trim()]"
+    ) == ["0 0 16 16", "Open"]
+  finally:
+    close_phase(desktop)
+    desktop.click("#back", 600)
 
 
 def test_the_signed_out_banner_offers_connect_with_the_mark(

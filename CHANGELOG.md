@@ -9,6 +9,13 @@ The engine, `arena-cleanup.py`, carries its own number and its own file,
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.14] - 2026-10-26
+
+### Changed
+
+- The delete confirm, the PR checks, and the phase detail share one dialog
+  shell. Each view is a template that mounts into its body and actions row.
+
 ## [0.3.13] - 2026-10-25
 
 ### Changed

@@ -640,6 +640,7 @@
   .modal.wide { width: min(640px, calc(100vw - 32px)); }
   /* the body takes the opening focus, so the x never does; a region draws no ring */
   .modal-body { max-height: 60vh; overflow: auto; overscroll-behavior: contain; margin: 0; }
+  .modal-body > :last-child { margin-bottom: 0; }
   .modal-body:focus { outline: none; }
   .step-list { list-style: none; margin: 0; padding: 0; }
   .step-list li { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 12px; min-height: 28px;
@@ -1126,45 +1127,36 @@
 </div>
 
 
-<dialog class="modal" id="confirm-delete" aria-labelledby="confirm-title">
+<!-- one dialog shell for every modal: a view template mounts into its body and its actions -->
+<dialog class="modal" id="modal" aria-labelledby="modal-title">
   <form method="dialog">
     <div class="modal-head">
-      <h2 id="confirm-title">Delete arena branch</h2>
-      <button class="icon-btn" type="submit" value="cancel" id="confirm-x" aria-label="Close" title="Close"><span class="ico-svg" data-icon="x" aria-hidden="true"></span></button>
+      <h2 id="modal-title"></h2>
+      <button class="icon-btn" type="submit" value="cancel" id="modal-x" aria-label="Close" title="Close"><span class="ico-svg" data-icon="x" aria-hidden="true"></span></button>
     </div>
-    <p>This deletes <code id="confirm-branch"></code> on origin. There is no undo.</p>
-    <div class="modal-actions">
-      <button class="btn" type="submit" value="cancel" autofocus>Cancel</button>
-      <button class="btn danger" type="submit" value="delete" id="confirm-go">Delete</button>
-    </div>
+    <p id="modal-sub" hidden></p>
+    <div class="modal-body" id="modal-body" tabindex="-1"></div>
+    <div class="modal-actions" id="modal-actions"></div>
   </form>
 </dialog>
-<dialog class="modal wide" id="checks-modal" aria-labelledby="checks-title">
-  <form method="dialog">
-    <div class="modal-head">
-      <h2 id="checks-title">PR checks</h2>
-      <button class="icon-btn" type="submit" value="cancel" aria-label="Close" title="Close"><span class="ico-svg" data-icon="x" aria-hidden="true"></span></button>
-    </div>
-    <p id="checks-sub"></p>
-    <div class="modal-body" tabindex="-1" autofocus><ul class="check-list" id="checks-list"></ul></div>
-    <div class="modal-actions">
-      <a class="btn ghost" id="checks-pr" target="_blank" rel="noopener" title="Open PR on GitHub"><span class="ico-svg" data-icon="github" aria-hidden="true"></span>Open PR</a>
-    </div>
-  </form>
-</dialog>
-<dialog class="modal wide" id="phase-modal" aria-labelledby="phase-title">
-  <form method="dialog">
-    <div class="modal-head">
-      <h2 id="phase-title">Phase</h2>
-      <button class="icon-btn" type="submit" value="cancel" aria-label="Close" title="Close"><span class="ico-svg" data-icon="x" aria-hidden="true"></span></button>
-    </div>
-    <p id="phase-sub"></p>
-    <div class="modal-body" id="phase-body" tabindex="-1" autofocus></div>
-    <div class="modal-actions">
-      <a class="btn ghost" id="phase-link" target="_blank" rel="noopener" title="Open on GitHub" hidden><span class="ico-svg" data-icon="github" aria-hidden="true"></span>Open</a>
-    </div>
-  </form>
-</dialog>
+<template id="tpl-confirm-delete">
+  <p>This deletes <code id="confirm-branch"></code> on origin. There is no undo.</p>
+  <div data-slot="actions">
+    <button class="btn" type="submit" value="cancel" autofocus>Cancel</button>
+    <button class="btn danger" type="submit" value="delete" id="confirm-go">Delete</button>
+  </div>
+</template>
+<template id="tpl-checks">
+  <ul class="check-list" id="checks-list"></ul>
+  <div data-slot="actions">
+    <a class="btn ghost" id="checks-pr" target="_blank" rel="noopener" title="Open PR on GitHub"><span class="ico-svg" data-icon="github" aria-hidden="true"></span>Open PR</a>
+  </div>
+</template>
+<template id="tpl-phase">
+  <div data-slot="actions">
+    <a class="btn ghost" id="phase-link" target="_blank" rel="noopener" title="Open on GitHub" hidden><span class="ico-svg" data-icon="github" aria-hidden="true"></span>Open</a>
+  </div>
+</template>
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script src="/gsap.min.js"></script>
@@ -1252,9 +1244,31 @@
     gsap.fromTo(nodes, { opacity: 0, y: rise },
       { opacity: 1, y: 0, ...MOTION, stagger, clearProps: "opacity,transform", overwrite: true });
   }
-  function openModal(dlg) {
+  // the shell takes one view at a time: the template's body and its actions slot
+  // mount, the title and the line under it swap, and the view names the width
+  function openModal(view, { title, sub = "", wide = false, onclose = null }) {
+    const dlg = $("modal");
+    const tpl = $(`tpl-${view}`).content.cloneNode(true);
+    drawIcons(tpl);
+    const actions = tpl.querySelector("[data-slot='actions']");
+    $("modal-actions").replaceChildren(...(actions ? [...actions.childNodes] : []));
+    $("modal-actions").hidden = false;
+    if (actions) actions.remove();
+    $("modal-body").replaceChildren(tpl);
+    $("modal-title").textContent = title;
+    setModalSub(sub);
+    dlg.classList.toggle("wide", wide);
+    dlg.dataset.view = view;
+    // the first autofocus wins: a view with none hands the opening focus to the body
+    $("modal-body").toggleAttribute("autofocus", !$("modal-actions").querySelector("[autofocus]"));
+    dlg.returnValue = "";
+    dlg.onclose = onclose;
     dlg.showModal();
     enter(dlg);
+  }
+  function setModalSub(text) {
+    $("modal-sub").textContent = text;
+    $("modal-sub").hidden = !text;
   }
 
   function icon(name, cls = "ico-svg") {
@@ -1262,7 +1276,10 @@
     box.innerHTML = ICONS[name] || "";
     return box;
   }
-  for (const slot of document.querySelectorAll("[data-icon]")) slot.innerHTML = ICONS[slot.dataset.icon] || "";
+  function drawIcons(root) {
+    for (const slot of root.querySelectorAll("[data-icon]")) slot.innerHTML = ICONS[slot.dataset.icon] || "";
+  }
+  drawIcons(document);
   // a live check or job step: a pulsing dot in the glyph slot
   const liveDot = () => el("span", { class: "ico-svg", "aria-hidden": "true" }, el("i", { class: "dot" }));
   // an arena branch reads as its slug, since arena/<slug>-<repo> repeats the repo name
@@ -1420,18 +1437,17 @@
   }
   function openChecks(repoId, branch) {
     state.checksOpen = { repoId, branch };
+    openModal("checks", { title: "PR checks", wide: true,
+      onclose: () => { state.checksOpen = null; closeJob(); } });
     renderChecks();
-    const dlg = $("checks-modal");
-    dlg.onclose = () => { state.checksOpen = null; closeJob(); };
-    openModal(dlg);
   }
   function renderChecks() {
     if (!state.checksOpen) return;
     const { repoId, branch } = state.checksOpen;
     const pr = ((statusFor(repoId).pr || {})[branch]) || null;
-    if (!pr) { $("checks-modal").close(); return; }
-    $("checks-title").textContent = `PR #${pr.number} checks`;
-    $("checks-sub").textContent = `${pr.title} on ${branch}: ${pr.passed}/${pr.total} passed`;
+    if (!pr) { $("modal").close(); return; }
+    $("modal-title").textContent = `PR #${pr.number} checks`;
+    setModalSub(`${pr.title} on ${branch}: ${pr.passed}/${pr.total} passed`);
     $("checks-pr").href = pr.url;
     const glyph = { passed: "check", failed: "x" };
     const mark = (c) => c.result === "running" ? liveDot() : icon(glyph[c.result] || "circle-small");
@@ -2174,12 +2190,9 @@
 
   // Deleting a branch on origin has no undo, so the modal names it and asks.
   function confirmDelete(name) {
-    const dlg = $("confirm-delete");
     const repo = state.repo;
-    $("confirm-branch").textContent = name;
-    dlg.returnValue = "";
-    dlg.onclose = async () => {
-      if (dlg.returnValue !== "delete" || state.repo !== repo) return;
+    const onclose = async () => {
+      if ($("modal").returnValue !== "delete" || state.repo !== repo) return;
       const kept = repo.status;
       const mark = { repo: repo.id, branch: name };
       state.gone.push(mark);
@@ -2198,7 +2211,8 @@
         toast(err.message, true);
       }
     };
-    openModal(dlg);
+    openModal("confirm-delete", { title: "Delete arena branch", onclose });
+    $("confirm-branch").textContent = name;
   }
 
   // the row leaves before the reply and comes back on a failure; the commits
@@ -2687,10 +2701,8 @@
   // after a rewrite, or the facts of the push.
   function openPhase(id) {
     state.phaseOpen = id;
+    openModal("phase", { title: "Phase", wide: true, onclose: () => { state.phaseOpen = null; } });
     renderPhase();
-    const dlg = $("phase-modal");
-    dlg.onclose = () => { state.phaseOpen = null; };
-    openModal(dlg);
   }
   function secsText(secs) {
     return secs < 0.1 ? "<0.1s" : secs.toFixed(1) + "s";
@@ -2766,9 +2778,9 @@
     if (!p) return;
     const done = p.state === "done" || p.state === "fail";
     const secs = p.start && p.end ? secsText(p.end - p.start) : "";
-    $("phase-title").textContent = p.name;
-    $("phase-sub").textContent = [p.state === "run" ? "running" : done ? secs : "", p.sub].filter(Boolean).join(", ");
-    const box = $("phase-body");
+    $("modal-title").textContent = p.name;
+    setModalSub([p.state === "run" ? "running" : done ? secs : "", p.sub].filter(Boolean).join(", "));
+    const box = $("modal-body");
     const link = $("phase-link");
     link.hidden = true;
     link.parentElement.hidden = true;

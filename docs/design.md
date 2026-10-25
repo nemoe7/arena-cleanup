@@ -185,15 +185,17 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - `arena-item`: the arena row with its `arena-checks` and `arena-del` icon buttons side by side. Its hover tint and its selected tint span the whole row, icon buttons included, and the icon buttons keep their own hover rings on top.
   - The trash glyph is dim until hover, then reads in the error tint.
   - The name reads `Delete <branch>`.
-- `modal`: a `dialog` of 420 px at most, with a title, one paragraph, and Cancel then Delete at the right. The page under any open dialog cannot scroll.
-  - The backdrop dims the page.
-  - Escape and Cancel close it without a request.
-- `checks-modal`: a 640 px `dialog` for the checks of a PR, whose body scrolls past 60 vh.
+- `modal`: the one `dialog` of the page, 420 px at most, that every modal view mounts into, as the nuu modal recipe draws it. The page under the open dialog cannot scroll.
+  - A head with the title and the close x, then a line under it. A `modal-body` that scrolls past 60 vh, and a `modal-actions` row at the right.
+  - A view is a `template`: `confirm-delete`, `checks`, or `phase`. Opening one swaps the body and the actions, names the view in `data-view`, and sets `wide` for 640 px.
+  - The backdrop dims the page. Escape and the x close any view without a request.
+  - `confirm-delete`: one paragraph with the branch name, then Cancel and Delete. Cancel takes the opening focus.
+- `checks`: the wide view for the checks of a PR.
   - One row per check, 36 px tall, with a glyph in the state colour, the `Workflow / Job` name, and a dim state phrase. A running check shows an amber pulsing dot in the glyph slot.
   - The phrase names the state and the run time, as GitHub lists them: `Successful in 41 s`, `Failed in 1 min 2 s`, `In progress`, `Queued`, `Skipped`. GitHub's rollup carries no event, so none shows.
   - A row that names an Actions job is a toggle with a chevron, and opens its `job-pane` under itself. Any other run keeps Open run.
-  - Open PR, with the GitHub mark, sits alone at the right. The head x closes the dialog, as it does for `phase-modal`, whose foot shows only when it has Open.
-  - Its body takes the opening focus and draws no ring, so the x never holds it. Same for `phase-modal`.
+  - Open PR, with the GitHub mark, sits alone at the right. The `phase` view shows its actions row only when it has Open.
+  - The body takes the opening focus and draws no ring, so the x never holds it. Same for `phase`.
 - `job-pane`: the job behind a check row, indented 24 px so its content lines up with the row name.
   - A head line with the verdict and the summed step time, then Open, with the GitHub mark, as a house 34 px button.
   - `job-steps`: one 28 px row per step with the state glyph, the name, and the seconds, or `running` behind an amber pulsing dot. Each row is a toggle with a chevron, 44 px below 30em, and opens its own log under itself.
@@ -202,10 +204,9 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - The first failed step opens on its own. A passed job opens no step, and a step without lines says so under its row.
     - A running job shows a note instead, since GitHub serves the log once the job ends.
   - Steps refresh every 10 s while a job runs. Closing the modal or the row stops the timer.
-- `phase-modal`: a 640 px `dialog` behind each run phase row, which is a button once the row has lines.
+- `phase`: the wide view behind each run phase row, which is a button once the row has lines.
   - A step list with stamp, message, and duration, the commit list after a rewrite, or the push facts as a `kv` list.
     - Prepare names three steps in place of its log: `Fetched`, `Located remote arena branch`, and `Pulled arena/<slug>`. Each takes the stamp and duration of the line that ends it, and the open step reads `Fetching…`.
-  - The body scrolls past 60 vh.
 - `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout.
   - `check`: a label with a drawn checkbox.
     - The box is 16 px, 20 px on a phone, with a 4 px radius and the surface-2 fill.
@@ -576,3 +577,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: the timeout slider follows the nuu range recipe. A tick marks each of its ten stops, both ends read 0 and 120 min in mono, and the readout stays beside the track.
 - Accepted 2026-10-26: the live dot in every pill and button grows from 6 to 8 px, the nuu live-dot default. The header tool dots keep 6 px, the recipe's small size for a dense row.
 - Accepted 2026-10-26: the breakpoints move to the nuu clause set, 68em, 60em, and 30em, plus a 24em max-height query. The phone layout starts at 480 px, and on a phone held sideways the top bar and the sidebar scroll away.
+- Accepted 2026-10-26: one dialog shell serves the delete confirm, the PR checks, and the phase detail, as the nuu modal recipe draws it. A view is a template that mounts into the shared body and actions, so the page holds one `dialog` and one close x.

@@ -17,12 +17,12 @@ pytestmark = pytest.mark.e2e
 
 CARD = ".repo-card:has-text('billing-api')"
 MODAL = """() => {
-  const dlg = document.getElementById('checks-modal');
-  return { open: dlg.open, title: document.getElementById('checks-title').textContent,
+  const dlg = document.getElementById('modal');
+  return { open: dlg.open, title: document.getElementById('modal-title').textContent,
     rows: [...dlg.querySelectorAll('.check-list li')]
       .map((li) => [li.className, li.querySelector('.name').textContent,
         li.querySelector('.check-row') ? 'job' : li.querySelector('a') ? 'link' : 'none']),
-    pr: document.getElementById('checks-pr').getAttribute('href') };
+    pr: dlg.open ? document.getElementById('checks-pr').getAttribute('href') : null };
 }"""
 ROWS = [
   ["passed", "CI / lint", "job"],
@@ -41,20 +41,20 @@ def test_the_pill_opens_the_checks_and_the_repo_view_shares_the_modal(
   page.wait_for_selector(f"{CARD} button.pill")
   assert page.evaluate(MODAL)["open"] is False
   page.click(f"{CARD} button.pill")
-  page.wait_for_selector("#checks-modal[open]")
+  page.wait_for_selector("#modal[open]")
   modal = page.evaluate(MODAL)
   assert modal["title"] == "PR #88 checks"
   assert modal["rows"] == ROWS, "one row per check, glyph by result, a job toggle"
   assert modal["pr"].endswith("/pull/88")
   page.keyboard.press("Escape")
-  page.wait_for_function("!document.getElementById('checks-modal').open")
+  page.wait_for_function("!document.getElementById('modal').open")
   walker.click(f"{CARD} .repo-name", 800)
   page.wait_for_selector(".arena-checks")
   page.click(".arena-checks")
-  page.wait_for_selector("#checks-modal[open]")
+  page.wait_for_selector("#modal[open]")
   assert page.evaluate(MODAL)["rows"] == ROWS
   page.keyboard.press("Escape")
-  page.wait_for_function("!document.getElementById('checks-modal').open")
+  page.wait_for_function("!document.getElementById('modal').open")
   walker.click("#back", 600)
 
 

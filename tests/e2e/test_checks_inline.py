@@ -45,21 +45,19 @@ def open_modal(walker: Walker, card: str) -> None:
   walker.goto(1200)
   page.wait_for_selector(f"{card} button.pill")
   page.click(f"{card} button.pill")
-  page.wait_for_selector("#checks-modal[open]")
+  page.wait_for_selector("#modal[open]")
 
 
 def close_modal(walker: Walker) -> None:
   walker.page.keyboard.press("Escape")
-  walker.page.wait_for_function("!document.getElementById('checks-modal').open")
+  walker.page.wait_for_function("!document.getElementById('modal').open")
 
 
 def test_a_failed_check_opens_its_steps_and_the_last_log_page(desktop: Walker) -> None:
   page = desktop.page
   open_modal(desktop, BILLING)
   try:
-    assert desktop.count("#checks-modal.wide .modal-body") == 1, (
-      "the modal scrolls inside"
-    )
+    assert desktop.count("#modal.wide .modal-body") == 1, "the modal scrolls inside"
     page.click(ROW.format(name="test"))
     page.wait_for_selector(LOG)
     assert page.get_attribute(ROW.format(name="test"), "aria-expanded") == "true"

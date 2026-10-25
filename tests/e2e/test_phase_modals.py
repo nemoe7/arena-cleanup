@@ -44,16 +44,16 @@ RUN = [
   ("OK", "done: 23 commits rewritten"),
 ]
 MODAL = """() => {
-  const dlg = document.getElementById('phase-modal');
-  const body = document.getElementById('phase-body');
-  return { open: dlg.open, title: document.getElementById('phase-title').textContent,
-    sub: document.getElementById('phase-sub').textContent,
+  const dlg = document.getElementById('modal');
+  const body = document.getElementById('modal-body');
+  return { open: dlg.open, title: document.getElementById('modal-title').textContent,
+    sub: document.getElementById('modal-sub').textContent,
     steps: [...body.querySelectorAll('.step-list li')]
       .map((li) => ['.t', '.msg', '.d'].map((c) => li.querySelector(c).textContent)),
     kv: [...body.querySelectorAll('.kv dt, .kv dd')].map((e) => e.textContent),
     commits: body.querySelectorAll('.commit').length,
     link: !document.getElementById('phase-link').hidden,
-    foot: [...document.querySelectorAll('#phase-modal .modal-actions > *')]
+    foot: [...document.querySelectorAll('#modal .modal-actions > *')]
       .filter((e) => !e.hidden && !e.parentElement.hidden).map((e) => e.textContent.trim()) };
 }"""
 PATTERN = "**/api/repos/*/jobs/latest"
@@ -104,7 +104,7 @@ def open_run(
 
 
 STEP_BOXES = """() => {
-  const li = document.querySelector('#phase-body .step-list li');
+  const li = document.querySelector('#modal-body .step-list li');
   const box = (sel) => li.querySelector(sel).getBoundingClientRect();
   const [t, msg, d] = ['.t', '.msg', '.d'].map(box);
   return { row: li.getBoundingClientRect().width, t, msg, d };
@@ -132,13 +132,13 @@ def test_a_step_row_stacks_its_text_on_a_phone_only(
 
 def open_phase(walker: Walker, phase: str) -> dict:
   walker.page.click(f'.phase[data-phase="{phase}"] .phase-head')
-  walker.page.wait_for_selector("#phase-modal[open]")
+  walker.page.wait_for_selector("#modal[open]")
   return walker.page.evaluate(MODAL)
 
 
 def close_phase(walker: Walker) -> None:
   walker.page.keyboard.press("Escape")
-  walker.page.wait_for_function("!document.getElementById('phase-modal').open")
+  walker.page.wait_for_function("!document.getElementById('modal').open")
 
 
 @pytest.mark.parametrize("width", ["desktop", "phone"])
@@ -167,7 +167,7 @@ def test_the_rewrite_row_lists_the_commits_under_the_counts(desktop: Walker) -> 
   open_run(desktop, RUN)
   modal = open_phase(desktop, "rewrite")
   assert modal["sub"] == "3.0s, signed 20 commits"
-  desktop.page.wait_for_selector("#phase-body .commit")
+  desktop.page.wait_for_selector("#modal-body .commit")
   modal = desktop.page.evaluate(MODAL)
   assert 1 <= modal["commits"] <= 20
   assert modal["steps"] == [], "the commit list replaces the steps"

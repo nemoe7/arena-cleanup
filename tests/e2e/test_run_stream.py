@@ -43,11 +43,11 @@ def test_the_job_pane_leaves_the_live_run_alone(desktop: Walker, demo: Demo) -> 
   start_parked(desktop, demo, "billing-api")
   try:
     desktop.click(f"{ROWS} .arena-checks", 200)
-    page.wait_for_selector("#checks-modal[open]")
+    page.wait_for_selector("#modal[open]")
     desktop.click("#checks-list .check-row", 200)
     page.wait_for_selector("#checks-list li.open .job-pane")
     page.keyboard.press("Escape")
-    page.wait_for_function("() => !document.querySelector('#checks-modal').open")
+    page.wait_for_function("() => !document.querySelector('#modal').open")
     assert page.inner_text("#start").strip() == "Cancel"
     desktop.click("#start", 0)
     assert "cancelled" in desktop.wait_status("cancelled"), (

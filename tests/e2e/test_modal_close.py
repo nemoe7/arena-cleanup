@@ -15,7 +15,7 @@ from tests.e2e.test_checks_inline import BILLING, close_modal, open_modal
 
 pytestmark = pytest.mark.e2e
 
-CLOSE = "#checks-modal .modal-head .icon-btn"
+CLOSE = "#modal .modal-head .icon-btn"
 CLEAR = "rgba(0, 0, 0, 0)"
 FACE = """(sel) => {
   const el = document.querySelector(sel);
@@ -54,7 +54,7 @@ def test_the_close_x_rests_bare_and_fills_under_a_pointer(desktop: Walker) -> No
     page.mouse.up()
     assert pressed["fill"] == pressed["surface"] and pressed["line"] == pressed["rule"]
   finally:
-    if page.evaluate("document.getElementById('checks-modal').open"):
+    if page.evaluate("document.getElementById('modal').open"):
       close_modal(desktop)
 
 
@@ -63,13 +63,13 @@ def test_the_foot_holds_open_pr_alone_and_the_x_closes(desktop: Walker) -> None:
   open_modal(desktop, BILLING)
   try:
     foot = page.eval_on_selector_all(
-      "#checks-modal .modal-actions > *", "els => els.map((e) => e.textContent.trim())"
+      "#modal .modal-actions > *", "els => els.map((e) => e.textContent.trim())"
     )
     assert foot == ["Open PR"], "no Close beside Open PR"
     focused = page.evaluate("document.activeElement.className")
     assert focused == "modal-body", "the body takes the opening focus, not the x"
     page.click(CLOSE)
-    page.wait_for_function("!document.getElementById('checks-modal').open")
+    page.wait_for_function("!document.getElementById('modal').open")
   finally:
-    if page.evaluate("document.getElementById('checks-modal').open"):
+    if page.evaluate("document.getElementById('modal').open"):
       close_modal(desktop)
