@@ -561,6 +561,11 @@
   .opt.row > label { font-weight: 560; font-size: var(--fs-2); white-space: nowrap; }
   .opt.row .tree { grid-column: 1 / -1; }
   .slider { width: 100%; height: 24px; margin: 0; accent-color: var(--accent); }
+  /* the nuu range recipe: a tick per stop under the track, the two ends named below it */
+  .range { display: grid; gap: 2px; min-width: 0; }
+  .range-ends { display: flex; justify-content: space-between; font: var(--fs-1) var(--mono); color: var(--muted); }
+  .range-ends, .readout { font-variant-numeric: tabular-nums; }
+  #opt-timeout > label, #opt-timeout .readout { align-self: start; line-height: 24px; }
   .readout { font: var(--fs-1) var(--mono); color: var(--muted); min-width: 6ch; text-align: right; }
   .checks { display: flex; flex-wrap: wrap; align-content: start; gap: 8px 20px; padding: 10px 2px; }
   /* the run button ends the checkbox row and drops under it, right-aligned, when the row is narrow */
@@ -911,6 +916,7 @@
     .check input::after { width: 15px; height: 15px; }
     .opt.row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; }
     .slider { height: 44px; }
+    #opt-timeout .readout { line-height: 44px; }
     .row-btn.select { min-height: 44px; }
     .link-btn { min-height: 44px; min-width: 44px; }
     /* the pill and the name keep their size; an unseen box above and below brings the hit area to 44 px */
@@ -1053,7 +1059,11 @@
             </div>
             <div class="opt row" id="opt-timeout">
               <label for="timeout">PR check timeout</label>
-              <input class="slider" id="timeout" type="range" min="0" max="9" step="1" value="3" title="How long the run waits for the PR checks. At 0 it does not wait.">
+              <div class="range">
+                <input class="slider" id="timeout" type="range" min="0" max="9" step="1" value="3" list="timeout-ticks" title="How long the run waits for the PR checks. At 0 it does not wait.">
+                <datalist id="timeout-ticks"><option value="0" label="0"></option><option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option><option value="5"></option><option value="6"></option><option value="7"></option><option value="8"></option><option value="9" label="120"></option></datalist>
+                <div class="range-ends" aria-hidden="true"><span>0</span><span>120 min</span></div>
+              </div>
               <output class="readout" id="timeout-out" for="timeout">15 min</output>
             </div>
             <div class="opt checks" id="checks">

@@ -21,6 +21,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The demo job log carries a few lines for every step, so each row has lines.
 - The focus ring shows after keyboard travel alone: Tab or an arrow key arms it,
   a pointer press disarms it, and the ring no longer changes a control's corners.
+- The PR check timeout slider draws a tick per stop and names its two ends, 0
+  and 120 min, under the track, as the nuu range recipe asks.
 
 ### Fixed
 

@@ -56,7 +56,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - No hint texts.
     - Dry Run, Ignore PR Checks, Update Tags (checked by default), and No lease are checkboxes.
     - No lease is the one danger-coloured option: checked, the run pushes with `git push --force` and no lease, and its tooltip names the two other effects of `-f`.
-  - PR check timeout: a slider with the number beside it. It snaps to 0, 5, 10, 15, 20, 30, 45, 60, 90, or 120 minutes.
+  - PR check timeout: a slider with the number beside it, a tick per stop, and both ends named under the track. It snaps to 0, 5, 10, 15, 20, 30, 45, 60, 90, or 120 minutes.
   - Target branch: it lists the default branch first and never an `arena/*` branch.
     - A clone parked on an arena branch gets the default branch alone, sent as `-b`.
     - Arena branch appears with two or more arena branches, newest tip first.
@@ -572,3 +572,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - nuu-deviation: phase-rows-ink: the phase timeline rows ink 0.11 to 0.30 of their 441 px at 1280 px. Each row holds a dot, a name, a count, and a time.
   - nuu-deviation: settings-column-ink: the settings column inks 0.13 of 1280 px, two cards over a sparse page
   - nuu-deviation: add-bar-width: the add bar field spans its row at 1280 px, a URL or an absolute path needs the room
+- Accepted 2026-10-25: the timeout slider follows the nuu range recipe. A tick marks each of its ten stops, both ends read 0 and 120 min in mono, and the readout stays beside the track.
