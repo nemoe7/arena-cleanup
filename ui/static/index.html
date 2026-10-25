@@ -1842,6 +1842,8 @@
         : await api("/api/repos");
       state.repos = [...pending(), ...withoutGone(repos)];
       state.unreachable = false;
+      // a repo seen running has a newer run than the one its view remembers
+      for (const r of repos) if (r.running) lastRuns.delete(r.id);
       // the open repo reads its fresh entry too, so the sidebar keeps up with
       // the cards. A live run, or its end, owns the view until it settles.
       const entry = state.repo && !state.job && !state.settling

@@ -39,6 +39,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   sidebar keeps up with the cards without a click.
 - A return from Settings to a repo view reads its status again, so a
   sign-in shows in the sidebar at once.
+- A repo seen running on the dashboard drops the run its view remembers, so
+  the next open paints the newer run, not the old one first.
 
 ## [0.3.11] - 2026-10-25
 
