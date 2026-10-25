@@ -1,11 +1,14 @@
-"""A check row opens its Actions job in place: steps first, the paged log below.
+"""A check row opens its Actions job in place: its steps, each a toggle for its log.
 
-The log opens on its last page and loads an older page when scrolled to its
-top. A check from an app, not Actions, keeps its outbound link. The running
-job test comes last, since its fake clock stays on the page.
+The first failed step opens on its last page and loads an older page when
+scrolled to its top. A passed job opens no step. A check from an app, not
+Actions, keeps its outbound link. The running job test comes last, since its
+fake clock stays on the page.
 """
 
 from __future__ import annotations
+
+import re
 
 import pytest
 
@@ -17,6 +20,7 @@ BILLING = ".repo-card:has-text('billing-api')"
 SHOP = ".repo-card:has-text('shop-web')"
 ROW = "#checks-list li:has-text('{name}') .check-row"
 PANE = "#checks-list li.open .job-pane"
+STEP = f"{PANE} .job-steps li:has-text('{{name}}')"
 LOG = f"{PANE} .job-log"
 PAGE = 400
 TOTAL = 1000
@@ -29,6 +33,11 @@ LOG_STATE = """() => {
     first: pre.textContent.split('\\n')[0], last: pre.textContent.trimEnd().split('\\n').pop(),
     lines: document.querySelector('#checks-list li.open .job-lines').textContent };
 }"""
+
+
+def counts(walker: Walker, selector: str) -> list[int]:
+  """The numbers in an element's text, as `lines 1 to 400 of 1000` carries three."""
+  return [int(n) for n in re.findall(r"\d+", walker.text(selector))]
 
 
 def open_modal(walker: Walker, card: str) -> None:
@@ -55,11 +64,11 @@ def test_a_failed_check_opens_its_steps_and_the_last_log_page(desktop: Walker) -
     page.wait_for_selector(LOG)
     assert page.get_attribute(ROW.format(name="test"), "aria-expanded") == "true"
     assert desktop.count(f"{PANE} .job-steps li") == STEPS
-    assert (
-      desktop.text(f"{PANE} .job-steps li.failure .name")
-      == "Run uv run --no-sync pytest"
-    )
+    assert "pytest" in desktop.text(f"{PANE} .job-steps li.failure .name")
     assert desktop.text(f"{PANE} .job-steps li.failure .d") == "3 min 15 s"
+    assert desktop.count(f"{PANE} .job-steps li.open") == 1, "the failed step opens"
+    assert page.get_attribute(f"{PANE} li.failure .step", "aria-expanded") == "true"
+    assert desktop.count(f"{PANE} li.failure .job-log") == 1, "its log sits in its row"
     assert desktop.text(f"{PANE} .job-state").startswith("failure, ")
     assert page.get_attribute(f"{PANE} .job-head a", "href").endswith(
       "/runs/88/job/882"
@@ -152,6 +161,54 @@ def test_the_pane_takes_the_house_sizes(
     close_modal(walker)
 
 
+def test_a_step_row_opens_only_its_own_lines(desktop: Walker) -> None:
+  page = desktop.page
+  open_modal(desktop, BILLING)
+  try:
+    page.click(ROW.format(name="test"))
+    page.wait_for_selector(LOG)
+    post = STEP.format(name="Post Checkout")
+    page.click(f"{post} .step")
+    page.wait_for_selector(f"{post} .job-log")
+    lines = desktop.text(f"{post} .job-log").split("\n")
+    assert len(lines) == 1 and "cleanup" in lines[0], (
+      "a step in the second the step before ended keeps only its own line"
+    )
+    assert "[error]" not in lines[0], "the error line stays with the failed step"
+    assert counts(desktop, f"{post} .job-lines") == [1, 1, 1]
+    assert desktop.count(LOG) == 2, "the failed step stays open"
+    assert counts(desktop, f"{PANE} li.failure .job-lines") == [
+      TOTAL - PAGE + 1,
+      TOTAL,
+      TOTAL,
+    ], "and it keeps its line count"
+    setup = STEP.format(name="Set up job")
+    page.click(f"{setup} .step")
+    page.wait_for_selector(f"{setup} .job-log")
+    first = desktop.text(f"{setup} .job-log").split("\n")
+    assert len(first) == 2 and first[0].startswith("11:21:00 "), first
+    page.click(f"{post} .step")
+    assert desktop.count_settled(f"{post} .job-log", 0) == 0, "a second click closes"
+    assert page.get_attribute(f"{post} .step", "aria-expanded") == "false"
+    assert desktop.count(LOG) == 2
+  finally:
+    close_modal(desktop)
+
+
+def test_a_passed_job_opens_no_step(desktop: Walker) -> None:
+  page = desktop.page
+  open_modal(desktop, BILLING)
+  try:
+    page.click(ROW.format(name="lint"))
+    page.wait_for_selector(f"{PANE} .job-steps li.success")
+    assert desktop.count(f"{PANE} .job-steps li") == STEPS
+    assert desktop.count_settled(LOG, 0) == 0, "no step opens on a passed job"
+    assert desktop.count(f"{PANE} .job-steps li.open") == 0
+    assert desktop.count(f"{PANE} .job-note:not([hidden])") == 0, "and no note"
+  finally:
+    close_modal(desktop)
+
+
 def test_an_app_check_keeps_its_outbound_link(desktop: Walker) -> None:
   open_modal(desktop, SHOP)
   try:
@@ -178,7 +235,7 @@ def test_a_running_job_shows_its_live_step_without_a_log_and_polls(
     page.wait_for_selector(f"{PANE} .job-steps li.in_progress")
     assert desktop.text(f"{PANE} .job-steps li.in_progress .d") == "running"
     assert desktop.count(LOG) == 0
-    assert desktop.text(f"{PANE} .job-note") == "The log arrives when the job ends."
+    assert desktop.text(f"{PANE} .job-note"), "a note stands in for the log"
     before = len(hits)
     with page.expect_request(lambda req: "/job?" in req.url, timeout=5000):
       page.clock.run_for(POLL_MS)

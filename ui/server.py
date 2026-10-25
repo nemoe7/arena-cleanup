@@ -567,6 +567,10 @@ JOB_LOG_PAGE = 400
 JOB_CACHE_MAX = 32  # finished jobs kept with their logs, oldest out first
 JOB_CACHE: dict[str, dict[str, Any]] = {}
 JOB_CACHE_LOCK = threading.Lock()
+FAILED_STEPS = ("failure", "cancelled", "timed_out")
+LINE_STAMP = re.compile(r"^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)\S* ")
+# the first line of a run or action step, of a post step, and of Complete job
+STEP_OPENERS = ("##[group]Run ", "Post job cleanup.", "Cleaning up orphan processes")
 
 
 def job_ref(url: str) -> tuple[str, str, str] | None:
@@ -615,12 +619,15 @@ def job_report(ref: tuple[str, str, str]) -> dict[str, Any] | None:
     "url": job.get("html_url", ""),
     "steps": [
       {
+        "number": step.get("number") or n,
         "name": step.get("name", ""),
         "status": step.get("status", ""),
         "conclusion": step.get("conclusion") or "",
         "seconds": step_seconds(step),
+        "started": step.get("started_at") or "",
+        "ended": step.get("completed_at") or "",
       }
-      for step in job.get("steps") or []
+      for n, step in enumerate(job.get("steps") or [], 1)
     ],
   }
   if report["status"] == "completed":
@@ -657,6 +664,49 @@ def job_log_lines(ref: tuple[str, str, str]) -> list[str] | None:
   lines = out.splitlines()
   keep_job(ref, log=lines)
   return lines
+
+
+def first_failed(steps: list[dict[str, Any]]) -> int | None:
+  """The number of the first step that failed, None when every step passed."""
+  return next((s["number"] for s in steps if s["conclusion"] in FAILED_STEPS), None)
+
+
+def step_lines(lines: list[str], steps: list[dict[str, Any]]) -> dict[int, list[str]]:
+  """The job log split by step number on the steps' start times.
+
+  Two steps can share a start second. Its lines stay with the earlier step
+  until the later step's opening line. So a 0 s step keeps its own output.
+  """
+  begun = [s for s in steps if s["started"]]
+  split: dict[int, list[str]] = {s["number"]: [] for s in steps}
+  if not begun:
+    return split
+  i = 0
+  for line in lines:
+    match = LINE_STAMP.match(line)
+    while (
+      match
+      and i + 1 < len(begun)
+      and later_step(begun[i + 1], begun[i], match.group(1))
+    ):
+      i += 1
+    if match and i + 1 < len(begun) and opens_step(begun[i + 1], line, match):
+      i += 1
+    split[begun[i]["number"]].append(line)
+  return split
+
+
+def later_step(step: dict[str, Any], previous: dict[str, Any], stamp: str) -> bool:
+  """Whether a line stamped `stamp` falls past the end of `previous`, in `step` or later."""
+  start = step["started"][:19]
+  return stamp > start or (stamp == start and previous["ended"][:19] < start)
+
+
+def opens_step(step: dict[str, Any], line: str, match: re.Match[str]) -> bool:
+  """Whether a line in the second `step` started is its opening line."""
+  return match.group(1) == step["started"][:19] and line.startswith(
+    STEP_OPENERS, match.end()
+  )
 
 
 def log_page(lines: list[str], before: int | None, limit: int) -> dict[str, Any]:
@@ -1784,13 +1834,20 @@ class Handler(BaseHTTPRequestHandler):
           )
           before_text = query.get("before", [None])[0]
           before = None if before_text is None else max(0, int(before_text))
+          step_text = query.get("step", [None])[0]
+          step = None if step_text is None else int(step_text)
         except ValueError:
           self._error("bad cursor", 400)
           return
         report: dict[str, Any] = {"job": job_report(ref), "log": None}
-        if query.get("log", ["0"])[0] == "1":
-          lines = job_log_lines(ref)
-          report["log"] = None if lines is None else log_page(lines, before, limit)
+        # one step's log at a time: as asked, else from the first failed step
+        if query.get("log", ["0"])[0] == "1" and report["job"]:
+          steps = report["job"]["steps"]
+          step = first_failed(steps) if step is None else step
+          lines = None if step is None else job_log_lines(ref)
+          if lines is not None:
+            page = log_page(step_lines(lines, steps).get(step, []), before, limit)
+            report["log"] = {"step": step, **page}
         self._json(report)
       elif len(parts) == 4 and parts[:2] == ["api", "repos"] and parts[3] == "tree":
         repo = self._repo(parts[2])

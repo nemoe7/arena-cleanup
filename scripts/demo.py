@@ -286,14 +286,23 @@ def job_for(job_id: int) -> dict:
 
 
 def job_log(job_id: int) -> str:
-  """A 1,000 line job log with the pytest failure at the end, so the pane pages twice."""
-  lines = ["2026-10-24T11:24:04.0000000Z ##[group]Run uv run --no-sync pytest"]
+  """A job log with a few lines per step and 1,000 pytest lines, so that step pages twice."""
+  lines = ["2026-10-24T11:21:00.0000000Z Current runner version: '2.330.0'",
+           "2026-10-24T11:21:04.0000000Z Complete job name: test",
+           "2026-10-24T11:22:00.0000000Z ##[group]Run actions/checkout@v7.0.1",
+           "2026-10-24T11:22:01.0000000Z Syncing repository: demo/billing-api",
+           "2026-10-24T11:22:04.0000000Z ##[endgroup]",
+           "2026-10-24T11:23:00.0000000Z ##[group]Run astral-sh/setup-uv@v10.3.1",
+           "2026-10-24T11:23:04.0000000Z Added /home/runner/.local/bin to the path",
+           "2026-10-24T11:24:04.0000000Z ##[group]Run uv run --no-sync pytest"]
   for n in range(1, 998):
     t = 24 * 60 + 4 + (n * 194) // 997
     stamp = "2026-10-24T11:%%02d:%%02d.%%07dZ" %% (t // 60, t %% 60, n * 1000)
     lines.append("%%s tests/e2e/test_%%03d.py::test_case PASSED" %% (stamp, n))
   lines.append("2026-10-24T11:27:18.0000000Z FAILED tests/e2e/test_optimistic.py::test_card_leaves - AssertionError")
   lines.append("2026-10-24T11:27:19.0000000Z ##[error]Process completed with exit code 1.")
+  lines.append("2026-10-24T11:27:19.5000000Z Post job cleanup.")
+  lines.append("2026-10-24T11:27:20.0000000Z Cleaning up orphan processes")
   return "\\n".join(lines) + "\\n"
 
 

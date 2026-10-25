@@ -503,17 +503,19 @@
   .check-list li { flex-wrap: wrap; }
   .check-row { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0;
     background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
-  .check-row .chev { --ico: var(--ico-s); color: var(--dim); transition: transform var(--fast) var(--ease); }
-  .check-list .open .check-row .chev { transform: rotate(90deg); }
-  .check-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px; }
-  @media (hover: hover) { .check-row:hover .name { color: var(--text); } }
+  .check-row .chev, .step .chev { --ico: var(--ico-s); color: var(--dim); transition: transform var(--fast) var(--ease); }
+  .check-list .open .check-row .chev, .job-steps .open .step .chev { transform: rotate(90deg); }
+  .check-row:focus-visible, .step:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px; }
+  @media (hover: hover) { .check-row:hover .name, .step:hover .name { color: var(--text); } }
   .job-pane { flex: 1 1 100%; min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 0 0 12px 24px; }
   .job-head { display: flex; align-items: center; gap: 8px; font-size: var(--fs-1); color: var(--dim); }
   .job-head .grow { flex: 1; }
   .job-steps { list-style: none; margin: 0; padding: 0; }
-  .job-steps li { display: flex; align-items: center; gap: 8px; min-height: 28px; font-size: var(--fs-2);
-    border-top: 1px solid var(--line); }
+  .job-steps li { display: block; min-height: 0; border-top: 1px solid var(--line); }
   .job-steps li:first-child { border-top: 0; }
+  .step { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 0; background: none;
+    border: 0; font: inherit; font-size: var(--fs-2); color: inherit; text-align: left; cursor: pointer; }
+  .job-steps .job-log { margin: 0 0 8px; }
   .job-steps .ico-svg { --ico: var(--ico-s); flex: none; color: var(--dim); }
   .job-steps .success .ico-svg { color: var(--ok); }
   .job-steps .failure .ico-svg, .job-steps .cancelled .ico-svg { color: var(--err); }
@@ -853,7 +855,7 @@
     .repo-name { font-size: 15px; }
     .hint, .opt-label .desc, .phase-sub, .run-foot .hint, .commit .meta { font-size: 12px; }
     .phase-head { min-height: 44px; padding: 8px 12px; font-size: 13px; }
-    .check-row { min-height: 44px; }
+    .check-row, .step { min-height: 44px; }
     .commit { font-size: 13px; }
     .sign-fields { grid-template-columns: 1fr; }
     .sign-row .k { flex-basis: 100%; min-width: 0; }
@@ -1415,9 +1417,9 @@
     $("checks-pr").href = pr.url;
     const glyph = { passed: "check", failed: "x" };
     const mark = (c) => c.result === "running" ? liveDot() : icon(glyph[c.result] || "circle-small");
-    // the open pane moves into the new list with its log where the reader left it
-    const pre = state.pane && state.pane.pane.querySelector(".job-log");
-    const top = pre ? pre.scrollTop : 0;
+    // the open pane moves into the new list with its logs where the reader left them
+    const pres = state.pane ? [...state.pane.pane.querySelectorAll(".job-log")] : [];
+    const tops = pres.map((pre) => pre.scrollTop);
     $("checks-list").replaceChildren(...(pr.checks || []).map((c) => {
       const name = checkName(c);
       const phrase = checkPhrase(c);
@@ -1442,12 +1444,12 @@
               "aria-label": `Open the run of ${c.name}` }, "Open run")
           : null);
     }));
-    if (pre) pre.scrollTop = top;
+    pres.forEach((pre, i) => { pre.scrollTop = tops[i]; });
   }
 
-  // One Actions job open at a time: its steps, then the newest page of its log.
-  // Older pages load when the log is scrolled to its top. While the job runs,
-  // the steps refresh every JOB_POLL ms; GitHub serves the log once the job ends.
+  // One Actions job open at a time: its steps, each a toggle for its own log.
+  // The first failed step opens with the newest page; older pages load on a
+  // scroll to the top. While the job runs, the steps refresh every JOB_POLL ms.
   // A check row reads like GitHub's list: `Workflow / Job`, then the state phrase
   // with the time the run took. The rollup carries no event, so none is shown.
   const CHECK_WORDS = {
@@ -1480,7 +1482,7 @@
   function keepJob(job) {
     if (!job.job || job.job.status !== "completed") return;
     state.jobs.delete(job.url);
-    state.jobs.set(job.url, { job: job.job, log: job.log });
+    state.jobs.set(job.url, { job: job.job, logs: job.logs, open: [...job.open] });
     while (state.jobs.size > JOBS_KEPT) state.jobs.delete(state.jobs.keys().next().value);
   }
   function toggleJob(repoId, url) {
@@ -1493,7 +1495,8 @@
         el("ul", { class: "job-steps" }),
         el("p", { class: "job-note" }));
       const kept = state.jobs.get(url);
-      state.pane = { repoId, url, pane, job: kept ? kept.job : null, log: kept ? kept.log : null, timer: 0 };
+      state.pane = { repoId, url, pane, job: kept ? kept.job : null, logs: kept ? kept.logs : {},
+        open: new Set(kept ? kept.open : []), loading: new Set(), timer: 0 };
     }
     renderChecks();
     if (!reopen) return;
@@ -1505,52 +1508,79 @@
       loadJob();
     }
   }
-  function jobPath(before, withLog) {
+  function jobPath(withLog, step, before) {
     const q = new URLSearchParams({ url: state.pane.url, log: withLog ? "1" : "0" });
+    if (step != null) q.set("step", String(step));
     if (before != null) q.set("before", String(before));
     return `/api/repos/${state.pane.repoId}/job?${q}`;
   }
   async function loadJob() {
     const job = state.pane;
+    const first = !job.job;
     let body;
     try {
-      body = await api(jobPath(null, !job.log));
+      // the first read brings the first failed step's log; a running job asks again at each poll
+      body = await api(jobPath(first || job.job.status !== "completed"));
     } catch (err) {
-      if (state.pane === job) job.pane.querySelector(".job-note").textContent = err.message;
+      if (state.pane === job) paneNote(job.pane).textContent = err.message;
       return;
     }
     if (state.pane !== job) return;
-    const first = !job.job;
     job.job = body.job;
-    if (body.log) job.log = body.log;
+    if (body.log) { job.logs[body.log.step] = body.log; job.open.add(body.log.step); }
     keepJob(job);
     renderJob();
     if (first) job.pane.closest("li").scrollIntoView({ block: "nearest" });
     if (job.job && job.job.status !== "completed") job.timer = setTimeout(loadJob, JOB_POLL);
   }
-  async function loadOlderLog() {
+  const stepItem = (job, number) => job.pane.querySelector(`.job-steps li[data-step="${number}"]`);
+  async function toggleStep(number) {
     const job = state.pane;
-    const pre = job.pane.querySelector(".job-log");
-    if (!job.log || job.log.start === 0 || job.loading) return;
-    job.loading = true;
+    if (job.open.has(number)) job.open.delete(number);
+    else job.open.add(number);
+    renderJob();
+    keepJob(job);
+    if (!job.open.has(number) || number in job.logs || job.loading.has(number)) return;
+    job.loading.add(number);
     try {
-      const body = await api(jobPath(job.log.start, true));
-      if (state.pane !== job || !body.log) return;
-      const before = pre.scrollHeight;
-      job.log = { ...body.log, lines: body.log.lines.concat(job.log.lines) };
+      const body = await api(jobPath(true, number));
+      if (state.pane !== job) return;
+      job.logs[number] = body.log;
       keepJob(job);
-      pre.textContent = logText(job.log.lines);
-      pre.scrollTop = pre.scrollHeight - before;
-      job.pane.querySelector(".job-lines").textContent = logRange(job.log);
+      renderJob();
+    } catch (err) {
+      if (state.pane === job) stepItem(job, number).querySelector(".job-lines").textContent = err.message;
     } finally {
-      job.loading = false;
+      job.loading.delete(number);
+    }
+  }
+  async function loadOlderLog(number) {
+    const job = state.pane;
+    const log = job.logs[number];
+    const li = stepItem(job, number);
+    if (!log || log.start === 0 || job.loading.has(number) || !li) return;
+    job.loading.add(number);
+    try {
+      const body = await api(jobPath(true, number, log.start));
+      if (state.pane !== job || !body.log) return;
+      const pre = li.querySelector(".job-log");
+      const before = pre.scrollHeight;
+      job.logs[number] = { ...body.log, lines: body.log.lines.concat(log.lines) };
+      keepJob(job);
+      pre.textContent = logText(job.logs[number].lines);
+      pre.scrollTop = pre.scrollHeight - before;
+      li.querySelector(".job-lines").textContent = logRange(job.logs[number]);
+    } finally {
+      job.loading.delete(number);
     }
   }
   const logText = (lines) => lines.map((line) => line.replace(LOG_STAMP, "$1 ")).join("\n");
   const logRange = (log) => `lines ${log.start + 1} to ${log.total} of ${log.total}`;
+  // the pane's own note, not a step's line count, which shares the class
+  const paneNote = (pane) => pane.querySelector(":scope > .job-note");
   function renderJob() {
-    const { pane, job, log } = state.pane;
-    const note = pane.querySelector(".job-note");
+    const { pane, job, logs, open } = state.pane;
+    const note = paneNote(pane);
     if (!job) {
       pane.querySelector(".job-state").textContent = "unavailable";
       note.textContent = "GitHub did not answer for this job.";
@@ -1559,25 +1589,45 @@
     const verdict = job.status === "completed" ? job.conclusion || "completed" : job.status.replace("_", " ");
     const total = job.steps.reduce((sum, s) => sum + (s.seconds || 0), 0);
     pane.querySelector(".job-state").textContent = total ? `${verdict}, ${jobSecs(total)}` : verdict;
-    pane.querySelector(".job-steps").replaceChildren(...job.steps.map((s) => {
-      const tone = s.conclusion || s.status;
-      return el("li", { class: tone },
-        tone === "in_progress" ? liveDot() : icon(STEP_GLYPH[tone] || "circle-small"),
-        el("span", { class: "name" }, s.name),
-        el("span", { class: "d" }, s.status === "in_progress" ? "running" : jobSecs(s.seconds)));
-    }));
-    if (!log) {
-      note.textContent = job.status === "completed" ? "No log for this job." : "The log arrives when the job ends.";
+    const list = pane.querySelector(".job-steps");
+    // the rows stay in place across polls, so an open log keeps its scroll
+    if (list.childElementCount !== job.steps.length) list.replaceChildren(...job.steps.map(jobStepRow));
+    job.steps.forEach((s, i) => paintStep(list.children[i], s, open.has(s.number), logs[s.number]));
+    note.textContent = job.status === "completed" ? "" : "The log arrives when the job ends.";
+    note.hidden = !note.textContent;
+  }
+  const jobStepRow = (s) => el("li", { "data-step": String(s.number) },
+    el("button", { class: "step", type: "button", "aria-expanded": "false", onclick: () => toggleStep(s.number) },
+      icon("circle-small"), el("span", { class: "name" }, s.name), el("span", { class: "d" }),
+      icon("chevron-right", "ico-svg chev")));
+  // A step row is a toggle: open, it holds its own log, which opens at its end
+  // and prepends older pages. Without a log it says so under the row.
+  function paintStep(li, s, isOpen, log) {
+    const tone = s.conclusion || s.status;
+    li.className = tone + (isOpen ? " open" : "");
+    const row = li.firstChild;
+    row.setAttribute("aria-expanded", String(isOpen));
+    row.firstChild.replaceWith(tone === "in_progress" ? liveDot() : icon(STEP_GLYPH[tone] || "circle-small"));
+    row.querySelector(".d").textContent = s.status === "in_progress" ? "running" : jobSecs(s.seconds);
+    let pre = li.querySelector(".job-log");
+    if (!isOpen) {
+      if (pre) { pre.remove(); li.querySelector(".job-lines").remove(); }
       return;
     }
-    if (!pane.querySelector(".job-log")) {
-      const pre = el("pre", { class: "job-log", tabindex: "0", "aria-label": "Job log" });
-      pre.addEventListener("scroll", () => { if (pre.scrollTop === 0) loadOlderLog(); });
-      note.replaceWith(pre, el("p", { class: "job-note job-lines" }));
+    if (!pre) {
+      pre = el("pre", { class: "job-log", hidden: "", tabindex: "0", "aria-label": `Log of ${s.name}` });
+      pre.addEventListener("scroll", () => { if (pre.scrollTop === 0) loadOlderLog(s.number); });
+      li.append(pre, el("p", { class: "job-note job-lines" }));
+    }
+    const lines = li.querySelector(".job-lines");
+    if (log === undefined) { lines.textContent = "loading"; return; }
+    if (!log || !log.total) { lines.textContent = "No log for this step."; return; }
+    if (pre.hidden) {
+      pre.hidden = false;
       pre.textContent = logText(log.lines);
       pre.scrollTop = pre.scrollHeight;
     }
-    pane.querySelector(".job-lines").textContent = logRange(log);
+    lines.textContent = logRange(log);
   }
 
   // Removing a card deletes its URL clone, so the first click only arms the

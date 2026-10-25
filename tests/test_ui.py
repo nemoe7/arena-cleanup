@@ -1414,6 +1414,50 @@ def test_log_pages_end_at_the_cursor_and_open_on_the_last_page() -> None:
   assert server.log_page(lines, 0, 400)["lines"] == []
 
 
+def test_the_job_log_splits_by_step_on_the_start_times() -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  def step(number: int, conclusion: str, started: str, ended: str) -> dict[str, Any]:
+    return {
+      "number": number,
+      "conclusion": conclusion,
+      "started": started,
+      "ended": ended,
+    }
+
+  steps = [
+    step(1, "success", "2026-10-24T11:20:00Z", "2026-10-24T11:20:04Z"),
+    step(2, "failure", "2026-10-24T11:20:04Z", "2026-10-24T11:23:19Z"),
+    step(3, "success", "2026-10-24T11:23:19Z", "2026-10-24T11:23:19Z"),
+    step(4, "success", "2026-10-24T11:23:19Z", "2026-10-24T11:23:20Z"),
+    step(5, "skipped", "", ""),
+  ]
+  lines = [
+    "2026-10-24T11:20:00.0000000Z Current runner version: '2.330.0'",
+    "2026-10-24T11:20:04.0000000Z Complete job name: test",
+    "2026-10-24T11:20:04.1000000Z ##[group]Run uv run --no-sync pytest",
+    "2026-10-24T11:20:04.2000000Z shell: /usr/bin/bash -e {0}",
+    "2026-10-24T11:21:00.0000000Z tests/test_a.py PASSED",
+    "2026-10-24T11:23:19.0000000Z ##[error]Process completed with exit code 1.",
+    "2026-10-24T11:23:19.5000000Z Post job cleanup.",
+    "2026-10-24T11:23:19.9000000Z Cleaning up orphan processes",
+    "a line without a stamp",
+  ]
+  split = server.step_lines(lines, steps)
+  assert [len(split[n]) for n in (1, 2, 3, 4, 5)] == [2, 4, 1, 2, 0], split
+  assert split[1][-1].endswith("Complete job name: test"), (
+    "a shared second stays with the earlier step until the opener"
+  )
+  assert split[2][0].endswith("##[group]Run uv run --no-sync pytest")
+  assert split[2][-1].endswith("exit code 1."), "the error line stays with its step"
+  assert split[3] == lines[6:7], "two steps in one second split at each opener"
+  assert split[4] == lines[7:], "an unstamped line follows the step before it"
+  assert server.step_lines(lines, [step(5, "skipped", "", "")]) == {5: []}
+  assert server.first_failed(steps) == 2
+  assert server.first_failed(steps[:1]) is None
+
+
 def test_step_seconds_come_from_the_timestamps() -> None:
   sys.path.insert(0, str(ROOT))
   from ui import server
@@ -1470,7 +1514,11 @@ def test_the_job_route_reads_steps_and_pages_the_log(
   assert report is not None
   assert [s["name"] for s in report["steps"]] == ["Set up job", "pytest"]
   assert [s["seconds"] for s in report["steps"]] == [4, 195]
+  assert [s["number"] for s in report["steps"]] == [1, 2], "steps count from 1"
+  assert report["steps"][1]["started"] == "2026-10-24T11:20:04Z"
+  assert report["steps"][1]["ended"] == "2026-10-24T11:23:19Z"
   assert report["conclusion"] == "failure"
+  assert server.first_failed(report["steps"]) == 2
   lines = server.job_log_lines(ref)
   assert lines is not None and len(lines) == 1000
   server.job_log_lines(ref)

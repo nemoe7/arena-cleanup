@@ -195,9 +195,10 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Its body takes the opening focus and draws no ring, so the x never holds it. Same for `phase-modal`.
 - `job-pane`: the job behind a check row, indented 24 px so its content lines up with the row name.
   - A head line with the verdict and the summed step time, then Open, with the GitHub mark, as a house 34 px button.
-  - `job-steps`: one 28 px row per step with the state glyph, the name, and the seconds, or `running` behind an amber pulsing dot.
-  - `job-log`: a `pre` in the mono face, 26 vh tall at most, that opens on the last 400 lines. A scroll to its top prepends the page before, and the view keeps its place.
+  - `job-steps`: one 28 px row per step with the state glyph, the name, and the seconds, or `running` behind an amber pulsing dot. Each row is a toggle with a chevron, 44 px below 40em, and opens its own log under itself.
+  - `job-log`: a `pre` in the mono face, 26 vh tall at most, with one step's lines, that opens on the last 400 lines. A scroll to its top prepends the page before, and the view keeps its place.
     - Each line drops the date and the fraction of its stamp, so `11:27:19` leads it.
+    - The first failed step opens on its own. A passed job opens no step, and a step without lines says so under its row.
     - A running job shows a note instead, since GitHub serves the log once the job ends.
   - Steps refresh every 10 s while a job runs. Closing the modal or the row stops the timer.
 - `phase-modal`: a 640 px `dialog` behind each run phase row, which is a button once the row has lines.
@@ -562,3 +563,5 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: the Running button shows its dot bare. The busy face narrows the glyph box to 6 px, so dot and label centre as a pair with an 8 px gap.
 - Accepted 2026-10-25: the dashboard names how long ago a repo was last active, the newest of check completion, arena tip commit, and PR edit. The compact nuu form sits after the name, the full form and the source in its title.
 - Accepted 2026-10-24: page memory keeps commit pages by repo, ref, tip, and cursor, the settings and signing answers, and the last run per repo. Each paints at once, and a fresh read replaces it only when the answer differs.
+- Accepted 2026-10-25: a step row in the job pane is a toggle for its own log lines, as on GitHub's job page. The first failed step opens on its last page, a passed job opens no step, and each open log pages on its own.
+  - The server splits the job log on the step start times. Lines in a second that two steps share stay with the earlier step until the later step's opening line.

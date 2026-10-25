@@ -9,6 +9,17 @@ The engine, `arena-cleanup.py`, carries its own number and its own file,
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.13] - 2026-10-25
+
+### Changed
+
+- In the checks modal, each step row is a toggle for its own log lines, as on
+  GitHub's job page. The first failed step opens on its last page, a passed
+  job opens no step, and older pages still load on a scroll to the top.
+- The server splits a job log by step on the step start times. Two steps that
+  share a second split at the later step's opening line.
+- The demo job log carries a few lines for every step, so each row has lines.
+
 ## [0.3.12] - 2026-10-25
 
 ### Changed
