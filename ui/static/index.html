@@ -365,8 +365,9 @@
   .repo-card.pending { opacity: .6; pointer-events: none; }
   .repo-head, .repo-card.pending .repo-meta { display: inline-flex; align-items: center; vertical-align: middle; min-width: 0; }
   .repo-head > div { grid-area: name; display: flex; align-items: baseline; gap: 8px; max-width: 280px; padding: 12px; }
-  /* the nuu relative-timestamp face: monospace with tabular digits, so `12min ago` and `9h ago` line up */
-  .repo-since { flex: none; font: var(--fs-1) var(--mono); font-variant-numeric: tabular-nums; color: var(--dim); white-space: nowrap; }
+  /* the stamp reads in full on a desktop and compact on a phone, in the UI face */
+  .repo-since { flex: none; font-size: var(--fs-1); color: var(--dim); white-space: nowrap; }
+  .repo-since .short { display: none; }
   .repo-card .rm { grid-area: rm; margin: 12px 12px 12px 0; vertical-align: middle; }
   .repo-ico {
     --ico: var(--ico-l); grid-area: ico; margin: 12px 0 12px 12px;
@@ -901,6 +902,8 @@
       padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); gap: 8px;
     }
     .tabbar .btn { flex: 1; height: 42px; }
+    .repo-since .full { display: none; }
+    .repo-since .short { display: inline; }
     /* the nuu floating-overlay fade: the bar has no plate of its own. The page fades
        into the background behind the button and over 36 px above it, and the fade
        lifts over the last 192 px of scroll so the page end reads whole */
@@ -1806,7 +1809,8 @@
     const { at, what } = lastActive(s);
     if (!at) return null;
     return el("span", { class: "repo-since", "data-at": at, "data-what": what,
-      title: `Last active ${relativeTime(at)}: ${what}` }, relativeTime(at, true));
+      title: `Last active ${relativeTime(at)}: ${what}` },
+      el("span", { class: "full" }, relativeTime(at)), el("span", { class: "short" }, relativeTime(at, true)));
   }
   // The nuu relative form: `3h ago` compact, `3 hours ago` in full, no seconds
   function relativeTime(stamp, compact = false, now = Date.now()) {
@@ -1883,7 +1887,8 @@
   function refreshStamps() {
     for (const node of $("repo-grid").querySelectorAll(".repo-since[data-at]")) {
       const at = Number(node.dataset.at);
-      node.textContent = relativeTime(at, true);
+      node.querySelector(".full").textContent = relativeTime(at);
+      node.querySelector(".short").textContent = relativeTime(at, true);
       node.title = `Last active ${relativeTime(at)}: ${node.dataset.what}`;
     }
   }

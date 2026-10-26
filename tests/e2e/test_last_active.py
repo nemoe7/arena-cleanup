@@ -1,8 +1,9 @@
 """A dashboard card names the time since the repo was last active.
 
 The stamp is the newest of three: a check completion, an arena tip commit, and
-a PR edit. It reads in the nuu relative form, `30min ago`, and its title names
-the full form with the source (docs/design.md).
+a PR edit. A desktop reads the full form, `30 minutes ago`, and a phone the
+compact one, `30min ago`. The title names the full form with the source
+(docs/design.md).
 """
 
 from __future__ import annotations
@@ -21,6 +22,10 @@ pytestmark = pytest.mark.e2e
 SHOP = ".repo-card:has-text('shop-web')"
 DOCS = ".repo-card:has-text('docs-site')"
 COMPACT = re.compile(r"^(now|\d+(min|h|d|wk|mo|yr) ago)$")
+FULL = re.compile(
+  r"^(just now|yesterday|last (week|month|year)|an? (minute|hour) ago"
+  r"|\d+ (minutes|hours|days|weeks|months|years) ago)$"
+)
 HOUR = 3600
 
 
@@ -54,10 +59,10 @@ def test_the_newest_of_check_tip_and_edit_is_the_stamp(desktop: Walker) -> None:
   try:
     desktop.goto(1200)
     page.wait_for_selector(f"{SHOP} .repo-since")
-    shop = page.eval_on_selector(f"{SHOP} .repo-since", "e => [e.textContent, e.title]")
-    assert shop == ["30min ago", "Last active 30 minutes ago: PR #142 check"]
-    docs = page.eval_on_selector(f"{DOCS} .repo-since", "e => [e.textContent, e.title]")
-    assert docs == ["2d ago", "Last active 2 days ago: arena tip commit"]
+    shop = page.eval_on_selector(f"{SHOP} .repo-since", "e => [e.innerText, e.title]")
+    assert shop == ["30 minutes ago", "Last active 30 minutes ago: PR #142 check"]
+    docs = page.eval_on_selector(f"{DOCS} .repo-since", "e => [e.innerText, e.title]")
+    assert docs == ["2 days ago", "Last active 2 days ago: arena tip commit"]
     # one line: name first, stamp after it
     name = page.eval_on_selector(
       f"{SHOP} .repo-name", "e => e.getBoundingClientRect().toJSON()"
@@ -71,11 +76,23 @@ def test_the_newest_of_check_tip_and_edit_is_the_stamp(desktop: Walker) -> None:
     page.unroute_all(behavior="ignoreErrors")
 
 
-def test_every_ready_card_carries_a_compact_stamp(desktop: Walker) -> None:
+def test_every_ready_card_carries_a_full_stamp_on_a_desktop(desktop: Walker) -> None:
   desktop.goto(1200)
   page = desktop.page
   page.wait_for_selector(".repo-card .repo-since")
   stamps = page.eval_on_selector_all(
-    ".repo-card:not(.pending) .repo-since", "els => els.map((e) => e.textContent)"
+    ".repo-card:not(.pending) .repo-since", "els => els.map((e) => e.innerText)"
+  )
+  assert stamps and all(FULL.match(s) for s in stamps), stamps
+  face = page.eval_on_selector(".repo-since", "e => getComputedStyle(e).fontFamily")
+  assert "Inter" in face and "Monaspace" not in face, "the UI face, not the mono one"
+
+
+def test_every_ready_card_carries_a_compact_stamp_on_a_phone(phone: Walker) -> None:
+  phone.goto(1200)
+  page = phone.page
+  page.wait_for_selector(".repo-card .repo-since")
+  stamps = page.eval_on_selector_all(
+    ".repo-card:not(.pending) .repo-since", "els => els.map((e) => e.innerText)"
   )
   assert stamps and all(COMPACT.match(s) for s in stamps), stamps

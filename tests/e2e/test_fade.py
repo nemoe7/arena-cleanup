@@ -70,15 +70,3 @@ def test_the_phone_page_fades_behind_the_bottom_bar(phone: Walker) -> None:
       "() => parseFloat(getComputedStyle(document.getElementById('tabbar'), '::before').opacity) === 0"
     )
   phone.click("#back", 600)
-
-
-def test_the_compact_stamp_sits_in_the_tabular_monospace_face(desktop: Walker) -> None:
-  desktop.goto(1200)
-  page = desktop.page
-  page.wait_for_selector(".repo-since")
-  face = page.eval_on_selector(
-    ".repo-since",
-    "e => { const s = getComputedStyle(e); return [s.fontFamily, s.fontVariantNumeric]; }",
-  )
-  assert "Monaspace Neon" in face[0]
-  assert face[1] == "tabular-nums"

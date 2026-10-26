@@ -28,8 +28,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The icon tag carries the Lucide stroke attributes, and the GitHub mark takes
   its own 16 px tag. No glyph changes.
 - The phone bottom bar drops its glass plate and takes the nuu floating-overlay
-  fade behind the button. The compact card stamps sit in the monospace face
-  with tabular digits.
+  fade behind the button. The card stamp reads in full on a desktop and compact
+  on a phone.
 
 ## [0.3.15] - 2026-10-26
 
