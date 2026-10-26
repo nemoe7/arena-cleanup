@@ -65,10 +65,10 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: chromium-${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
+      # A miss downloads the browser and its libraries. A hit needs neither: the
+      # ubuntu-24.04 image ships the libraries with its own Chrome.
       - if: steps.chromium.outputs.cache-hit != 'true'
         run: uv run --no-sync playwright install --with-deps chromium
-      - if: steps.chromium.outputs.cache-hit == 'true'
-        run: uv run --no-sync playwright install-deps chromium
       # The suite needs git, gpg, git-filter-repo, and Chromium. The runner has
       # the first two. `uv run` puts git-filter-repo on PATH, and earlier steps Chromium.
       - run: uv run --no-sync pytest
