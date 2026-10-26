@@ -2081,11 +2081,15 @@
     // lets go of it and attaches to the latest run of the repo it shows
     if (state.es) { state.es.close(); state.es = null; }
     state.job = null;
-    setRunButton("idle");
+    // the list already flags a live run: the view opens on Cancel and the
+    // running status, so the button never shows Clean & Push first
+    const live = Boolean(repo.running);
+    setRunButton(live ? "attaching" : "idle");
+    if (live) setStatus("running", "running");
     show("repo");
     const status = refreshStatus();
     loadCommits();
-    reattach(repo.id, ++state.opened);
+    reattach(repo.id, ++state.opened, live);
     return status;
   }
 
@@ -2105,8 +2109,8 @@
   }
   // The latest run of a repo: a live one streams on, a finished one is
   // painted from its saved lines. A newer open or start wins over the answer.
-  async function reattach(repoId, opened) {
-    const known = lastRuns.get(repoId);
+  async function reattach(repoId, opened, live = false) {
+    const known = live ? null : lastRuns.get(repoId);
     if (known) paintRun(known);
     let snap;
     try {
@@ -2114,7 +2118,11 @@
     } catch {
       return;
     }
-    if (opened !== state.opened || !snap.status) return; // a newer view, or no run yet
+    if (opened !== state.opened) return; // a newer view
+    if (!snap.status) { // no run yet: a stale list flag lets go
+      if (live) { setStatus("", "idle"); setRunButton("idle"); }
+      return;
+    }
     if (known && known.id === snap.id) return;
     if (known) clearRun();
     if (snap.status === "running") {
@@ -2837,13 +2845,14 @@
   // live. Between the click and the job id it is disabled, so a second click
   // cannot start a second run.
   const setRunButton = (mode) => {
-    const running = mode === "running";
+    const running = mode === "running" || mode === "attaching";
     for (const id of ["start", "start-mobile"]) {
       const btn = $(id);
       btn.dataset.state = mode;
       btn.replaceChildren(...(running ? ["Cancel"] : [icon("broom-sparkles"), "Clean & Push"]));
       btn.classList.toggle("primary", !running);
-      btn.disabled = mode === "starting";
+      // no job id yet, while a run starts or the view attaches to one: no click lands
+      btn.disabled = mode === "starting" || mode === "attaching";
       if (running) btn.title = "Stops this run";
     }
     if (mode === "idle") renderCommand();

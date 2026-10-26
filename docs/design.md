@@ -247,9 +247,10 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - The dashboard view carries `aria-busy` while its read runs. Our bar is decorative and carries no role, since our loading line announces that read.
   - A fetch of the repo states spins the Reload glyph instead.
   - The repo view and Settings never show it, the minute fetch included.
-- `run button`: one button with `data-state` idle, starting, or running.
+- `run button`: one button with `data-state` idle, starting, attaching, or running.
   - Idle reads Clean & Push and is the primary.
   - Starting is disabled until the job id arrives.
+  - Attaching reads Cancel, disabled, while a repo the list flags as running opens and its latest run is read. It never shows Clean & Push first.
   - Running reads Cancel as a plain button.
   - Idle greys with a tooltip in three cases: `reading the branch state` from the run end until the status answers, `a clean would overwrite commits on main` below 0, and `nothing to clean on <branch>` at 0. Any other idle state keeps it live, an unknown count included.
 - `card-foot`: the action row of a card, right-aligned with an 8 px gap and 16 px of padding. The options card has none: its run button sits in the checkbox row.
@@ -578,3 +579,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-26: the live dot in every pill and button grows from 6 to 8 px, the nuu live-dot default. The header tool dots keep 6 px, the recipe's small size for a dense row.
 - Accepted 2026-10-26: the breakpoints move to the nuu clause set, 68em, 60em, and 30em, plus a 24em max-height query. The phone layout starts at 480 px, and on a phone held sideways the top bar and the sidebar scroll away.
 - Accepted 2026-10-26: one dialog shell serves the delete confirm, the PR checks, and the phase detail, as the nuu modal recipe draws it. A view is a template that mounts into the shared body and actions, so the page holds one `dialog` and one close x.
+- Accepted 2026-10-26: a repo opened during its own run paints Cancel from the first frame. The list flag seeds the view, and the latest-run answer attaches the stream, so Clean & Push never flashes before Cancel.
