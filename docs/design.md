@@ -229,7 +229,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Before a count the row carries the name alone.
 - `repo-card`: a `tr` of `grid`, a real `table` with `th` header cells, so the columns align across rows under the header row. Once the table outgrows its room the cells hand their content to the row, which lays the card out by area.
   - Row, left to right, four cells: the icon and name, the default branch pill, the arena rows stacked, and the actions.
-    - After the name, a dim `repo-since` stamp names how long ago the repo was last active, in nuu relative form: `3h ago`.
+    - After the name, a dim `repo-since` stamp names how long ago the repo was last active, in nuu relative form: `3h ago`. It sits in the monospace face with tabular digits, the nuu timestamp recipe.
     - Last active is the newest of a check completion, an arena tip commit, and a PR edit. The title gives the full form and the source.
     - The actions cell holds Clean, and Remove with the trash glyph.
     - The arena area takes the free width, so Clean and Remove sit at the right edge.
@@ -263,6 +263,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - `card-foot`: the action row of a card, right-aligned with an 8 px gap and 16 px of padding. The options card has none: its run button sits in the checkbox row.
   - Every card action sits there, so the x alone stays top right.
   - The options foot hides on a phone, where the tab bar runs.
+    - The tab bar is a fixed glass strip with the nuu floating-overlay fade: 36 px of page fade into the background under it. The fade lifts over the last 192 px of scroll.
 - `tree`: the path selector.
   - Rows are `treeitem`s with `aria-level`. A folder row carries `aria-expanded` and loads its children on the first open.
   - The trailing `tree-select` button toggles the path and reports `aria-pressed`. Rows and select buttons grow to 44 px on a phone.
@@ -591,3 +592,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-26: the engine rewrites and signs before it waits for running checks, so the push follows the last green check at once. The timeline gains a Checks wait row between Rewrite and sign and Push.
   - A red check or a cancel during the wait puts the branch and its tags back at the fetched tip.
 - Accepted 2026-10-26: the icon tag carries the Lucide stroke attributes, so an audit reads the glyph table as Lucide. The GitHub mark keeps its own 16 px tag with an Octicons note.
+- Accepted 2026-10-26: two more nuu recipes land. The phone bottom bar takes the floating-overlay fade, and the compact card stamps sit in the monospace face with tabular digits.

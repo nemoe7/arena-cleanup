@@ -27,6 +27,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   names, three engine docstrings, and three test docstrings.
 - The icon tag carries the Lucide stroke attributes, and the GitHub mark takes
   its own 16 px tag. No glyph changes.
+- The phone bottom bar takes the nuu floating-overlay fade, and the compact
+  card stamps sit in the monospace face with tabular digits.
 
 ## [0.3.15] - 2026-10-26
 
