@@ -199,8 +199,9 @@ def test_pr_gate(world: World) -> None:
 
 def test_checks_added_during_the_wait_count_in_the_total(world: World) -> None:
   """GitHub adds check runs while the engine waits: the total follows them."""
-  world.git("checkout", "-q", "main")
-  world.git("checkout", "-q", "-b", "arena/session-grow")
+  # the branch leaves origin's tip, so the push guard has nothing to protect
+  world.git("fetch", "-q", "origin")
+  world.git("checkout", "-q", "-B", "arena/session-grow", "origin/main")
   world.commit(
     "other-dev", "other@example.com", "2024-02-02T10:00:00+08:00", "feat: human\n"
   )
@@ -230,8 +231,8 @@ def test_checks_added_during_the_wait_count_in_the_total(world: World) -> None:
 
 def test_a_red_check_after_the_rewrite_restores_the_branch(world: World) -> None:
   """The wait follows the rewrite. A red check then puts the branch back, unpushed."""
-  world.git("checkout", "-q", "main")
-  world.git("checkout", "-q", "-b", "arena/session-wait")
+  world.git("fetch", "-q", "origin")
+  world.git("checkout", "-q", "-B", "arena/session-wait", "origin/main")
   world.commit(
     "other-dev", "other@example.com", "2024-02-01T10:00:00+08:00", "feat: human\n"
   )
