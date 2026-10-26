@@ -201,6 +201,7 @@ def test_checks_added_during_the_wait_count_in_the_total(world: World) -> None:
   """GitHub adds check runs while the engine waits: the total follows them."""
   # the branch leaves origin's tip, so the push guard has nothing to protect
   world.git("fetch", "-q", "origin")
+  main_before = world.rev("origin/main")
   world.git("checkout", "-q", "-B", "arena/session-grow", "origin/main")
   world.commit(
     "other-dev", "other@example.com", "2024-02-02T10:00:00+08:00", "feat: human\n"
@@ -224,9 +225,12 @@ def test_checks_added_during_the_wait_count_in_the_total(world: World) -> None:
     assert res.says("all 2 check(s) finished"), res.text
     assert not res.says("all 1 check(s) finished")
   finally:
+    # the push moved origin/main past the other arena branches: put it back
     world.git("checkout", "-q", "main")
+    world.git("-C", str(world.origin), "update-ref", "refs/heads/main", main_before)
     world.git("push", "-q", "origin", "--delete", "arena/session-grow")
     world.git("branch", "-q", "-D", "arena/session-grow")
+    world.git("fetch", "-q", "--prune", "origin")
 
 
 def test_a_red_check_after_the_rewrite_restores_the_branch(world: World) -> None:
