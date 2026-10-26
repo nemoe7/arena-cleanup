@@ -211,6 +211,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Clean up names the return, the reset, the branch deletes, and `Done`. A step the run skipped is left out.
     - A failed phase ends on its error line.
   - PR checks opens the pill view of the PR the run checked, with the same check rows, job logs, and Open PR. Without a PR with checks it names its steps: `Found PR #<n>`, `No open PR for <branch>`, `PR check skipped`, or `PR #<n> checks passed`.
+    - `All <n> checks finished` counts the check lines seen when the engine's own total is lower, since engines before 0.3.7 froze it at the first read.
 - `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout.
   - `check`: a label with a drawn checkbox.
     - The box is 16 px, 20 px on a phone, with a 4 px radius and the surface-2 fill.

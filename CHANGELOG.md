@@ -9,6 +9,13 @@ The engine, `arena-cleanup.py`, carries its own number and its own file,
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.16] - 2026-10-26
+
+### Fixed
+
+- The PR checks steps count the checks GitHub added during the wait, so an
+  engine log with a frozen total still reads the full count.
+
 ## [0.3.15] - 2026-10-26
 
 ### Changed

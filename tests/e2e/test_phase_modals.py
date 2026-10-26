@@ -250,6 +250,43 @@ def test_the_pr_checks_row_names_its_steps_without_a_pr_with_checks(
   desktop.click("#back", 600)
 
 
+GROWING = [
+  ("INFO", "arena-cleanup 0.3.6 starting"),
+  ("OK", "fetched and pruned origin"),
+  ("INFO", "switching to arena/elsewhere (tracking origin/arena/elsewhere)"),
+  ("OK", "already up to date (de96315)"),
+  ("INFO", "checking PR status for arena/elsewhere"),
+  ("INFO", "found PR #119"),
+  ("WARN", 'check "Repository Quality": IN_PROGRESS'),
+  ("OK", 'check "Review Dependencies": SUCCESS'),
+  ("INFO", "1 check(s) still running, waiting up to 15m00s (polling every 1s)"),
+  ("OK", 'check "Repository Quality": SUCCESS'),
+  ("OK", 'check "CodeQL": SUCCESS'),
+  ("INFO", "all 2 check(s) finished after 2m39s"),
+  ("OK", "PR #119 checks ok"),
+  ("INFO", "scanning 2 commit(s) as Nemo <nemo@example.com>"),
+  ("OK", "history rewritten: 2 commit(s): 1 rewritten, 1 signed, 1 untouched (0.3s)"),
+  ("INFO", "pushing (with lease) HEAD -> refs/heads/main"),
+  ("OK", "pushed 8ffa87d to origin/main"),
+  ("INFO", "returning to main"),
+  ("OK", "done"),
+]
+
+
+def test_checks_added_during_the_wait_count_in_the_pr_steps(desktop: Walker) -> None:
+  """An older engine froze its total at the first read. The steps count the lines."""
+  open_run(desktop, GROWING)
+  assert desktop.text('.phase[data-phase="pr"] .phase-sub') == "3/3"
+  modal = open_phase(desktop, "pr")
+  assert [s[1] for s in modal["steps"]] == [
+    "Found PR #119",
+    "All 3 checks finished",
+    "PR #119 checks passed",
+  ]
+  close_phase(desktop)
+  desktop.click("#back", 600)
+
+
 def test_a_running_rewrite_names_the_collected_commits_and_the_open_step(
   desktop: Walker,
 ) -> None:

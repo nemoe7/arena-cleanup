@@ -2753,8 +2753,12 @@
           [/^PR #(\d+) reports no status checks/i, "No checks on PR #{1}"],
           [/^would wait for (\d+) still-running check/i, (m) => `Would wait for ${plural(+m[1], "running check")}`],
           [/^(\d+) check\(s\) still running/i, null, (m) => ({ doing: `Waiting for ${plural(+m[1], "running check")}…` })],
-          [/^all (\d+) check\(s\) finished/i, (m) => `All ${plural(+m[1], "check")} finished`],
+          // the engine of 0.3.6 and before froze this total at its first read: the
+          // check lines seen so far keep the count honest for an old log
+          [/^all (\d+) check\(s\) finished/i,
+            (m) => `All ${plural(Math.max(+m[1], Object.keys(state.counts.checks).length), "check")} finished`],
           [/^PR #(\d+) checks ok/i, "PR #{1} checks passed"]] },
+        { optional: true, doing: "", ends: [[/^PR #(\d+) checks ok/i, "PR #{1} checks passed"]] },
       ],
     },
     rewrite: {
