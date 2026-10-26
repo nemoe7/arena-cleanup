@@ -12,9 +12,9 @@ and the engine uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The rewrite and the signing run before the wait for running checks, so
   the push follows the last green check at once. A red check or a cancel
   during the wait puts the branch and its tags back at the fetched tip.
-- The checks wait counts check runs GitHub adds during the wait in its
-  total. The heartbeat and the final line read `finished/total` from the
-  fresh summary instead of the first one.
+- The checks wait counts check runs GitHub adds during it in its total.
+  Heartbeat and final line read `finished/total` from the fresh summary
+  instead of the first one.
 
 ## [0.3.6] - 2026-10-24
 

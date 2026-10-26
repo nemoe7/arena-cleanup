@@ -301,7 +301,7 @@ WAITED = [
 
 
 def test_the_wait_after_the_rewrite_is_its_own_phase(desktop: Walker) -> None:
-  """The engine rewrites first, then waits: the wait row sits between the two."""
+  """The engine rewrites first, then waits: its wait row sits between the two."""
   open_run(desktop, WAITED)
   rows = desktop.page.evaluate(
     """() => [...document.querySelectorAll('#phases .phase')]
@@ -325,7 +325,7 @@ def test_the_wait_after_the_rewrite_is_its_own_phase(desktop: Walker) -> None:
 
 
 def test_checks_added_during_the_wait_count_in_the_pr_steps(desktop: Walker) -> None:
-  """An older engine froze its total at the first read. The steps count the lines."""
+  """An older engine froze its total at the first read. The steps count check lines."""
   open_run(desktop, GROWING)
   assert desktop.text('.phase[data-phase="pr"] .phase-sub') == "3/3"
   modal = open_phase(desktop, "pr")

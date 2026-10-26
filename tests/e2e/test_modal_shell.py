@@ -1,4 +1,4 @@
-"""One dialog shell serves the checks, the phase detail, and the delete confirm.
+"""One dialog shell serves the checks, phase detail, and delete confirm.
 
 The page holds a single `dialog`. Each view mounts its template into the body
 and the actions row. It names itself in `data-view` and sets the width class.

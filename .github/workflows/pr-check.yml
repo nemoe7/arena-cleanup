@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-python@v7.1.0
         with:
           python-version: "3.13"
-      - name: Check the commits, the title, and the body
+      - name: Check commits, title, and body
         env:
           # Values reach the script through the environment, never through script text.
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -42,7 +42,7 @@ jobs:
             --pr-title "$PR_TITLE" \
             --body-file "$PR_BODY_FILE" \
             --no-ste
-      - name: Check the version is one step above the base branch
+      - name: Check version is one step above base
         env:
           PR_BASE: ${{ github.event.pull_request.base.sha }}
           PR_HEAD: ${{ github.event.pull_request.head.sha }}

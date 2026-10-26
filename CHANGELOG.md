@@ -23,6 +23,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   engine log with a frozen total still reads the full count.
 - README names the Update Tags option, the browser checks, and the CI steps
   as they are. The engine tests that sign skip without gpg.
+- Short prose lines drop surplus articles after a text audit: workflow step
+  names, three engine docstrings, and three test docstrings.
 
 ## [0.3.15] - 2026-10-26
 

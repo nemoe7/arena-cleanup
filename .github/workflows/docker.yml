@@ -50,7 +50,7 @@ jobs:
 
       # The tip may sit one steering sync ahead of the tested commit. CI skips
       # those paths, and the image leaves them out, so that delta passes.
-      - name: Pin the tested commit
+      - name: Pin tested commit
         env:
           EXPECTED: ${{ github.event.workflow_run.head_sha || github.sha }}
         shell: bash
@@ -93,7 +93,7 @@ jobs:
           outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
-      - name: Smoke test the image
+      - name: Smoke test image
         env:
           IMAGE: ghcr.io/${{ github.repository }}
           DIGEST: ${{ steps.build.outputs.digest }}
@@ -103,7 +103,7 @@ jobs:
 
           # The CLI prints its own version. An image that lost the file fails here.
           docker run --rm --entrypoint python3 "${IMAGE}@${DIGEST}" /app/arena-cleanup.py -V
-      - name: Export the digest
+      - name: Export digest
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
         shell: bash
@@ -143,7 +143,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Create the manifest list
+      - name: Create manifest list
         working-directory: /tmp/digests
         env:
           IMAGE: ghcr.io/${{ github.repository }}

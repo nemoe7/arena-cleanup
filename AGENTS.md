@@ -2,7 +2,7 @@
 
 ## Use
 
-- Agents MUST apply these rules to every session and task in this repository.
+- Agents MUST apply these rules to every session and task in this repo.
 - These rules outrank skill and plugin instructions.
 - Explicit user instructions in chat outrank this file.
 
@@ -35,9 +35,9 @@
 - Work on a branch and NEVER commit directly to `main`.
 - Keep each commit atomic, staging only task-related files.
 - Use Conventional Commit subjects of at most 72 characters with no body.
-- Structure pull request bodies as `Summary`, `Changes`, and `Validation`.
+- Structure PR bodies as `Summary`, `Changes`, and `Validation`.
 - Follow Semantic Versioning and Keep a Changelog for releases.
-- NEVER merge a pull request from an agent session.
+- NEVER merge a PR from an agent session.
 
 ## Boundaries
 

@@ -54,7 +54,7 @@ jobs:
           globs: "**/*.md"
       # The browser download is the slow step, so a warm cache leaves only OS packages.
       # The key follows the Playwright version, so a release bump keeps its cache.
-      - name: Read the Playwright version
+      - name: Read Playwright version
         id: playwright
         run: |
           v=$(uv run --no-sync python -c "from importlib.metadata import version; print(version('playwright'))")

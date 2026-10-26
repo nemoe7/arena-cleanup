@@ -1039,7 +1039,7 @@ def wait_for_checks(
 
 
 class PendingChecks:
-  """Checks still running at the gate: the wait for them follows the rewrite."""
+  """Checks still running at the gate: their wait follows the rewrite."""
 
   def __init__(
     self,
@@ -1057,7 +1057,7 @@ class PendingChecks:
 
 
 class Gate:
-  """What the PR gate found: the PR number, and the checks left to wait for."""
+  """What the PR gate found: its PR number and the checks left to wait for."""
 
   def __init__(self, pr: int | None, pending: PendingChecks | None = None) -> None:
     self.pr = pr
@@ -2317,7 +2317,7 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
   if not stats.changed and cfg.dry_run:
     log.ok("history already clean, nothing to rewrite")  # real runs already said so
 
-  # The checks still running at the gate get their wait here, after the
+  # Checks still running at the gate get their wait here, after the
   # rewrite. The push then follows the last green check at once.
   if gate.pending:
     # the UI cancels with SIGTERM: during the wait it reads as an interrupt

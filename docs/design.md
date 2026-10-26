@@ -208,7 +208,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - A step list with stamp, message, and duration, the commit list after a rewrite, or the push facts as a `kv` list. No view repeats the log lines.
     - Prepare names three steps: `Fetched`, `Located remote arena branch`, and `Pulled arena/<slug>`. Each takes the stamp and duration of the line that ends it, and the open step reads `Fetching…`.
     - Rewrite and sign names `Collected <n> commits`, `Commits rewritten`, `Backup written`, `Signed <k> of <n> commits`, and the tag move, and reads `Signing <i>/<n>…` while it runs. A dry run reads `Would sign <k> commits`.
-    - Clean up names the return, the reset, the branch deletes, and `Done`. A step the run skipped is left out.
+    - Clean up names the return, reset, branch deletes, and `Done`. A step the run skipped is left out.
     - Checks wait reads `Waiting for <n> running checks…`, then `Waiting, <x>/<y> finished…`, and names `All <n> checks finished` and `PR #<n> checks passed`.
     - A failed phase ends on its error line.
   - PR checks opens the pill view of the PR the run checked, with the same check rows, job logs, and Open PR. Without a PR with checks it names its steps: `Found PR #<n>`, `No open PR for <branch>`, `PR check skipped`, or `PR #<n> checks passed`.
