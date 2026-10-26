@@ -7,6 +7,12 @@ file, `CHANGELOG.md`.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the engine uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.7] - 2026-10-26
+
+- The checks wait counts check runs GitHub adds during the wait in its
+  total. The heartbeat and the final line read `finished/total` from the
+  fresh summary instead of the first one.
+
 ## [0.3.6] - 2026-10-24
 
 - Log lines print commit hashes at 7 characters, the GitHub short SHA,

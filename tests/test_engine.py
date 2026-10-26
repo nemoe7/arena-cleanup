@@ -192,6 +192,18 @@ def test_pr_gate(world: World) -> None:
   assert res.seconds <= FAST_SECONDS, f"dry run waited {res.seconds:.0f}s"
 
 
+def test_checks_added_during_the_wait_count_in_the_total(world: World) -> None:
+  """GitHub adds check runs while the engine waits: the total follows them."""
+  world.git("checkout", "-q", "arena/session-1")
+  world.agent_commit("chore: work for the growing checks test")
+  world.gh_state("growing")
+  res = world.cleanup("run", "-K", "--check-interval", "1", "--check-timeout", "30")
+  assert res.says("1 check(s) still running"), res.text
+  assert res.says('check "lint": SUCCESS'), res.text
+  assert res.says("all 2 check(s) finished"), res.text
+  assert not res.says("all 1 check(s) finished")
+
+
 def test_failure_handling(world: World) -> None:
   world.git("checkout", "-q", "main")
   assert world.cleanup(cwd=world.origin).rc == 1

@@ -45,7 +45,7 @@ from typing import Any
 
 # the engine's own number. pyproject.toml carries the UI's, and
 # scripts/check_versions.py asks for one step per changed part.
-__version__ = "0.3.6"
+__version__ = "0.3.7"
 PROG = "arena-cleanup"
 
 # ==== Defaults: edit these, or override per run with the matching flags ======
@@ -994,9 +994,12 @@ def wait_for_checks(
   summary: CheckSummary,
   seen: dict[str, str],
 ) -> CheckSummary:
-  """Poll until no check is still running, or the timeout expires."""
+  """Poll until no check is still running, or the timeout expires.
+
+  GitHub adds check runs while others finish, so every count reads the
+  fresh summary: the total grows with them.
+  """
   started = time.time()
-  total = len(summary.runs)
   last_beat = started
   while True:
     remaining = timeout - (time.time() - started)
@@ -1007,7 +1010,7 @@ def wait_for_checks(
       )
 
     log.status(
-      f"waiting for checks... {summary.finished}/{total} finished "
+      f"waiting for checks... {summary.finished}/{len(summary.runs)} finished "
       f"(elapsed {_duration(time.time() - started)})"
     )
     time.sleep(min(interval, remaining))
@@ -1020,7 +1023,8 @@ def wait_for_checks(
       raise Fail(f"PR #{pr} has failing check(s): {summary.describe_failed()}")
     if not summary.running:
       log.info(
-        f"all {total} check(s) finished after {_duration(time.time() - started)}"
+        f"all {len(summary.runs)} check(s) finished after "
+        f"{_duration(time.time() - started)}"
       )
       return summary
 
@@ -1028,7 +1032,7 @@ def wait_for_checks(
     if not log.tty and time.time() - last_beat >= 60:
       last_beat = time.time()
       log.info(
-        f"still waiting: {summary.finished}/{total} finished "
+        f"still waiting: {summary.finished}/{len(summary.runs)} finished "
         f"(elapsed {_duration(time.time() - started)})"
       )
 
