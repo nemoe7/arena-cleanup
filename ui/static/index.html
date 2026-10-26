@@ -898,16 +898,15 @@
     .log-row { grid-template-columns: 58px 38px minmax(0, 1fr); gap: 8px; padding: 0 12px; }
     .tabbar {
       display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-      border-top: 1px solid var(--line); background: var(--glass-2);
-      backdrop-filter: blur(14px); padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
-      gap: 8px;
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); gap: 8px;
     }
     .tabbar .btn { flex: 1; height: 42px; }
-    /* the nuu floating-overlay fade: the page fades over 36 px as it slides under the
-       bar, and the fade lifts over the last 192 px of scroll so the page end reads whole */
+    /* the nuu floating-overlay fade: the bar has no plate of its own. The page fades
+       into the background behind the button and over 36 px above it, and the fade
+       lifts over the last 192 px of scroll so the page end reads whole */
     .tabbar::before {
-      content: ""; position: absolute; left: 0; right: 0; bottom: calc(100% + 1px); height: var(--edge-fade-end, 36px);
-      background: linear-gradient(to top, var(--bg), transparent); pointer-events: none;
+      content: ""; position: absolute; left: 0; right: 0; bottom: 0; top: calc(-1 * var(--edge-fade-end, 36px)); z-index: -1;
+      background: linear-gradient(to top, var(--bg) calc(100% - var(--edge-fade-end, 36px)), transparent); pointer-events: none;
     }
     @media (prefers-reduced-motion: no-preference) {
       @supports (animation-timeline: scroll(root)) {

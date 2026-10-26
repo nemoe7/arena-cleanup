@@ -40,23 +40,27 @@ def test_the_scroll_panels_fade_at_their_edges(desktop: Walker) -> None:
 
 BAR_FADE = """() => {
   const bar = document.getElementById('tabbar');
+  const own = getComputedStyle(bar);
   const s = getComputedStyle(bar, '::before');
-  return { height: s.height, image: s.backgroundImage, animation: s.animationName,
-    opacity: parseFloat(s.opacity), bottom: parseFloat(s.bottom),
-    bar: bar.getBoundingClientRect().height,
+  return { height: parseFloat(s.height), image: s.backgroundImage, animation: s.animationName,
+    opacity: parseFloat(s.opacity), top: parseFloat(s.top), z: s.zIndex,
+    bar: bar.getBoundingClientRect().height, plate: own.backgroundColor, border: own.borderTopWidth,
     supported: CSS.supports('animation-timeline: scroll(root)') };
 }"""
 
 
 def test_the_phone_page_fades_behind_the_bottom_bar(phone: Walker) -> None:
-  """The nuu floating-overlay fade: 36 px above the bar, lifted at the page end."""
+  """The nuu floating-overlay fade: no plate, the page fades behind the button."""
   phone.goto(1200)
   phone.click(".repo-card:has-text('shop-web') .repo-name", 800)
   page = phone.page
   page.wait_for_selector("#commits .commit")
   fade = page.evaluate(BAR_FADE)
-  assert fade["height"] == "36px"
-  assert fade["bottom"] == fade["bar"], "the strip sits on the top edge of the bar"
+  assert fade["plate"] == "rgba(0, 0, 0, 0)" and fade["border"] == "0px", "no plate"
+  assert fade["top"] == -36 and fade["height"] == fade["bar"] + 36, (
+    "the strip covers the bar and 36 px"
+  )
+  assert fade["z"] == "-1", "the strip sits behind the button"
   assert "linear-gradient" in fade["image"]
   if fade["supported"]:
     assert fade["animation"] == "tab-fade"
