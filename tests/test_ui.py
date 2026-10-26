@@ -1315,7 +1315,7 @@ def test_the_log_clock_reads_on_the_card() -> None:
   assert ratio >= TEXT_CONTRAST, f"--dim on --surface gives {ratio:.2f}:1"
 
 
-ICON_KEY_RE = re.compile(r'^    "?([a-z-]+)"?: svg\(', re.MULTILINE)
+ICON_KEY_RE = re.compile(r'^    "?([a-z-]+)"?: (?:svg|mark)\(', re.MULTILINE)
 GLYPH_ONLY = {"commits-refresh": "Reload commits", "copy": "Copy log"}
 GLYPH_BUTTONS = {
   "commits-refresh": "refresh-cw",

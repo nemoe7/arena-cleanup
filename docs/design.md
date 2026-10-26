@@ -578,10 +578,9 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: a step row in the job pane is a toggle for its own log lines, as on GitHub's job page. The first failed step opens on its last page, a passed job opens no step, and each open log pages on its own.
   - The server splits the job log on the step start times. Lines in a second that two steps share stay with the earlier step until the later step's opening line.
 - Accepted 2026-10-25: the focus ring shows on keyboard travel alone, nuu clause 9. A script focus or a pointer press draws none, and the generic ring no longer rounds a control's corners on focus.
-- Accepted 2026-10-25: three house density readings stay as they are, recorded as nuu deviations.
+- Accepted 2026-10-25: two house density readings stay as they are, recorded as nuu deviations. The add bar width was a third until 2026-10-26, when the audit stopped flagging it.
   - nuu-deviation: phase-rows-ink: the phase timeline rows ink 0.11 to 0.30 of their 441 px at 1280 px. Each row holds a dot, a name, a count, and a time.
   - nuu-deviation: settings-column-ink: the settings column inks 0.13 of 1280 px, two cards over a sparse page
-  - nuu-deviation: add-bar-width: the add bar field spans its row at 1280 px, a URL or an absolute path needs the room
 - Accepted 2026-10-25: the timeout slider follows the nuu range recipe. A tick marks each of its ten stops, both ends read 0 and 120 min in mono, and the readout stays beside the track.
 - Accepted 2026-10-26: the live dot in every pill and button grows from 6 to 8 px, the nuu live-dot default. The header tool dots keep 6 px, the recipe's small size for a dense row.
 - Accepted 2026-10-26: the breakpoints move to the nuu clause set, 68em, 60em, and 30em, plus a 24em max-height query. The phone layout starts at 480 px, and on a phone held sideways the top bar and the sidebar scroll away.
@@ -591,3 +590,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-26: short labels drop their articles and fillers. A tooltip, a button name, or a step name reads like `Show PR checks`, `Open repo`, or `Deleting local branch…`, while a sentence-long hint keeps its words.
 - Accepted 2026-10-26: the engine rewrites and signs before it waits for running checks, so the push follows the last green check at once. The timeline gains a Checks wait row between Rewrite and sign and Push.
   - A red check or a cancel during the wait puts the branch and its tags back at the fetched tip.
+- Accepted 2026-10-26: the icon tag carries the Lucide stroke attributes, so an audit reads the glyph table as Lucide. The GitHub mark keeps its own 16 px tag with an Octicons note.

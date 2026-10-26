@@ -25,6 +25,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   as they are. The engine tests that sign skip without gpg.
 - Short prose lines drop surplus articles after a text audit: workflow step
   names, three engine docstrings, and three test docstrings.
+- The icon tag carries the Lucide stroke attributes, and the GitHub mark takes
+  its own 16 px tag. No glyph changes.
 
 ## [0.3.15] - 2026-10-26
 
