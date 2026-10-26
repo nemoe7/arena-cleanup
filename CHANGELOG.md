@@ -16,6 +16,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The PR checks phase row opens the pill view of the PR the run checked. The
   Rewrite and sign and Clean up rows name their steps, so no phase row repeats
   the log lines.
+- Every checks opener, the pill, the arena row button, and the PR checks phase
+  row, reads Show PR checks.
 
 ### Fixed
 

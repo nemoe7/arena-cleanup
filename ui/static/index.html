@@ -1422,7 +1422,7 @@
     const cls = pr.state === "passing" ? "ok" : pr.state === "failing" ? "err" : pr.state === "running" ? "warn" : "mono";
     if (pr.state === "none") return el("span", { class: "pill mono" }, `PR #${pr.number}, no checks`);
     const tag = open ? "button" : "span";
-    return el(tag, { class: "pill " + cls, title: open ? `Show the checks of PR #${pr.number}` : pr.title,
+    return el(tag, { class: "pill " + cls, title: open ? "Show PR checks" : pr.title,
       type: open ? "button" : false, onclick: open ? (e) => { e.stopPropagation(); open(); } : false },
       `PR #${pr.number}`,
       `, ${pr.passed}/${pr.total}`);
@@ -2182,8 +2182,8 @@
                aheadPill((s.ahead || {})[b], s.default, "meta ahead"),
                el("span", { class: "meta" }, metaFor((s.pr || {})[b], s.pr_checked)))),
            ((s.pr || {})[b] || {}).total
-             ? el("button", { type: "button", class: "icon-btn arena-checks", "aria-label": `Show the checks of ${b}`,
-                 title: "Show the PR checks", onclick: () => openChecks(state.repo.id, b) },
+             ? el("button", { type: "button", class: "icon-btn arena-checks", "aria-label": `Show PR checks of ${b}`,
+                 title: "Show PR checks", onclick: () => openChecks(state.repo.id, b) },
                  icon("check"))
              : null,
            el("button", { type: "button", class: "icon-btn arena-del", "aria-label": `Delete ${b}`,
@@ -2596,7 +2596,7 @@
     $("phases").replaceChildren(...state.phases.map((p) =>
       el("li", { class: "phase", "data-phase": p.id, "data-state": "idle" },
         el("button", { type: "button", class: "phase-head", disabled: true,
-          title: `Show the ${p.name} steps`, onclick: () => openPhase(p.id) },
+          title: p.id === "pr" ? "Show PR checks" : `Show the ${p.name} steps`, onclick: () => openPhase(p.id) },
           el("span", { class: "phase-ico", "aria-hidden": "true" }, icon("circle-small", "ico-svg idle")),
           el("span", { class: "phase-name" }, p.name),
           el("span", { class: "phase-sub" }, p.sub),

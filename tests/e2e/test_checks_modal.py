@@ -40,6 +40,7 @@ def test_the_pill_opens_the_checks_and_the_repo_view_shares_the_modal(
   walker.goto(1200)
   page.wait_for_selector(f"{CARD} button.pill")
   assert page.evaluate(MODAL)["open"] is False
+  assert page.get_attribute(f"{CARD} button.pill", "title") == "Show PR checks"
   page.click(f"{CARD} button.pill")
   page.wait_for_selector("#modal[open]")
   modal = page.evaluate(MODAL)
@@ -50,6 +51,11 @@ def test_the_pill_opens_the_checks_and_the_repo_view_shares_the_modal(
   page.wait_for_function("!document.getElementById('modal').open")
   walker.click(f"{CARD} .repo-name", 800)
   page.wait_for_selector(".arena-checks")
+  assert page.get_attribute(".arena-checks", "title") == "Show PR checks"
+  assert (
+    page.get_attribute(".arena-checks", "aria-label")
+    == "Show PR checks of arena/1b9d4c7e-billing-api"
+  )
   page.click(".arena-checks")
   page.wait_for_selector("#modal[open]")
   assert page.evaluate(MODAL)["rows"] == ROWS

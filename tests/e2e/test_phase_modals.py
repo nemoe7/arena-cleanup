@@ -223,6 +223,8 @@ def test_the_pr_checks_row_opens_the_pill_view_of_the_checked_pr(
 ) -> None:
   """The run checked a PR with checks: its row is the pill view, not the lines."""
   open_run(desktop, RUN)
+  head = '.phase[data-phase="pr"] .phase-head'
+  assert desktop.page.get_attribute(head, "title") == "Show PR checks"
   modal = open_phase(desktop, "pr")
   assert modal["title"] == "PR #57 checks"
   checks = desktop.page.evaluate(CHECKS)
