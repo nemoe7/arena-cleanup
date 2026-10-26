@@ -21,7 +21,7 @@ Run every command as the bare `arena-preview`; the script under the installed `a
 | `worktree start [-g, --gate <gate-name>] [-a, --allow <glob>] <name> <destination>` | Create a detached task worktree outside the root, beside a named root gate when one runs |
 | `worktree collect <name>` | Print the allowed detached-worktree patch after a green root gate |
 | `ack <markdown>` | Omit IDs only when exactly one non-quiet note or report answer is pending. Supply one Markdown text. With multiple pending items, supply the ID |
-| `ack <id> <markdown>` | Answer one delivered ID with a rendered reply; single-quote inline text. Add `-i, --id`, `-t, --title`, `-T, --type`, and repeatable `-d, --detail` to create its linked task atomically |
+| `ack <id> <markdown>` | Answer one delivered ID with a rendered reply; single-quote inline text. Add `-i, --id`, `-t, --title`, `-T, --type`, `-S, --scope <scope>`, and repeatable `-d, --detail` to create its linked task atomically |
 | `task list [-f, --full]` | List upcoming task IDs, order, status, report links, set type marks and each linked report answer with its stamp and text. With `-f`, include finished tasks. Use task ID for details |
 | `task show ID` | Print one stored task: its title, status, order, primary type when set, report link, blocked mark and every detail |
 | `task set ID TITLE [DETAIL ...]` | Add or update a task; every task carries at least one detail, and reject a write that leaves none; one task holds one job, so several jobs mean several tasks rather than one task with many details; `-m, --msg-id` is optional and only a note-born or report-born task carries it; `-u, --unblocked` clears a report wait. |

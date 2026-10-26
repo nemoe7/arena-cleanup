@@ -908,6 +908,25 @@ class AssetRedirect(urllib.request.HTTPRedirectHandler):
     return super().redirect_request(request, fp, code, message, headers, newurl)
 
 
+def resolve_named_breakpoints(
+  project_root: Path | None = None,
+) -> tuple[str, ...]:
+  cfg_info = load_nuu_config(project_root or Path.cwd())
+  cfg = cfg_info["config"]
+  cfg_audit = cfg.get("audit") if isinstance(cfg.get("audit"), dict) else {}
+  raw = (
+    cfg_audit.get("named_breakpoints")
+    or cfg_audit.get("breakpoints")
+    or cfg.get("named_breakpoints")
+    or cfg.get("breakpoints")
+  )
+  if isinstance(raw, list):
+    items = [str(x).strip() for x in raw if str(x).strip()]
+    if items:
+      return tuple(items)
+  return NAMED_BREAKPOINTS
+
+
 def browser(args):
   if args.timeout <= 0 or any(width <= 0 for width in args.widths):
     raise ValueError("timeout and widths must be positive")
@@ -923,8 +942,23 @@ def browser(args):
     if isinstance(cfg_info["config"].get("audit"), dict)
     else {}
   )
+  cfg_viewports = (
+    cfg_audit.get("viewports") or cfg_info["config"].get("viewports") or []
+  )
+  configured_heights: dict[int, int] = {}
+  viewport_widths: list[int] = []
+  if isinstance(cfg_viewports, list):
+    for item in cfg_viewports:
+      m = re.match(r"^\s*(\d+)\s*x\s*(\d+)\s*$", str(item), re.IGNORECASE)
+      if m:
+        vw, vh = int(m.group(1)), int(m.group(2))
+        if vw > 0 and vh > 0:
+          viewport_widths.append(vw)
+          configured_heights[vw] = vh
   cfg_widths = cfg_audit.get("widths") or cfg_info["config"].get("widths") or []
   configured_widths = [w for w in cfg_widths if isinstance(w, int) and w > 0]
+  if not configured_widths and viewport_widths:
+    configured_widths = viewport_widths
   cfg_report_widths = (
     cfg_audit.get("report_widths") or cfg_info["config"].get("report_widths") or []
   )
@@ -944,6 +978,7 @@ def browser(args):
     "url": args.url,
     "output": str(Path(args.artifacts).resolve()),
     "widths": selected_widths,
+    "heights": configured_heights,
     "report_widths": report_widths,
     "selector": args.selector,
     "ready": getattr(args, "ready", None),

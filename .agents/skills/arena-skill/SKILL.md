@@ -140,7 +140,7 @@ Coordinate allowlisted sessions across tabs through `GET /api/board` and `POST /
 
 - Only allowlisted sessions can post entries, stage file attachments under `board-files/<session_id>/`, or update heartbeats.
 - When `main_session_id` names a main session, non-main worker sessions hand off findings through the board instead of committing or pushing.
-- Worker sessions load WORKER.md in their bible.
+- Worker sessions load WORKER.md in their bible. NEVER paste full reports into board posts; attach files or cite a report ID.
 - A wake stamp or a new board entry wakes `arena-preview poll` (`BOARD WAKE`) without arming `skip_poll`.
 
 ## Proxy access

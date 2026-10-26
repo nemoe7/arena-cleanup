@@ -883,7 +883,15 @@ async function run() {
   const output = fs.mkdtempSync(path.join(artifactRoot, 'capture-'));
   const captures = [];
   const timeout = request.timeout * 1000;
-  const HOUSE_HEIGHTS = {1920: 957, 1080: 2437, 958: 958, 411: 799, 855: 325};
+  const HOUSE_HEIGHTS = {
+    1920: 957,
+    1372: 883,
+    1080: 2437,
+    958: 958,
+    411: 799,
+    855: 325,
+    ...(request.heights || {}),
+  };
   const REPORT_WIDTHS = Array.isArray(request.report_widths) && request.report_widths.length
     ? request.report_widths
     : [1920, 411];
