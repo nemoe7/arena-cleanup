@@ -38,7 +38,9 @@ def start_parked(walker: Walker, demo: Demo, name: str) -> None:
   )
 
 
-def test_the_job_pane_leaves_the_live_run_alone(desktop: Walker, demo: Demo) -> None:
+def test_the_job_pane_leaves_the_live_run_alone(
+  desktop: Walker, demo: Demo, signing: None
+) -> None:
   page = desktop.page
   start_parked(desktop, demo, "billing-api")
   try:
@@ -109,7 +111,9 @@ def test_a_poll_left_over_never_paints_another_repo(
     page.unroute_all(behavior="ignoreErrors")
 
 
-def test_a_failed_cancel_never_says_cancelled(desktop: Walker, demo: Demo) -> None:
+def test_a_failed_cancel_never_says_cancelled(
+  desktop: Walker, demo: Demo, signing: None
+) -> None:
   page = desktop.page
   start_parked(desktop, demo, "docs-site")
   try:

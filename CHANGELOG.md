@@ -11,6 +11,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.16] - 2026-10-26
 
+### Added
+
+- A Checks wait phase row between Rewrite and sign and Push. The engine of
+  0.3.7 waits for running checks after the rewrite, and the row carries that
+  wait with its own count and steps.
+
 ### Fixed
 
 - The PR checks steps count the checks GitHub added during the wait, so an

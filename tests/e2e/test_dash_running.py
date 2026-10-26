@@ -107,7 +107,7 @@ def test_a_live_job_marks_its_row(desktop: Walker) -> None:
 
 
 def test_a_run_started_here_marks_its_row_before_the_list_answers(
-  desktop: Walker, demo: Demo
+  desktop: Walker, demo: Demo, signing: None
 ) -> None:
   """Back from the repo view finds the card grey, even on a stale list read."""
   page = desktop.page

@@ -45,6 +45,7 @@ TIMES = {
   "prepare": "6.0s",
   "pr": "3.0s",
   "rewrite": "2.0s",
+  "wait": "",
   "publish": "2.0s",
   "sync": "2.0s",
 }
@@ -85,7 +86,7 @@ def rows_after(walker: Walker, lines: list[tuple[str, str]]) -> dict[str, str]:
 def test_the_rows_add_up_to_the_wall_clock(desktop: Walker) -> None:
   rows = rows_after(desktop, RUN)
   assert rows == TIMES, "each phase runs until the next one starts"
-  assert sum(float(v[:-1]) for v in rows.values()) == float(len(RUN) - 1)
+  assert sum(float(v[:-1]) for v in rows.values() if v) == float(len(RUN) - 1)
 
 
 def test_an_early_deletion_and_a_late_scan_stay_in_their_phases(

@@ -28,7 +28,7 @@ BUTTON = """() => {
 
 
 def test_an_open_during_a_run_paints_cancel_before_the_answer(
-  desktop: Walker, demo: Demo
+  desktop: Walker, demo: Demo, signing: None
 ) -> None:
   page = desktop.page
   held: list[Any] = []

@@ -46,7 +46,7 @@ def test_a_finished_run_comes_back_after_a_page_reload(desktop: Walker) -> None:
 
 
 def test_a_live_run_streams_on_after_a_return_to_the_repo(
-  desktop: Walker, demo: Demo
+  desktop: Walker, demo: Demo, signing: None
 ) -> None:
   desktop.goto(1200)
   desktop.click(".repo-card:has-text('docs-site') .repo-name", 800)

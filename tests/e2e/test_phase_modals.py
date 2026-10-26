@@ -273,6 +273,57 @@ GROWING = [
 ]
 
 
+WAITED = [
+  ("INFO", "arena-cleanup 0.3.7 starting"),
+  ("OK", "fetched and pruned origin"),
+  ("INFO", "switching to arena/elsewhere (tracking origin/arena/elsewhere)"),
+  ("OK", "already up to date (de96315)"),
+  ("INFO", "checking PR status for arena/elsewhere"),
+  ("INFO", "found PR #119"),
+  ("WARN", 'check "Repository Quality": IN_PROGRESS'),
+  ("OK", 'check "Review Dependencies": SUCCESS'),
+  (
+    "INFO",
+    "1 check(s) still running, waiting up to 15m00s after the rewrite (polling every 1s)",
+  ),
+  ("INFO", "scanning 2 commit(s) as Nemo <nemo@example.com>"),
+  ("OK", "history rewritten: 2 commit(s): 1 rewritten, 1 signed, 1 untouched (0.3s)"),
+  ("INFO", "waiting for PR #119 checks (1 still running)"),
+  ("OK", 'check "Repository Quality": SUCCESS'),
+  ("OK", 'check "CodeQL": SUCCESS'),
+  ("INFO", "all 3 check(s) finished after 2m39s"),
+  ("OK", "PR #119 checks ok"),
+  ("INFO", "pushing (with lease) HEAD -> refs/heads/main"),
+  ("OK", "pushed 8ffa87d to origin/main"),
+  ("INFO", "returning to main"),
+  ("OK", "done"),
+]
+
+
+def test_the_wait_after_the_rewrite_is_its_own_phase(desktop: Walker) -> None:
+  """The engine rewrites first, then waits: the wait row sits between the two."""
+  open_run(desktop, WAITED)
+  rows = desktop.page.evaluate(
+    """() => [...document.querySelectorAll('#phases .phase')]
+      .map((li) => [li.dataset.phase, li.dataset.state, li.querySelector('.phase-sub').textContent])"""
+  )
+  assert [r[0] for r in rows] == ["prepare", "pr", "rewrite", "wait", "publish", "sync"]
+  assert [r[1] for r in rows] == ["done"] * 6
+  subs = {r[0]: r[2] for r in rows}
+  assert subs["pr"] == "3/3" and subs["wait"] == "3/3"
+  modal = open_phase(desktop, "pr")
+  assert [s[1] for s in modal["steps"]] == ["Found PR #119", "1 check still running"]
+  close_phase(desktop)
+  modal = open_phase(desktop, "wait")
+  assert modal["title"] == "Checks wait"
+  assert [s[1] for s in modal["steps"]] == [
+    "All 3 checks finished",
+    "PR #119 checks passed",
+  ]
+  close_phase(desktop)
+  desktop.click("#back", 600)
+
+
 def test_checks_added_during_the_wait_count_in_the_pr_steps(desktop: Walker) -> None:
   """An older engine froze its total at the first read. The steps count the lines."""
   open_run(desktop, GROWING)
@@ -280,6 +331,7 @@ def test_checks_added_during_the_wait_count_in_the_pr_steps(desktop: Walker) -> 
   modal = open_phase(desktop, "pr")
   assert [s[1] for s in modal["steps"]] == [
     "Found PR #119",
+    "1 check still running",
     "All 3 checks finished",
     "PR #119 checks passed",
   ]
@@ -301,7 +353,7 @@ def test_a_running_rewrite_names_the_collected_commits_and_the_open_step(
 
 def test_idle_rows_do_not_open(desktop: Walker) -> None:
   open_run(desktop, None)
-  assert desktop.count(".phase-head:disabled") == 5
+  assert desktop.count(".phase-head:disabled") == 6
 
 
 RUN_GLYPH = """() => {

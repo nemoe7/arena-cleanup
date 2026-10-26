@@ -7,6 +7,7 @@ The page objects live in `scripts/walk.py`, the hand-run walk. Set
 from __future__ import annotations
 
 import os
+import shutil
 from collections.abc import Iterator
 from typing import Any
 
@@ -39,6 +40,13 @@ def browser(playwright: Any) -> Iterator[Any]:
     pytest.skip(f"no Chromium for Playwright: {str(exc).splitlines()[0]}")
   yield instance
   instance.close()
+
+
+@pytest.fixture
+def signing() -> None:
+  """A parked run signs before it waits for its checks, so it needs gpg."""
+  if shutil.which("gpg") is None:
+    pytest.skip("no gpg: the run cannot reach its checks wait")
 
 
 @pytest.fixture(scope="module")

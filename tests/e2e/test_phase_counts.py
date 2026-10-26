@@ -114,7 +114,9 @@ def test_the_checks_row_counts_passed_of_total(desktop: Walker) -> None:
   assert rows["rewrite"] == "collecting 23 commits"
 
 
-def test_a_waiting_check_shows_as_live(desktop: Walker, demo: Demo) -> None:
+def test_a_waiting_check_shows_as_live(
+  desktop: Walker, demo: Demo, signing: None
+) -> None:
   desktop.goto(1200)
   desktop.click(".repo-card:has-text('docs-site') .repo-name", 800)
   demo.slow_checks(True)
