@@ -52,7 +52,7 @@ MODAL = """() => {
       .map((li) => ['.t', '.msg', '.d'].map((c) => li.querySelector(c).textContent)),
     kv: [...body.querySelectorAll('.kv dt, .kv dd')].map((e) => e.textContent),
     commits: body.querySelectorAll('.commit').length,
-    link: !document.getElementById('phase-link').hidden,
+    link: Boolean(document.getElementById('phase-link')) && !document.getElementById('phase-link').hidden,
     foot: [...document.querySelectorAll('#modal .modal-actions > *')]
       .filter((e) => !e.hidden && !e.parentElement.hidden).map((e) => e.textContent.trim()) };
 }"""
@@ -198,14 +198,65 @@ def test_the_push_row_shows_the_move_the_lease_and_the_tags(desktop: Walker) -> 
   desktop.click("#back", 600)
 
 
-def test_the_last_row_reads_clean_up_and_lists_its_steps(desktop: Walker) -> None:
+def test_the_last_row_reads_clean_up_and_names_its_steps(desktop: Walker) -> None:
   open_run(desktop, RUN)
   assert desktop.text('.phase[data-phase="sync"] .phase-name') == "Clean up"
   modal = open_phase(desktop, "sync")
   assert modal["title"] == "Clean up"
-  assert [s[1] for s in modal["steps"]] == [text for _, text in RUN[-3:]]
+  assert [s[1] for s in modal["steps"]] == [
+    "Returned to main",
+    "Deleted origin/arena/4c3a9b5f-infra-tools",
+    "Done, 23 commits rewritten",
+  ], "named steps, not the log lines"
   assert modal["foot"] == [], "no link, no foot"
   close_phase(desktop)
+  desktop.click("#back", 600)
+
+
+CHECKS = """() => ({
+  rows: [...document.querySelectorAll('#modal .check-list li .name')].map((e) => e.textContent),
+  view: document.getElementById('modal').dataset.view })"""
+
+
+def test_the_pr_checks_row_opens_the_pill_view_of_the_checked_pr(
+  desktop: Walker,
+) -> None:
+  """The run checked a PR with checks: its row is the pill view, not the lines."""
+  open_run(desktop, RUN)
+  modal = open_phase(desktop, "pr")
+  assert modal["title"] == "PR #57 checks"
+  checks = desktop.page.evaluate(CHECKS)
+  assert checks["view"] == "checks" and checks["rows"] == ["CI / lint", "CI / test"]
+  assert modal["steps"] == [], "no log lines"
+  assert modal["foot"] == ["Open PR"]
+  close_phase(desktop)
+  desktop.click("#back", 600)
+
+
+def test_the_pr_checks_row_names_its_steps_without_a_pr_with_checks(
+  desktop: Walker,
+) -> None:
+  lines = [
+    (level, text.replace("arena/4c3a9b5f-infra-tools", "arena/elsewhere"))
+    for level, text in RUN
+  ]
+  open_run(desktop, lines)
+  modal = open_phase(desktop, "pr")
+  assert modal["title"] == "PR checks"
+  assert [s[1] for s in modal["steps"]] == ["PR #57 checks passed"]
+  close_phase(desktop)
+  desktop.click("#back", 600)
+
+
+def test_a_running_rewrite_names_the_collected_commits_and_the_open_step(
+  desktop: Walker,
+) -> None:
+  open_run(desktop, RUN[:8], status="running")
+  desktop.page.wait_for_selector('.phase[data-phase="rewrite"][data-state="run"]')
+  modal = open_phase(desktop, "rewrite")
+  assert [s[1] for s in modal["steps"]] == ["Collected 23 commits", "Signing…"]
+  close_phase(desktop)
+  desktop.page.unroute(JOB)
   desktop.click("#back", 600)
 
 

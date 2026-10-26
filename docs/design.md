@@ -205,8 +205,12 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - A running job shows a note instead, since GitHub serves the log once the job ends.
   - Steps refresh every 10 s while a job runs. Closing the modal or the row stops the timer.
 - `phase`: the wide view behind each run phase row, which is a button once the row has lines.
-  - A step list with stamp, message, and duration, the commit list after a rewrite, or the push facts as a `kv` list.
-    - Prepare names three steps in place of its log: `Fetched`, `Located remote arena branch`, and `Pulled arena/<slug>`. Each takes the stamp and duration of the line that ends it, and the open step reads `Fetching…`.
+  - A step list with stamp, message, and duration, the commit list after a rewrite, or the push facts as a `kv` list. No view repeats the log lines.
+    - Prepare names three steps: `Fetched`, `Located remote arena branch`, and `Pulled arena/<slug>`. Each takes the stamp and duration of the line that ends it, and the open step reads `Fetching…`.
+    - Rewrite and sign names `Collected <n> commits`, `Rewrote the commits`, `Backup written`, `Signed <k> of <n> commits`, and the tag move, and reads `Signing <i>/<n>…` while it runs. A dry run reads `Would sign <k> commits`.
+    - Clean up names the return, the reset, the branch deletes, and `Done`. A step the run skipped is left out.
+    - A failed phase ends on its error line.
+  - PR checks opens the pill view of the PR the run checked, with the same check rows, job logs, and Open PR. Without a PR with checks it names its steps: `Found PR #<n>`, `No open PR for <branch>`, `PR check skipped`, or `PR #<n> checks passed`.
 - `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout.
   - `check`: a label with a drawn checkbox.
     - The box is 16 px, 20 px on a phone, with a 4 px radius and the surface-2 fill.
@@ -580,3 +584,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-26: the breakpoints move to the nuu clause set, 68em, 60em, and 30em, plus a 24em max-height query. The phone layout starts at 480 px, and on a phone held sideways the top bar and the sidebar scroll away.
 - Accepted 2026-10-26: one dialog shell serves the delete confirm, the PR checks, and the phase detail, as the nuu modal recipe draws it. A view is a template that mounts into the shared body and actions, so the page holds one `dialog` and one close x.
 - Accepted 2026-10-26: a repo opened during its own run paints Cancel from the first frame. The list flag seeds the view, and the latest-run answer attaches the stream, so Clean & Push never flashes before Cancel.
+- Accepted 2026-10-26: no phase row repeats the log. The PR checks row opens the pill view of the checked PR, and Rewrite and sign and Clean up name their steps like Prepare.

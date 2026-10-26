@@ -11,6 +11,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.15] - 2026-10-26
 
+### Changed
+
+- The PR checks phase row opens the pill view of the PR the run checked. The
+  Rewrite and sign and Clean up rows name their steps, so no phase row repeats
+  the log lines.
+
 ### Fixed
 
 - A repo opened while its run is live shows Cancel from the first frame. The

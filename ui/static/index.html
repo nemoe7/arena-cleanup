@@ -2531,6 +2531,8 @@
     let m;
     if (/^dry run:/.test(msg)) {
       counts.dry = true;
+    } else if ((m = /^checking PR status for (\S+)/.exec(msg))) {
+      counts.prBranch = m[1];
     } else if ((m = /^check "([^"]+)": /.exec(msg))) {
       counts.checks[m[1]] = level; // OK when it passed, WARN while it runs, ERROR when it failed
       const states = Object.values(counts.checks);
@@ -2590,7 +2592,7 @@
   function resetPhases() {
     state.phases = PHASES.map((p) => ({ ...p, state: "idle", lines: 0, start: 0, end: 0, rows: [] }));
     state.phase = "prepare";
-    state.counts = { checks: {}, dry: false, tags: 0, pushed: 0, push: { tags: [] } };
+    state.counts = { checks: {}, dry: false, tags: 0, pushed: 0, push: { tags: [] }, prBranch: "" };
     $("phases").replaceChildren(...state.phases.map((p) =>
       el("li", { class: "phase", "data-phase": p.id, "data-state": "idle" },
         el("button", { type: "button", class: "phase-head", disabled: true,
@@ -2708,6 +2710,12 @@
   // Each row opens its detail: the steps with their stamps, the commit list
   // after a rewrite, or the facts of the push.
   function openPhase(id) {
+    // the PR checks row is the pill view of the PR the run checked
+    const branch = state.counts.prBranch;
+    if (id === "pr" && branch && (((statusFor(state.repo.id).pr || {})[branch]) || {}).total) {
+      openChecks(state.repo.id, branch);
+      return;
+    }
     state.phaseOpen = id;
     openModal("phase", { title: "Phase", wide: true, onclose: () => { state.phaseOpen = null; } });
     renderPhase();
@@ -2719,38 +2727,115 @@
     el("span", { class: "t" }, clock(stamp)),
     el("span", { class: "msg" }, msg),
     el("span", { class: "d" }, secsText(took)));
-  function phaseSteps(p) {
-    if (p.id === "prepare") return prepareSteps(p);
-    return el("ol", { class: "step-list" }, ...p.rows.map((r, i) => {
-      const next = p.rows[i + 1];
-      return stepRow(r.level, r.stamp, r.msg, (next ? next.t : p.end) - r.t);
-    }));
-  }
-  // Prepare names three steps instead of its log. A step ends at the engine
-  // line that completes it, and the next one shows while the phase runs.
-  const PREPARE_STEPS = [
-    { doing: "Fetching…", done: "Fetched", end: /^fetched and pruned origin/ },
-    { doing: "Locating remote arena branch…", done: "Located remote arena branch",
-      end: /^(?:would )?switch(?:ing|ed)? to (arena\/\S+)|^current branch: (arena\/\S+)/ },
-    { doing: "Pulling {slug}…", done: "Pulled {slug}", end: /^pulled \(|^already up to date|skipping pull/ },
-  ];
-  function prepareSteps(p) {
+  // A phase names its steps instead of repeating the log. A step ends at the
+  // engine line that completes it, a step the run skipped is left out, and
+  // the next required step shows while the phase runs. An end with no text
+  // only renames the open step, and `{n}` reads a match group or a saved var.
+  const STEP_TABLES = {
+    prepare: {
+      vars: { slug: "the arena branch" },
+      steps: [
+        { doing: "Fetching…", ends: [[/^fetched and pruned origin/i, "Fetched"]] },
+        { doing: "Locating remote arena branch…",
+          ends: [[/^(?:would )?switch(?:ing|ed)? to (arena\/\S+)|^current branch: (arena\/\S+)/i,
+            "Located remote arena branch", (m) => ({ slug: m[1] || m[2] })]] },
+        { doing: "Pulling {slug}…", ends: [[/^pulled \(|^already up to date|skipping pull/i, "Pulled {slug}"]] },
+      ],
+    },
+    pr: {
+      vars: { pr: "" },
+      steps: [
+        { doing: "Looking for the PR…", ends: [
+          [/^--skip-pr-check set/i, "PR check skipped"],
+          [/^no open PR for (?:branch )?([^\s,]+)/i, "No open PR for {1}"],
+          [/^found PR #(\d+)/i, "Found PR #{1}", (m) => ({ pr: m[1] })]] },
+        { doing: "Reading the checks of PR #{pr}…", ends: [
+          [/^PR #(\d+) reports no status checks/i, "No checks on PR #{1}"],
+          [/^would wait for (\d+) still-running check/i, (m) => `Would wait for ${plural(+m[1], "running check")}`],
+          [/^(\d+) check\(s\) still running/i, null, (m) => ({ doing: `Waiting for ${plural(+m[1], "running check")}…` })],
+          [/^all (\d+) check\(s\) finished/i, (m) => `All ${plural(+m[1], "check")} finished`],
+          [/^PR #(\d+) checks ok/i, "PR #{1} checks passed"]] },
+      ],
+    },
+    rewrite: {
+      vars: { verb: "Signing" },
+      steps: [
+        { optional: true, doing: "Removing paths…", ends: [
+          [/^would remove (.+?): (\d+) file\(s\) across (\d+) commit\(s\)/i,
+            (m) => `Would remove ${m[1]}: ${plural(+m[2], "file")} in ${plural(+m[3], "commit")}`],
+          [/^removed (.+?): (\d+) file\(s\) gone/i, (m) => `Removed ${m[1]}: ${plural(+m[2], "file")} gone`]] },
+        { doing: "Collecting commits…", ends: [
+          [/^scanning (\d+) commit\(s\) as .*?(\(read-only\))?$/i, (m) => `Collected ${plural(+m[1], "commit")}`,
+            (m) => ({ n: m[1], verb: m[2] ? "Scanning" : "Signing" })]] },
+        { doing: "{verb}…", ends: [
+          [/^scanning\.\.\. 100% \(\d+\/\d+\)(?: - (\d+) rewritten)?/i, (m) => `Would sign ${plural(+(m[1] || 0), "commit")}`],
+          [/^rewriting\.\.\. (\d+)% \((\d+)\/(\d+)\)/i, null, (m) => ({ doing: `Signing ${m[2]}/${m[3]}…` })],
+          [/^creating backup bundle/i, "Rewrote the commits"],
+          [/^nothing to rewrite/i, "Nothing to rewrite"],
+          [/^history already clean/i, "History already clean"]] },
+        { optional: true, doing: "Writing the backup bundle…", ends: [[/^backup written to /i, "Backup written"]] },
+        { optional: true, doing: "Finishing the rewrite…", ends: [
+          [/^history rewritten: (\d+) commit\(s\): (\d+) rewritten, (\d+) signed/i,
+            (m) => `Signed ${m[3]} of ${plural(+m[1], "commit")}`]] },
+        { optional: true, doing: "Moving tags…", ends: [
+          [/^(\d+) tag\(s\) now point at the rewritten commits/i, (m) => `${plural(+m[1], "tag")} moved to the rewritten commits`],
+          [/^(\d+) tag\(s\) point into these commits and would move/i, (m) => `Would move ${plural(+m[1], "tag")}`]] },
+      ],
+    },
+    sync: {
+      vars: {},
+      steps: [
+        { doing: "Returning to the default branch…", ends: [
+          [/^would return to (\S+)/i, "Would return to {1}"],
+          [/^returning to (\S+)/i, "Returned to {1}"],
+          [/^staying on (\S+)/i, "Staying on {1}"],
+          [/^switching to (\S+) first/i, "Switched to {1}"]] },
+        { optional: true, doing: "Resetting…", ends: [[/^resetting (\S+) to origin\//i, "Reset {1} to origin"]] },
+        { optional: true, doing: "Deleting the remote branch…", ends: [
+          [/^would delete origin\/(\S+)/i, "Would delete origin/{1}"],
+          [/^deleted origin\/(\S+)/i, "Deleted origin/{1}"],
+          [/^origin\/(\S+) is already gone/i, "origin/{1} already gone"]] },
+        { optional: true, doing: "Deleting the local branch…", ends: [
+          [/^would delete local branch (\S+)/i, "Would delete local branch {1}"],
+          [/^deleted local branch (\S+)/i, "Deleted local branch {1}"],
+          [/^local branch (\S+) is still checked out/i, "Kept local branch {1}, still checked out"]] },
+        { optional: true, doing: "Finishing…", ends: [[/^done\b(?:[:,] (.+))?/i, (m) => (m[1] ? `Done, ${m[1]}` : "Done")]] },
+      ],
+    },
+  };
+  function namedSteps(p) {
+    const table = STEP_TABLES[p.id];
+    const steps = table.steps;
+    const vars = { ...table.vars };
+    const text = (s, m) => (typeof s === "function" ? s(m) : s)
+      .replace(/\{(\w+)\}/g, (_, k) => (m && /^\d+$/.test(k) ? m[k] || "" : vars[k] || ""));
     const rows = [];
-    let start = p.start, i = 0, slug = "the arena branch";
-    const text = (s) => s.replace("{slug}", slug);
+    let start = p.start, i = 0;
     for (const r of p.rows) {
-      const step = PREPARE_STEPS[i];
-      const m = step && step.end.exec(r.msg.toLowerCase());
-      if (!m) continue;
-      slug = m[1] || m[2] || slug;
-      rows.push(stepRow("ok", r.stamp, text(step.done), r.t - start));
+      let j = i, hit = null;
+      for (; j < steps.length && !hit; j += 1) {
+        for (const end of steps[j].ends) {
+          const m = end[0].exec(r.msg);
+          if (m) { hit = { end, m, at: j }; break; }
+        }
+      }
+      if (!hit) continue;
+      if (hit.end[2]) Object.assign(vars, hit.end[2](hit.m));
+      if (hit.end[1] === null) continue;
+      rows.push(stepRow("ok", r.stamp, text(hit.end[1], hit.m), r.t - start));
       start = r.t;
-      i += 1;
+      i = hit.at + 1;
+      vars.doing = "";
     }
-    const open = PREPARE_STEPS[i];
+    const open = steps.slice(i).find((s) => !s.optional);
     const last = p.rows[p.rows.length - 1];
-    if (open && last && p.state === "run") rows.push(stepRow("info", last.stamp, text(open.doing), Date.now() / 1000 - start));
-    else if (open && last && p.state === "fail") rows.push(stepRow("error", last.stamp, text(open.doing), p.end - start));
+    const doing = () => vars.doing || text(open.doing);
+    if (p.state === "fail" && last) {
+      const err = [...p.rows].reverse().find((r) => r.level === "error") || last;
+      rows.push(stepRow("error", err.stamp, err === last && open && err.level !== "error" ? doing() : err.msg, p.end - start));
+    } else if (open && last && p.state === "run") {
+      rows.push(stepRow("info", last.stamp, doing(), Date.now() / 1000 - start));
+    }
     return el("ol", { class: "step-list" }, ...rows);
   }
   function webUrl(remote) {
@@ -2805,7 +2890,7 @@
         link.parentElement.hidden = false;
       }
     } else if (!(p.id === "rewrite" && done && rewritten)) {
-      box.replaceChildren(phaseSteps(p));
+      box.replaceChildren(namedSteps(p));
     }
   }
 
