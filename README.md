@@ -10,10 +10,12 @@ branch, its distance from origin, and its PR checks.
 One click runs the pipeline:
 
 1. Fetch and prune, select the arena branch, and reconcile it with upstream.
-2. Wait for the PR checks. Failing ones stop the run.
+2. Read the PR checks. A failing one stops the run.
 3. Remove the named paths from every commit, when asked.
 4. Rewrite the commits to your identity, sign them, and move the tags.
-5. `git push --force-with-lease` to the default branch, then delete the local
+5. Wait for the checks that still ran, so the push follows the last green one
+   at once. A red check or a cancel here puts the branch and its tags back.
+6. `git push --force-with-lease` to the default branch, then delete the local
    arena branch. **No lease** pushes with `git push --force` instead, which
    lands even when the default branch moved during the run.
 

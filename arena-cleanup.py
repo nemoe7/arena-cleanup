@@ -35,6 +35,7 @@ import argparse
 import json
 import os
 import shlex
+import signal
 import subprocess
 import sys
 import tempfile
@@ -1037,6 +1038,32 @@ def wait_for_checks(
       )
 
 
+class PendingChecks:
+  """Checks still running at the gate: the wait for them follows the rewrite."""
+
+  def __init__(
+    self,
+    pr: int,
+    summary: CheckSummary,
+    seen: dict[str, str],
+    interval: int,
+    timeout: int,
+  ) -> None:
+    self.pr = pr
+    self.summary = summary
+    self.seen = seen
+    self.interval = interval
+    self.timeout = timeout
+
+
+class Gate:
+  """What the PR gate found: the PR number, and the checks left to wait for."""
+
+  def __init__(self, pr: int | None, pending: PendingChecks | None = None) -> None:
+    self.pr = pr
+    self.pending = pending
+
+
 def pr_gate(
   log: Log,
   target: str,
@@ -1046,17 +1073,18 @@ def pr_gate(
   wait_interval: int,
   dry_run: bool,
   require_pr: bool = True,
-) -> int | None:
+) -> Gate:
   """
   The PR gate: no PR, or a failing check, stops the run.
 
   The tool waits for still-running checks rather than guessing. A check that is
-  not finished yet is not a failure. `--check-timeout 0` turns waiting off,
-  and `--skip-pr-check` skips the gate entirely.
+  not finished yet is not a failure. The wait itself comes after the rewrite,
+  so the push follows the last green check at once. `--check-timeout 0`
+  turns waiting off, and `--skip-pr-check` skips the gate entirely.
   """
   if skip:
     log.warning("--skip-pr-check set, skipping PR validation entirely")
-    return None
+    return Gate(None)
 
   log.info(f"checking PR status for {target}")
   pr = find_open_pr(target)
@@ -1070,7 +1098,7 @@ def pr_gate(
       f"no open PR for {target}, continuing because the branch was named "
       "explicitly with --branch"
     )
-    return None
+    return Gate(None)
   log.info(f"found PR #{pr}")
 
   seen: dict[str, str] = {}
@@ -1079,7 +1107,7 @@ def pr_gate(
 
   if not summary.runs:
     log.warning(f"PR #{pr} reports no status checks at all")
-    return pr
+    return Gate(pr)
   if summary.failed:
     raise Fail(f"PR #{pr} has failing check(s): {summary.describe_failed()}")
 
@@ -1089,7 +1117,7 @@ def pr_gate(
         f"would wait for {len(summary.running)} still-running check(s) "
         f"(up to {_duration(wait_timeout)}) before continuing"
       )
-      return pr
+      return Gate(pr)
     if wait_timeout <= 0:
       raise Fail(
         f"PR #{pr} has {len(summary.running)} still-running check(s) and "
@@ -1097,14 +1125,47 @@ def pr_gate(
       )
     log.info(
       f"{len(summary.running)} check(s) still running, waiting up to "
-      f"{_duration(wait_timeout)} (polling every {wait_interval}s)"
+      f"{_duration(wait_timeout)} after the rewrite (polling every {wait_interval}s)"
     )
-    summary = wait_for_checks(log, pr, wait_interval, wait_timeout, summary, seen)
-    if summary.failed:
-      raise Fail(f"PR #{pr} has failing check(s): {summary.describe_failed()}")
+    return Gate(pr, PendingChecks(pr, summary, seen, wait_interval, wait_timeout))
 
   log.ok(f"PR #{pr} checks ok")
-  return pr
+  return Gate(pr)
+
+
+def wait_for_pending(log: Log, pending: PendingChecks) -> None:
+  """The checks wait, after the rewrite: a red check or a timeout stops the run."""
+  pr = pending.pr
+  log.info(
+    f"waiting for PR #{pr} checks ({len(pending.summary.running)} still running)"
+  )
+  summary = wait_for_checks(
+    log, pr, pending.interval, pending.timeout, pending.summary, pending.seen
+  )
+  if summary.failed:
+    raise Fail(f"PR #{pr} has failing check(s): {summary.describe_failed()}")
+  log.ok(f"PR #{pr} checks ok")
+
+
+def restore_after_wait(
+  log: Log, why: str, branch: str, tip: str, tags_before: dict[str, str]
+) -> None:
+  """A red check or a cancel after the rewrite: the branch and its tags go back."""
+  git("reset", "-q", "--hard", tip)
+  moved = 0
+  now = local_tags()
+  for ref, sha in tags_before.items():
+    if now.get(ref) != sha:
+      git("update-ref", ref, sha)
+      moved += 1
+  log.warning(
+    f"{why} after the rewrite: {branch} is back at {short(tip)}, "
+    f"{moved} tag(s) restored, nothing pushed"
+  )
+
+
+def _interrupt(_signum: int, _frame: object) -> None:
+  raise KeyboardInterrupt
 
 
 # ==== Step 3b: remove paths from every commit (git filter-repo) ==============
@@ -2232,7 +2293,7 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
         note="done, nothing to push",
       )
 
-  pr = pr_gate(
+  gate = pr_gate(
     log,
     target_name,
     skip=args.skip_pr_check,
@@ -2241,10 +2302,12 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
     dry_run=cfg.dry_run,
     require_pr=not explicit,
   )
+  pr = gate.pr
 
   # Tag shas as they are right now. After the rewrite this is what tells us
   # which tags moved. Those are the ones origin has to be told about.
   tags_before = local_tags()
+  tip_before = git("rev-parse", "HEAD").text.strip()
 
   paths = None
   if cfg.paths:
@@ -2253,6 +2316,22 @@ def cmd_run(args: argparse.Namespace, log: Log) -> int:
   stats = rewrite_history(log, cfg, apply=not cfg.dry_run, rev=publish)
   if not stats.changed and cfg.dry_run:
     log.ok("history already clean, nothing to rewrite")  # real runs already said so
+
+  # The checks still running at the gate get their wait here, after the
+  # rewrite. The push then follows the last green check at once.
+  if gate.pending:
+    # the UI cancels with SIGTERM: during the wait it reads as an interrupt
+    previous = signal.signal(signal.SIGTERM, _interrupt)
+    try:
+      wait_for_pending(log, gate.pending)
+    except Fail:
+      restore_after_wait(log, "checks failed", target_name, tip_before, tags_before)
+      raise
+    except KeyboardInterrupt:
+      restore_after_wait(log, "cancelled", target_name, tip_before, tags_before)
+      raise
+    finally:
+      signal.signal(signal.SIGTERM, previous)
 
   # "Nothing to rewrite" does not mean "nothing to publish". The branch may
   # still hold commits origin has never seen, or just lost paths.

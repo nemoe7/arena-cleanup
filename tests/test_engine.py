@@ -194,14 +194,73 @@ def test_pr_gate(world: World) -> None:
 
 def test_checks_added_during_the_wait_count_in_the_total(world: World) -> None:
   """GitHub adds check runs while the engine waits: the total follows them."""
-  world.git("checkout", "-q", "arena/session-1")
-  world.agent_commit("chore: work for the growing checks test")
+  world.git("checkout", "-q", "main")
+  world.git("checkout", "-q", "-b", "arena/session-grow")
+  world.commit(
+    "other-dev", "other@example.com", "2024-02-02T10:00:00+08:00", "feat: human\n"
+  )
+  world.git("push", "-q", "-u", "origin", "arena/session-grow")
   world.gh_state("growing")
-  res = world.cleanup("run", "-K", "--check-interval", "1", "--check-timeout", "30")
-  assert res.says("1 check(s) still running"), res.text
-  assert res.says('check "lint": SUCCESS'), res.text
-  assert res.says("all 2 check(s) finished"), res.text
-  assert not res.says("all 1 check(s) finished")
+  try:
+    res = world.cleanup(
+      "run",
+      "-b",
+      "arena/session-grow",
+      "-K",
+      "--check-interval",
+      "1",
+      "--check-timeout",
+      "30",
+    )
+    assert res.rc == 0, res.text
+    assert res.says("1 check(s) still running"), res.text
+    assert res.says('check "lint": SUCCESS'), res.text
+    assert res.says("all 2 check(s) finished"), res.text
+    assert not res.says("all 1 check(s) finished")
+  finally:
+    world.git("checkout", "-q", "main")
+    world.git("push", "-q", "origin", "--delete", "arena/session-grow")
+    world.git("branch", "-q", "-D", "arena/session-grow")
+
+
+def test_a_red_check_after_the_rewrite_restores_the_branch(world: World) -> None:
+  """The wait follows the rewrite. A red check then puts the branch back, unpushed."""
+  world.git("checkout", "-q", "main")
+  world.git("checkout", "-q", "-b", "arena/session-wait")
+  world.commit(
+    "other-dev", "other@example.com", "2024-02-01T10:00:00+08:00", "feat: human\n"
+  )
+  world.git("push", "-q", "-u", "origin", "arena/session-wait")
+  tip = world.rev("arena/session-wait")
+  main_before = world.rev("origin/main")
+  world.gh_state("pending-red")
+  try:
+    res = world.cleanup(
+      "run",
+      "-b",
+      "arena/session-wait",
+      "-K",
+      "--check-interval",
+      "1",
+      "--check-timeout",
+      "30",
+    )
+    assert res.rc == 1
+    assert res.says("still running, waiting up to", "after the rewrite"), res.text
+    assert res.says("waiting for PR #42 checks"), res.text
+    assert res.says("has failing check(s)"), res.text
+    assert res.says("checks failed after the rewrite"), res.text
+    assert not res.says("pushed", "origin/main")
+    assert world.rev("arena/session-wait") == tip, "the branch is back at its tip"
+    assert world.rev("origin/main") == main_before
+    waited_after = res.text.index("waiting for PR #42") > res.text.index(
+      "nothing to rewrite"
+    )
+    assert waited_after, "the wait comes after the rewrite"
+  finally:
+    world.git("checkout", "-q", "main")
+    world.git("push", "-q", "origin", "--delete", "arena/session-wait")
+    world.git("branch", "-q", "-D", "arena/session-wait")
 
 
 def test_failure_handling(world: World) -> None:

@@ -105,6 +105,14 @@ if [ "$1 $2" = "pr view" ]; then
       else
         echo '@PENDING_RUNNING@'
       fi ;;
+    pending-red)
+      # one check runs on the first poll, then it fails: the wait after the rewrite stops the run
+      n="$(cat "$state_file.count" 2>/dev/null || echo 0)"; n=$((n+1)); echo "$n" > "$state_file.count"
+      if [ "$n" -ge 2 ]; then
+        echo '@PENDING_RED@'
+      else
+        echo '@PENDING_RUNNING@'
+      fi ;;
     bad-shape)
       # a wrapper around gh printing a bare list: gh never does, a wrapper can
       echo '@BAD_SHAPE@' ;;
@@ -145,6 +153,7 @@ def fake_gh_script() -> str:
     .replace("@PENDING_DONE@", _rollup([_check("build")]))
     .replace("@PENDING_RUNNING@", _rollup([_check("build", "IN_PROGRESS", "")]))
     .replace("@GROWING_DONE@", _rollup([_check("build"), _check("lint")]))
+    .replace("@PENDING_RED@", _rollup([_check("build", conclusion="FAILURE")]))
     .replace("@BAD_SHAPE@", json.dumps([_check("build")], separators=(",", ":")))
     .replace("@GREEN@", _rollup(GREEN))
     .replace("@AUTH@", AUTH_JSON)
