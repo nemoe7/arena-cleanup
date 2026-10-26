@@ -37,7 +37,6 @@ SKIP_DIRS = {
   ".git",
   ".agents",
   "node_modules",
-  "arena-state",
   "__pycache__",
   ".pytest_cache",
   ".ruff_cache",
@@ -48,52 +47,10 @@ FONT_MIMES = {
   ".ttf": "font/ttf",
   ".otf": "font/otf",
 }
-
-# Compact 5x7 bitmap glyphs (rows encoded as 5-bit integers) for digits, uppercase, and punctuation.
-GLYPHS = {
-  " ": (0, 0, 0, 0, 0, 0, 0),
-  "!": (4, 4, 4, 4, 4, 0, 4),
-  "-": (0, 0, 0, 31, 0, 0, 0),
-  ".": (0, 0, 0, 0, 0, 0, 4),
-  ":": (0, 4, 0, 0, 0, 4, 0),
-  "/": (1, 1, 2, 4, 8, 16, 16),
-  "0": (14, 17, 19, 21, 25, 17, 14),
-  "1": (4, 12, 4, 4, 4, 4, 14),
-  "2": (14, 17, 1, 2, 4, 8, 31),
-  "3": (30, 1, 1, 14, 1, 1, 30),
-  "4": (2, 6, 10, 18, 31, 2, 2),
-  "5": (31, 16, 30, 1, 1, 17, 14),
-  "6": (6, 8, 16, 30, 17, 17, 14),
-  "7": (31, 1, 2, 4, 8, 8, 8),
-  "8": (14, 17, 17, 14, 17, 17, 14),
-  "9": (14, 17, 17, 15, 1, 2, 12),
-  "A": (14, 17, 17, 31, 17, 17, 17),
-  "B": (30, 17, 17, 30, 17, 17, 30),
-  "C": (14, 17, 16, 16, 16, 17, 14),
-  "D": (28, 18, 17, 17, 17, 18, 28),
-  "E": (31, 16, 16, 30, 16, 16, 31),
-  "F": (31, 16, 16, 30, 16, 16, 16),
-  "G": (14, 17, 16, 23, 17, 17, 15),
-  "H": (17, 17, 17, 31, 17, 17, 17),
-  "I": (14, 4, 4, 4, 4, 4, 14),
-  "J": (7, 2, 2, 2, 18, 18, 12),
-  "K": (17, 18, 20, 24, 20, 18, 17),
-  "L": (16, 16, 16, 16, 16, 16, 31),
-  "M": (17, 27, 21, 21, 17, 17, 17),
-  "N": (17, 25, 21, 19, 17, 17, 17),
-  "O": (14, 17, 17, 17, 17, 17, 14),
-  "P": (30, 17, 17, 30, 16, 16, 16),
-  "Q": (14, 17, 17, 17, 21, 18, 13),
-  "R": (30, 17, 17, 30, 20, 18, 17),
-  "S": (15, 16, 16, 14, 1, 1, 30),
-  "T": (31, 4, 4, 4, 4, 4, 4),
-  "U": (17, 17, 17, 17, 17, 17, 14),
-  "V": (17, 17, 17, 17, 17, 10, 4),
-  "W": (17, 17, 17, 21, 21, 27, 17),
-  "X": (17, 17, 10, 4, 10, 17, 17),
-  "Y": (17, 17, 10, 4, 4, 4, 4),
-  "Z": (31, 1, 2, 4, 8, 16, 31),
-}
+DEFAULT_RASTER_FONT = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
+_TEXT_RASTER_CACHE: dict[
+  tuple[str, tuple[int, int, int, int], int, str], tuple[int, int, bytearray]
+] = {}
 
 
 def parse_color(value):
@@ -220,6 +177,17 @@ def resolve_project_typography(
   font_Index: dict[str, Path] = {}
   for font_path in _iter_project_files(scan_root, set(FONT_MIMES)):
     font_Index.setdefault(font_path.name, font_path)
+  if not style_files and not font_Index and cfg_info["path"] is None:
+    cur = scan_root
+    while cur.parent != cur and cur != Path("/tmp"):
+      if (cur / ".git").exists():
+        scan_root = cur
+        root = cur
+        style_files = _iter_project_files(scan_root, {".css", ".html"})
+        for font_path in _iter_project_files(scan_root, set(FONT_MIMES)):
+          font_Index.setdefault(font_path.name, font_path)
+        break
+      cur = cur.parent
 
   # Prefer product CSS and HTML with @font-face declarations over reference fallback sheets.
   def style_priority(path: Path) -> tuple[int, int, str]:
@@ -567,8 +535,6 @@ def fill_rect(rgba, width, height, x, y, w, h, color):
 def draw_box(rgba, width, height, x, y, w, h, color, thickness=2):
   if w <= 0 or h <= 0:
     raise ValueError("box width and height must be positive")
-  fill = (color[0], color[1], color[2], 32)
-  fill_rect(rgba, width, height, x, y, w, h, fill)
   for t in range(thickness):
     for px in range(x + t, x + w - t):
       blend_pixel(rgba, width, height, px, y + t, color)
@@ -599,39 +565,84 @@ def draw_arrow(rgba, width, height, x1, y1, x2, y2, color):
     draw_line(rgba, width, height, x2, y2, hx, hy, color, radius=1)
 
 
-def draw_text(rgba, width, height, x, y, text, color, scale=1):
-  cursor = x
-  for ch in str(text).upper():
-    glyph = GLYPHS.get(ch, GLYPHS[" "])
-    for row_idx, row_bits in enumerate(glyph):
-      for col_idx in range(5):
-        if (row_bits >> (4 - col_idx)) & 1:
-          for sy in range(scale):
-            for sx in range(scale):
-              blend_pixel(
-                rgba,
-                width,
-                height,
-                cursor + col_idx * scale + sx,
-                y + row_idx * scale + sy,
-                color,
-              )
-    cursor += 6 * scale
+def _rasterize_text(
+  text: str,
+  color: tuple[int, int, int, int],
+  scale: int = 1,
+  font_path: str | None = None,
+) -> tuple[int, int, bytearray]:
+  label = str(text)
+  if not label:
+    return 1, 1, bytearray(4)
+  resolved_font = (
+    font_path
+    if font_path and Path(font_path).is_file()
+    else str(DEFAULT_RASTER_FONT)
+    if DEFAULT_RASTER_FONT.is_file()
+    else "DejaVu-Sans-Bold"
+  )
+  cache_key = (label, tuple(color), max(1, int(scale)), resolved_font)
+  cached = _TEXT_RASTER_CACHE.get(cache_key)
+  if cached is not None:
+    return cached
+  point_size = max(11, 6 * max(1, int(scale)) + 1)
+  convert_bin = shutil.which("convert")
+  if convert_bin:
+    cmd = [
+      convert_bin,
+      "-background",
+      "none",
+      "-fill",
+      css_hex(color),
+      "-font",
+      resolved_font,
+      "-pointsize",
+      str(point_size),
+      f"label:{label}",
+      "-depth",
+      "8",
+      "-define",
+      "png:color-type=6",
+      "PNG32:-",
+    ]
+    proc = subprocess.run(cmd, capture_output=True, timeout=10, check=False)
+    if proc.returncode == 0 and proc.stdout:
+      tw, th, t_rgba = decode_png(proc.stdout)
+      _TEXT_RASTER_CACHE[cache_key] = (tw, th, t_rgba)
+      return tw, th, t_rgba
+  tw = max(1, len(label) * 6 * max(1, int(scale)))
+  th = max(1, 8 * max(1, int(scale)))
+  fallback = bytearray(tw * th * 4)
+  for idx in range(0, len(fallback), 4):
+    fallback[idx : idx + 4] = bytes(color)
+  _TEXT_RASTER_CACHE[cache_key] = (tw, th, fallback)
+  return tw, th, fallback
 
 
-def draw_label(rgba, width, height, x, y, text, color, scale=2):
+def draw_text(rgba, width, height, x, y, text, color, scale=1, font_path=None):
+  tw, th, t_rgba = _rasterize_text(str(text), color, scale=scale, font_path=font_path)
+  blit_rgba(rgba, width, height, t_rgba, tw, th, int(x), int(y))
+
+
+def draw_label(rgba, width, height, x, y, text, color, scale=2, font_path=None):
   label = str(text).strip()
   if not label:
     raise ValueError("label text must not be empty")
-  pad = 3 * scale + 1
-  box_w = (len(label) * 6 - 1) * scale + pad * 2
-  box_h = 7 * scale + pad * 2
-  fill_rect(rgba, width, height, x, y, box_w, box_h, (17, 24, 39, 230))
+  tw, th, t_rgba = _rasterize_text(
+    label, COLORS["white"], scale=scale, font_path=font_path
+  )
+  pad_x = 3 * scale + 2
+  pad_y = 2 * scale + 1
+  box_w = tw + pad_x * 2
+  box_h = th + pad_y * 2
+  fill_rect(rgba, width, height, x, y, box_w, box_h, (17, 24, 39, 238))
   draw_box(rgba, width, height, x, y, box_w, box_h, color, thickness=max(1, scale // 2))
-  draw_text(rgba, width, height, x + pad, y + pad, label, COLORS["white"], scale=scale)
+  blit_rgba(rgba, width, height, t_rgba, tw, th, int(x + pad_x), int(y + pad_y))
 
 
-def draw_callout(rgba, width, height, x, y, number, color, label=None, scale=2):
+def draw_callout(
+  rgba, width, height, x, y, number, color, label=None, scale=2, font_path=None
+):
   badge = str(number).strip()
   if not badge:
     raise ValueError("callout number must not be empty")
@@ -644,21 +655,16 @@ def draw_callout(rgba, width, height, x, y, number, color, label=None, scale=2):
         blend_pixel(rgba, width, height, x + dx, y + dy, color)
       elif dist <= radius + border - 1:
         blend_pixel(rgba, width, height, x + dx, y + dy, COLORS["white"])
-  text_w = (len(badge) * 6 - 1) * scale
-  text_h = 7 * scale
-  draw_text(
-    rgba,
-    width,
-    height,
-    x - text_w // 2,
-    y - text_h // 2,
-    badge,
-    COLORS["white"],
-    scale=scale,
+  tw, th, t_rgba = _rasterize_text(
+    badge, COLORS["white"], scale=scale, font_path=font_path
   )
+  blit_rgba(rgba, width, height, t_rgba, tw, th, int(x - tw // 2), int(y - th // 2))
   if label:
-    pad = 3 * scale + 1
-    box_h = 7 * scale + pad * 2
+    _, l_th, _ = _rasterize_text(
+      str(label).strip(), COLORS["white"], scale=scale, font_path=font_path
+    )
+    pad_y = 2 * scale + 1
+    box_h = l_th + pad_y * 2
     draw_label(
       rgba,
       width,
@@ -668,6 +674,7 @@ def draw_callout(rgba, width, height, x, y, number, color, label=None, scale=2):
       label,
       color,
       scale=scale,
+      font_path=font_path,
     )
 
 
@@ -785,33 +792,18 @@ def _chromium_render_png(
 ) -> bool:
   if os.environ.get("NUU_RENDERER") == "bitmap" or not shutil.which("node"):
     return False
-  chromium_bin = os.environ.get("CHROMIUM_PATH") or (
-    "/tmp/chromium" if Path("/tmp/chromium").is_file() else ""
-  )
+  chromium_bin = os.environ.get("CHROMIUM_PATH") or ""
   env = dict(os.environ)
-  if Path("/tmp/al2023/lib").is_dir():
-    existing_ld = env.get("LD_LIBRARY_PATH", "")
-    env["LD_LIBRARY_PATH"] = (
-      f"/tmp/al2023/lib:{existing_ld}" if existing_ld else "/tmp/al2023/lib"
-    )
-  repo_root = Path(__file__).resolve().parents[3]
   cwd = Path.cwd().resolve()
   node_paths = [
     str(Path(__file__).resolve().parent),
     str(cwd / "node_modules"),
-    str(cwd / "arena-state" / "chromium-env" / "node_modules"),
-    str(repo_root / "node_modules"),
-    str(repo_root / "arena-state" / "chromium-env" / "node_modules"),
-    "/home/user/clankers/arena-state/chromium-env/node_modules",
-    "/home/user/clankers/node_modules",
-    "/home/user/node_modules",
   ]
   if env.get("NODE_PATH"):
     node_paths.append(env["NODE_PATH"])
   env["NODE_PATH"] = ":".join(dict.fromkeys(node_paths))
   script = """
 const fs = require("node:fs");
-const path = require("node:path");
 let pw = null;
 for (const mod of ["playwright-core", "playwright"]) {
   try { pw = require(mod); break; } catch {}
@@ -820,23 +812,7 @@ if (!pw || !pw.chromium) process.exit(2);
 const payload = JSON.parse(fs.readFileSync(0, "utf8"));
 (async () => {
   const pwExec = typeof pw.chromium.executablePath === "function" ? pw.chromium.executablePath() : "";
-  let execPath = payload.executable || pwExec;
-  if (!execPath || !fs.existsSync(execPath) || !fs.existsSync("/tmp/al2023/lib")) {
-    try {
-      const chromium = require("@sparticuz/chromium");
-      const pkgDir = path.dirname(require.resolve("@sparticuz/chromium/package.json"));
-      const binDir = path.join(pkgDir, "bin");
-      if (!fs.existsSync("/tmp/al2023/lib")) {
-        const lambdafs = require("@sparticuz/chromium/build/cjs/lambdafs.js").default;
-        await lambdafs.inflate(path.join(binDir, "al2023.tar.br"));
-        await lambdafs.inflate(path.join(binDir, "fonts.tar.br"));
-      }
-      chromium.setupLambdaEnvironment("/tmp/al2023/lib");
-      if (!execPath || !fs.existsSync(execPath)) {
-        execPath = await chromium.executablePath(binDir);
-      }
-    } catch {}
-  }
+  const execPath = payload.executable || pwExec;
   if (!execPath || !fs.existsSync(execPath)) process.exit(3);
   const browser = await pw.chromium.launch({
     executablePath: execPath,
@@ -918,7 +894,7 @@ def _overlay_svg_and_nodes(
     hex_c = css_hex(color)
     parts.append(
       f'<div style="position:absolute;left:{x}px;top:{y}px;width:{w}px;height:{h}px;'
-      f"border:{stroke_w}px solid {hex_c};background:rgba({color[0]},{color[1]},{color[2]},0.14);"
+      f"border:{stroke_w}px solid {hex_c};background:none;"
       f'border-radius:4px;box-sizing:border-box;pointer-events:none;"></div>'
     )
   if arrows:

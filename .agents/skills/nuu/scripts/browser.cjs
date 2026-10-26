@@ -426,13 +426,29 @@ async function a11yChecks(page) {
 
     const walker = document.createTreeWalker(document.body || document.documentElement, NodeFilter.SHOW_TEXT);
     const checkedElements = new Set();
+    const checkedTimestampElements = new Set();
+    const rawUiTimestampRe = /\b\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?|\s+\d{2}:\d{2}(?::\d{2})?(?:\s*(?:UTC|GMT|[+-]\d{2}:?\d{2}))?)\b|\b\d{2}:\d{2}(?::\d{2})?\s*(?:UTC|GMT)\b/;
     let textNode;
     while ((textNode = walker.nextNode())) {
       if (!textNode.nodeValue || !textNode.nodeValue.trim()) continue;
       const parent = textNode.parentElement;
-      if (!parent || checkedElements.has(parent) || ['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(parent.tagName)) continue;
-      checkedElements.add(parent);
+      if (!parent || ['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(parent.tagName)) continue;
       if (!isVisible(parent)) continue;
+      if (!checkedTimestampElements.has(parent) && !parent.closest('code, pre, textarea')) {
+        const tsMatch = rawUiTimestampRe.exec(textNode.nodeValue);
+        if (tsMatch) {
+          checkedTimestampElements.add(parent);
+          findings.push({
+            rule: 'NUA310',
+            severity: 'review',
+            criterion: 'relative-timestamps',
+            selector: selectorFor(parent),
+            evidence: `Visible raw or unadjusted timestamp in UI text: ${tsMatch[0]}`,
+          });
+        }
+      }
+      if (checkedElements.has(parent)) continue;
+      checkedElements.add(parent);
       const style = getComputedStyle(parent);
       const fgRaw = parseRgba(style.color);
       if (!fgRaw || fgRaw[3] <= 0) continue;
@@ -868,6 +884,9 @@ async function run() {
   const captures = [];
   const timeout = request.timeout * 1000;
   const HOUSE_HEIGHTS = {1920: 957, 1080: 2437, 958: 958, 411: 799, 855: 325};
+  const REPORT_WIDTHS = Array.isArray(request.report_widths) && request.report_widths.length
+    ? request.report_widths
+    : [1920, 411];
   try {
     for (const width of request.widths) {
       const height = Number(request.height || HOUSE_HEIGHTS[width] || 900);
@@ -883,7 +902,9 @@ async function run() {
           page.on('console', message => {
             if (message.type() === 'error') errors.push({type: 'console', message: message.text()});
           });
-          const row = {width, height, touch, scheme, motion, status: 'not_checked', errors,
+          const row = {width, height, touch, scheme, motion,
+            report_shot: REPORT_WIDTHS.includes(width) && scheme === 'dark' && motion === 'no-preference',
+            status: 'not_checked', errors,
             flow: {status: 'not_run'}, edit: {status: 'not_run'}};
           captures.push(row);
           try {
@@ -967,7 +988,9 @@ async function run() {
     }
   }
   return {status: findings.length ? 'findings' : 'captured', findings,
-    engine: chosen[0], captures, automated_flow: 'first capture only',
+    engine: chosen[0], captures,
+    report_shots: captures.filter(row => row.report_shot && row.screenshot).map(row => row.screenshot),
+    automated_flow: 'first capture only',
     synthesized_input: 'Playwright actions', visual_judgment: 'not_run', participant_research: 'not_run', real_device: 'not_run'};
 }
 

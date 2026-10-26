@@ -47,6 +47,7 @@ MEDIA_BREAKPOINT_RE = re.compile(
 HOME = Path(__file__).resolve().parent.parent
 CATALOG = HOME / "data" / "vendor" / "ui-ux-pro-max"
 WIDTHS = (1920, 1080, 958, 855, 411)
+REPORT_WIDTHS = (1920, 411)
 SKIP = {
   ".agents",
   ".git",
@@ -57,7 +58,6 @@ SKIP = {
   "node_modules",
   "dist",
   "build",
-  "arena-state",
   "__pycache__",
   ".pytest_cache",
   ".ruff_cache",
@@ -158,19 +158,35 @@ def load_rule_descriptions(home: Path = HOME) -> dict[str, str]:
         descriptions.setdefault("NUI002", _clean_md(sentences[0]))
     if 2 in clauses:
       descriptions.setdefault("NUI003", _clean_md(clauses[2]))
+  descriptions.setdefault(
+    "NUL006", "Raw ISO or unadjusted UTC/offset timestamp in UI text or source"
+  )
+  descriptions.setdefault(
+    "NUA310", "Visible raw ISO or unadjusted UTC/offset timestamp in rendered UI text"
+  )
   return descriptions
 
 
 VERSION = _load_version()
 RULE_DESCRIPTIONS = load_rule_descriptions()
 KNOWN_NUU_RULES = {
-  *(f"NUL00{i}" for i in range(1, 6)),
+  *(f"NUL00{i}" for i in range(1, 7)),
   *(f"NUI00{i}" for i in range(1, 4)),
   *(f"NUB10{i}" for i in range(1, 5)),
   *(f"NUM{i}" for i in range(201, 211)),
-  *(f"NUA{i}" for i in range(301, 310)),
+  *(f"NUA{i}" for i in range(301, 311)),
   *RULE_DESCRIPTIONS,
 }
+RAW_UI_TIMESTAMP_RE = re.compile(
+  r"\b\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?"
+  r"|\s+\d{2}:\d{2}(?::\d{2})?(?:\s*(?:UTC|GMT|[+-]\d{2}:?\d{2}))?)\b"
+  r"|\b\d{2}:\d{2}(?::\d{2})?\s*(?:UTC|GMT)\b"
+)
+UNADJUSTED_JS_TIMESTAMP_RE = re.compile(
+  r"\.(?:textContent|innerText)\s*=\s*(?:(?![^\n;]*\b(?:clockTime|relativeTime|time|format\w*)\s*\()[^;\n]*\.(?:toISOString|toUTCString)\s*\("
+  r"|[A-Za-z0-9_$.]+\.(?:at|updated_at|created_at)\s*(?:\|\|\s*['\"][^\n'\"]*['\"])?\s*;)"
+  r"|\btimeZone\s*:\s*['\"](?:UTC|GMT|Etc/UTC)['\"]"
+)
 NONUU_MARKER_RE = re.compile(r"\bnonuu:[ \t]*(.*?)(?=-->|\*/|;|\s|$|\bnonuu:)")
 DEVIATION_MARKER_RE = re.compile(
   r"\bnuu-deviation:[ \t]*(?:([A-Za-z0-9_.-]+):[ \t]*)?(.*?)(?=-->|\*/|$)"
@@ -369,11 +385,14 @@ def extract(root):
 
 
 class SourcePage(HTMLParser):
+  RAW_TEXT_TAGS = ("script", "style", "code", "pre", "textarea", "template")
+
   def __init__(self, path):
     super().__init__(convert_charrefs=True)
     self.path, self.findings = path, []
     self.labels, self.ids, self.controls = set(), set(), []
     self.label_depth = 0
+    self.raw_text_depth = 0
 
   def finding(self, rule, criterion, evidence, position):
     line, column = position
@@ -392,6 +411,8 @@ class SourcePage(HTMLParser):
 
   def handle_starttag(self, tag, attributes):
     attrs = dict(attributes)
+    if tag in self.RAW_TEXT_TAGS:
+      self.raw_text_depth += 1
     if attrs.get("id"):
       self.ids.add(attrs["id"])
     if tag == "label":
@@ -404,8 +425,22 @@ class SourcePage(HTMLParser):
       self.controls.append((attrs, bool(self.label_depth), self.getpos()))
 
   def handle_endtag(self, tag):
+    if tag in self.RAW_TEXT_TAGS:
+      self.raw_text_depth = max(0, self.raw_text_depth - 1)
     if tag == "label":
       self.label_depth = max(0, self.label_depth - 1)
+
+  def handle_data(self, data):
+    if self.raw_text_depth > 0 or not data:
+      return
+    match = RAW_UI_TIMESTAMP_RE.search(data)
+    if match:
+      self.finding(
+        "NUL006",
+        "relative-timestamps",
+        f"Raw or unadjusted timestamp in UI text: {match[0]}",
+        self.getpos(),
+      )
 
   def finish(self):
     for attrs, nested, position in self.controls:
@@ -576,6 +611,29 @@ def lint(root):
               "status": "source_candidate",
               "evidence": f"{prop_match[1]}: {prop_match[2].strip()}",
               "criterion": "clause-9",
+            }
+          )
+    if path.suffix.lower() in {".js", ".jsx", ".ts", ".tsx"}:
+      clean_js = re.sub(
+        r"/\*.*?\*/",
+        lambda match: "".join("\n" if char == "\n" else " " for char in match[0]),
+        text,
+        flags=re.DOTALL,
+      )
+      for number, raw_line in enumerate(clean_js.splitlines(), 1):
+        code_part = raw_line.split("//", 1)[0]
+        ts_match = UNADJUSTED_JS_TIMESTAMP_RE.search(code_part)
+        if ts_match:
+          current.append(
+            {
+              "rule": "NUL006",
+              "path": str(path),
+              "line": number,
+              "column": ts_match.start() + 1,
+              "severity": "review",
+              "status": "source_candidate",
+              "evidence": f"Unadjusted or raw timestamp assignment: {ts_match[0].strip()}",
+              "criterion": "relative-timestamps",
             }
           )
     for finding in current:
@@ -867,6 +925,14 @@ def browser(args):
   )
   cfg_widths = cfg_audit.get("widths") or cfg_info["config"].get("widths") or []
   configured_widths = [w for w in cfg_widths if isinstance(w, int) and w > 0]
+  cfg_report_widths = (
+    cfg_audit.get("report_widths") or cfg_info["config"].get("report_widths") or []
+  )
+  report_widths = sorted(
+    {int(w) for w in cfg_report_widths if isinstance(w, int) and w > 0}
+    or REPORT_WIDTHS,
+    reverse=True,
+  )
   selected_widths = (
     sorted({int(w) for w in args.widths if w > 0})
     if args.widths
@@ -878,6 +944,7 @@ def browser(args):
     "url": args.url,
     "output": str(Path(args.artifacts).resolve()),
     "widths": selected_widths,
+    "report_widths": report_widths,
     "selector": args.selector,
     "ready": getattr(args, "ready", None),
     "a11y": bool(getattr(args, "a11y", False) or args.command in {"a11y", "audit"}),
