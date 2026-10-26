@@ -37,7 +37,7 @@ def test_the_pill_opens_the_checks_and_the_repo_view_shares_the_modal(
 ) -> None:
   walker: Walker = request.getfixturevalue(width)
   page = walker.page
-  walker.goto(1200)
+  walker.goto()
   page.wait_for_selector(f"{CARD} button.pill")
   assert page.evaluate(MODAL)["open"] is False
   assert page.get_attribute(f"{CARD} button.pill", "title") == "Show PR checks"
@@ -49,7 +49,7 @@ def test_the_pill_opens_the_checks_and_the_repo_view_shares_the_modal(
   assert modal["pr"].endswith("/pull/88")
   page.keyboard.press("Escape")
   page.wait_for_function("!document.getElementById('modal').open")
-  walker.click(f"{CARD} .repo-name", 800)
+  walker.click(f"{CARD} .repo-name")
   page.wait_for_selector(".arena-checks")
   assert page.get_attribute(".arena-checks", "title") == "Show PR checks"
   assert (
@@ -61,11 +61,11 @@ def test_the_pill_opens_the_checks_and_the_repo_view_shares_the_modal(
   assert page.evaluate(MODAL)["rows"] == ROWS
   page.keyboard.press("Escape")
   page.wait_for_function("!document.getElementById('modal').open")
-  walker.click("#back", 600)
+  walker.click("#back")
 
 
 def test_a_row_without_a_pr_keeps_its_plain_pill(desktop: Walker) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   row = ".repo-card:has-text('data-pipeline') .arena-row:has-text('6d8b3a4e')"
   desktop.page.wait_for_selector(row)
   assert desktop.count(f"{row} span.pill:not(.ahead)") == 1

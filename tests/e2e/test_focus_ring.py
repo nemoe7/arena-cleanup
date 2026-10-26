@@ -28,7 +28,7 @@ SCRIPT_FOCUS = """() => {
 
 def test_the_ring_follows_the_keyboard(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
+  desktop.goto()
   assert page.evaluate(FLAG) is None, "a fresh page carries no flag"
   assert page.evaluate(SCRIPT_FOCUS) == "none", "a pointer focus draws no ring"
   page.keyboard.press("Tab")

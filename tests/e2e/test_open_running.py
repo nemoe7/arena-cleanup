@@ -33,16 +33,16 @@ def test_an_open_during_a_run_paints_cancel_before_the_answer(
   page = desktop.page
   held: list[Any] = []
 
-  desktop.goto(1200)
-  desktop.click(f"{CARD} .repo-name", 800)
+  desktop.goto()
+  desktop.click(f"{CARD} .repo-name")
   demo.slow_checks(True)
   try:
     box = 'input[data-opt="dry_run"]'
     if page.is_checked(box):
-      desktop.click(box, 150)
-    desktop.click("#start", 0)
+      desktop.click(box)
+    desktop.click("#start")
     assert desktop.wait_status("running") == "running"
-    desktop.click("#back", 600)
+    desktop.click("#back")
     page.wait_for_selector(f"{CARD} button.clean.running")
 
     # the latest-run answer lands two seconds after the view opens
@@ -52,7 +52,7 @@ def test_an_open_during_a_run_paints_cancel_before_the_answer(
       route.continue_()
 
     page.route(LATEST, hold)
-    desktop.click(f"{CARD} .repo-name", 300)
+    desktop.click(f"{CARD} .repo-name")
     first = page.evaluate(BUTTON)
     assert first["label"] == "Cancel", "no Clean & Push before the answer"
     assert first["state"] == "attaching" and first["disabled"] is True
@@ -64,7 +64,7 @@ def test_an_open_during_a_run_paints_cancel_before_the_answer(
     page.unroute(LATEST)
     after = page.evaluate(BUTTON)
     assert after["label"] == "Cancel" and after["disabled"] is False
-    desktop.click("#start", 0)
+    desktop.click("#start")
     assert "cancelled" in desktop.wait_status("cancelled")
   finally:
     demo.slow_checks(False)

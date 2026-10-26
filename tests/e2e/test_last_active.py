@@ -57,7 +57,7 @@ def test_the_newest_of_check_tip_and_edit_is_the_stamp(desktop: Walker) -> None:
   page.route("**/api/repos", stamp)
   page.route("**/api/fetch", stamp)
   try:
-    desktop.goto(1200)
+    desktop.goto()
     page.wait_for_selector(f"{SHOP} .repo-since")
     shop = page.eval_on_selector(f"{SHOP} .repo-since", "e => [e.innerText, e.title]")
     assert shop == ["30 minutes ago", "Last active 30 minutes ago: PR #142 check"]
@@ -77,7 +77,7 @@ def test_the_newest_of_check_tip_and_edit_is_the_stamp(desktop: Walker) -> None:
 
 
 def test_every_ready_card_carries_a_full_stamp_on_a_desktop(desktop: Walker) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   page = desktop.page
   page.wait_for_selector(".repo-card .repo-since")
   stamps = page.eval_on_selector_all(
@@ -89,7 +89,7 @@ def test_every_ready_card_carries_a_full_stamp_on_a_desktop(desktop: Walker) -> 
 
 
 def test_every_ready_card_carries_a_compact_stamp_on_a_phone(phone: Walker) -> None:
-  phone.goto(1200)
+  phone.goto()
   page = phone.page
   page.wait_for_selector(".repo-card .repo-since")
   stamps = page.eval_on_selector_all(

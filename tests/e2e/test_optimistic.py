@@ -42,11 +42,11 @@ def test_the_arena_row_leaves_before_the_reply_and_returns_on_failure(
   held: list[Any] = []
   page.route("**/api/repos/*/arena/delete", lambda route: held.append(route))
   try:
-    desktop.goto(1200)
-    desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
+    desktop.goto()
+    desktop.click(".repo-card:has-text('shop-web') .repo-name")
     assert desktop.count(ROW) == 1
-    desktop.click(f"{ROW} .arena-del", 300)
-    desktop.click("#confirm-go", SETTLE)
+    desktop.click(f"{ROW} .arena-del")
+    desktop.click("#confirm-go")
     route = wait_for(held, page)
     assert desktop.count_settled(ROW, 0) == 0, "the row left before the server answered"
     fail(route)
@@ -66,13 +66,13 @@ def test_a_reload_during_the_delete_keeps_the_branch_off_the_card(
   held: list[Any] = []
   page.route("**/api/repos/*/arena/delete", lambda route: held.append(route))
   try:
-    desktop.goto(1200)
-    desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
-    desktop.click(f"{ROW} .arena-del", 300)
-    desktop.click("#confirm-go", SETTLE)
+    desktop.goto()
+    desktop.click(".repo-card:has-text('shop-web') .repo-name")
+    desktop.click(f"{ROW} .arena-del")
+    desktop.click("#confirm-go")
     route = wait_for(held, page)
     # Back reloads the list from a server that still has the branch
-    desktop.click("#back", 800)
+    desktop.click("#back")
     assert desktop.count(".repo-card") > 0
     assert desktop.count_settled(SHOP_ROW, 0) == 0, (
       "a reload keeps the branch off the card"
@@ -90,10 +90,10 @@ def test_the_card_leaves_before_the_reply_and_returns_on_failure(
   held: list[Any] = []
   page.route("**/api/repos/*/remove", lambda route: held.append(route))
   try:
-    desktop.goto(1200)
+    desktop.goto()
     cards = desktop.count(".repo-card")
-    desktop.click(f"{CARD} .rm", 100)
-    desktop.click(f"{CARD} .rm", SETTLE)
+    desktop.click(f"{CARD} .rm")
+    desktop.click(f"{CARD} .rm")
     route = wait_for(held, page)
     assert desktop.count_settled(CARD, 0) == 0, (
       "the card left before the server answered"
@@ -119,10 +119,10 @@ def test_the_add_bar_shows_a_pending_card_before_the_clone_answers(
 
   page.route("**/api/repos", hold_posts)
   try:
-    desktop.goto(1200)
+    desktop.goto()
     cards = desktop.count(".repo-card")
     page.fill("#add-source", "https://github.com/acme/new-repo.git")
-    desktop.click("#add-btn", SETTLE)
+    desktop.click("#add-btn")
     route = wait_for(held, page)
     assert desktop.count(PENDING) == 1, "a pending card shows before the clone answers"
     assert "new-repo" in desktop.text(PENDING)
@@ -154,11 +154,11 @@ def test_a_clone_refused_during_a_reload_leaves_no_card_behind(desktop: Walker) 
 
   page.route("**/api/repos", hold_posts)
   try:
-    desktop.goto(1200)
+    desktop.goto()
     page.route("**/api/fetch", lambda route: fetches.append(route))
     cards = desktop.count(".repo-card")
     page.fill("#add-source", "https://github.com/acme/late-repo.git")
-    desktop.click("#add-btn", SETTLE)
+    desktop.click("#add-btn")
     clone = wait_for(posts, page)
     page.click("#repos-refresh")
     reload = wait_for(fetches, page)

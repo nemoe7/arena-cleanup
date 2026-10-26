@@ -32,7 +32,7 @@ def probe(browser: Any, demo: Demo, width: int) -> dict[str, Any]:
   context = browser.new_context(viewport={"width": width, "height": 900})
   try:
     walker = Walker(context, f"{demo.url}/#/settings")
-    walker.goto(800)
+    walker.goto()
     walker.page.wait_for_selector("#card-identity")
     return walker.page.evaluate(PROBE, SECTIONS)
   finally:
@@ -63,13 +63,13 @@ def test_the_help_cards_fold(desktop: Walker) -> None:
   assert desktop.count("#access-body .card") == 1
   assert "credential helper" in desktop.text("#access-body")
   assert "ssh keys" in desktop.text("#access-body")
-  desktop.click("#info-body details.fold > summary", 200)
+  desktop.click("#info-body details.fold > summary")
   assert (
     page.evaluate("() => document.querySelector('#info-body details.fold').open")
     is True
   )
   assert desktop.visible("#info-body details.fold .card-body")
-  desktop.click("#info-body details.fold > summary", 200)
+  desktop.click("#info-body details.fold > summary")
   assert not desktop.visible("#info-body details.fold .card-body")
   mark = page.eval_on_selector(
     "#info-body .fold-mark", "e => getComputedStyle(e, '::after').content"

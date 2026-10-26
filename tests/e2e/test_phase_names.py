@@ -57,4 +57,4 @@ def test_phase_words_in_names_leave_every_row_done(desktop: Walker) -> None:
   subs = {row[0]: row[2] for row in rows}
   assert subs["pr"] == "2/2"
   assert subs["rewrite"] == "signed 5 commits"
-  desktop.click("#back", 300)
+  desktop.click("#back")

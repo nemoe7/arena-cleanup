@@ -40,10 +40,10 @@ def open_with_a_run(
   context = browser.new_context(viewport={"width": width, "height": height})
   try:
     walker = Walker(context, demo.url)
-    walker.goto(600)
-    walker.click(CARD, 800)
-    walker.click('input[data-opt="dry_run"]', 0)
-    walker.click("#start", 0)
+    walker.goto()
+    walker.click(CARD)
+    walker.click('input[data-opt="dry_run"]')
+    walker.click("#start")
     walker.wait_status("exit")
     walker.page.wait_for_timeout(300)
     return walker.page.evaluate(PROBE)
@@ -87,8 +87,8 @@ def test_the_sidebar_arena_rows_take_two_lines(browser: Any, demo: Demo) -> None
   context = browser.new_context(viewport={"width": 1568, "height": 775})
   try:
     walker = Walker(context, demo.url)
-    walker.goto(600)
-    walker.click(".repo-card:has-text('data-pipeline') .repo-ico", 800)
+    walker.goto()
+    walker.click(".repo-card:has-text('data-pipeline') .repo-ico")
     rows = walker.page.evaluate(ARENA_ROWS)
   finally:
     context.close()

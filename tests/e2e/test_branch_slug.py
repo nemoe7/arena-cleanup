@@ -52,7 +52,7 @@ def test_an_arena_branch_reads_as_its_slug(desktop: Walker) -> None:
   for pattern in ("**/api/fetch", "**/api/repos", "**/api/repos/*"):
     page.route(pattern, rename)
   try:
-    desktop.goto(1200)
+    desktop.goto()
     page.wait_for_selector(f"{CARD} .arena-row .bname")
     assert page.eval_on_selector(f"{CARD} .arena-row .bname", NAME) == [SLUG, FULL], (
       "the card row shows the slug and keeps the full name as its title"
@@ -61,7 +61,7 @@ def test_an_arena_branch_reads_as_its_slug(desktop: Walker) -> None:
       PLAIN,
       PLAIN,
     ], "a branch without the repo name tail keeps its full name"
-    desktop.click(f"{CARD} .repo-name", 600)
+    desktop.click(f"{CARD} .repo-name")
     page.wait_for_selector(ROW)
     assert page.eval_on_selector(f"{ROW} .txt", "(e) => e.textContent") == SLUG
     assert page.eval_on_selector(ROW, NAME)[1] == f"Pull from {FULL}", (

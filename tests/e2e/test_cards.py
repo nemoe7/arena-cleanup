@@ -25,7 +25,7 @@ def row_geometry(walker: Walker) -> tuple[float, float, float, float]:
 
 
 def test_the_desktop_row_puts_the_pills_beside_the_name(desktop: Walker) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   name_top, tail_top, name_left, tail_left = row_geometry(desktop)
   assert abs(tail_top - name_top) < 8, "one line"
   assert tail_left > name_left
@@ -40,7 +40,7 @@ def test_the_desktop_row_puts_the_pills_beside_the_name(desktop: Walker) -> None
 
 
 def test_the_phone_card_row_keeps_the_two_lines(phone: Walker) -> None:
-  phone.goto(1200)
+  phone.goto()
   name_top, tail_top, name_left, tail_left = row_geometry(phone)
   assert tail_top > name_top
   assert tail_left == name_left
@@ -48,7 +48,7 @@ def test_the_phone_card_row_keeps_the_two_lines(phone: Walker) -> None:
 
 
 def test_the_repo_name_is_the_control_that_opens_the_repo(desktop: Walker) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   assert desktop.count(".repo-card[role]") == 0
   assert desktop.count(".repo-card button.repo-name") == desktop.count(".repo-card")
   desktop.page.focus(f"{CARD} .repo-name")

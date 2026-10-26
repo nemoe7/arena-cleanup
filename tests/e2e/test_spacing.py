@@ -127,9 +127,9 @@ def font_sizes(elements: list[dict[str, Any]]) -> set[float]:
 
 
 def collect(walker: Walker, opener: str | None) -> list[dict[str, Any]]:
-  walker.goto(400 if opener else 1200)
+  walker.goto()
   if opener:
-    walker.click(opener, 800)
+    walker.click(opener)
   return walker.page.evaluate(COLLECT, list(PROPS))
 
 

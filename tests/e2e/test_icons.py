@@ -31,8 +31,8 @@ CARD_CLEAN = ".repo-card .btn.clean:not(.running)"
 
 
 def glyph_widths(walker: Walker) -> dict[str, float]:
-  walker.goto(1200)
-  walker.click(".repo-card:has-text('shop-web') .repo-name", 800)
+  walker.goto()
+  walker.click(".repo-card:has-text('shop-web') .repo-name")
   walker.page.wait_for_selector(".commit .sig .ico-svg")
   return {sel: walker.page.eval_on_selector(sel, BOX) for sel in GLYPHS}
 
@@ -48,7 +48,7 @@ def test_phone_glyphs_keep_the_desktop_sizes(phone: Walker) -> None:
 
 
 def test_clean_buttons_carry_the_broom_and_sparkle_on_hover(desktop: Walker) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   page = desktop.page
   assert page.eval_on_selector(f"{CARD_CLEAN} .ico-svg", BOX) == BUTTON
   idle = page.eval_on_selector(f"{CARD_CLEAN} .sparkles", OPACITY)
@@ -58,14 +58,14 @@ def test_clean_buttons_carry_the_broom_and_sparkle_on_hover(desktop: Walker) -> 
   )
   assert idle == 0
   assert page.eval_on_selector(CARD_CLEAN, "e => e.innerText.trim()") == "Clean & Push"
-  desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
+  desktop.click(".repo-card:has-text('shop-web') .repo-name")
   assert page.eval_on_selector("#start .ico-svg", BOX) == BUTTON
   assert page.eval_on_selector("#start .sparkles", OPACITY) == 0
 
 
 def hover_shift(walker: Walker) -> tuple[str, str]:
   """The reload button's background before and under the pointer."""
-  walker.goto(1200)
+  walker.goto()
   before = walker.page.eval_on_selector("#repos-refresh", BACKGROUND)
   walker.page.hover("#repos-refresh")
   walker.page.wait_for_timeout(300)
@@ -83,9 +83,9 @@ def test_a_touch_screen_hover_leaves_the_icon_button_alone(phone: Walker) -> Non
 
 
 def squares(walker: Walker) -> list[list[float | str]]:
-  walker.goto(1200)
+  walker.goto()
   seen = walker.page.evaluate(ICON_ONLY)
-  walker.click(".repo-card:has-text('data-pipeline') .repo-name", 800)
+  walker.click(".repo-card:has-text('data-pipeline') .repo-name")
   seen += walker.page.evaluate(ICON_ONLY)
   walker.page.goto("about:blank")
   walker.page.goto(walker.url + "#/settings")

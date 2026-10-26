@@ -39,8 +39,8 @@ def patch(route: Any, name: str, status: dict[str, Any]) -> None:
 def test_a_github_remote_links_owner_and_repo(desktop: Walker) -> None:
   # the demo origins answer to https://github.com/demo/<name>
   page = desktop.page
-  desktop.goto(1200)
-  desktop.click(CARD.format(name=REPO), 600)
+  desktop.goto()
+  desktop.click(CARD.format(name=REPO))
   link = page.eval_on_selector("#side-top .kv dd .remote-link", LINK)
   assert link == {
     "href": f"https://github.com/demo/{REPO}",
@@ -50,13 +50,13 @@ def test_a_github_remote_links_owner_and_repo(desktop: Walker) -> None:
     "title": f"Open demo/{REPO} on GitHub",
     "mark": 1,
   }
-  desktop.click("#back", 600)
+  desktop.click("#back")
   # any other remote keeps the plain text
   local = f"/srv/git/{OTHER}.git"
   for pattern in ROUTES:
     page.route(pattern, lambda route: patch(route, OTHER, {"remote": local}))
   try:
-    desktop.click(CARD.format(name=OTHER), 600)
+    desktop.click(CARD.format(name=OTHER))
     assert page.query_selector("#side-top .kv dd .remote-link") is None
     cells = page.eval_on_selector_all(
       "#side-top .kv dd", "(ds) => ds.map((d) => d.textContent)"

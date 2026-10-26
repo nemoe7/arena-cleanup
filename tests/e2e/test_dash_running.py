@@ -68,7 +68,9 @@ def test_a_live_job_marks_its_row(desktop: Walker) -> None:
   page.route("**/api/fetch", flag)
   page.route("**/api/repos", flag)
   try:
-    desktop.goto(1200)
+    # the page fetches once after the cached cards are on screen
+    with page.expect_response("**/api/fetch"):
+      desktop.goto()
     page.wait_for_selector(f"{CARD} button.clean.running")
     row = page.eval_on_selector(CARD, ROW)
     other = page.eval_on_selector(".repo-card:has-text('billing-api')", ROW)
@@ -89,8 +91,8 @@ def test_a_live_job_marks_its_row(desktop: Walker) -> None:
     assert other["pulses"] is False
     # repo view and back: the return reads the statuses once more
     before = len(reads)
-    desktop.click(f"{CARD} .repo-name", 600)
-    desktop.click("#back", 600)
+    desktop.click(f"{CARD} .repo-name")
+    desktop.click("#back")
     page.wait_for_selector(f"{CARD} button.clean.running")
     deadline = time.monotonic() + 5
     while len(reads) < before + 1 and time.monotonic() < deadline:
@@ -99,7 +101,7 @@ def test_a_live_job_marks_its_row(desktop: Walker) -> None:
   finally:
     page.unroute("**/api/repos")
     page.unroute("**/api/fetch")
-  desktop.goto(1200)
+  desktop.goto()
   page.wait_for_selector(CARD)
   assert page.eval_on_selector(CARD, ROW)["running"] is False, (
     "a plain reload clears it"
@@ -123,20 +125,20 @@ def test_a_run_started_here_marks_its_row_before_the_list_answers(
     reads.append(len(repos))
     route.fulfill(response=reply, body=json.dumps(repos))
 
-  desktop.goto(1200)
-  desktop.click(f"{card} .repo-name", 800)
+  desktop.goto()
+  desktop.click(f"{card} .repo-name")
   demo.slow_checks(True)
   page.route("**/api/repos", stale)
   try:
     box = 'input[data-opt="dry_run"]'
     if page.is_checked(box):
-      desktop.click(box, 150)
-    desktop.click("#start", 0)
+      desktop.click(box)
+    desktop.click("#start")
     assert desktop.wait_status("running") == "running"
     assert page.eval_on_selector(card, ROW)["running"] is True, (
       "the card behind the repo view is marked at once"
     )
-    desktop.click("#back", 600)
+    desktop.click("#back")
     assert page.eval_on_selector(card, ROW)["running"] is True, "Back finds it grey"
     deadline = time.monotonic() + 5
     while not reads and time.monotonic() < deadline:
@@ -146,8 +148,8 @@ def test_a_run_started_here_marks_its_row_before_the_list_answers(
     assert page.eval_on_selector(card, ROW)["running"] is True, (
       "a read from before the start cannot undo it"
     )
-    desktop.click(f"{card} .repo-name", 800)
-    desktop.click("#start", 0)
+    desktop.click(f"{card} .repo-name")
+    desktop.click("#start")
     assert "cancelled" in desktop.wait_status("cancelled")
   finally:
     page.unroute("**/api/repos")

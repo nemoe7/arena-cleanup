@@ -36,13 +36,13 @@ def test_an_arena_branch_is_never_the_current_target(desktop: Walker) -> None:
   for pattern in ROUTES:
     page.route(pattern, park)
   try:
-    desktop.goto(1200)
-    desktop.click(CARD.format(name="shop-web"), 600)
+    desktop.goto()
+    desktop.click(CARD.format(name="shop-web"))
     select = page.eval_on_selector("#branch", SELECT)
     assert select == {"value": "main", "options": [["main", "main (default)"]]}
     # parked on a plain branch, the clone keeps it as the current target
-    desktop.click("#back", 600)
-    desktop.click(CARD.format(name="billing-api"), 600)
+    desktop.click("#back")
+    desktop.click(CARD.format(name="billing-api"))
     select = page.eval_on_selector("#branch", SELECT)
     assert select == {
       "value": "",

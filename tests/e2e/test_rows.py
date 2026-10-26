@@ -109,7 +109,7 @@ def probe(
     if long_branch:
       walker.page.route("**/api/fetch", lengthen)
       walker.page.route("**/api/repos", lengthen)
-    walker.goto(600)
+    walker.goto()
     walker.page.wait_for_selector(f"{CARD} .arena-row .arena-tail .pill")
     return walker.page.eval_on_selector(CARD, PROBE)
   finally:
@@ -153,7 +153,7 @@ def test_above_1200_a_repo_is_one_table_row(browser: Any, demo: Demo) -> None:
 
 def test_a_hovered_table_row_tints(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(600)
+  desktop.goto()
   page.wait_for_selector(f"{CARD} .arena-row .arena-tail .pill")
   page.mouse.move(0, 0)
   page.wait_for_timeout(200)
@@ -225,7 +225,7 @@ def test_a_resized_window_folds_and_unfolds_the_rows(browser: Any, demo: Demo) -
   context = browser.new_context(viewport={"width": 1400, "height": 900})
   try:
     walker = Walker(context, demo.url)
-    walker.goto(600)
+    walker.goto()
     page = walker.page
     page.wait_for_selector(f"{CARD} .arena-row .arena-tail .pill")
     page.wait_for_function(SETTLED, arg="table-row")

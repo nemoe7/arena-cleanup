@@ -38,8 +38,8 @@ def test_a_commit_date_uses_the_24_hour_clock(desktop: Walker) -> None:
       status=200, content_type="application/json", body=json.dumps(page_body())
     ),
   )
-  desktop.goto(1200)
-  desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
+  desktop.goto()
+  desktop.click(".repo-card:has-text('shop-web') .repo-name")
   shown = desktop.text("#commits .commit .meta > span:last-child")
   assert DATE.match(shown), shown
   assert f", {page.evaluate(LOCAL_HOUR)}:11" in shown

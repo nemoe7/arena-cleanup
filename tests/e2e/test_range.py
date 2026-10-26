@@ -14,8 +14,8 @@ pytestmark = pytest.mark.e2e
 
 
 def open_repo(walker: Walker) -> None:
-  walker.goto(1200)
-  walker.click(".repo-card .repo-name", 800)
+  walker.goto()
+  walker.click(".repo-card .repo-name")
 
 
 TICKS = """() => {

@@ -27,16 +27,16 @@ def phase_states(walker: Walker) -> list[str]:
 
 
 def test_a_finished_run_comes_back_after_a_page_reload(desktop: Walker) -> None:
-  desktop.goto(1200)
-  desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
-  desktop.click('input[data-opt="dry_run"]', 0)
-  desktop.click("#start", 0)
+  desktop.goto()
+  desktop.click(".repo-card:has-text('shop-web') .repo-name")
+  desktop.click('input[data-opt="dry_run"]')
+  desktop.click("#start")
   status = desktop.wait_status("exit")
   rows = desktop.count(ROWS)
   assert rows > 0
 
-  desktop.goto(1200)
-  desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
+  desktop.goto()
+  desktop.click(".repo-card:has-text('shop-web') .repo-name")
   desktop.page.wait_for_function(
     f"() => document.querySelectorAll('{ROWS}').length === {rows}", timeout=WAIT_MS
   )
@@ -48,25 +48,25 @@ def test_a_finished_run_comes_back_after_a_page_reload(desktop: Walker) -> None:
 def test_a_live_run_streams_on_after_a_return_to_the_repo(
   desktop: Walker, demo: Demo, signing: None
 ) -> None:
-  desktop.goto(1200)
-  desktop.click(".repo-card:has-text('docs-site') .repo-name", 800)
+  desktop.goto()
+  desktop.click(".repo-card:has-text('docs-site') .repo-name")
   demo.slow_checks(True)
   try:
     box = 'input[data-opt="dry_run"]'
     if desktop.page.is_checked(box):
-      desktop.click(box, 150)
-    desktop.click("#start", 0)
+      desktop.click(box)
+    desktop.click("#start")
     log_includes(desktop, PARKED)
 
-    desktop.click("#back", 600)
+    desktop.click("#back")
     assert desktop.visible("#view-dashboard")
-    desktop.click(".repo-card:has-text('docs-site') .repo-name", 800)
+    desktop.click(".repo-card:has-text('docs-site') .repo-name")
     assert desktop.wait_status("running") == "running"
     log_includes(desktop, PARKED)
     assert desktop.text("#start") == "Cancel", "one button, in its running state"
     assert "run" in phase_states(desktop)
 
-    desktop.click("#start", 0)
+    desktop.click("#start")
     assert "cancelled" in desktop.wait_status("cancelled")
   finally:
     demo.slow_checks(False)

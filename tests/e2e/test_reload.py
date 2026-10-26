@@ -17,7 +17,7 @@ BRANCH = "arena/late-branch"
 def test_reload_fetches_a_branch_that_appeared_on_origin(
   desktop: Walker, demo: Demo
 ) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   desktop.page.wait_for_selector(f"{CARD} .arena-row")
   rows = desktop.page.locator(f"{CARD} .arena-row")
   before = rows.count()

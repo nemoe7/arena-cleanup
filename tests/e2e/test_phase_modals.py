@@ -74,8 +74,8 @@ def open_run(
   lines there once the event stream fails.
   """
   if lines is None:
-    walker.goto(1200)
-    walker.click(".repo-card:has-text('infra-tools') .repo-name", 800)
+    walker.goto()
+    walker.click(".repo-card:has-text('infra-tools') .repo-name")
     return
   snap = {
     "id": "fake",
@@ -97,8 +97,8 @@ def open_run(
       ),
     )
   try:
-    walker.goto(1200)
-    walker.click(".repo-card:has-text('infra-tools') .repo-name", 800)
+    walker.goto()
+    walker.click(".repo-card:has-text('infra-tools') .repo-name")
   finally:
     walker.page.unroute(PATTERN)
 
@@ -127,7 +127,7 @@ def test_a_step_row_stacks_its_text_on_a_phone_only(
       "the duration shares the stamp line"
     )
   close_phase(walker)
-  walker.click("#back", 600)
+  walker.click("#back")
 
 
 def open_phase(walker: Walker, phase: str) -> dict:
@@ -160,7 +160,7 @@ def test_the_prepare_row_opens_its_steps_with_stamps_and_durations(
     "each step lasts until the line that ends it"
   )
   close_phase(walker)
-  walker.click("#back", 600)
+  walker.click("#back")
 
 
 def test_the_rewrite_row_lists_the_commits_under_the_counts(desktop: Walker) -> None:
@@ -172,7 +172,7 @@ def test_the_rewrite_row_lists_the_commits_under_the_counts(desktop: Walker) -> 
   assert 1 <= modal["commits"] <= 20
   assert modal["steps"] == [], "the commit list replaces the steps"
   close_phase(desktop)
-  desktop.click("#back", 600)
+  desktop.click("#back")
 
 
 def test_the_push_row_shows_the_move_the_lease_and_the_tags(desktop: Walker) -> None:
@@ -195,7 +195,7 @@ def test_the_push_row_shows_the_move_the_lease_and_the_tags(desktop: Walker) -> 
     "/infra-tools/commits/main"
   )
   close_phase(desktop)
-  desktop.click("#back", 600)
+  desktop.click("#back")
 
 
 def test_the_last_row_reads_clean_up_and_names_its_steps(desktop: Walker) -> None:
@@ -210,7 +210,7 @@ def test_the_last_row_reads_clean_up_and_names_its_steps(desktop: Walker) -> Non
   ], "named steps, not the log lines"
   assert modal["foot"] == [], "no link, no foot"
   close_phase(desktop)
-  desktop.click("#back", 600)
+  desktop.click("#back")
 
 
 CHECKS = """() => ({
@@ -232,7 +232,7 @@ def test_the_pr_checks_row_opens_the_pill_view_of_the_checked_pr(
   assert modal["steps"] == [], "no log lines"
   assert modal["foot"] == ["Open PR"]
   close_phase(desktop)
-  desktop.click("#back", 600)
+  desktop.click("#back")
 
 
 def test_the_pr_checks_row_names_its_steps_without_a_pr_with_checks(
@@ -247,7 +247,7 @@ def test_the_pr_checks_row_names_its_steps_without_a_pr_with_checks(
   assert modal["title"] == "PR checks"
   assert [s[1] for s in modal["steps"]] == ["PR #57 checks passed"]
   close_phase(desktop)
-  desktop.click("#back", 600)
+  desktop.click("#back")
 
 
 GROWING = [
@@ -321,7 +321,7 @@ def test_the_wait_after_the_rewrite_is_its_own_phase(desktop: Walker) -> None:
     "PR #119 checks passed",
   ]
   close_phase(desktop)
-  desktop.click("#back", 600)
+  desktop.click("#back")
 
 
 def test_checks_added_during_the_wait_count_in_the_pr_steps(desktop: Walker) -> None:
@@ -336,7 +336,7 @@ def test_checks_added_during_the_wait_count_in_the_pr_steps(desktop: Walker) -> 
     "PR #119 checks passed",
   ]
   close_phase(desktop)
-  desktop.click("#back", 600)
+  desktop.click("#back")
 
 
 def test_a_running_rewrite_names_the_collected_commits_and_the_open_step(
@@ -348,7 +348,7 @@ def test_a_running_rewrite_names_the_collected_commits_and_the_open_step(
   assert [s[1] for s in modal["steps"]] == ["Collected 23 commits", "Signing…"]
   close_phase(desktop)
   desktop.page.unroute(JOB)
-  desktop.click("#back", 600)
+  desktop.click("#back")
 
 
 def test_idle_rows_do_not_open(desktop: Walker) -> None:
@@ -381,4 +381,4 @@ def test_a_running_row_pulses_an_amber_dot(desktop: Walker) -> None:
   assert glyph["dot"] and glyph["amber"] and not glyph["svg"], "a dot, no glyph"
   assert glyph["animation"] == "pulse"
   desktop.page.unroute(JOB)
-  desktop.click("#back", 600)
+  desktop.click("#back")

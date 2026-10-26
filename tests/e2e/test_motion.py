@@ -45,7 +45,7 @@ def entries(page: Any, sel: str) -> list[list[Any]]:
 
 
 def test_gsap_is_vendored_and_served_as_a_script(desktop: Walker) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   assert desktop.page.evaluate("gsap.version") == "3.15.0"
   reply = desktop.page.request.get(desktop.url.rstrip("/") + "/gsap.min.js")
   assert reply.ok
@@ -58,7 +58,7 @@ def test_a_view_enters_on_the_shared_curve(
 ) -> None:
   walker: Walker = request.getfixturevalue(width)
   page = walker.page
-  walker.goto(1200)
+  walker.goto()
   page.evaluate(HOOK)
   page.click(".repo-card:has-text('shop-web') .repo-name")
   seen = entries(page, "#view-repo")
@@ -69,12 +69,12 @@ def test_a_view_enters_on_the_shared_curve(
   assert page.evaluate(TWEENS, "#view-repo") == [], (
     "the tween clears its props and ends"
   )
-  walker.click("#back", 600)
+  walker.click("#back")
 
 
 def test_a_dialog_enters_the_same_way(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
+  desktop.goto()
   page.evaluate(HOOK)
   page.click(".repo-card:has-text('billing-api') button.pill")
   assert entries(page, "#modal") == [["modal", 0.18, "power2.out", "0"]]
@@ -114,7 +114,7 @@ ROWS = "document.querySelectorAll('#commits .commit').length"
 
 def test_every_commit_row_enters_within_one_spread(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
+  desktop.goto()
   page.evaluate(RECORD_ENTERS)
   page.click(".repo-card:has-text('shop-web') .repo-name")
   page.wait_for_selector("#commits .commit")
@@ -124,4 +124,4 @@ def test_every_commit_row_enters_within_one_spread(desktop: Walker) -> None:
   enters = [e for e in page.evaluate("window.__enters") if e[1]]
   assert enters == [[rows, rows, {"amount": STAGGER_S}, 0.18]]
   assert page.evaluate(OPACITY, "#commits .commit:last-child") == "1"
-  desktop.click("#back", 600)
+  desktop.click("#back")

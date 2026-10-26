@@ -42,7 +42,7 @@ def counts(walker: Walker, selector: str) -> list[int]:
 
 def open_modal(walker: Walker, card: str) -> None:
   page = walker.page
-  walker.goto(1200)
+  walker.goto()
   page.wait_for_selector(f"{card} button.pill")
   page.click(f"{card} button.pill")
   page.wait_for_selector("#modal[open]")

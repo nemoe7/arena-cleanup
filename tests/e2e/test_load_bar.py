@@ -113,7 +113,7 @@ def test_a_fetch_spins_the_reload_glyph_without_the_bar(
 ) -> None:
   walker: Walker = request.getfixturevalue(width)
   page = walker.page
-  walker.goto(1200)
+  walker.goto()
   assert page.evaluate(BAR)["hidden"] is True, "no bar at rest"
   held: list[Any] = []
   page.route("**/api/fetch", lambda r: held.append(r))

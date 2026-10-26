@@ -35,20 +35,20 @@ def hits(page: Any, token: str) -> list[str]:
 def test_a_branch_seen_before_paints_its_commits_from_memory(desktop: Walker) -> None:
   page = desktop.page
   seen = hits(page, "/commits?")
-  desktop.goto(1200)
-  desktop.click(PIPELINE, 600)
+  desktop.goto()
+  desktop.click(PIPELINE)
   page.wait_for_selector("#commits .commit")
   first = len(seen)
   assert first == 1, "one page for the selected branch"
-  desktop.click(ROW.format(branch="arena/5e1f7d2c-data-pipeline"), 600)
+  desktop.click(ROW.format(branch="arena/5e1f7d2c-data-pipeline"))
   page.wait_for_selector("#commits .commit")
   assert len(seen) == first + 1, "a new branch reads its page"
-  desktop.click(ROW.format(branch="arena/6d8b3a4e-data-pipeline"), 600)
+  desktop.click(ROW.format(branch="arena/6d8b3a4e-data-pipeline"))
   page.wait_for_selector("#commits .commit")
   assert len(seen) == first + 1, "a branch seen before paints from memory"
-  desktop.click("#commits-refresh", 600)
+  desktop.click("#commits-refresh")
   assert len(seen) == first + 2, "Reload reads afresh"
-  desktop.click("#back", 600)
+  desktop.click("#back")
 
 
 def test_settings_paint_their_last_answer_while_the_fresh_read_runs(
@@ -57,12 +57,12 @@ def test_settings_paint_their_last_answer_while_the_fresh_read_runs(
   page = desktop.page
   settings = hits(page, "/api/settings")
   signing = hits(page, "/api/signing")
-  desktop.goto(1200)
-  desktop.click("#settings-btn", 0)
+  desktop.goto()
+  desktop.click("#settings-btn")
   page.wait_for_selector("#id-name")
   page.wait_for_function(f"!{LOADING}")
   assert (len(settings), len(signing)) == (1, 1)
-  desktop.click("#settings-back", 300)
+  desktop.click("#settings-back")
   page.click("#settings-btn")
   painted = page.evaluate(
     f"() => ({{ name: Boolean(document.querySelector('#id-name')), loading: {LOADING} }})"
@@ -71,7 +71,7 @@ def test_settings_paint_their_last_answer_while_the_fresh_read_runs(
   page.wait_for_function(f"() => !{LOADING}")
   page.wait_for_timeout(500)
   assert (len(settings), len(signing)) == (2, 2), "the fresh read still runs"
-  desktop.click("#settings-back", 300)
+  desktop.click("#settings-back")
 
 
 def snapshot(job: str, count: int) -> dict[str, Any]:
@@ -96,10 +96,10 @@ def test_the_last_run_paints_before_the_server_answers(desktop: Walker) -> None:
 
   page.route("**/jobs/latest", latest)
   try:
-    desktop.goto(1200)
-    desktop.click(SHOP, 600)
+    desktop.goto()
+    desktop.click(SHOP)
     page.wait_for_function(f"document.querySelectorAll('{ROWS}').length === 3")
-    desktop.click("#back", 300)
+    desktop.click("#back")
     answer["delay"] = 900
     page.click(SHOP)
     page.wait_for_selector("#view-repo", state="visible")
@@ -107,11 +107,11 @@ def test_the_last_run_paints_before_the_server_answers(desktop: Walker) -> None:
     page.wait_for_timeout(1500)
     assert desktop.count(ROWS) == 3, "the same run id adds nothing"
     assert len(calls) == 2, "the fresh read still runs"
-    desktop.click("#back", 300)
+    desktop.click("#back")
     answer.update(snap=snapshot("job-b", 5), delay=0)
-    desktop.click(SHOP, 300)
+    desktop.click(SHOP)
     page.wait_for_function(f"document.querySelectorAll('{ROWS}').length === 5")
     assert "job-b" in desktop.text("#log"), "another run repaints the view"
   finally:
     page.unroute("**/jobs/latest")
-  desktop.click("#back", 300)
+  desktop.click("#back")

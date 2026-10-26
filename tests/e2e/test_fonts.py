@@ -21,7 +21,7 @@ FAMILY = "e => getComputedStyle(e).fontFamily.split(',')[0].replace(/\"/g, '')"
 
 
 def test_both_bundled_faces_are_loaded(desktop: Walker) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   desktop.page.wait_for_selector(".repo-card .bname")
   assert desktop.page.evaluate(FACES) == {
     "Inter": "loaded",

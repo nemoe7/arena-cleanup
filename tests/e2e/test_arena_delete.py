@@ -31,43 +31,43 @@ def test_the_modal_asks_before_the_branch_goes(desktop: Walker) -> None:
     )
 
   page.route("**/api/repos/*/arena/delete", fake)
-  desktop.goto(1200)
-  desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
+  desktop.goto()
+  desktop.click(".repo-card:has-text('shop-web') .repo-name")
   assert desktop.count(f"{ROW} .arena-del") == 1
   # Cancel: the modal closes and the page sends nothing
-  desktop.click(f"{ROW} .arena-del", 300)
+  desktop.click(f"{ROW} .arena-del")
   assert page.evaluate(OPEN) is True
   assert desktop.text("#confirm-branch") == BRANCH
-  desktop.click(CANCEL, 300)
+  desktop.click(CANCEL)
   assert page.evaluate(OPEN) is False
   assert bodies == []
   # the x top right closes it the same way, and it is a square icon button
-  desktop.click(f"{ROW} .arena-del", 300)
+  desktop.click(f"{ROW} .arena-del")
   box = page.eval_on_selector("#modal-x", BOX)
   assert box[0] == box[1] == 32
-  desktop.click("#modal-x", 300)
+  desktop.click("#modal-x")
   assert page.evaluate(OPEN) is False
   assert bodies == []
   # Escape closes it too
-  desktop.click(f"{ROW} .arena-del", 300)
+  desktop.click(f"{ROW} .arena-del")
   page.keyboard.press("Escape")
   page.wait_for_timeout(200)
   assert page.evaluate(OPEN) is False
   assert bodies == []
   # Delete: one request that names the branch
-  desktop.click(f"{ROW} .arena-del", 300)
-  desktop.click("#confirm-go", 600)
+  desktop.click(f"{ROW} .arena-del")
+  desktop.click("#confirm-go")
   assert page.evaluate(OPEN) is False
   assert bodies == [{"branch": BRANCH}]
   page.unroute("**/api/repos/*/arena/delete")
 
 
 def test_the_phone_keeps_the_control_a_thumb_can_hit(phone: Walker) -> None:
-  phone.goto(1200)
-  phone.click(".repo-card:has-text('shop-web') .repo-name", 800)
+  phone.goto()
+  phone.click(".repo-card:has-text('shop-web') .repo-name")
   box = phone.page.eval_on_selector(f"{ROW} .arena-del", BOX)
   assert box[0] >= 44 and box[1] >= 44
-  phone.click(f"{ROW} .arena-del", 300)
+  phone.click(f"{ROW} .arena-del")
   assert phone.page.eval_on_selector("#modal-x", BOX) == [44, 44]
-  phone.click("#modal-x", 300)
+  phone.click("#modal-x")
   assert phone.page.evaluate(OPEN) is False

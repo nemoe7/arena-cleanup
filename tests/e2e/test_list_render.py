@@ -53,8 +53,8 @@ def dirty(name: str):
 
 def test_a_removal_in_flight_stays_out_of_a_status_refresh(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
-  desktop.click(f"{CARD.format(name='data-pipeline')} .repo-name", 800)
+  desktop.goto()
+  desktop.click(f"{CARD.format(name='data-pipeline')} .repo-name")
   page.wait_for_selector(ROWS)
   assert desktop.count(ROWS) == 2
   page.route(
@@ -63,11 +63,11 @@ def test_a_removal_in_flight_stays_out_of_a_status_refresh(desktop: Walker) -> N
   )
   page.evaluate(DELAY, ["/arena/delete", 3000])
   try:
-    desktop.click(f"{ROWS}:not(.selected) .arena-del", 300)
-    desktop.click("#confirm-go", 300)
+    desktop.click(f"{ROWS}:not(.selected) .arena-del")
+    desktop.click("#confirm-go")
     assert desktop.count(ROWS) == 1, "the row leaves before the reply"
-    desktop.click("#settings-btn", 300)
-    desktop.click("#settings-back", 800)
+    desktop.click("#settings-btn")
+    desktop.click("#settings-back")
     assert desktop.count(ROWS) == 1, "the status refresh brought the deleted row back"
     page.wait_for_timeout(3000)
   finally:
@@ -79,9 +79,9 @@ def test_a_tick_that_changed_nothing_keeps_focus_and_an_armed_remove(
   desktop: Walker,
 ) -> None:
   page = desktop.page
-  desktop.goto(1200)
+  desktop.goto()
   rm = f"{CARD.format(name='billing-api')} .rm"
-  desktop.click(rm, 100)
+  desktop.click(rm)
   assert page.eval_on_selector(
     rm, "e => e.classList.contains('armed') && e === document.activeElement"
   )
@@ -99,7 +99,7 @@ def test_a_tick_that_changed_nothing_keeps_focus_and_an_armed_remove(
 
 def test_a_changed_list_keeps_the_focus_on_the_same_control(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
+  desktop.goto()
   name = f"{CARD.format(name='docs-site')} .repo-name"
   page.focus(name)
   page.route(lambda url: url.endswith("/api/repos"), dirty("docs-site"))
@@ -115,10 +115,10 @@ def test_a_changed_list_keeps_the_focus_on_the_same_control(desktop: Walker) -> 
 
 def test_a_changed_list_keeps_the_job_log_scroll(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
-  desktop.click(f"{CARD.format(name='billing-api')} button.pill", 300)
+  desktop.goto()
+  desktop.click(f"{CARD.format(name='billing-api')} button.pill")
   page.wait_for_selector("#modal[open]")
-  desktop.click("#checks-list li:has-text('test') .check-row", 300)
+  desktop.click("#checks-list li:has-text('test') .check-row")
   pre = "#checks-list li.open .job-log"
   page.wait_for_selector(pre)
   page.eval_on_selector(pre, "e => { e.scrollTop = Math.floor(e.scrollHeight / 2); }")
@@ -138,15 +138,15 @@ def test_a_changed_list_keeps_the_job_log_scroll(desktop: Walker) -> None:
 
 def test_a_return_from_settings_reads_the_list_again(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
-  desktop.click("#settings-btn", 400)
+  desktop.goto()
+  desktop.click("#settings-btn")
   with page.expect_request(lambda r: r.url.endswith("/api/repos")):
-    desktop.click("#settings-back", 0)
+    desktop.click("#settings-back")
 
 
 def test_a_refused_remove_reloads_the_list(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
+  desktop.goto()
   cards = desktop.count(".repo-card")
   page.route("**/api/repos/*/remove", lambda route: fail(route, "origin refused"))
   try:
@@ -154,8 +154,8 @@ def test_a_refused_remove_reloads_the_list(desktop: Walker) -> None:
       lambda r: r.url.endswith("/api/repos") and r.method == "GET"
     ):
       rm = f"{CARD.format(name='infra-tools')} .rm"
-      desktop.click(rm, 100)
-      desktop.click(rm, 300)
+      desktop.click(rm)
+      desktop.click(rm)
     assert "origin refused" in desktop.text("#toast")
     assert desktop.count_settled(".repo-card", cards) == cards
   finally:
@@ -164,7 +164,7 @@ def test_a_refused_remove_reloads_the_list(desktop: Walker) -> None:
 
 def test_a_refused_clone_reports_under_the_field(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
+  desktop.goto()
   page.route(
     "**/api/repos",
     lambda route: (
@@ -175,7 +175,7 @@ def test_a_refused_clone_reports_under_the_field(desktop: Walker) -> None:
   )
   try:
     page.fill("#add-source", "https://github.com/acme/refused.git")
-    desktop.click("#add-btn", 600)
+    desktop.click("#add-btn")
     assert page.is_visible("#add-error")
     assert desktop.text("#add-error") == "clone refused"
     assert page.get_attribute("#add-source", "aria-invalid") == "true"
@@ -188,12 +188,12 @@ def test_a_refused_clone_reports_under_the_field(desktop: Walker) -> None:
 
 def test_an_error_toast_stays_to_be_read(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
+  desktop.goto()
   page.route("**/api/repos/*/remove", lambda route: fail(route, "origin refused"))
   try:
     rm = f"{CARD.format(name='docs-site')} .rm"
-    desktop.click(rm, 100)
-    desktop.click(rm, 3000)
+    desktop.click(rm)
+    desktop.click(rm)
     assert page.eval_on_selector("#toast", "e => e.classList.contains('show')"), (
       "the error toast went at the receipt's 2.2 s"
     )
@@ -208,7 +208,7 @@ def test_the_reload_glyph_spins_until_the_last_fetch_ends(desktop: Walker) -> No
   held: list[Any] = []
   page.route("**/api/fetch", lambda route: held.append(route))
   try:
-    desktop.goto(600)
+    desktop.goto()
     page.click("#repos-refresh")
     page.wait_for_timeout(300)
     assert len(held) == 2, "the page-load fetch and the Reload click are both in flight"

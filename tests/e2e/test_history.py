@@ -16,17 +16,17 @@ def pushed(walker: Walker) -> bool:
 
 
 def test_a_sub_view_is_one_entry_deep(desktop: Walker) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   root = length(desktop)
   assert not pushed(desktop)
 
-  desktop.click(".repo-card .repo-name", 800)
+  desktop.click(".repo-card .repo-name")
   assert desktop.visible("#view-repo")
   assert length(desktop) == root + 1
   assert pushed(desktop)
 
   # a sub-view opened from a sub-view replaces the entry
-  desktop.click("#settings-btn", 800)
+  desktop.click("#settings-btn")
   assert desktop.visible("#view-settings")
   assert length(desktop) == root + 1
   assert pushed(desktop)
@@ -39,35 +39,35 @@ def test_a_sub_view_is_one_entry_deep(desktop: Walker) -> None:
 
 
 def test_the_in_app_back_pops_the_entry(desktop: Walker) -> None:
-  desktop.goto(1200)
-  desktop.click(".repo-card .repo-name", 800)
+  desktop.goto()
+  desktop.click(".repo-card .repo-name")
   top = length(desktop)
 
-  desktop.click("#back", 800)
+  desktop.click("#back")
   assert desktop.visible("#view-dashboard")
   assert not pushed(desktop)
   assert length(desktop) == top, "a pop keeps the entry ahead of it"
 
   # the next sub-view takes that slot instead of stacking a third entry
-  desktop.click(".repo-card .repo-name", 800)
+  desktop.click(".repo-card .repo-name")
   assert pushed(desktop)
   assert length(desktop) == top
 
 
 def test_the_tab_title_names_the_page(desktop: Walker) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   assert desktop.page.title() == "arena-cleanup"
 
-  desktop.click(".repo-card .repo-name", 800)
+  desktop.click(".repo-card .repo-name")
   name = desktop.text("#repo-title").strip()
   assert name
   assert desktop.page.title() == f"arena-cleanup | {name}"
 
-  desktop.click("#settings-btn", 800)
+  desktop.click("#settings-btn")
   assert desktop.page.title() == "arena-cleanup | Settings"
 
   # in-app Back returns to the repo, and the title follows
-  desktop.click("#settings-back", 800)
+  desktop.click("#settings-back")
   assert desktop.visible("#view-repo")
   assert desktop.page.title() == f"arena-cleanup | {name}"
 

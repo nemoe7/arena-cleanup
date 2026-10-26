@@ -25,8 +25,8 @@ SELECTED = "e => e.classList.contains('selected')"
 
 
 def open_repo(walker: Walker) -> None:
-  walker.goto(1200)
-  walker.click(CARD, 800)
+  walker.goto()
+  walker.click(CARD)
   walker.page.wait_for_selector(OTHER_ROW)
 
 
@@ -40,7 +40,7 @@ def test_the_selected_tint_ends_at_the_trash_button(
   # two branches: the page opens on one, a click moves the mark to this row
   assert page.eval_on_selector(ROW, SELECTED) is False
   assert page.eval_on_selector(OTHER_ROW, SELECTED) is True
-  walker.click(f"{ROW} .row-btn", 300)
+  walker.click(f"{ROW} .row-btn")
   assert page.eval_on_selector(ROW, SELECTED) is True
   assert page.eval_on_selector(OTHER_ROW, SELECTED) is False
   assert (

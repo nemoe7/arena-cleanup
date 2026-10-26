@@ -30,7 +30,7 @@ def test_the_arrow_ink_and_the_count_share_one_inset(
   request: pytest.FixtureRequest, width: str
 ) -> None:
   walker: Walker = request.getfixturevalue(width)
-  walker.goto(1200)
+  walker.goto()
   walker.page.wait_for_selector(".pill.ahead")
   ink = walker.page.evaluate(INK)
   assert abs(ink["arrowLeft"] - ink["countRight"]) <= 1.5, ink

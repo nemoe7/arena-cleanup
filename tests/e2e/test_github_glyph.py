@@ -26,7 +26,7 @@ def marked(walker: Walker, sel: str) -> list[str]:
 
 def test_the_checks_modal_links_lead_with_the_mark(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
+  desktop.goto()
   page.click(f"{BILLING} button.pill")
   page.wait_for_selector("#modal[open]")
   try:
@@ -56,7 +56,7 @@ def test_the_phase_modal_link_leads_with_the_mark(desktop: Walker) -> None:
     ) == ["0 0 16 16", "Open"]
   finally:
     close_phase(desktop)
-    desktop.click("#back", 600)
+    desktop.click("#back")
 
 
 def test_the_signed_out_banner_offers_connect_with_the_mark(
@@ -65,7 +65,7 @@ def test_the_signed_out_banner_offers_connect_with_the_mark(
   demo.sign_in(False)
   demo.wait_until_checked(False)
   try:
-    desktop.goto(2500)
+    desktop.goto()
     assert marked(desktop, "#auth-banner button") == [
       "0 0 16 16",
       "Connect",

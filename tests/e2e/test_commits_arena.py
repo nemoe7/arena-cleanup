@@ -26,10 +26,10 @@ def subjects(walker: Walker, repo_id: str, ref: str) -> list[str]:
 
 def test_the_list_shows_the_selected_arena_branch(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
+  desktop.goto()
   repos = page.request.get(f"{desktop.url}/api/repos").json()
   repo_id = next(r["id"] for r in repos if r["name"] == "data-pipeline")
-  desktop.click(".repo-card:has-text('data-pipeline') .repo-name", 800)
+  desktop.click(".repo-card:has-text('data-pipeline') .repo-name")
   assert (
     page.evaluate(FIRST)
     == subjects(desktop, repo_id, "arena/6d8b3a4e-data-pipeline")[0]

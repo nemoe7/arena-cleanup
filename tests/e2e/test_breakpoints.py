@@ -43,8 +43,8 @@ def probe(browser: Any, demo: Demo, width: int, height: int = 900) -> dict[str, 
   context = browser.new_context(viewport={"width": width, "height": height})
   try:
     walker = Walker(context, demo.url)
-    walker.goto(400)
-    walker.click(".repo-card .repo-name", 800)
+    walker.goto()
+    walker.click(".repo-card .repo-name")
     return walker.page.evaluate(PROBE)
   finally:
     context.close()

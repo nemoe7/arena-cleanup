@@ -97,14 +97,14 @@ def check_block(walker: Walker, reason: str) -> None:
   card = page.locator(f"{CARD} .card-actions .btn").evaluate(BUTTON)
   assert card["disabled"] is bool(reason), card
   assert (card["title"] == reason) is bool(reason), card
-  walker.click(f"{CARD} .repo-name", 800)
+  walker.click(f"{CARD} .repo-name")
   page.wait_for_selector("#options-card")
   for sel in ("#start", "#start-mobile"):
     run = page.locator(sel).evaluate(BUTTON)
     assert run["state"] == "idle", run
     assert run["disabled"] is bool(reason), run
     assert (run["title"] == reason) is bool(reason), run
-  walker.click("#back", 600)
+  walker.click("#back")
 
 
 @pytest.mark.parametrize("width", ["desktop", "phone"])
@@ -112,7 +112,7 @@ def test_the_button_rests_when_the_default_moved_past_the_branch(
   request: pytest.FixtureRequest, default_moved: None, width: str
 ) -> None:
   walker: Walker = request.getfixturevalue(width)
-  walker.goto(1200)
+  walker.goto()
   refresh(walker)
   walker.page.wait_for_selector(f"{CARD} .arena-row .ahead", state="detached")
   check_block(walker, OVERWRITE)
@@ -123,7 +123,7 @@ def test_the_button_rests_when_the_default_absorbed_the_branch(
   request: pytest.FixtureRequest, default_absorbed: None, width: str
 ) -> None:
   walker: Walker = request.getfixturevalue(width)
-  walker.goto(1200)
+  walker.goto()
   refresh(walker)
   check_block(walker, f"nothing to clean on {BRANCH}")
 
@@ -131,7 +131,7 @@ def test_the_button_rests_when_the_default_absorbed_the_branch(
 def test_the_button_stays_live_without_an_arena_branch(
   desktop: Walker, branch_gone: None
 ) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   desktop.page.wait_for_selector(f"{CARD} .arena-row")
   refresh(desktop)
   desktop.page.wait_for_selector(f"{CARD} .arena-row:has-text('no arena/* branches')")
@@ -143,7 +143,7 @@ def test_the_button_is_live_when_a_branch_is_ahead(
   request: pytest.FixtureRequest, width: str
 ) -> None:
   walker: Walker = request.getfixturevalue(width)
-  walker.goto(1200)
+  walker.goto()
   refresh(walker)
   walker.page.wait_for_selector(f"{CARD} .arena-row:has(.bname[title='{BRANCH}'])")
   check_block(walker, "")

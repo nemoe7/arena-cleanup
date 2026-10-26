@@ -16,8 +16,8 @@ EDGE_END = "e => parseFloat(getComputedStyle(e).getPropertyValue('--edge-end'))"
 
 
 def test_the_scroll_panels_fade_at_their_edges(desktop: Walker) -> None:
-  desktop.goto(1200)
-  desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
+  desktop.goto()
+  desktop.click(".repo-card:has-text('shop-web') .repo-name")
   page = desktop.page
   page.wait_for_selector("#commits .commit")
   for sel in PANELS:
@@ -51,8 +51,8 @@ BAR_FADE = """() => {
 
 def test_the_phone_page_fades_behind_the_bottom_bar(phone: Walker) -> None:
   """The nuu floating-overlay fade: no plate, the page fades behind the button."""
-  phone.goto(1200)
-  phone.click(".repo-card:has-text('shop-web') .repo-name", 800)
+  phone.goto()
+  phone.click(".repo-card:has-text('shop-web') .repo-name")
   page = phone.page
   page.wait_for_selector("#commits .commit")
   fade = page.evaluate(BAR_FADE)
@@ -69,4 +69,4 @@ def test_the_phone_page_fades_behind_the_bottom_bar(phone: Walker) -> None:
     page.wait_for_function(
       "() => parseFloat(getComputedStyle(document.getElementById('tabbar'), '::before').opacity) === 0"
     )
-  phone.click("#back", 600)
+  phone.click("#back")

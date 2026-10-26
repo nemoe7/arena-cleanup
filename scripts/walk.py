@@ -41,6 +41,18 @@ STARTUP_SECONDS = 60
 STATUS_CACHE_SECONDS = 15
 # the dashboard hides this line once the repo list is in, on success and on failure
 REPOS_READY = "#repo-loading"
+
+SETTLE_MS = 100
+MOTION_DONE = """() => {
+  // pulses never end, and a scroll-driven fade runs as long as its timeline does
+  const ends = (a) => {
+    const t = a.effect && a.effect.getTiming();
+    return a.timeline === document.timeline && !(t && t.iterations === Infinity);
+  };
+  if (document.getAnimations().some((a) => a.playState === 'running' && ends(a))) return false;
+  const g = window.gsap;
+  return !g || !g.globalTimeline.getChildren(true, true, true).some((t) => t.isActive());
+}"""
 DESKTOP = {"viewport": {"width": 1360, "height": 900}}
 PHONE_DEVICE = "iPhone 13"
 # the walk provokes these on purpose, so they are narration, not failures
@@ -135,12 +147,17 @@ class Demo:
     self.api("/api/auth", {"action": "check"})
 
   def slow_checks(self, on: bool) -> None:
-    """With the marker present every PR has a check that never finishes."""
+    """Toggle the fake gh's slow marker, then read every status again.
+
+    With the marker present every PR has a check that never finishes. The
+    fresh read drops the PR checks the server cached under the other state.
+    """
     marker = self.gh_state / "slow"
     if on:
       marker.write_text("")
     else:
       marker.unlink(missing_ok=True)
+    self.api("/api/fetch", {"force": True})
 
 
 class Walker:
@@ -161,11 +178,20 @@ class Walker:
     ):
       self.errors.append(message.text)
 
-  def goto(self, settle_ms: int = 250) -> None:
-    """Open the dashboard and wait for its repo list, then settle for the motion."""
+  def goto(self) -> None:
+    """Open the dashboard and wait for its repo list, then for the motion to end."""
     self.page.goto(self.url, wait_until="load")
     self.page.wait_for_selector(REPOS_READY, state="hidden", timeout=15000)
-    self.page.wait_for_timeout(settle_ms)
+    self.settle()
+
+  def settle(self, floor_ms: int = SETTLE_MS) -> None:
+    """Wait until the page motion ends, then a short floor.
+
+    GSAP tweens and finite document-timeline animations count. The pulsing
+    dots and the scroll-driven fades never end, so they do not hold the wait.
+    """
+    self.page.wait_for_function(MOTION_DONE, timeout=5000)
+    self.page.wait_for_timeout(floor_ms)
 
   def visible(self, selector: str) -> bool:
     return self.page.is_visible(selector)
@@ -183,9 +209,9 @@ class Walker:
       self.page.wait_for_timeout(50)
     return self.count(selector)
 
-  def click(self, selector: str, settle_ms: int = 250) -> None:
+  def click(self, selector: str) -> None:
     self.page.click(selector, timeout=8000)
-    self.page.wait_for_timeout(settle_ms)
+    self.settle()
 
   def start_argv(self) -> str:
     """The argv the Start button will run, exposed as a data attribute."""
@@ -234,7 +260,7 @@ def needs_gpg() -> None:
 
 @step("desktop")
 def no_console_errors_on_load(w: Walker, demo: Demo) -> None:
-  w.goto(1500)
+  w.goto()
   assert w.errors == []
 
 
@@ -258,10 +284,10 @@ def typing_into_the_add_box(w: Walker, demo: Demo) -> None:
 @step("desktop")
 def open_repo_from_its_card(w: Walker, demo: Demo) -> None:
   w.goto()
-  w.click(".repo-card .repo-name", 800)
+  w.click(".repo-card .repo-name")
   assert w.visible("#view-repo")
   assert "shop-web" in w.text("#repo-title")
-  w.click("#back", 600)
+  w.click("#back")
   assert w.visible("#view-dashboard")
 
 
@@ -271,12 +297,12 @@ def keyboard_enter_on_a_card(w: Walker, demo: Demo) -> None:
   w.page.keyboard.press("Enter")
   w.page.wait_for_timeout(600)
   assert w.visible("#view-repo")
-  w.click("#back", 400)
+  w.click("#back")
 
 
 @step("desktop")
 def github_access_panel(w: Walker, demo: Demo) -> None:
-  w.click("#settings-btn", 1000)
+  w.click("#settings-btn")
   assert w.visible("#view-settings")
   login = demo.api("/api/auth")["gh"]["login"]
   assert f"@{login}" in w.text("#access-body .banner.ok")
@@ -285,7 +311,7 @@ def github_access_panel(w: Walker, demo: Demo) -> None:
 
 @step("desktop")
 def recheck_button_keeps_the_answer(w: Walker, demo: Demo) -> None:
-  w.click("text=Re-check", 1200)
+  w.click("text=Re-check")
   assert w.count("#access-body .banner.ok") >= 1
   w.click("#settings-back")
   assert w.visible("#view-dashboard")
@@ -293,7 +319,7 @@ def recheck_button_keeps_the_answer(w: Walker, demo: Demo) -> None:
 
 @step("desktop")
 def signing_panel(w: Walker, demo: Demo) -> None:
-  w.click("#settings-btn", 1000)
+  w.click("#settings-btn")
   assert w.visible("#view-settings")
   assert w.visible("#gpg-name")
   assert w.visible("#gpg-email")
@@ -326,12 +352,12 @@ def back_from_signing(w: Walker, demo: Demo) -> None:
 
 @step("desktop")
 def arena_select_lists_the_newest_first(w: Walker, demo: Demo) -> None:
-  w.goto(1000)
+  w.goto()
   assert not w.visible("#opt-arena"), "the select waits for the repo page"
-  w.click(".repo-card >> nth=0 >> .repo-name", 800)
+  w.click(".repo-card >> nth=0 >> .repo-name")
   assert not w.visible("#opt-arena"), "one arena branch needs no select"
-  w.goto(1000)
-  w.click(".repo-card >> nth=4 >> .repo-name", 800)
+  w.goto()
+  w.click(".repo-card >> nth=4 >> .repo-name")
   assert w.visible("#opt-arena")
   name = w.text("#repo-title").strip()
   repo = next(r for r in demo.api("/api/repos") if r["name"] == name)
@@ -348,7 +374,7 @@ def arena_select_lists_the_newest_first(w: Walker, demo: Demo) -> None:
   assert w.page.get_attribute(pressed, "data-branch") == options[1], (
     "the row follows the select"
   )
-  w.click(f'#sidebar button[data-branch="{newest}"]', 200)
+  w.click(f'#sidebar button[data-branch="{newest}"]')
   assert w.page.input_value("#arena") == newest, "the select follows the row"
   assert w.page.get_attribute(pressed, "data-branch") == newest
   assert f"--arena {newest}" in w.start_argv()
@@ -359,15 +385,15 @@ def arena_select_lists_the_newest_first(w: Walker, demo: Demo) -> None:
 
 @step("desktop")
 def sidebar_and_branch_selector(w: Walker, demo: Demo) -> None:
-  w.goto(1000)
-  w.click(".repo-card .repo-name", 800)
+  w.goto()
+  w.click(".repo-card .repo-name")
   sidebar = w.text("#sidebar")
   assert "Repo" in sidebar
   assert "3f7c2e1a" in sidebar, "the arena row names the branch by its slug"
   assert w.count('#sidebar button[data-branch][aria-pressed="true"]') == 1, (
     "one branch, one mark"
   )
-  w.click("#sidebar button[data-branch]", 200)
+  w.click("#sidebar button[data-branch]")
   assert w.page.input_value("#branch") == "", (
     "an arena row never sets the target branch"
   )
@@ -389,16 +415,16 @@ def sidebar_and_branch_selector(w: Walker, demo: Demo) -> None:
 @step("desktop")
 def option_checkbox_updates_the_argv(w: Walker, demo: Demo) -> None:
   box = 'input[data-opt="dry_run"]'
-  w.click(box, 200)
+  w.click(box)
   assert w.page.is_checked(box)
   assert "--dry-run" in w.start_argv()
-  w.click(box, 200)
+  w.click(box)
   assert "--dry-run" not in w.start_argv()
   tags = 'input[data-opt="update_tags"]'
   assert w.page.is_checked(tags), "tags move by default"
-  w.click(tags, 200)
+  w.click(tags)
   assert "--no-tags" in w.start_argv()
-  w.click(tags, 200)
+  w.click(tags)
   assert "--no-tags" not in w.start_argv()
   assert w.count("#options .desc") == 0 and w.count("#task-note") == 0, "no hint texts"
 
@@ -410,7 +436,7 @@ def path_chip_add_and_remove(w: Walker, demo: Demo) -> None:
   w.page.wait_for_timeout(300)
   assert "--path uploads" in w.start_argv()
   assert w.count(".chip-x") == 1
-  w.click(".chip-x button >> nth=0", 300)
+  w.click(".chip-x button >> nth=0")
   assert "--path" not in w.start_argv()
 
 
@@ -428,16 +454,16 @@ def keyboard_backspace_removes_a_chip(w: Walker, demo: Demo) -> None:
 
 @step("desktop")
 def tree_selector_adds_a_folder_chip(w: Walker, demo: Demo) -> None:
-  w.click("#browse", 500)
+  w.click("#browse")
   assert w.count("#tree .tree-row") > 0
-  w.click(".tree-row[aria-expanded] >> nth=0", 500)
+  w.click(".tree-row[aria-expanded] >> nth=0")
   assert w.count(".tree-kids .tree-row") > 0
-  w.click(".tree-row[aria-expanded] >> nth=0 >> .tree-select", 300)
+  w.click(".tree-row[aria-expanded] >> nth=0 >> .tree-select")
   assert w.count(".chip-x") == 1
   assert w.count('.tree-select[aria-pressed="true"]') == 1
-  w.click(".chip-x button >> nth=0", 300)
+  w.click(".chip-x button >> nth=0")
   assert w.count('.tree-select[aria-pressed="true"]') == 0
-  w.click("#browse", 300)
+  w.click("#browse")
   assert w.page.is_hidden("#tree")
 
 
@@ -463,8 +489,8 @@ def timeout_slider_snaps_and_shows_the_number(w: Walker, demo: Demo) -> None:
 
 @step("desktop")
 def start_a_dry_run_and_watch_it_finish(w: Walker, demo: Demo) -> None:
-  w.click('input[data-opt="dry_run"]', 0)
-  w.click("#start", 0)
+  w.click('input[data-opt="dry_run"]')
+  w.click("#start")
   status = w.wait_status("exit")
   assert "exit 0" in status
   # the run card is the story, and its raw log stays open under it
@@ -475,7 +501,7 @@ def start_a_dry_run_and_watch_it_finish(w: Walker, demo: Demo) -> None:
 @step("desktop")
 def cancel_a_run_in_flight(w: Walker, demo: Demo) -> None:
   w.click("#back")
-  w.click(".repo-card >> nth=2 >> .repo-name", 900)
+  w.click(".repo-card >> nth=2 >> .repo-name")
   assert "docs-site" in w.text("#repo-title")
   # The demo fixtures finish in a fraction of a second. The stub gh reports a check that
   # never finishes, so the run parks at the PR gate. Only there Cancel meets a live process.
@@ -483,14 +509,14 @@ def cancel_a_run_in_flight(w: Walker, demo: Demo) -> None:
   try:
     box = 'input[data-opt="dry_run"]'
     if w.page.is_checked(box):
-      w.click(box, 150)
-    w.click("#start", 0)
+      w.click(box)
+    w.click("#start")
     w.page.wait_for_function(
       "() => document.querySelector('#log').innerText.includes('still running, waiting up to')",
       timeout=30000,
     )
     assert w.text("#start") == "Cancel", "the one button turned into Cancel"
-    w.click("#start", 0)
+    w.click("#start")
     status = w.wait_status("cancelled", timeout=20000)
   finally:
     demo.slow_checks(False)
@@ -503,11 +529,11 @@ def cancel_a_run_in_flight(w: Walker, demo: Demo) -> None:
 @step("desktop")
 def copy_the_log(w: Walker, demo: Demo) -> None:
   w.click("#back")
-  w.click(".repo-card >> nth=0 >> .repo-name", 800)
-  w.click('input[data-opt="dry_run"]', 0)
-  w.click("#start", 0)
+  w.click(".repo-card >> nth=0 >> .repo-name")
+  w.click('input[data-opt="dry_run"]')
+  w.click("#start")
   w.wait_status("exit")
-  w.click("#copy", 400)
+  w.click("#copy")
   assert "copied" in w.text("#toast")
 
 
@@ -523,7 +549,7 @@ def jump_to_latest_button(w: Walker, demo: Demo) -> None:
     "#log", "e => { e.scrollTop = 0; e.dispatchEvent(new Event('scroll')); }"
   )
   w.page.wait_for_timeout(300)
-  w.click("#jump", 400)
+  w.click("#jump")
   assert w.page.eval_on_selector(
     "#log", f"e => e.scrollHeight - e.scrollTop - e.clientHeight < {SCROLL_SLACK_PX}"
   )
@@ -540,9 +566,9 @@ def keyboard_ctrl_enter_starts(w: Walker, demo: Demo) -> None:
 
 @step("desktop")
 def adding_a_bad_path_reports_an_error(w: Walker, demo: Demo) -> None:
-  w.goto(1000)
+  w.goto()
   w.page.fill("#add-source", "/definitely/not/a/repo")
-  w.click("#add-btn", 1200)
+  w.click("#add-btn")
   assert w.visible("#add-error")
   assert w.text("#add-error").strip()
 
@@ -551,7 +577,7 @@ def adding_a_bad_path_reports_an_error(w: Walker, demo: Demo) -> None:
 def empty_add_is_a_no_op(w: Walker, demo: Demo) -> None:
   before = w.count(".repo-card")
   w.page.fill("#add-source", "   ")
-  w.click("#add-btn", 600)
+  w.click("#add-btn")
   assert w.count(".repo-card") == before
 
 
@@ -559,7 +585,7 @@ def empty_add_is_a_no_op(w: Walker, demo: Demo) -> None:
 def signed_out_banner_and_honest_pills(w: Walker, demo: Demo) -> None:
   demo.sign_in(False)
   demo.wait_until_checked(False)
-  w.goto(2500)
+  w.goto()
   assert w.visible("#auth-banner")
   pills = w.page.eval_on_selector_all(
     ".arena-row .pill:not(.ahead)", "els => els.map(e => e.innerText)"
@@ -570,7 +596,7 @@ def signed_out_banner_and_honest_pills(w: Walker, demo: Demo) -> None:
 
 @step("desktop")
 def connect_github_opens_access_with_a_token_field(w: Walker, demo: Demo) -> None:
-  w.click("#auth-banner button", 1000)
+  w.click("#auth-banner button")
   assert w.visible("#view-settings")
   assert w.visible("#token-input")
 
@@ -578,22 +604,22 @@ def connect_github_opens_access_with_a_token_field(w: Walker, demo: Demo) -> Non
 @step("desktop")
 def a_junk_token_is_rejected(w: Walker, demo: Demo) -> None:
   w.page.fill("#token-input", "not a token")
-  w.click("#token-btn", 1200)
+  w.click("#token-btn")
   assert "token" in w.text("#toast").lower()
 
 
 @step("desktop")
 def sign_in_with_a_token(w: Walker, demo: Demo) -> None:
   w.page.fill("#token-input", "ghp_walkthrough123")
-  w.click("#token-btn", 2000)
+  w.click("#token-btn")
   assert w.count("#access-body .banner.ok") >= 1
 
 
 @step("desktop")
 def checks_come_back_after_signing_in(w: Walker, demo: Demo) -> None:
-  w.click("#settings-back", 400)
+  w.click("#settings-back")
   demo.wait_until_checked(True)
-  w.goto(2200)
+  w.goto()
   pills = w.page.eval_on_selector_all(
     ".arena-row .pill:not(.ahead)", "els => els.map(e => e.innerText)"
   )
@@ -603,7 +629,7 @@ def checks_come_back_after_signing_in(w: Walker, demo: Demo) -> None:
 
 @step("desktop")
 def offline_shell_loads_and_server_is_called_out(w: Walker, demo: Demo) -> None:
-  w.goto(2000)
+  w.goto()
   w.context.set_offline(True)
   w.page.reload(wait_until="domcontentloaded")
   w.page.wait_for_timeout(1800)
@@ -623,13 +649,13 @@ def back_online_recovers_automatically(w: Walker, demo: Demo) -> None:
 
 @step("phone")
 def phone_loads(w: Walker, demo: Demo) -> None:
-  w.goto(1500)
+  w.goto()
   assert w.count(".repo-card") == DEMO_REPOS
 
 
 @step("phone")
 def phone_tab_bar_in_the_repo_view(w: Walker, demo: Demo) -> None:
-  w.click(".repo-card .repo-name", 700)
+  w.click(".repo-card .repo-name")
   assert w.visible("#tabbar")
 
 
@@ -657,8 +683,8 @@ def phone_paste_box_is_a_tap_target(w: Walker, demo: Demo) -> None:
 
 @step("phone")
 def phone_clean_and_push_runs(w: Walker, demo: Demo) -> None:
-  w.click(".repo-card .repo-name", 700)
-  w.click("#start-mobile", 4000)
+  w.click(".repo-card .repo-name")
+  w.click("#start-mobile")
   assert w.status_text().strip()
 
 
@@ -737,22 +763,22 @@ def walk(out: Path, chromium: str | None) -> int:
 def capture_views(walker: Walker, demo: Demo) -> dict[str, bytes]:
   """The four example views of the design boards, PNG bytes by shot name."""
   shots: dict[str, bytes] = {}
-  walker.goto(1500)
+  walker.goto()
   shots["dashboard"] = walker.page.screenshot()
   demo.sign_in(False)
   demo.wait_until_checked(False)
-  walker.goto(2500)
+  walker.goto()
   shots["signed-out"] = walker.page.screenshot()
   demo.sign_in(True)
   demo.wait_until_checked(True)
-  walker.goto(2000)
-  walker.click(".repo-card .repo-name", 800)
-  walker.click('input[data-opt="dry_run"]', 0)
-  walker.click("#start", 0)
+  walker.goto()
+  walker.click(".repo-card .repo-name")
+  walker.click('input[data-opt="dry_run"]')
+  walker.click("#start")
   walker.wait_status("exit")
   walker.page.wait_for_timeout(400)
   shots["after-run"] = walker.page.screenshot(full_page=True)
-  walker.click("#settings-btn", 1500)
+  walker.click("#settings-btn")
   shots["settings"] = walker.page.screenshot(full_page=True)
   return shots
 

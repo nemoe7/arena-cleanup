@@ -72,8 +72,8 @@ def rows_after(walker: Walker, lines: list[tuple[str, str]]) -> dict[str, str]:
     ),
   )
   try:
-    walker.goto(1200)
-    walker.click(".repo-card:has-text('infra-tools') .repo-name", 800)
+    walker.goto()
+    walker.click(".repo-card:has-text('infra-tools') .repo-name")
     pairs = walker.page.eval_on_selector_all(
       ".phase",
       "els => els.map((e) => [e.dataset.phase, e.querySelector('.phase-time').textContent])",

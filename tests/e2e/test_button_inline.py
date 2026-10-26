@@ -46,8 +46,8 @@ def test_the_button_ends_the_last_checkbox_line_or_drops_under_it(
   size = page.viewport_size
   page.set_viewport_size({"width": width, "height": 900})
   try:
-    desktop.goto(1200)
-    desktop.click(CARD, 800)
+    desktop.goto()
+    desktop.click(CARD)
     assert (
       page.eval_on_selector_all("#options-card .card-foot", "els => els.length") == 0
     )

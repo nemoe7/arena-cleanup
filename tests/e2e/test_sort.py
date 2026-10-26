@@ -32,7 +32,7 @@ def choose(walker: Walker, value: str) -> None:
 
 
 def test_the_default_order_is_the_newest_arena_tip_first(desktop: Walker) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   repos = desktop.page.evaluate(REPOS)
   assert len(repos) >= 3
   assert desktop.page.input_value("#repo-sort") == "newest"
@@ -50,7 +50,7 @@ def test_the_default_order_is_the_newest_arena_tip_first(desktop: Walker) -> Non
 
 
 def test_name_and_pr_state_orders(desktop: Walker) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   repos = desktop.page.evaluate(REPOS)
   choose(desktop, "name")
   assert desktop.page.evaluate(NAMES) == sorted(r["name"] for r in repos)
@@ -63,9 +63,9 @@ def test_name_and_pr_state_orders(desktop: Walker) -> None:
 
 
 def test_the_order_survives_a_reload(desktop: Walker) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   choose(desktop, "name")
-  desktop.goto(1200)
+  desktop.goto()
   assert desktop.page.input_value("#repo-sort") == "name"
   names = desktop.page.evaluate(NAMES)
   assert names == sorted(names)

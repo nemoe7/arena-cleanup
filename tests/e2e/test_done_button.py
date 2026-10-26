@@ -43,8 +43,8 @@ def zero_ahead(route: Any) -> None:
 
 
 def open_repo(walker: Walker, name: str = REPO) -> None:
-  walker.goto(1200)
-  walker.click(f".repo-card:has-text('{name}') .repo-name", 800)
+  walker.goto()
+  walker.click(f".repo-card:has-text('{name}') .repo-name")
 
 
 @pytest.mark.parametrize("width", ["desktop", "phone"])

@@ -51,7 +51,7 @@ def feet_on(walker: Walker, hash_route: str) -> dict[str, dict]:
     page.wait_for_selector("#card-identity")
   else:
     page.wait_for_selector(".repo-card")
-    walker.click(CARD, 800)
+    walker.click(CARD)
     page.wait_for_selector("#options-card")
   page.wait_for_timeout(300)
   return {foot["card"]: foot for foot in page.evaluate(FEET)}

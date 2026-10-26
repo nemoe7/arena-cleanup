@@ -28,7 +28,7 @@ BUSY = "() => document.querySelector('.repo-card .btn.twin .busy .ico-svg').offs
 def test_every_pill_dot_is_the_nuu_size_and_the_busy_glyph_box_matches(
   desktop: Walker,
 ) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   busy = desktop.page.evaluate(BUSY)
   open_repo(desktop, "data-pipeline")
   desktop.page.wait_for_selector(".arena-item .dot.live")

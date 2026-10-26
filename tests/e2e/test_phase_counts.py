@@ -23,17 +23,17 @@ def row_texts(walker: Walker) -> dict[str, str]:
 
 
 def test_idle_rows_show_only_their_names(desktop: Walker) -> None:
-  desktop.goto(1200)
+  desktop.goto()
   # no e2e test runs infra-tools, so its view has no latest run to show
-  desktop.click(".repo-card:has-text('infra-tools') .repo-name", 800)
+  desktop.click(".repo-card:has-text('infra-tools') .repo-name")
   assert set(row_texts(desktop).values()) == {""}
 
 
 def test_a_dry_run_counts_checks_commits_and_tags(desktop: Walker) -> None:
-  desktop.goto(1200)
-  desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
-  desktop.click('input[data-opt="dry_run"]', 0)
-  desktop.click("#start", 0)
+  desktop.goto()
+  desktop.click(".repo-card:has-text('shop-web') .repo-name")
+  desktop.click('input[data-opt="dry_run"]')
+  desktop.click("#start")
   desktop.wait_status("exit")
   rows = row_texts(desktop)
   assert rows["prepare"] == ""
@@ -82,8 +82,8 @@ def painted(walker: Walker, lines: list[tuple[str, str]]) -> dict[str, str]:
     ),
   )
   try:
-    walker.goto(1200)
-    walker.click(".repo-card:has-text('infra-tools') .repo-name", 800)
+    walker.goto()
+    walker.click(".repo-card:has-text('infra-tools') .repo-name")
     return row_texts(walker)
   finally:
     walker.page.unroute(pattern)
@@ -117,14 +117,14 @@ def test_the_checks_row_counts_passed_of_total(desktop: Walker) -> None:
 def test_a_waiting_check_shows_as_live(
   desktop: Walker, demo: Demo, signing: None
 ) -> None:
-  desktop.goto(1200)
-  desktop.click(".repo-card:has-text('docs-site') .repo-name", 800)
+  desktop.goto()
+  desktop.click(".repo-card:has-text('docs-site') .repo-name")
   demo.slow_checks(True)
   try:
     box = 'input[data-opt="dry_run"]'
     if desktop.page.is_checked(box):
-      desktop.click(box, 150)
-    desktop.click("#start", 0)
+      desktop.click(box)
+    desktop.click("#start")
     desktop.page.wait_for_function(
       "() => document.querySelector('.phase[data-phase=\"pr\"] .phase-sub')"
       ".textContent === '0/1'",
@@ -132,5 +132,5 @@ def test_a_waiting_check_shows_as_live(
     )
   finally:
     demo.slow_checks(False)
-    desktop.click("#start", 0)
+    desktop.click("#start")
     desktop.wait_status("cancelled")

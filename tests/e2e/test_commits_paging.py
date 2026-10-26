@@ -61,8 +61,8 @@ def test_the_hint_is_the_count_and_a_scroll_loads_the_older_page(
     route.fulfill(status=200, content_type="application/json", body=json.dumps(body))
 
   page.route("**/api/repos/*/commits?*", fake)
-  desktop.goto(1200)
-  desktop.click(".repo-card:has-text('shop-web') .repo-name", 800)
+  desktop.goto()
+  desktop.click(".repo-card:has-text('shop-web') .repo-name")
   assert desktop.text("#commits-hint") == f"{TOTAL:,}"
   assert page.evaluate(ROWS) == PAGE
   assert urls[-1].endswith(f"limit={PAGE}{REF}")
@@ -79,7 +79,7 @@ def test_the_hint_is_the_count_and_a_scroll_loads_the_older_page(
   page.wait_for_timeout(400)
   assert len(urls) == 2
   # Reload restarts at the first page
-  desktop.click("#commits-refresh", 600)
+  desktop.click("#commits-refresh")
   assert page.evaluate(ROWS) == PAGE
   assert urls[-1].endswith(f"limit={PAGE}{REF}")
   page.unroute("**/api/repos/*/commits?*")

@@ -61,4 +61,4 @@ def test_the_three_views_share_one_dialog(desktop: Walker) -> None:
   assert checks["actions"] == ["Open PR"], "the last view's actions are gone"
   page.keyboard.press("Escape")
   page.wait_for_function(CLOSED)
-  desktop.click("#back", 600)
+  desktop.click("#back")

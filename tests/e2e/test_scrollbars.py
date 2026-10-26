@@ -26,7 +26,7 @@ GUTTERS = """() => ({
 def test_the_root_reserves_no_gutter_and_chromium_keeps_the_drawn_thumb(
   desktop: Walker,
 ) -> None:
-  desktop.goto(600)
+  desktop.goto()
   got = desktop.page.evaluate(GUTTERS)
   assert got["root"] == "auto", "the page root reserves no gutter"
   assert got["view"] == "stable", "a scrolling view keeps its gutter"

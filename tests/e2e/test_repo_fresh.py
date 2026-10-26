@@ -34,7 +34,7 @@ def repo_id(walker: Walker, name: str) -> str:
 
 def test_a_slow_status_answer_stays_with_its_repo(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
+  desktop.goto()
   page.evaluate(DELAY, repo_id(desktop, "billing-api"))
   try:
     page.click(CARD.format(name="billing-api"))
@@ -66,11 +66,11 @@ def subjects(walker: Walker, rid: str, ref: str) -> list[str]:
 
 def test_a_deleted_branch_takes_its_commits_off_the_list(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
+  desktop.goto()
   rid = repo_id(desktop, "data-pipeline")
-  desktop.click(CARD.format(name="data-pipeline"), 800)
+  desktop.click(CARD.format(name="data-pipeline"))
   page.wait_for_selector(ROWS)
-  desktop.click(f"{ROWS}:not(.selected) .select", 700)
+  desktop.click(f"{ROWS}:not(.selected) .select")
   chosen = page.get_attribute(f"{ROWS}.selected .select", "data-branch")
   other = page.get_attribute(f"{ROWS}:not(.selected) .select", "data-branch")
   assert (
@@ -82,8 +82,8 @@ def test_a_deleted_branch_takes_its_commits_off_the_list(desktop: Walker) -> Non
     lambda route: route.fulfill(status=200, content_type="application/json", body="{}"),
   )
   try:
-    desktop.click(f"{ROWS}.selected .arena-del", 300)
-    desktop.click("#confirm-go", 0)
+    desktop.click(f"{ROWS}.selected .arena-del")
+    desktop.click("#confirm-go")
     want = subjects(desktop, rid, other)[0]
     page.wait_for_function(
       f"document.querySelector('#commits .commit .subject').textContent === {want!r}"
@@ -94,8 +94,8 @@ def test_a_deleted_branch_takes_its_commits_off_the_list(desktop: Walker) -> Non
 
 def test_the_list_tick_refreshes_the_sidebar(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
-  desktop.click(CARD.format(name="docs-site"), 800)
+  desktop.goto()
+  desktop.click(CARD.format(name="docs-site"))
   assert "clean" in page.inner_text("#side-top")
 
   def dirty(route):  # a list read that says the clone has three changes
@@ -117,18 +117,18 @@ def test_the_list_tick_refreshes_the_sidebar(desktop: Walker) -> None:
 
 def test_a_return_from_settings_reads_the_status_again(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
+  desktop.goto()
   rid = repo_id(desktop, "docs-site")
-  desktop.click(CARD.format(name="docs-site"), 800)
-  desktop.click("#settings-btn", 400)
+  desktop.click(CARD.format(name="docs-site"))
+  desktop.click("#settings-btn")
   with page.expect_request(lambda r: r.url.endswith(f"/api/repos/{rid}")):
-    desktop.click("#settings-back", 0)
+    desktop.click("#settings-back")
   assert page.inner_text("#repo-title") == "docs-site"
 
 
 def test_clean_and_push_waits_for_the_first_fresh_status(desktop: Walker) -> None:
   page = desktop.page
-  desktop.goto(1200)
+  desktop.goto()
   page.evaluate(DELAY, repo_id(desktop, "shop-web"))
   try:
     page.click(CARD.format(name="shop-web"))
