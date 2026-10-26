@@ -134,7 +134,7 @@ def test_clean_and_push_waits_for_the_first_fresh_status(desktop: Walker) -> Non
     page.click(CARD.format(name="shop-web"))
     page.wait_for_timeout(300)
     assert page.eval_on_selector("#start", "e => e.disabled")
-    assert page.get_attribute("#start", "title") == "reading the branch state"
+    assert page.get_attribute("#start", "title") == "reading branch state"
     page.wait_for_function(
       "() => !document.querySelector('#start').disabled", timeout=5000
     )

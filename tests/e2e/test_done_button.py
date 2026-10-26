@@ -105,7 +105,7 @@ def test_the_button_waits_for_the_branch_state_after_a_run(desktop: Walker) -> N
     page.wait_for_function("document.getElementById('start').dataset.state === 'idle'")
     for btn in page.evaluate(BUTTONS):
       assert btn["disabled"] is True, "grey from the run end"
-      assert btn["title"] == "reading the branch state"
+      assert btn["title"] == "reading branch state"
   finally:
     for r in held:
       r.continue_()

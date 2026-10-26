@@ -207,7 +207,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - `phase`: the wide view behind each run phase row, which is a button once the row has lines.
   - A step list with stamp, message, and duration, the commit list after a rewrite, or the push facts as a `kv` list. No view repeats the log lines.
     - Prepare names three steps: `Fetched`, `Located remote arena branch`, and `Pulled arena/<slug>`. Each takes the stamp and duration of the line that ends it, and the open step reads `Fetching…`.
-    - Rewrite and sign names `Collected <n> commits`, `Rewrote the commits`, `Backup written`, `Signed <k> of <n> commits`, and the tag move, and reads `Signing <i>/<n>…` while it runs. A dry run reads `Would sign <k> commits`.
+    - Rewrite and sign names `Collected <n> commits`, `Commits rewritten`, `Backup written`, `Signed <k> of <n> commits`, and the tag move, and reads `Signing <i>/<n>…` while it runs. A dry run reads `Would sign <k> commits`.
     - Clean up names the return, the reset, the branch deletes, and `Done`. A step the run skipped is left out.
     - A failed phase ends on its error line.
   - PR checks opens the pill view of the PR the run checked, with the same check rows, job logs, and Open PR. Without a PR with checks it names its steps: `Found PR #<n>`, `No open PR for <branch>`, `PR check skipped`, or `PR #<n> checks passed`.
@@ -256,7 +256,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Starting is disabled until the job id arrives.
   - Attaching reads Cancel, disabled, while a repo the list flags as running opens and its latest run is read. It never shows Clean & Push first.
   - Running reads Cancel as a plain button.
-  - Idle greys with a tooltip in three cases: `reading the branch state` from the run end until the status answers, `a clean would overwrite commits on main` below 0, and `nothing to clean on <branch>` at 0. Any other idle state keeps it live, an unknown count included.
+  - Idle greys with a tooltip in three cases: `reading branch state` from the run end until the status answers, `a clean would overwrite commits on main` below 0, and `nothing to clean on <branch>` at 0. Any other idle state keeps it live, an unknown count included.
 - `card-foot`: the action row of a card, right-aligned with an 8 px gap and 16 px of padding. The options card has none: its run button sits in the checkbox row.
   - Every card action sits there, so the x alone stays top right.
   - The options foot hides on a phone, where the tab bar runs.
@@ -567,7 +567,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: the dashboard repaints its cards only when a list read changed something. Focus, an armed Remove, and an open job log's scroll survive a tick, and the relative stamps update in place.
 - Accepted 2026-10-25: an error toast stays 5 s and a receipt 2.2 s. A refused clone reports under the add field, as a bad source does.
 - Accepted 2026-10-25: a dashboard card greys Clean & Push for overwrite and nothing-ahead reasons, through one guard shared with its repo view. That view alone adds `reading the branch state`.
-- Accepted 2026-10-25: a repo view opens on its list entry and greys Clean & Push, `reading the branch state`, until the fresh status lands. A click never runs on a status older than that read.
+- Accepted 2026-10-25: a repo view opens on its list entry and greys Clean & Push, `reading branch state`, until the fresh status lands. A click never runs on a status older than that read.
 - Accepted 2026-10-25: Cancel toasts `cancelling` when the server took the request, and the error when it did not. Only the status line says `cancelled`, once the run ended.
 - Accepted 2026-10-25: the Running button shows its dot bare. The busy face narrows the glyph box to the dot, so dot and label centre as a pair with an 8 px gap.
 - Accepted 2026-10-25: the dashboard names how long ago a repo was last active, the newest of check completion, arena tip commit, and PR edit. The compact nuu form sits after the name, the full form and the source in its title.
@@ -585,3 +585,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-26: one dialog shell serves the delete confirm, the PR checks, and the phase detail, as the nuu modal recipe draws it. A view is a template that mounts into the shared body and actions, so the page holds one `dialog` and one close x.
 - Accepted 2026-10-26: a repo opened during its own run paints Cancel from the first frame. The list flag seeds the view, and the latest-run answer attaches the stream, so Clean & Push never flashes before Cancel.
 - Accepted 2026-10-26: no phase row repeats the log. The PR checks row opens the pill view of the checked PR, and Rewrite and sign and Clean up name their steps like Prepare.
+- Accepted 2026-10-26: short labels drop their articles and fillers. A tooltip, a button name, or a step name reads like `Show PR checks`, `Open repo`, or `Deleting local branch…`, while a sentence-long hint keeps its words.

@@ -965,7 +965,7 @@
 <div class="app">
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
-    <a class="brand" href="#/" aria-label="arena-cleanup, back to the dashboard">
+    <a class="brand" href="#/" aria-label="Back to dashboard">
       <span class="ico-svg" data-icon="broom-sparkles" aria-hidden="true"></span>
       <span class="name">arena-cleanup</span>
       <span class="chip" id="ver">v?</span>
@@ -1059,7 +1059,7 @@
             <div class="opt row" id="opt-paths">
               <label for="pathin">Remove paths</label>
               <div class="chips" id="chips" title="git filter-repo removes each path from every ref.">
-                <input id="pathin" placeholder="add a file or folder…" spellcheck="false" autocomplete="off" aria-label="Add a path to remove">
+                <input id="pathin" placeholder="add a file or folder…" spellcheck="false" autocomplete="off" aria-label="Add path">
               </div>
               <button type="button" class="link-btn" id="browse" aria-expanded="false" aria-controls="tree"><span class="ico-svg" data-icon="folder-tree" aria-hidden="true"></span>Browse</button>
               <div class="tree" id="tree" role="tree" aria-label="Files at HEAD" hidden></div>
@@ -1475,7 +1475,7 @@
         el("span", { class: "phrase" }, phrase),
         c.url
           ? el("a", { class: "btn ghost", href: c.url, target: "_blank", rel: "noopener",
-              "aria-label": `Open the run of ${c.name}` }, "Open run")
+              "aria-label": `Open run of ${c.name}` }, "Open run")
           : null);
     }));
     pres.forEach((pre, i) => { pre.scrollTop = tops[i]; });
@@ -1670,7 +1670,7 @@
     let timer = 0;
     const disarm = () => { btn.classList.remove("armed"); btn.replaceChildren(icon("trash-2")); btn.setAttribute("aria-label", `Remove ${repo.name}`); };
     const btn = el("button", {
-      class: "btn ghost rm", title: "Remove this repo", "aria-label": `Remove ${repo.name}`,
+      class: "btn ghost rm", title: "Remove repo", "aria-label": `Remove ${repo.name}`,
       onclick: async (e) => {
         e.stopPropagation();
         if (!btn.classList.contains("armed")) {
@@ -1714,7 +1714,7 @@
     const head = el("div", { class: "repo-head" },
       el("span", { class: "repo-ico", "aria-hidden": "true" }, icon("git-branch")),
       el("div", { style: "min-width:0" },
-        el("button", { type: "button", class: "repo-name", title: "Open the repo",
+        el("button", { type: "button", class: "repo-name", title: "Open repo",
           onclick: (e) => { e.stopPropagation(); openRepo(repo.id); } }, repo.name),
         sinceStamp(s)),
     );
@@ -2187,7 +2187,7 @@
                  icon("check"))
              : null,
            el("button", { type: "button", class: "icon-btn arena-del", "aria-label": `Delete ${b}`,
-             title: "Delete this arena branch on origin", onclick: () => confirmDelete(b) },
+             title: "Delete arena branch", onclick: () => confirmDelete(b) },
              icon("trash-2"))))
         : [el("div", { class: "row-btn", style: "cursor:default;color:var(--dim)" }, el("span", { class: "txt" }, "none on origin"))]));
 
@@ -2456,7 +2456,7 @@
   // the repo view adds its own reasons: a run just ended and the branch state
   // is on its way, or the target is not the default branch
   function runBlock() {
-    if (state.settling) return "reading the branch state";
+    if (state.settling) return "reading branch state";
     const s = state.repo?.status;
     if (!s || !s.ok) return "";
     const target = state.branch || s.branch || s.default;
@@ -2596,7 +2596,7 @@
     $("phases").replaceChildren(...state.phases.map((p) =>
       el("li", { class: "phase", "data-phase": p.id, "data-state": "idle" },
         el("button", { type: "button", class: "phase-head", disabled: true,
-          title: p.id === "pr" ? "Show PR checks" : `Show the ${p.name} steps`, onclick: () => openPhase(p.id) },
+          title: p.id === "pr" ? "Show PR checks" : `Show ${p.name} steps`, onclick: () => openPhase(p.id) },
           el("span", { class: "phase-ico", "aria-hidden": "true" }, icon("circle-small", "ico-svg idle")),
           el("span", { class: "phase-name" }, p.name),
           el("span", { class: "phase-sub" }, p.sub),
@@ -2733,7 +2733,7 @@
   // only renames the open step, and `{n}` reads a match group or a saved var.
   const STEP_TABLES = {
     prepare: {
-      vars: { slug: "the arena branch" },
+      vars: { slug: "arena branch" },
       steps: [
         { doing: "Fetching…", ends: [[/^fetched and pruned origin/i, "Fetched"]] },
         { doing: "Locating remote arena branch…",
@@ -2745,11 +2745,11 @@
     pr: {
       vars: { pr: "" },
       steps: [
-        { doing: "Looking for the PR…", ends: [
+        { doing: "Looking for PR…", ends: [
           [/^--skip-pr-check set/i, "PR check skipped"],
           [/^no open PR for (?:branch )?([^\s,]+)/i, "No open PR for {1}"],
           [/^found PR #(\d+)/i, "Found PR #{1}", (m) => ({ pr: m[1] })]] },
-        { doing: "Reading the checks of PR #{pr}…", ends: [
+        { doing: "Reading PR #{pr} checks…", ends: [
           [/^PR #(\d+) reports no status checks/i, "No checks on PR #{1}"],
           [/^would wait for (\d+) still-running check/i, (m) => `Would wait for ${plural(+m[1], "running check")}`],
           [/^(\d+) check\(s\) still running/i, null, (m) => ({ doing: `Waiting for ${plural(+m[1], "running check")}…` })],
@@ -2770,11 +2770,11 @@
         { doing: "{verb}…", ends: [
           [/^scanning\.\.\. 100% \(\d+\/\d+\)(?: - (\d+) rewritten)?/i, (m) => `Would sign ${plural(+(m[1] || 0), "commit")}`],
           [/^rewriting\.\.\. (\d+)% \((\d+)\/(\d+)\)/i, null, (m) => ({ doing: `Signing ${m[2]}/${m[3]}…` })],
-          [/^creating backup bundle/i, "Rewrote the commits"],
+          [/^creating backup bundle/i, "Commits rewritten"],
           [/^nothing to rewrite/i, "Nothing to rewrite"],
           [/^history already clean/i, "History already clean"]] },
-        { optional: true, doing: "Writing the backup bundle…", ends: [[/^backup written to /i, "Backup written"]] },
-        { optional: true, doing: "Finishing the rewrite…", ends: [
+        { optional: true, doing: "Writing backup…", ends: [[/^backup written to /i, "Backup written"]] },
+        { optional: true, doing: "Finishing rewrite…", ends: [
           [/^history rewritten: (\d+) commit\(s\): (\d+) rewritten, (\d+) signed/i,
             (m) => `Signed ${m[3]} of ${plural(+m[1], "commit")}`]] },
         { optional: true, doing: "Moving tags…", ends: [
@@ -2785,17 +2785,17 @@
     sync: {
       vars: {},
       steps: [
-        { doing: "Returning to the default branch…", ends: [
+        { doing: "Returning to default branch…", ends: [
           [/^would return to (\S+)/i, "Would return to {1}"],
           [/^returning to (\S+)/i, "Returned to {1}"],
           [/^staying on (\S+)/i, "Staying on {1}"],
           [/^switching to (\S+) first/i, "Switched to {1}"]] },
         { optional: true, doing: "Resetting…", ends: [[/^resetting (\S+) to origin\//i, "Reset {1} to origin"]] },
-        { optional: true, doing: "Deleting the remote branch…", ends: [
+        { optional: true, doing: "Deleting remote branch…", ends: [
           [/^would delete origin\/(\S+)/i, "Would delete origin/{1}"],
           [/^deleted origin\/(\S+)/i, "Deleted origin/{1}"],
           [/^origin\/(\S+) is already gone/i, "origin/{1} already gone"]] },
-        { optional: true, doing: "Deleting the local branch…", ends: [
+        { optional: true, doing: "Deleting local branch…", ends: [
           [/^would delete local branch (\S+)/i, "Would delete local branch {1}"],
           [/^deleted local branch (\S+)/i, "Deleted local branch {1}"],
           [/^local branch (\S+) is still checked out/i, "Kept local branch {1}, still checked out"]] },
@@ -2856,7 +2856,7 @@
       ...kv("Tags", ...tags));
   }
   async function commitBody(box, count) {
-    box.replaceChildren(el("div", { class: "hint", style: "padding:8px 0" }, "Loading the commits…"));
+    box.replaceChildren(el("div", { class: "hint", style: "padding:8px 0" }, "Loading commits…"));
     try {
       const data = await api(`/api/repos/${state.repo.id}/commits?limit=${Math.min(count, COMMITS_PAGE)}`);
       if (state.phaseOpen !== "rewrite") return;
@@ -2938,7 +2938,7 @@
       btn.classList.toggle("primary", !running);
       // no job id yet, while a run starts or the view attaches to one: no click lands
       btn.disabled = mode === "starting" || mode === "attaching";
-      if (running) btn.title = "Stops this run";
+      if (running) btn.title = "Stop run";
     }
     if (mode === "idle") renderCommand();
   };
@@ -3491,7 +3491,7 @@
     }
 
     nodes.push(el("div", { class: "card", id: "card-create-key" },
-      el("div", { class: "card-head" }, el("h2", {}, s.keys.length ? "Create another key" : "Create a key"), el("span", { class: "hint" }, "ed25519, no passphrase, generated inside the container")),
+      el("div", { class: "card-head" }, el("h2", {}, s.keys.length ? "Create another key" : "Create key"), el("span", { class: "hint" }, "ed25519, no passphrase, generated inside the container")),
       el("div", { class: "card-body", style: "display:grid;gap:10px" },
         el("div", { class: "sign-fields" }, name, email),
         el("div", { class: "hint" }, "The private key stays in /home/arena/.gnupg inside this container's volume. Export it if you also want to sign on your laptop."),
@@ -3500,7 +3500,7 @@
 
     // steps
     nodes.push(el("div", { class: "card", id: "card-github-keys" },
-      el("div", { class: "card-head" }, el("h2", {}, "Add the public key to GitHub")),
+      el("div", { class: "card-head" }, el("h2", {}, "Add public key to GitHub")),
       el("div", { class: "card-body" },
         stepList([
           "Copy the public key (<b>Copy public key</b> above).",

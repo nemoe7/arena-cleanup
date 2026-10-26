@@ -18,6 +18,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the log lines.
 - Every checks opener, the pill, the arena row button, and the PR checks phase
   row, reads Show PR checks.
+- Short labels drop their articles and fillers: tooltips, the step names of the
+  phase views, and the GPG key card heads.
 
 ### Fixed
 
