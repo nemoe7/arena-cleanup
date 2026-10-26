@@ -127,7 +127,7 @@ empty go. Signatures do not survive it, so the push pass re-signs the branch
 it pushes.
 
 Tags that pointed into rewritten commits move with them, force-pushed with a
-lease. **Don't move tags** leaves them and warns.
+lease. Unchecked, **Update Tags** leaves them and warns.
 
 `Ctrl`/`Cmd` + `Enter` starts the selected command. On a phone the same page
 stacks into one column, and the primary actions stick to the bottom.
@@ -188,12 +188,12 @@ Browser checks need Playwright: `uv sync --group qa`, then `uv run playwright
 install chromium`, or a Chromium of your own.
 
 ```console
-uv run pytest tests/e2e                           # spacing audit, history depth, log clock
+uv run pytest tests/e2e                           # the browser checks of the UI
 uv run scripts/walk.py --out /tmp/walk            # press every control, one screenshot per step
 ```
 
-Four workflows run on GitHub. `ci.yml` runs the lint, format, Markdown, and
-pytest steps plus the spacing audit. `pr-check.yml` holds PRs to the
+Four workflows run on GitHub. `ci.yml` runs the lint, format, Markdown,
+nemoizer, and pytest steps. `pr-check.yml` holds PRs to the
 contract in `scripts/check_pr.py`. `container-scan.yml` prints a Trivy report,
 and `docker.yml` publishes the image.
 

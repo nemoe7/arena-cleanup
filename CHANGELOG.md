@@ -21,6 +21,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The PR checks steps count the checks GitHub added during the wait, so an
   engine log with a frozen total still reads the full count.
+- README names the Update Tags option, the browser checks, and the CI steps
+  as they are. The engine tests that sign skip without gpg.
 
 ## [0.3.15] - 2026-10-26
 

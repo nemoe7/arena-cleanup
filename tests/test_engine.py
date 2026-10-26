@@ -64,6 +64,7 @@ def test_logging_format(world: World) -> None:
   assert res.says("scanning... ")
 
 
+@needs_gpg
 def test_strip_rewrites_identity_dates_and_messages(world: World) -> None:
   res = world.cleanup("strip")
   assert res.rc == 0
@@ -94,6 +95,7 @@ def test_strip_rewrites_identity_dates_and_messages(world: World) -> None:
   assert world.git("rev-list", "--count", "HEAD") == str(SEED_COMMITS)
 
 
+@needs_gpg
 def test_strip_is_idempotent_and_check_reports_clean(world: World) -> None:
   world.cleanup("strip")
   assert world.cleanup("strip", "--check").rc == 0
@@ -103,6 +105,7 @@ def test_strip_is_idempotent_and_check_reports_clean(world: World) -> None:
   assert len(list(world.tmp.glob(BUNDLE_GLOB))) == 1
 
 
+@needs_gpg
 def test_full_run_from_the_default_branch(world: World) -> None:
   world.git("checkout", "-q", "main")
   world.git("reset", "-q", "--hard", "origin/main", check=False)
@@ -127,6 +130,7 @@ def test_full_run_from_the_default_branch(world: World) -> None:
   assert "arena-agent" not in world.git("log", "--format=%an", "origin/main")
 
 
+@needs_gpg
 def test_second_run_is_a_clean_no_op(world: World) -> None:
   res = world.cleanup("-K")
   assert res.rc == 0, res.text
@@ -137,6 +141,7 @@ def test_second_run_is_a_clean_no_op(world: World) -> None:
   assert res.strays() == []
 
 
+@needs_gpg
 def test_pr_gate(world: World) -> None:
   world.git("checkout", "-q", "arena/session-1")
   world.agent_commit("chore: bot work 2")
@@ -325,6 +330,7 @@ def test_doctor(world: World) -> None:
   assert res.says("gh authenticated")
 
 
+@needs_gpg
 def test_force_push_lease_protects_the_default_branch(world: World) -> None:
   real_git = shutil.which("git")
   flag = world.root / "sabotaged"
@@ -396,6 +402,7 @@ def test_no_lease_push_lands_when_the_default_branch_moved(world: World) -> None
   world.git("checkout", "-q", "main")
 
 
+@needs_gpg
 def test_upstream_diverged_with_different_content(world: World) -> None:
   sibling = world.root / "sibling"
   world.git("clone", "-q", str(world.origin), str(sibling), cwd=world.root)
@@ -458,6 +465,7 @@ def test_upstream_diverged_with_different_content(world: World) -> None:
   assert world.git_rc("cat-file", "-e", "origin/main:local-only.txt") != 0
 
 
+@needs_gpg
 def test_branch_main_cleans_the_default_branch_in_place(world: World) -> None:
   mode = world.root / "mode.git"
   work = world.root / "mode-work"
@@ -518,6 +526,7 @@ def test_branch_main_cleans_the_default_branch_in_place(world: World) -> None:
   assert res.says("branch not found: no-such-branch")
 
 
+@needs_gpg
 def test_delete_branch_drops_the_arena_branch_once_published(world: World) -> None:
   work = world.root / "mode-work"
   world.git("checkout", "-q", "-b", "arena/mode-test", cwd=work)
@@ -603,6 +612,7 @@ USAGE_ERROR = 2
 STRIP_CHECK_CODES = {0, 7}
 
 
+@needs_gpg
 def test_help_screen_and_shorthands(world: World) -> None:
   res = world.cleanup("--help")
   assert res.rc == 0
@@ -641,6 +651,7 @@ def test_help_screen_and_shorthands(world: World) -> None:
   )
 
 
+@needs_gpg
 def test_blacklist_claims_a_bare_arena_author(world: World) -> None:
   world.git("checkout", "-q", "main")
   world.git("checkout", "-q", "-b", "arena/bl-check", "main")
@@ -670,6 +681,7 @@ def test_blacklist_claims_a_bare_arena_author(world: World) -> None:
   world.git("branch", "-q", "-D", "arena/bl-check")
 
 
+@needs_gpg
 def test_claim_rules_come_from_git_config(world: World) -> None:
   world.git("checkout", "-q", "main")
   world.git("checkout", "-q", "-b", "arena/rules-check", "main")
@@ -716,6 +728,7 @@ def test_superseded_check_runs(world: World) -> None:
   assert res.says('check "test": FAILURE')
 
 
+@needs_gpg
 def test_local_arena_branch_is_deleted_once_the_run_is_done(world: World) -> None:
   world.git("checkout", "-q", "main")
   world.git("checkout", "-q", "-b", "arena/cleanup-default", "main")
@@ -759,6 +772,7 @@ def test_local_arena_branch_is_deleted_once_the_run_is_done(world: World) -> Non
   assert "arena/dropboth" not in world.remote_heads()
 
 
+@needs_gpg
 def test_uncommitted_changes(world: World) -> None:
   world.git("checkout", "-q", "main")
   world.git("fetch", "-q", "--prune", "origin")
@@ -811,6 +825,7 @@ def test_uncommitted_changes(world: World) -> None:
   world.git("fetch", "-q", "--prune", "origin")
 
 
+@needs_gpg
 def test_local_arena_branch_is_the_pre_cleanup_copy(world: World) -> None:
   world.git("checkout", "-q", "main")
   world.only_arena()
@@ -836,6 +851,7 @@ def test_local_arena_branch_is_the_pre_cleanup_copy(world: World) -> None:
   world.git("branch", "-q", "-D", "arena/stale-copy", check=False)
 
 
+@needs_gpg
 def test_multiple_origin_arena_branches(world: World) -> None:
   world.git("checkout", "-q", "main")
   world.git("reset", "-q", "--hard", "origin/main")
@@ -899,6 +915,7 @@ def test_multiple_origin_arena_branches(world: World) -> None:
   world.git("fetch", "-q", "--prune", "origin")
 
 
+@needs_gpg
 def test_divergence_prompt_answered_by_hand(world: World) -> None:
   sibling = world.root / "sibling"
   world.git("checkout", "-q", "main")
@@ -1011,6 +1028,7 @@ def test_divergence_prompt_answered_by_hand(world: World) -> None:
   world.git("branch", "-q", "-D", "arena/div-prompt", check=False)
 
 
+@needs_gpg
 def test_default_branch_already_absorbed_the_branch(world: World) -> None:
   world.git("checkout", "-q", "main")
   world.only_arena()
@@ -1070,6 +1088,7 @@ def test_default_branch_already_absorbed_the_branch(world: World) -> None:
   assert world.git_rc("merge-base", "--is-ancestor", maint_sha, "origin/main") != 0
 
 
+@needs_gpg
 def test_push_guard_for_a_maintenance_commit_on_main(world: World) -> None:
   world.git("checkout", "-q", "main")
   world.git("checkout", "-q", "-b", "arena/new-work", "main")
@@ -1134,6 +1153,7 @@ AGENT = "arena-agent <agent@arena.ai>"
 REWRITE_NEEDED = 7
 
 
+@needs_gpg
 @needs_filter_repo
 def test_path_removes_a_directory_from_history_and_tags_follow(world: World) -> None:
   world.git("checkout", "-q", "main")
@@ -1199,6 +1219,7 @@ def test_path_removes_a_directory_from_history_and_tags_follow(world: World) -> 
   assert world.cleanup("strip", "-p", "site/uploads", "--keep-empty").rc == USAGE_ERROR
 
 
+@needs_gpg
 @needs_filter_repo
 def test_path_with_run_publishes_the_cleaned_tree_and_moves_tags(world: World) -> None:
   origin = world.origin
