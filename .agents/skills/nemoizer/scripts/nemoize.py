@@ -82,12 +82,14 @@ except ImportError:
 from prose import (
   COMMENT_BLOCK_CAP,
   comment_blocks,
+  html_attr_spans,
   is_code_file,
   is_env_file,
   is_jinja_file,
   is_workflow_yaml,
   prose_spans,
   slash_comments,
+  ui_label_spans,
   workflow_name_spans,
 )
 
@@ -224,9 +226,26 @@ PROSE_RULE_IDS = {
   "self_narration": "HMN910",
   "paragraph": "NMP100",
   "comment_block": "NMP101",
+  "padded_ui_label": "NMU100",
   "serial_comma": "NMO003",
   "the_density": "NMO902",
 }
+NMU100_MAX_WORDS = 6
+PADDING = re.compile(r"\b(the|this|these|those|a|an|please|here|just)\b", re.IGNORECASE)
+SENTENCE_END = re.compile(r"[.!?]$")
+
+
+def nmu100_findings(spans, cap=NMU100_MAX_WORDS):
+  """A label of cap words or fewer must not carry an article or a filler."""
+  for text, line, _ in spans:
+    words = text.split()
+    if len(words) > cap or SENTENCE_END.search(text):
+      continue
+    hit = PADDING.search(text)
+    if hit:
+      yield line, text, hit.group(1), len(words)
+
+
 RULE_DESCRIPTIONS = {
   "STE001": "dangling conjunction",
   "STE100": "semicolon in prose",
@@ -261,6 +280,7 @@ RULE_DESCRIPTIONS = {
   "HMN910": "self-narration",
   "NMP100": "paragraph has {count} sentences (cap {cap})",
   "NMP101": "comment block has {count} lines (cap {cap})",
+  "NMU100": 'label "{text}" carries "{word}" ({count} words, cap {cap})',
   "NMO003": "missing Oxford comma",
   "NMO902": (
     '"the" density is {count}% (cap {cap}%); '
@@ -283,6 +303,11 @@ def describe_finding(row):
   if row["rule"] == "NMP100" and row.get("kind") in NMP100_LABELS:
     label = NMP100_LABELS[row["kind"]]
     return f"{label} has {row['count']} sentences (cap {row['cap']})"
+  if row["rule"] == "NMU100":
+    return (
+      f'label "{row["text"]}" carries "{row["word"]}"'
+      f" ({row['count']} words, cap {row['cap']})"
+    )
   template = RULE_DESCRIPTIONS.get(row["rule"], "{count} (cap {cap})")
   if "{count}" in template:
     return template.format(count=row["count"], cap=row["cap"])
@@ -340,6 +365,7 @@ DEFAULT_CONFIG = {
   "comment_block_cap": COMMENT_BLOCK_CAP,
   "the_density_cap": THE_DENSITY_CAP,
   "min_the_count": MIN_THE_COUNT,
+  "nmu100_max_words": NMU100_MAX_WORDS,
   "test_helpers": (),
   "select": ("ALL",),
   "ignore": (),
@@ -448,6 +474,8 @@ def load_config(targets=(), config_path=None, no_config=False):
     ("heading-sentence-cap", "heading_sentence_cap"),
     ("comment-block-cap", "comment_block_cap"),
     ("min-the-count", "min_the_count"),
+    ("nmu100-max-words", "nmu100_max_words"),
+    ("nmu100_max_words", "nmu100_max_words"),
   ):
     if toml_key in table:
       val = int(table[toml_key])
@@ -475,6 +503,12 @@ def load_config(targets=(), config_path=None, no_config=False):
       config["select"] = tuple(str(item) for item in lint["select"])
     if "ignore" in lint:
       config["ignore"] = tuple(str(item) for item in lint["ignore"])
+    for lint_key in ("nmu100_max_words", "nmu100-max-words"):
+      if lint_key in lint:
+        val = int(lint[lint_key])
+        if val < 1:
+          raise ValueError(f"{lint_key} must be at least 1")
+        config["nmu100_max_words"] = val
     per_file = lint.get("per-file-ignores", {})
     if isinstance(per_file, dict):
       for pattern, rules in per_file.items():
@@ -2111,6 +2145,38 @@ def source_prose(path, text, context, paragraph_cap):
               "status": "manual_review",
             }
           )
+  suffix = path.suffix.lower()
+  if suffix in {".js", ".mjs", ".cjs", ".html", ".htm"}:
+    code = PROSE_RULE_IDS["padded_ui_label"]
+    if not suppressed(code, file_ids):
+      attr_spans = (
+        html_attr_spans(text)
+        if suffix in {".html", ".htm"} and not is_jinja_file(path)
+        else []
+      )
+      seen_ui = set()
+      ui_spans = []
+      for label_text, first, last in [*attr_spans, *ui_label_spans(path, text)]:
+        if (label_text, first) not in seen_ui:
+          seen_ui.add((label_text, first))
+          ui_spans.append((label_text, first, last))
+      nmu_cap = int(ACTIVE_CONFIG.get("nmu100_max_words") or NMU100_MAX_WORDS)
+      for ln, label_text, word, word_count in nmu100_findings(ui_spans, cap=nmu_cap):
+        if 0 < ln <= len(line_ids) and suppressed(code, line_ids[ln - 1]):
+          continue
+        findings.append(
+          {
+            "rule": code,
+            "path": str(path),
+            "line": ln,
+            "column": 1,
+            "text": label_text,
+            "word": word,
+            "count": word_count,
+            "cap": nmu_cap,
+            "status": "review",
+          }
+        )
   return findings
 
 

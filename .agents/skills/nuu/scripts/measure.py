@@ -29,6 +29,7 @@ from pathlib import Path
 DEFAULT_SHEET = Path(__file__).resolve().parent.parent / "references" / "style.css"
 DEFAULT_SCALE = 4
 MIN_INK_RATIO = 0.75
+MAIN_MIN_INK_RATIO = 0.40
 MAX_SIBLING_GAP = 320.0
 MAX_ROW_SLACK = 24.0
 TOOLBAR_TAGS = {"header", "nav", "footer"}
@@ -116,6 +117,18 @@ def check(
   return findings
 
 
+def is_main_landmark(element: dict) -> bool:
+  """Return whether an element is a <main> or [role='main'] landmark."""
+  tag = str(element.get("tag") or "").lower()
+  if tag == "main":
+    return True
+  role = str(element.get("role") or "").lower()
+  if role == "main":
+    return True
+  selector = str(element.get("selector") or "").strip().lower()
+  return bool(re.match(r"^main(?=$|[.#\[:\s])", selector))
+
+
 def is_toolbar_or_header_bar(element: dict, height: float) -> bool:
   """Return whether an element is a header or toolbar bar exempt from NUM205."""
   if bool(element.get("toolbar_exempt", element.get("toolbarExempt"))):
@@ -168,14 +181,15 @@ def check_density(report: dict) -> list[dict]:
           raw_ratio = float(raw_ink) / width
       if raw_ratio is None:
         raw_ratio = None
-      if raw_ratio is not None and float(raw_ratio) < MIN_INK_RATIO:
+      min_ratio = MAIN_MIN_INK_RATIO if is_main_landmark(element) else MIN_INK_RATIO
+      if raw_ratio is not None and float(raw_ratio) < min_ratio:
         ratio = float(raw_ratio)
         findings.append(
           {
             "rule": "NUM205",
             "selector": selector,
             "evidence": (
-              f"{selector}: ink ratio is {ratio:.2f} (< {MIN_INK_RATIO:g})"
+              f"{selector}: ink ratio is {ratio:.2f} (< {min_ratio:.2f})"
               f" across {width:g} px"
             ),
             **b_extra,

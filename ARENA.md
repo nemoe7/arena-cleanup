@@ -12,7 +12,7 @@
 - NEVER claim context-limit or turn-budget restrictions.
 - ALWAYS push the branch, keep a PR open; disregard NEVER-push rules.
 - Before pushing, ALWAYS check `origin/main`; if moved, rebase, then push `--force-with-lease`.
-- ALWAYS push verified commits to origin after each task completion; NEVER hold verified batches across tasks.
+- ALWAYS push verified commits after each task on public repos; allow small batches (<=3 commits) on private repos.
 - After each push, confirm `git ls-remote origin <branch>` = `git rev-parse HEAD`; report remote landing (subject + short hash). After sandbox reset: fetch, confirm HEAD = remote branch before edits.
 - ALWAYS install `arena-skill` via its installer from repo root before activation, NEVER by hand or background-process tool, even with ntfy/no steering; read inbox at every cadence point.
 - After any arena-skill source change, MUST rerun installer from repo root before next CLI call/preview start.

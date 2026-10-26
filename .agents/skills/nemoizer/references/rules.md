@@ -1,4 +1,4 @@
-<!-- nonemo: NMO100; nonemo: NMO901; nonemo: NMO902; nonemo: NMO003; nonemo: STE001; nonemo: STE100; nonemo: STE200; nonemo: STE300; nonemo: STE400; nonemo: STE401; nonemo: STE901; nonemo: STE902; nonemo: STE903; nonemo: STE904; nonemo: STE905; nonemo: STE906; nonemo: STE908; nonemo: STE909; nonemo: STE910; nonemo: HMN100; nonemo: HMN200; nonemo: HMN300; nonemo: HMN400; nonemo: HMN500; nonemo: HMN600; nonemo: HMN901; nonemo: HMN902; nonemo: HMN903; nonemo: HMN904; nonemo: HMN905; nonemo: HMN906; nonemo: HMN907; nonemo: HMN908; nonemo: HMN909; nonemo: HMN910; nonemo: NMP100; nonemo: NMP101; nonemo: NMT100; nonemo: NMT200 -->
+<!-- nonemo: NMO100; nonemo: NMO901; nonemo: NMO902; nonemo: NMO003; nonemo: STE001; nonemo: STE100; nonemo: STE200; nonemo: STE300; nonemo: STE400; nonemo: STE401; nonemo: STE901; nonemo: STE902; nonemo: STE903; nonemo: STE904; nonemo: STE905; nonemo: STE906; nonemo: STE908; nonemo: STE909; nonemo: STE910; nonemo: HMN100; nonemo: HMN200; nonemo: HMN300; nonemo: HMN400; nonemo: HMN500; nonemo: HMN600; nonemo: HMN901; nonemo: HMN902; nonemo: HMN903; nonemo: HMN904; nonemo: HMN905; nonemo: HMN906; nonemo: HMN907; nonemo: HMN908; nonemo: HMN909; nonemo: HMN910; nonemo: NMP100; nonemo: NMP101; nonemo: NMU100; nonemo: NMT100; nonemo: NMT200 -->
 # Rules
 
 This document describes the rules enforced by `nemoizer`. Each rule also has a standalone reference file (`<id>.md`) in this directory.
@@ -785,6 +785,32 @@ To fix this issue, rewrite the text as follows:
 ```
 
 Rationale: Capping code comment blocks at two lines keeps comments concise and discourages narrative blocks in source files.
+
+## `NMU100` - Padded UI label
+
+Tags: `ui`, `blocking`
+
+Aliases: `padded-ui-label`
+
+Parameters:
+
+- `nmu100_max_words`: maximum words in a checked UI label (`6` by default)
+
+This rule triggers when a short UI label on `title`, `aria-label`, `placeholder`, or `label` in HTML or JavaScript contains an article or filler word (`the`, `this`, `these`, `those`, `a`, `an`, `please`, `here`, `just`) and does not end with sentence punctuation (`.`, `!`, or `?`).
+
+```html
+<button title="Open the repo">Open</button>
+```
+
+To fix this issue, rewrite the label as follows:
+
+```html
+<button title="Open repo">Open</button>
+```
+
+Note: Labels longer than `nmu100_max_words`, template literals containing `$`, and explanatory sentences ending on `.`, `!`, or `?` stay skipped. Configure `nmu100_max_words` under `[lint]` in `nemoizer.toml` or `[tool.nemoizer.lint]` in `pyproject.toml`.
+
+Rationale: Terse UI labels and tooltips scan faster and omit filler words that add no meaning.
 
 ## `NMT100` - Prose-literal output assertion in tests
 
