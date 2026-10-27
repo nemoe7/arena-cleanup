@@ -579,9 +579,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-25: a step row in the job pane is a toggle for its own log lines, as on GitHub's job page. The first failed step opens on its last page, a passed job opens no step, and each open log pages on its own.
   - The server splits the job log on the step start times. Lines in a second that two steps share stay with the earlier step until the later step's opening line.
 - Accepted 2026-10-25: the focus ring shows on keyboard travel alone, nuu clause 9. A script focus or a pointer press draws none, and the generic ring no longer rounds a control's corners on focus.
-- Accepted 2026-10-25: two house density readings stay as they are, recorded as nuu deviations. The add bar width was a third until 2026-10-26, when the audit stopped flagging it.
+- Accepted 2026-10-25: one house density reading stays as it is, recorded as a nuu deviation. The add bar left on 2026-10-26, and the settings column on 2026-10-27, once nuu asked a main layout for 0.40 ink, not 0.75.
   - nuu-deviation: phase-rows-ink: the phase timeline rows ink 0.11 to 0.30 of their 441 px at 1280 px. Each row holds a dot, a name, a count, and a time.
-  - nuu-deviation: settings-column-ink: the settings column inks 0.13 of 1280 px, two cards over a sparse page
 - Accepted 2026-10-25: the timeout slider follows the nuu range recipe. A tick marks each of its ten stops, both ends read 0 and 120 min in mono, and the readout stays beside the track.
 - Accepted 2026-10-26: the live dot in every pill and button grows from 6 to 8 px, the nuu live-dot default. The header tool dots keep 6 px, the recipe's small size for a dense row.
 - Accepted 2026-10-26: the breakpoints move to the nuu clause set, 68em, 60em, and 30em, plus a 24em max-height query. The phone layout starts at 480 px, and on a phone held sideways the top bar and the sidebar scroll away.
