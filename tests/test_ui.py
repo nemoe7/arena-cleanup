@@ -1031,6 +1031,52 @@ def test_a_live_job_marks_its_repo_as_running() -> None:
       JOBS.pop(job.id, None)
 
 
+def test_a_job_keeps_the_pr_checks_the_run_read(
+  monkeypatch: pytest.MonkeyPatch,
+) -> None:
+  # The run names the branch it checks and later ends its read. The job asks
+  # gh once, then, while the PR is open, and keeps the answer in its snapshot.
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  reads: list[tuple[str, str]] = []
+
+  def fake_pr_checks(branch: str, cwd: str) -> dict[str, object]:
+    reads.append((branch, cwd))
+    return {"number": 5, "total": 1, "passed": 1, "checks": [{"name": "lint"}]}
+
+  monkeypatch.setattr(server, "pr_checks", fake_pr_checks)
+  script = (
+    "print('2026-10-27T10:00:00+0000 INFO  checking PR status for arena/x');"
+    "print('2026-10-27T10:00:01+0000 OK    check \"lint\": SUCCESS');"
+    "print('2026-10-27T10:00:02+0000 OK    PR #5 checks ok');"
+    "print('2026-10-27T10:00:03+0000 OK    PR #5 checks ok')"
+  )
+  repo = {"id": "kept", "name": "kept"}
+  job = server.Job([sys.executable, "-c", script], "/tmp", repo)
+  job.start()
+  deadline = time.monotonic() + STARTUP_SECONDS
+  while job.snapshot()["status"] != "done" and time.monotonic() < deadline:
+    time.sleep(0.1)
+  assert reads == [("arena/x", "/tmp")], "one read, at the first end of the PR read"
+  assert job.snapshot()["pr"] == {
+    "branch": "arena/x",
+    "number": 5,
+    "total": 1,
+    "passed": 1,
+    "checks": [{"name": "lint"}],
+  }
+  # a run that never read a PR keeps none
+  plain = server.Job(
+    [sys.executable, "-c", "print('2026-10-27T10:00:00+0000 OK    done')"], "/tmp", repo
+  )
+  plain.start()
+  deadline = time.monotonic() + STARTUP_SECONDS
+  while plain.snapshot()["status"] != "done" and time.monotonic() < deadline:
+    time.sleep(0.1)
+  assert reads == [("arena/x", "/tmp")] and plain.snapshot()["pr"] is None
+
+
 def test_the_brand_mark_and_the_app_icon_share_one_glyph(ui: UI) -> None:
   page = ui.text("/")
   assert 'class="brand" href="#/"' in page

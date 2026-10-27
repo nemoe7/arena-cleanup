@@ -21,6 +21,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The PR pill leads the tail of an arena row and the ahead chip follows it.
   A chip that drops out at zero no longer moves the pill.
+- The PR checks phase row shows the checks of the last run. The server keeps
+  the PR checks when the run ends its read, and the row opens the pill view on
+  that reading instead of the live PR, whose checks can differ by then.
 
 ## [0.3.17] - 2026-10-27
 

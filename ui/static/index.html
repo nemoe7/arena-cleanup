@@ -1207,7 +1207,7 @@
     opened: 0,
     phases: [],
     phase: null,
-    counts: { checks: {}, dry: false, tags: 0, pushed: 0 },
+    counts: { checks: {}, pr: null, dry: false, tags: 0, pushed: 0 },
     signing: null,
     settling: false,
   };
@@ -1452,8 +1452,10 @@
     if (state.repo?.id === repoId) return state.repo.status || {};
     return (state.repos.find((r) => r.id === repoId) || {}).status || {};
   }
-  function openChecks(repoId, branch) {
-    state.checksOpen = { repoId, branch };
+  // `pr` fixes the view on one reading, the checks a run kept; without it the
+  // view follows the live status of the branch
+  function openChecks(repoId, branch, pr = null) {
+    state.checksOpen = { repoId, branch, pr };
     openModal("checks", { title: "PR checks", wide: true,
       onclose: () => { state.checksOpen = null; closeJob(); } });
     renderChecks();
@@ -1461,10 +1463,11 @@
   function renderChecks() {
     if (!state.checksOpen) return;
     const { repoId, branch } = state.checksOpen;
-    const pr = ((statusFor(repoId).pr || {})[branch]) || null;
+    const pr = state.checksOpen.pr || ((statusFor(repoId).pr || {})[branch]) || null;
     if (!pr) { $("modal").close(); return; }
     $("modal-title").textContent = `PR #${pr.number} checks`;
-    setModalSub(`${pr.title} on ${branch}: ${pr.passed}/${pr.total} passed`);
+    const when = state.checksOpen.pr ? " when the run read them" : "";
+    setModalSub(`${pr.title} on ${branch}: ${pr.passed}/${pr.total} passed${when}`);
     $("checks-pr").href = pr.url;
     const glyph = { passed: "check", failed: "x" };
     const mark = (c) => c.result === "running" ? liveDot() : icon(glyph[c.result] || "circle-small");
@@ -2127,6 +2130,7 @@
   }
   function paintRun(snap) {
     appendLines(snap.lines || []);
+    if (snap.pr) state.counts.pr = snap.pr;
     paintDone(snap);
   }
   // The latest run of a repo: a live one streams on, a finished one is
@@ -2632,7 +2636,7 @@
   function resetPhases() {
     state.phases = PHASES.map((p) => ({ ...p, state: "idle", lines: 0, start: 0, end: 0, rows: [] }));
     state.phase = "prepare";
-    state.counts = { checks: {}, dry: false, tags: 0, pushed: 0, push: { tags: [] }, prBranch: "" };
+    state.counts = { checks: {}, pr: null, dry: false, tags: 0, pushed: 0, push: { tags: [] }, prBranch: "" };
     $("phases").replaceChildren(...state.phases.map((p) =>
       el("li", { class: "phase", "data-phase": p.id, "data-state": "idle" },
         el("button", { type: "button", class: "phase-head", disabled: true,
@@ -2750,10 +2754,10 @@
   // Each row opens its detail: the steps with their stamps, the commit list
   // after a rewrite, or the facts of the push.
   function openPhase(id) {
-    // the PR checks row is the pill view of the PR the run checked
-    const branch = state.counts.prBranch;
-    if (id === "pr" && branch && (((statusFor(state.repo.id).pr || {})[branch]) || {}).total) {
-      openChecks(state.repo.id, branch);
+    // the PR checks row shows the checks the run read, kept with the run
+    const pr = state.counts.pr;
+    if (id === "pr" && pr) {
+      openChecks(state.repo.id, pr.branch, pr);
       return;
     }
     state.phaseOpen = id;
@@ -3034,6 +3038,7 @@
     let seen = 0;
     const take = (snap) => {
       appendLines(snap.lines || []);
+      if (snap.pr) state.counts.pr = snap.pr;
       seen = snap.next ?? seen + (snap.lines || []).length;
     };
     // the button stays grey from the run end until the branch state answers,

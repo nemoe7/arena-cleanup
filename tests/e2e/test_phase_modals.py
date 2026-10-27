@@ -1,10 +1,10 @@
 # nonemo: STE902
 """Each run phase row opens a modal with its detail.
 
-Prepare names three steps, and PR checks and Clean up list their log lines
-with stamps and durations. Rewrite and sign lists the commits after the
-rewrite. Push shows the ref move, the lease, and the tags. The last row reads
-Clean up.
+Prepare and Clean up name their steps with stamps and durations. PR checks
+shows the checks the run kept, or names its steps without them. Rewrite and
+sign lists the commits after the rewrite, and Push shows the ref move, the
+lease, and the tags.
 """
 
 from __future__ import annotations
@@ -66,12 +66,15 @@ PREPARE_STEPS = [
 
 
 def open_run(
-  walker: Walker, lines: list[tuple[str, str]] | None, status: str = "done"
+  walker: Walker,
+  lines: list[tuple[str, str]] | None,
+  status: str = "done",
+  pr: dict | None = None,
 ) -> None:
   """Open infra-tools, with `lines` as its latest run when given.
 
   A `running` run answers the job poll too, since the live page reads its
-  lines there once the event stream fails.
+  lines there once the event stream fails. `pr` is the PR checks the run kept.
   """
   if lines is None:
     walker.goto()
@@ -87,6 +90,7 @@ def open_run(
       {"t": 1_700_000_000 + i, "text": f"2026-10-24T10:00:{i:02d}+0000 {level} {text}"}
       for i, (level, text) in enumerate(lines)
     ],
+    "pr": pr,
   }
   patterns = [PATTERN] + ([JOB] if status == "running" else [])
   for pattern in patterns:
@@ -214,38 +218,65 @@ def test_the_last_row_reads_clean_up_and_names_its_steps(desktop: Walker) -> Non
 
 
 CHECKS = """() => ({
-  rows: [...document.querySelectorAll('#modal .check-list li .name')].map((e) => e.textContent),
+  rows: [...document.querySelectorAll('#modal .check-list li')]
+    .map((li) => [li.className, li.querySelector('.name').textContent, li.querySelector('.phrase').textContent]),
   view: document.getElementById('modal').dataset.view })"""
 
 
-def test_the_pr_checks_row_opens_the_pill_view_of_the_checked_pr(
-  desktop: Walker,
-) -> None:
-  """The run checked a PR with checks: its row is the pill view, not the lines."""
-  open_run(desktop, RUN)
+# the checks the run kept: one check, a name the live PR of the demo does not have
+RUN_PR = {
+  "branch": "arena/4c3a9b5f-infra-tools",
+  "number": 57,
+  "title": "chore: pin the base image",
+  "url": "https://github.com/demo/infra-tools/pull/57",
+  "total": 1,
+  "passed": 1,
+  "failed": 0,
+  "running": 0,
+  "state": "passing",
+  "checks": [
+    {
+      "name": "lint",
+      "state": "SUCCESS",
+      "result": "passed",
+      "url": "",
+      "workflow": "",
+      "started": "",
+      "completed": "",
+    }
+  ],
+}
+
+
+def test_the_pr_checks_row_shows_the_checks_the_run_kept(desktop: Walker) -> None:
+  """The row opens the pill rows of the PR as the run read them, not today's."""
+  open_run(desktop, RUN, pr=RUN_PR)
   head = '.phase[data-phase="pr"] .phase-head'
   assert desktop.page.get_attribute(head, "title") == "Show PR checks"
   modal = open_phase(desktop, "pr")
   assert modal["title"] == "PR #57 checks"
+  assert modal["sub"].endswith(": 1/1 passed when the run read them")
   checks = desktop.page.evaluate(CHECKS)
-  assert checks["view"] == "checks" and checks["rows"] == ["CI / lint", "CI / test"]
+  assert checks["view"] == "checks"
+  assert checks["rows"] == [["passed", "lint", "Successful"]], (
+    "the kept check, not the live pill"
+  )
   assert modal["steps"] == [], "no log lines"
   assert modal["foot"] == ["Open PR"]
   close_phase(desktop)
   desktop.click("#back")
 
 
-def test_the_pr_checks_row_names_its_steps_without_a_pr_with_checks(
+def test_the_pr_checks_row_names_its_steps_when_the_run_kept_no_checks(
   desktop: Walker,
 ) -> None:
-  lines = [
-    (level, text.replace("arena/4c3a9b5f-infra-tools", "arena/elsewhere"))
-    for level, text in RUN
-  ]
-  open_run(desktop, lines)
+  """A run before the snapshot, or one without a PR, keeps the step names."""
+  open_run(desktop, RUN)
   modal = open_phase(desktop, "pr")
   assert modal["title"] == "PR checks"
   assert [s[1] for s in modal["steps"]] == ["PR #57 checks passed"]
+  assert desktop.page.evaluate(CHECKS)["rows"] == []
+  assert modal["foot"] == [], "no link, no foot"
   close_phase(desktop)
   desktop.click("#back")
 

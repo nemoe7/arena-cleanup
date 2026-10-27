@@ -1323,8 +1323,21 @@ def generate_key(name: str, email: str) -> tuple[str, str]:
 # ---- Jobs ------------------------------------------------------------------- #
 
 
+# The run names the branch it checks, then ends its read of the PR with one of
+# these lines. The checks are read then, while the PR is still open.
+PR_BRANCH_LINE = re.compile(r"\s(?:INFO|OK|WARN|ERROR)\s+checking PR status for (\S+)$")
+PR_READ_LINE = re.compile(
+  r"\s(?:INFO|OK|WARN|ERROR)\s+(?:PR #\d+ (?:checks ok|has failing check|reports no status checks)"
+  r"|timed out after \S+ waiting for PR #)"
+)
+
+
 class Job:
-  """One CLI invocation, with its output kept for replay and follow-along."""
+  """One CLI invocation, with its output kept for replay and follow-along.
+
+  The PR checks the run read stay on the job. At the end of that read, the job
+  asks gh once for the open PR and keeps the answer.
+  """
 
   def __init__(
     self,
@@ -1343,6 +1356,8 @@ class Job:
     self.exit: int | None = None
     self.cancelled = False
     self.lines: deque[tuple[float, str]] = deque(maxlen=MAX_LINES)
+    self.pr: dict[str, Any] | None = None
+    self._pr_branch = ""
     self._proc: subprocess.Popen[str] | None = None
     self._cond = threading.Condition()
 
@@ -1368,6 +1383,7 @@ class Job:
       with self._cond:
         self.lines.append((time.time(), text))
         self._cond.notify_all()
+      self._watch_pr(text)
     self._proc.wait()
     STATUS.drop(self.repo["id"])  # a run changes this clone, so its next read asks git
     with self._cond:
@@ -1387,6 +1403,17 @@ class Job:
         self.on_done(self)
       except OSError as exc:
         LOG.warning("job %s could not be saved: %s", self.id, exc)
+
+  def _watch_pr(self, text: str) -> None:
+    branch = PR_BRANCH_LINE.search(text)
+    if branch:
+      self._pr_branch = branch.group(1)
+      return
+    if not self._pr_branch or self.pr or not PR_READ_LINE.search(text):
+      return
+    checks = pr_checks(self._pr_branch, self.cwd)
+    if checks:
+      self.pr = {"branch": self._pr_branch, **checks}
 
   def cancel(self) -> bool:
     proc = self._proc
@@ -1415,6 +1442,7 @@ class Job:
         "elapsed": (self.finished or time.time()) - self.started,
         "next": since + len(entries),
         "lines": [{"t": t, "text": text} for t, text in entries],
+        "pr": self.pr,
       }
 
   def wait_for(self, since: int, timeout: float = 25.0) -> None:

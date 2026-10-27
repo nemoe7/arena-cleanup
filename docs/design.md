@@ -211,7 +211,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Clean up names the return, reset, branch deletes, and `Done`. A step the run skipped is left out.
     - Checks wait reads `Waiting for <n> running checks…`, then `Waiting, <x>/<y> finished…`, and names `All <n> checks finished` and `PR #<n> checks passed`.
     - A failed phase ends on its error line.
-  - PR checks opens the pill view of the PR the run checked, with the same check rows, job logs, and Open PR. Without a PR with checks it names its steps: `Found PR #<n>`, `No open PR for <branch>`, `PR check skipped`, or `PR #<n> checks passed`.
+  - PR checks opens the pill view of the PR as the run read it, with the same rows, job logs, and Open PR. The server keeps those checks at the end of the run's read, and the sub ends in `when the run read them`.
+    - A run that kept no checks, one before this snapshot or one without a PR, names its steps: `Found PR #<n>`, `No open PR for <branch>`, `PR check skipped`, or `PR #<n> checks passed`.
     - `All <n> checks finished` counts the check lines seen when the engine's own total is lower, since engines before 0.3.7 froze it at the first read.
 - `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout.
   - `check`: a label with a drawn checkbox.
@@ -597,3 +598,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-27: a repo without an arena branch keeps its stamp from the default tip commit, the newest time the repo has. A blank stamp read as a missing value.
 - Accepted 2026-10-27: without an arena branch the run names the default branch and signs it in place. Clean & Push greys with `nothing to sign on main` once every commit there carries a signature, and stays live while one has none.
 - Accepted 2026-10-27: the GitHub mark is the Simple Icons glyph on the 24 px grid. Every icon then sits on the nuu ladder, Lucide first and Simple Icons for brand marks, and the Octicons tag with its audit waiver goes.
+- Accepted 2026-10-27: the PR checks row shows the checks of the last run, not the live PR. The server keeps them at the end of the run's read, while the PR is open, and the row opens the pill view on them.
