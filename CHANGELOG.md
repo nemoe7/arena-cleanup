@@ -15,6 +15,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The card of a repo without an arena branch keeps its stamp. The default
   tip commit gives the time, and the title names it.
+- The add bar and the path input placeholders drop their article: `Paste
+  repo URL…` and `add file or folder…`.
 
 ## [0.3.16] - 2026-10-26
 
