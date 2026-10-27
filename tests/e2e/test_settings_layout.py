@@ -34,6 +34,8 @@ def probe(browser: Any, demo: Demo, width: int) -> dict[str, Any]:
     walker = Walker(context, f"{demo.url}/#/settings")
     walker.goto()
     walker.page.wait_for_selector("#card-identity")
+    # the access and signing sections fill once their API reads answer
+    walker.page.wait_for_selector(".hint:text-is('loading…')", state="detached")
     return walker.page.evaluate(PROBE, SECTIONS)
   finally:
     context.close()
