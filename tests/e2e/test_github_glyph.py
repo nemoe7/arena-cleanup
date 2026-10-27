@@ -11,11 +11,11 @@ from .test_phase_modals import RUN, close_phase, open_phase, open_run
 pytestmark = pytest.mark.e2e
 
 BILLING = ".repo-card:has-text('billing-api')"
-# the mark is the one Octicon, drawn on a 16 px grid, where Lucide draws on 24
+# the mark is the one filled glyph, the Simple Icons tag, where Lucide strokes
 MARKED = """(sel) => {
   const el = document.querySelector(sel);
   const svg = el.querySelector('.ico-svg svg');
-  return [svg ? svg.getAttribute('viewBox') : null, el.innerText.trim(), el.title];
+  return [svg ? svg.getAttribute('class') : null, el.innerText.trim(), el.title];
 }"""
 
 
@@ -31,13 +31,13 @@ def test_the_checks_modal_links_lead_with_the_mark(desktop: Walker) -> None:
   page.wait_for_selector("#modal[open]")
   try:
     assert marked(desktop, "#checks-pr") == [
-      "0 0 16 16",
+      "fill",
       "Open PR",
       "Open PR on GitHub",
     ]
     page.click("#checks-list li:has-text('test') .check-row")
     assert marked(desktop, "#checks-list li.open .job-pane a.btn") == [
-      "0 0 16 16",
+      "fill",
       "Open",
       "Open on GitHub",
     ]
@@ -51,9 +51,9 @@ def test_the_phase_modal_link_leads_with_the_mark(desktop: Walker) -> None:
   open_phase(desktop, "prepare")
   try:
     assert desktop.page.evaluate(
-      "() => [document.querySelector('#phase-link .ico-svg svg').getAttribute('viewBox'),"
+      "() => [document.querySelector('#phase-link .ico-svg svg').getAttribute('class'),"
       " document.getElementById('phase-link').textContent.trim()]"
-    ) == ["0 0 16 16", "Open"]
+    ) == ["fill", "Open"]
   finally:
     close_phase(desktop)
     desktop.click("#back")
@@ -67,7 +67,7 @@ def test_the_signed_out_banner_offers_connect_with_the_mark(
   try:
     desktop.goto()
     assert marked(desktop, "#auth-banner button") == [
-      "0 0 16 16",
+      "fill",
       "Connect",
       "Connect GitHub",
     ]
@@ -79,7 +79,7 @@ def test_the_signed_out_banner_offers_connect_with_the_mark(
 def test_the_key_card_opens_the_keys_page_with_the_mark(desktop: Walker) -> None:
   desktop.page.goto(f"{desktop.url}/#/settings", wait_until="networkidle")
   assert marked(desktop, "#card-github-keys a.btn") == [
-    "0 0 16 16",
+    "fill",
     "Open keys",
     "Open GitHub keys",
   ]

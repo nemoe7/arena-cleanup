@@ -137,7 +137,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - The favicon and the regular PWA pictures carry the accent glyph alone on a transparent ground.
   - Maskable picture and Apple touch icon add the `--surface` background, full bleed, with the glyph inside the safe zone.
 - No text glyphs stand in for icons. The licence sits beside the page in `ui/static/LICENSE-lucide.txt`.
-- One Octicon, `github`, draws the remote link mark filled on its 16 px grid. Its MIT notice is `ui/static/LICENSE-octicons.txt`.
+- One Simple Icons glyph, `github`, draws the GitHub mark filled on the same 24 px grid. Its CC0 notice is `ui/static/LICENSE-simple-icons.txt`.
 
 ### Layout
 
@@ -282,7 +282,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Copy follows ASD-STE100: short sentences, one action per banner, no jargon beyond git and GitHub terms.
 - Locale: English only. Dates use the browser locale.
 - Fonts: Inter and Monaspace Neon, SIL Open Font License 1.1, see `ui/static/fonts/LICENSE.txt`.
-  - Icons: Lucide, ISC, see `ui/static/LICENSE-lucide.txt`. The GitHub mark: Octicons, MIT, see `ui/static/LICENSE-octicons.txt`.
+  - Icons: Lucide, ISC, see `ui/static/LICENSE-lucide.txt`. The GitHub mark: Simple Icons, CC0 1.0, see `ui/static/LICENSE-simple-icons.txt`.
   - Motion: GSAP 3.15.0, the standard no-charge licence, see `ui/static/LICENSE-gsap.txt`.
 
 ## Behavior and data
@@ -595,3 +595,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-26: the card stamp reads in full on a desktop and compact on a phone, in the UI face. The monospace face of the nuu timestamp recipe reads worse here, and a handoff asks the recipe to drop that requirement.
 - Accepted 2026-10-27: a repo without an arena branch keeps its stamp from the default tip commit, the newest time the repo has. A blank stamp read as a missing value.
 - Accepted 2026-10-27: without an arena branch the run names the default branch and signs it in place. Clean & Push greys with `nothing to sign on main` once every commit there carries a signature, and stays live while one has none.
+- Accepted 2026-10-27: the GitHub mark is the Simple Icons glyph on the 24 px grid. Every icon then sits on the nuu ladder, Lucide first and Simple Icons for brand marks, and the Octicons tag with its audit waiver goes.

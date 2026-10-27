@@ -1074,7 +1074,10 @@ def test_pwa_assets(ui: UI) -> None:
 
 
 def test_the_icon_licences_ship_beside_the_page(ui: UI) -> None:
-  for name, head in (("lucide", b"ISC License"), ("octicons", b"MIT License")):
+  for name, head in (
+    ("lucide", b"ISC License"),
+    ("simple-icons", b"CC0 1.0 Universal"),
+  ):
     code, _, raw = ui.request("GET", f"/LICENSE-{name}.txt")
     assert code == 200, name
     assert raw.startswith(head), name

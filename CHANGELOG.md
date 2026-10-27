@@ -11,6 +11,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.18] - 2026-10-27
 
+### Changed
+
+- The GitHub mark is the Simple Icons glyph on the 24 px grid, so every icon
+  comes from the nuu ladder. The Octicons glyph and its licence file go, and
+  `LICENSE-simple-icons.txt` carries the CC0 notice.
+
 ### Fixed
 
 - The PR pill leads the tail of an arena row and the ahead chip follows it.
