@@ -47,6 +47,13 @@ def open_repo(walker: Walker, name: str = REPO) -> None:
   walker.click(f".repo-card:has-text('{name}') .repo-name")
 
 
+def wait_settled(page: Any) -> None:
+  """Wait for the branch state answer, which replaces the placeholder title."""
+  page.wait_for_function(
+    "document.getElementById('start').title !== 'reading branch state'"
+  )
+
+
 @pytest.mark.parametrize("width", ["desktop", "phone"])
 def test_nothing_ahead_greys_the_button(
   request: pytest.FixtureRequest, width: str
@@ -57,13 +64,14 @@ def test_nothing_ahead_greys_the_button(
     page.route(pattern, zero_ahead)
   try:
     open_repo(walker)
+    wait_settled(page)
     for btn in page.evaluate(BUTTONS):
       assert btn["disabled"] is True, btn
       assert btn["title"] == f"nothing to clean on {BRANCH}"
   finally:
-    for pattern in (LIST, FETCH, ONE):
-      page.unroute(pattern)
+    page.unroute_all(behavior="ignoreErrors")
   open_repo(walker)
+  wait_settled(page)
   for btn in page.evaluate(BUTTONS):
     assert btn["disabled"] is False, "commits ahead keep the button live"
     assert btn["title"].startswith("Runs:")
