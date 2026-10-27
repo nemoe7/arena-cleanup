@@ -33,6 +33,8 @@ def test_the_ring_follows_the_keyboard(desktop: Walker) -> None:
   assert page.evaluate(SCRIPT_FOCUS) == "none", "a pointer focus draws no ring"
   page.keyboard.press("Tab")
   assert page.evaluate(FLAG) == "true", "Tab sets the flag"
+  # under reduced motion the outline change is a transition of .01 ms: let it end
+  desktop.settle()
   active, style, width = page.evaluate(ACTIVE)
   assert active, "Tab moved the focus"
   assert (style, width) == ("solid", "2px"), "the active control wears the ring"

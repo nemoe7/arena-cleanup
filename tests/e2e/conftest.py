@@ -2,6 +2,10 @@
 
 The page objects live in `scripts/walk.py`, the hand-run walk. Set
 `E2E_CHROMIUM` to a Chromium binary to run without `playwright install`.
+
+The contexts ask for reduced motion, which the page honours. No tween runs,
+so each settled wait ends at its floor. A module marked `motion` keeps the
+tweens, since it tests them.
 """
 
 from __future__ import annotations
@@ -49,15 +53,26 @@ def signing() -> None:
     pytest.skip("no gpg: the run cannot reach its checks wait")
 
 
+def motion(request: pytest.FixtureRequest) -> dict[str, str]:
+  """Context options for the module's motion: reduced unless it is marked `motion`."""
+  if request.node.get_closest_marker("motion"):
+    return {}
+  return {"reduced_motion": "reduce"}
+
+
 @pytest.fixture(scope="module")
-def desktop(browser: Any, demo: Demo) -> Iterator[Walker]:
-  context = browser.new_context(**DESKTOP)
+def desktop(
+  request: pytest.FixtureRequest, browser: Any, demo: Demo
+) -> Iterator[Walker]:
+  context = browser.new_context(**DESKTOP, **motion(request))
   yield Walker(context, demo.url)
   context.close()
 
 
 @pytest.fixture(scope="module")
-def phone(browser: Any, playwright: Any, demo: Demo) -> Iterator[Walker]:
-  context = browser.new_context(**playwright.devices[PHONE_DEVICE])
+def phone(
+  request: pytest.FixtureRequest, browser: Any, playwright: Any, demo: Demo
+) -> Iterator[Walker]:
+  context = browser.new_context(**playwright.devices[PHONE_DEVICE], **motion(request))
   yield Walker(context, demo.url)
   context.close()

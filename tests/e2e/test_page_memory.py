@@ -11,6 +11,7 @@ one. Another run repaints the view (docs/design.md).
 from __future__ import annotations
 
 import json
+import time
 from typing import Any
 
 import pytest
@@ -84,15 +85,21 @@ def snapshot(job: str, count: int) -> dict[str, Any]:
 
 def test_the_last_run_paints_before_the_server_answers(desktop: Walker) -> None:
   page = desktop.page
-  answer = {"snap": snapshot("job-a", 3), "delay": 0}
+  answer = {"snap": snapshot("job-a", 3), "hold": False}
   calls: list[str] = []
+  held: list[Any] = []
 
-  def latest(route: Any) -> None:
-    calls.append(route.request.url)
-    page.wait_for_timeout(answer["delay"])
+  def reply(route: Any) -> None:
     route.fulfill(
       status=200, content_type="application/json", body=json.dumps(answer["snap"])
     )
+
+  def latest(route: Any) -> None:
+    calls.append(route.request.url)
+    if answer["hold"]:
+      held.append(route)
+    else:
+      reply(route)
 
   page.route("**/jobs/latest", latest)
   try:
@@ -100,15 +107,21 @@ def test_the_last_run_paints_before_the_server_answers(desktop: Walker) -> None:
     desktop.click(SHOP)
     page.wait_for_function(f"document.querySelectorAll('{ROWS}').length === 3")
     desktop.click("#back")
-    answer["delay"] = 900
+    answer["hold"] = True
     page.click(SHOP)
     page.wait_for_selector("#view-repo", state="visible")
     assert desktop.count(ROWS) == 3, "the known run paints before the answer"
-    page.wait_for_timeout(1500)
+    deadline = time.monotonic() + 5
+    while not held and time.monotonic() < deadline:
+      page.wait_for_timeout(50)
+    assert held, "the fresh read went out"
+    with page.expect_response("**/jobs/latest"):
+      reply(held.pop())
+    desktop.settle()
     assert desktop.count(ROWS) == 3, "the same run id adds nothing"
     assert len(calls) == 2, "the fresh read still runs"
     desktop.click("#back")
-    answer.update(snap=snapshot("job-b", 5), delay=0)
+    answer.update(snap=snapshot("job-b", 5), hold=False)
     desktop.click(SHOP)
     page.wait_for_function(f"document.querySelectorAll('{ROWS}').length === 5")
     assert "job-b" in desktop.text("#log"), "another run repaints the view"

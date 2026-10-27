@@ -3,9 +3,14 @@
 The checks modal has its own job pane state. A dropped stream resumes where
 it stopped. A run that keeps going says so when a cancel fails. A poll left
 over from one repo never paints another.
+
+The poll test installs the Playwright clock. The clock keeps flowing with
+real time, so the test after it sees no difference.
 """
 
 from __future__ import annotations
+
+import time
 
 import pytest
 
@@ -18,6 +23,8 @@ DRY = 'input[data-opt="dry_run"]'
 ROWS = "#side-top .arena-item"
 PARKED = "still running, waiting up to"
 WAIT_MS = 30000
+# the page polls a cut stream every 1200 ms
+POLL_MS = 1300
 
 
 def set_dry(walker: Walker, on: bool) -> None:
@@ -80,6 +87,25 @@ def test_a_dropped_stream_resumes_without_repeating_lines(desktop: Walker) -> No
     page.unroute_all(behavior="ignoreErrors")
 
 
+def poll_once(walker: Walker) -> None:
+  """Run the page clock past one poll interval, so a poll left over fires now."""
+  walker.page.clock.run_for(POLL_MS)
+  walker.settle()
+
+
+def wait_done(walker: Walker, name: str) -> None:
+  """Wait until the latest run of `name` ended on the server."""
+  repos = walker.page.request.get(f"{walker.url}/api/repos").json()
+  rid = next(r["id"] for r in repos if r["name"] == name)
+  deadline = time.monotonic() + WAIT_MS / 1000
+  while time.monotonic() < deadline:
+    snap = walker.page.request.get(f"{walker.url}/api/repos/{rid}/jobs/latest").json()
+    if snap.get("status") == "done":
+      return
+    time.sleep(0.2)
+  raise AssertionError("the parked run never ended")
+
+
 def test_a_poll_left_over_never_paints_another_repo(
   desktop: Walker, demo: Demo
 ) -> None:
@@ -90,6 +116,8 @@ def test_a_poll_left_over_never_paints_another_repo(
   demo.slow_checks(True)
   try:
     set_dry(desktop, False)
+    # the stream is cut, so the run's view polls on page timers: the fake clock drives them
+    page.clock.install()
     desktop.click("#start")
     page.wait_for_function(
       f"() => document.querySelector('#log').innerText.includes({PARKED!r})",
@@ -98,11 +126,12 @@ def test_a_poll_left_over_never_paints_another_repo(
     # no e2e test runs infra-tools, so its view has no run of its own to show
     desktop.click("#back")
     desktop.click(CARD.format(name="infra-tools"))
-    page.wait_for_timeout(2600)
+    poll_once(desktop)
     assert "billing-api" not in page.inner_text("#log"), "the old poll kept appending"
     status = desktop.status_text()
     demo.slow_checks(False)
-    page.wait_for_timeout(4000)
+    wait_done(desktop, "billing-api")
+    poll_once(desktop)
     assert desktop.status_text() == status == "idle", (
       "the old run's end painted this view"
     )

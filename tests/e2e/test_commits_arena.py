@@ -30,6 +30,7 @@ def test_the_list_shows_the_selected_arena_branch(desktop: Walker) -> None:
   repos = page.request.get(f"{desktop.url}/api/repos").json()
   repo_id = next(r["id"] for r in repos if r["name"] == "data-pipeline")
   desktop.click(".repo-card:has-text('data-pipeline') .repo-name")
+  page.wait_for_selector("#commits .commit")
   assert (
     page.evaluate(FIRST)
     == subjects(desktop, repo_id, "arena/6d8b3a4e-data-pipeline")[0]

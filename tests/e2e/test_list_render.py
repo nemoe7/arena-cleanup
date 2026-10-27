@@ -5,6 +5,10 @@ pane's scroll. A removal in flight stays out of a status refresh, and a
 return from Settings reads the list again. A refused remove reloads the
 list, and a refused clone reports under the field. An error toast stays to
 be read, and the Reload glyph spins until the last fetch ends.
+
+Two tests install the Playwright clock, so their page timers run out at
+once. The clock keeps flowing with real time, so the later tests see no
+difference.
 """
 
 from __future__ import annotations
@@ -21,6 +25,10 @@ pytestmark = pytest.mark.e2e
 CARD = ".repo-card:has-text('{name}')"
 ROWS = "#side-top .arena-item"
 ONLINE = "() => window.dispatchEvent(new Event('online'))"
+# the test holds the delete answer this long
+DELETE_MS = 3000
+# the page disarms an armed Remove after this long
+DISARM_MS = 4000
 # a fetch of one path answers late, the page's own fetch does the rest
 DELAY = """([tail, ms]) => {
   const orig = window.fetch;
@@ -61,7 +69,8 @@ def test_a_removal_in_flight_stays_out_of_a_status_refresh(desktop: Walker) -> N
     "**/api/repos/*/arena/delete",
     lambda route: route.fulfill(status=200, content_type="application/json", body="{}"),
   )
-  page.evaluate(DELAY, ["/arena/delete", 3000])
+  page.clock.install()
+  page.evaluate(DELAY, ["/arena/delete", DELETE_MS])
   try:
     desktop.click(f"{ROWS}:not(.selected) .arena-del")
     desktop.click("#confirm-go")
@@ -69,7 +78,9 @@ def test_a_removal_in_flight_stays_out_of_a_status_refresh(desktop: Walker) -> N
     desktop.click("#settings-btn")
     desktop.click("#settings-back")
     assert desktop.count(ROWS) == 1, "the status refresh brought the deleted row back"
-    page.wait_for_timeout(3000)
+    # the held delete lands before the next test starts
+    with page.expect_response("**/arena/delete"):
+      page.clock.run_for(DELETE_MS)
   finally:
     page.evaluate(RESTORE)
     page.unroute_all(behavior="ignoreErrors")
@@ -80,6 +91,7 @@ def test_a_tick_that_changed_nothing_keeps_focus_and_an_armed_remove(
 ) -> None:
   page = desktop.page
   desktop.goto()
+  page.clock.install()
   rm = f"{CARD.format(name='billing-api')} .rm"
   desktop.click(rm)
   assert page.eval_on_selector(
@@ -94,7 +106,7 @@ def test_a_tick_that_changed_nothing_keeps_focus_and_an_armed_remove(
     "the tick dropped focus"
   )
   page.keyboard.press("Escape")
-  page.wait_for_timeout(4200)
+  page.clock.run_for(DISARM_MS)
 
 
 def test_a_changed_list_keeps_the_focus_on_the_same_control(desktop: Walker) -> None:

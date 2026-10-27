@@ -27,6 +27,12 @@ BUTTON = """() => {
 }"""
 
 
+def release(held: list[Any]) -> None:
+  """Let every held answer through."""
+  while held:
+    held.pop().continue_()
+
+
 def test_an_open_during_a_run_paints_cancel_before_the_answer(
   desktop: Walker, demo: Demo, signing: None
 ) -> None:
@@ -45,19 +51,15 @@ def test_an_open_during_a_run_paints_cancel_before_the_answer(
     desktop.click("#back")
     page.wait_for_selector(f"{CARD} button.clean.running")
 
-    # the latest-run answer lands two seconds after the view opens
-    def hold(route: Any) -> None:
-      held.append(route)
-      page.wait_for_timeout(2000)
-      route.continue_()
-
-    page.route(LATEST, hold)
+    # the latest-run answer waits until the first paint is read
+    page.route(LATEST, lambda r: held.append(r))
     desktop.click(f"{CARD} .repo-name")
     first = page.evaluate(BUTTON)
     assert first["label"] == "Cancel", "no Clean & Push before the answer"
     assert first["state"] == "attaching" and first["disabled"] is True
     assert first["primary"] is False and first["status"] == "running"
     assert held, "the answer is still held"
+    release(held)
     page.wait_for_function(
       "document.getElementById('start').dataset.state === 'running'"
     )
@@ -67,4 +69,5 @@ def test_an_open_during_a_run_paints_cancel_before_the_answer(
     desktop.click("#start")
     assert "cancelled" in desktop.wait_status("cancelled")
   finally:
+    release(held)
     demo.slow_checks(False)

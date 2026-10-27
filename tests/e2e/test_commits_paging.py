@@ -16,7 +16,8 @@ TOTAL = 1234
 FIRST = "a" * 40
 LAST_OF_FIRST = "b" * 40
 LAST_OF_SECOND = "c" * 40
-ROWS = "() => document.querySelectorAll('#commits .commit').length"
+ROWS_JS = "document.querySelectorAll('#commits .commit').length"
+ROWS = f"() => {ROWS_JS}"
 # shop-web opens with arena/3f7c2e1a-shop-web selected, so every page names that ref
 REF = "&ref=arena%2F3f7c2e1a-shop-web"
 
@@ -63,6 +64,7 @@ def test_the_hint_is_the_count_and_a_scroll_loads_the_older_page(
   page.route("**/api/repos/*/commits?*", fake)
   desktop.goto()
   desktop.click(".repo-card:has-text('shop-web') .repo-name")
+  page.wait_for_function(f"{ROWS_JS} === {PAGE}")
   assert desktop.text("#commits-hint") == f"{TOTAL:,}"
   assert page.evaluate(ROWS) == PAGE
   assert urls[-1].endswith(f"limit={PAGE}{REF}")
@@ -80,6 +82,6 @@ def test_the_hint_is_the_count_and_a_scroll_loads_the_older_page(
   assert len(urls) == 2
   # Reload restarts at the first page
   desktop.click("#commits-refresh")
-  assert page.evaluate(ROWS) == PAGE
+  page.wait_for_function(f"{ROWS_JS} === {PAGE}")
   assert urls[-1].endswith(f"limit={PAGE}{REF}")
   page.unroute("**/api/repos/*/commits?*")

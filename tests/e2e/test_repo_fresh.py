@@ -16,12 +16,13 @@ pytestmark = pytest.mark.e2e
 CARD = ".repo-card:has-text('{name}') .repo-name"
 ROWS = "#side-top .arena-item"
 BRANCHES = "els => els.map((e) => e.dataset.branch)"
-# the status read of one repo answers 2.5 s late, and the page's own fetch does the rest
-DELAY = """(id) => {
+# the status read of one repo answers late on the fake clock, and the page's own fetch does the rest
+LATE_MS = 2500
+DELAY = """([id, ms]) => {
   const orig = window.fetch;
   window.__fetch = orig;
   window.fetch = (u, i) => (typeof u === 'string' && u.endsWith('/api/repos/' + id))
-    ? new Promise((r) => setTimeout(() => r(orig(u, i)), 2500))
+    ? new Promise((r) => setTimeout(() => r(orig(u, i)), ms))
     : orig(u, i);
 }"""
 RESTORE = "() => { if (window.__fetch) window.fetch = window.__fetch; }"
@@ -35,7 +36,9 @@ def repo_id(walker: Walker, name: str) -> str:
 def test_a_slow_status_answer_stays_with_its_repo(desktop: Walker) -> None:
   page = desktop.page
   desktop.goto()
-  page.evaluate(DELAY, repo_id(desktop, "billing-api"))
+  billing = repo_id(desktop, "billing-api")
+  page.clock.install()
+  page.evaluate(DELAY, [billing, LATE_MS])
   try:
     page.click(CARD.format(name="billing-api"))
     page.wait_for_timeout(250)
@@ -43,7 +46,9 @@ def test_a_slow_status_answer_stays_with_its_repo(desktop: Walker) -> None:
     page.wait_for_selector(CARD.format(name="shop-web"))
     page.wait_for_timeout(150)
     page.click(CARD.format(name="shop-web"))
-    page.wait_for_timeout(3200)
+    with page.expect_response(f"**/api/repos/{billing}"):
+      page.clock.run_for(LATE_MS)
+    desktop.settle()
     assert page.inner_text("#repo-title") == "shop-web", (
       "the late answer repainted the view"
     )
@@ -129,12 +134,14 @@ def test_a_return_from_settings_reads_the_status_again(desktop: Walker) -> None:
 def test_clean_and_push_waits_for_the_first_fresh_status(desktop: Walker) -> None:
   page = desktop.page
   desktop.goto()
-  page.evaluate(DELAY, repo_id(desktop, "shop-web"))
+  page.clock.install()
+  page.evaluate(DELAY, [repo_id(desktop, "shop-web"), LATE_MS])
   try:
     page.click(CARD.format(name="shop-web"))
     page.wait_for_timeout(300)
     assert page.eval_on_selector("#start", "e => e.disabled")
     assert page.get_attribute("#start", "title") == "reading branch state"
+    page.clock.run_for(LATE_MS)
     page.wait_for_function(
       "() => !document.querySelector('#start').disabled", timeout=5000
     )

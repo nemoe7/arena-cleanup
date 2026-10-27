@@ -472,3 +472,6 @@ def pytest_configure(config: pytest.Config) -> None:
   config.addinivalue_line(
     "markers", "e2e: drives a real browser against a demo instance"
   )
+  config.addinivalue_line(
+    "markers", "motion: the module tests motion, so its contexts keep the tweens"
+  )

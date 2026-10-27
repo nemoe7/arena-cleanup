@@ -14,7 +14,7 @@ import pytest
 
 from scripts.walk import Walker
 
-pytestmark = pytest.mark.e2e
+pytestmark = [pytest.mark.e2e, pytest.mark.motion]
 
 PROGRESS = '{"active": true, "done": 3, "total": 10}'
 BAR = """() => {

@@ -20,6 +20,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Without an arena branch, Clean & Push names the default branch and signs it
   in place. It greys with `nothing to sign on main` once every commit on the
   default branch carries a signature.
+- The browser tests ask for reduced motion, except the three modules that
+  test motion, so each settled wait ends at its floor. Their long waits move
+  to the Playwright clock or to an answer the test releases.
 
 ## [0.3.16] - 2026-10-26
 

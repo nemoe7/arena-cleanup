@@ -13,7 +13,7 @@ import pytest
 
 from scripts.walk import Walker
 
-pytestmark = pytest.mark.e2e
+pytestmark = [pytest.mark.e2e, pytest.mark.motion]
 
 DESKTOP = {"viewport": {"width": 1360, "height": 900}}
 TWEENS = """(sel) => gsap.getTweensOf(document.querySelector(sel))

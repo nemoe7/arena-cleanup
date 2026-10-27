@@ -136,6 +136,7 @@ def test_a_long_subject_clamps_to_two_lines_until_a_tap(phone: Walker) -> None:
   phone.click(".repo-card .repo-name")
   page = phone.page
   subject = f"{LONG_SUBJECT} .subject"
+  page.wait_for_selector(subject)
   line = page.eval_on_selector(
     subject, "e => parseFloat(getComputedStyle(e).lineHeight)"
   )

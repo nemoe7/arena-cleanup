@@ -6,7 +6,7 @@ import pytest
 
 from scripts.walk import Walker
 
-pytestmark = pytest.mark.e2e
+pytestmark = [pytest.mark.e2e, pytest.mark.motion]
 
 PANELS = ("#commits", "#log")
 EDGE_FADE = 12.0
