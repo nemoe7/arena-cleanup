@@ -17,6 +17,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   tip commit gives the time, and the title names it.
 - The add bar and the path input placeholders drop their article: `Paste
   repo URL…` and `add file or folder…`.
+- Without an arena branch, Clean & Push names the default branch and signs it
+  in place. It greys with `nothing to sign on main` once every commit on the
+  default branch carries a signature.
 
 ## [0.3.16] - 2026-10-26
 

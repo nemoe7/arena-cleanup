@@ -34,6 +34,9 @@ TICK_SECONDS = 1.0
 MIN_LOG_LINES = 5
 MIN_ICONS = 3
 PNG_MAGIC = b"\x89PNG"
+EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+# a signature header as git stores one: the walk checks its presence, not the key
+SIGNATURE = "gpgsig -----BEGIN PGP SIGNATURE-----\n \n iQEzBAABCAAdFiEE\n -----END PGP SIGNATURE-----"
 CLONE_URL = "https://github.com/acme/shop-web.git"
 GITHUB_FORMS = (
   "https://github.com/acme/shop-web",
@@ -294,10 +297,39 @@ def test_add_by_path(ui: UI, world: World, ids: dict[str, str]) -> None:
   assert all(stamp > 0 for stamp in status["activity"].values())
   main_tip_at = int(world.git("log", "-1", "--format=%ct", "origin/main"))
   assert status["default_at"] == main_tip_at, "the default tip's commit time"
+  assert status["unsigned_default"] is True, "the seed commits carry no signature"
   assert set(status["tips"]) == set(status["arena"]), "one tip per branch"
   assert all(len(sha) == 40 for sha in status["tips"].values())
   assert added["managed"] is False
   assert len(json.loads((ui.data / "repos.json").read_text())) == 1
+
+
+def test_the_signature_walk_stops_at_the_first_unsigned_commit(
+  world: World, tmp_path: Path
+) -> None:
+  sys.path.insert(0, str(ROOT))
+  from ui import server
+
+  world.git("init", "-q", str(tmp_path))
+  who = "Demo <demo@example.com> 1704074400 +0800"
+  raw = f"tree {EMPTY_TREE}\nauthor {who}\ncommitter {who}\n{SIGNATURE}\n\nfeat: root\n"
+  signed = subprocess.run(
+    ["git", "hash-object", "-t", "commit", "-w", "--stdin"],
+    cwd=tmp_path,
+    input=raw,
+    capture_output=True,
+    text=True,
+    check=True,
+  ).stdout.strip()
+  child = world.git(
+    "commit-tree", EMPTY_TREE, "-p", signed, "-m", "chore: child", cwd=tmp_path
+  )
+  assert server.has_unsigned(str(tmp_path), signed) is False, (
+    "every commit has a header"
+  )
+  assert server.has_unsigned(str(tmp_path), child) is True, "the child has none"
+  assert server.has_unsigned(str(tmp_path), "no-such-ref") is False
+  assert server.UNSIGNED[signed] is False and server.UNSIGNED[child] is True, "per tip"
 
 
 def test_github_page_addresses_normalize_to_clone_urls() -> None:

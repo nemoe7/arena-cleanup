@@ -259,7 +259,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Starting is disabled until the job id arrives.
   - Attaching reads Cancel, disabled, while a repo the list flags as running opens and its latest run is read. It never shows Clean & Push first.
   - Running reads Cancel as a plain button.
-  - Idle greys with a tooltip in three cases: `reading branch state` from the run end until the status answers, `a clean would overwrite commits on main` below 0, and `nothing to clean on <branch>` at 0. Any other idle state keeps it live, an unknown count included.
+  - Idle greys with a tooltip in four cases: `reading branch state` until the status answers, `a clean would overwrite commits on main` below 0, `nothing to clean on <branch>` at 0, and `nothing to sign on main` without an arena branch. Any other idle state keeps it live, an unknown count included.
 - `card-foot`: the action row of a card, right-aligned with an 8 px gap and 16 px of padding. The options card has none: its run button sits in the checkbox row.
   - Every card action sits there, so the x alone stays top right.
   - The options foot hides on a phone, where the tab bar runs.
@@ -595,3 +595,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-26: the phone bottom bar takes the nuu floating-overlay fade and drops its glass plate, blur, and hairline. The fade alone separates the button from the page.
 - Accepted 2026-10-26: the card stamp reads in full on a desktop and compact on a phone, in the UI face. The monospace face of the nuu timestamp recipe reads worse here, and a handoff asks the recipe to drop that requirement.
 - Accepted 2026-10-27: a repo without an arena branch keeps its stamp from the default tip commit, the newest time the repo has. A blank stamp read as a missing value.
+- Accepted 2026-10-27: without an arena branch the run names the default branch and signs it in place. Clean & Push greys with `nothing to sign on main` once every commit there carries a signature, and stays live while one has none.

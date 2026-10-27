@@ -729,6 +729,48 @@ def default_branch(cwd: str) -> str:
   return ""
 
 
+UNSIGNED_WALK_SECONDS = 5.0  # the longest a signature walk may hold a status read
+UNSIGNED_CACHE_MAX = 256  # tips remembered with their signature answer
+UNSIGNED: dict[str, bool] = {}
+
+
+def has_unsigned(cwd: str, ref: str) -> bool:
+  """
+  Does the history of `ref` hold a commit without a signature header?
+
+  The walk streams the raw commits newest first and stops at the first one
+  without a `gpgsig` header. A repo that never signed answers at once, and a
+  signed history is read once per tip. A walk past its deadline answers True:
+  the button stays live, and the engine decides.
+  """
+  tip = git("rev-parse", "--verify", "-q", ref, cwd=cwd)
+  if not tip:
+    return False
+  if tip in UNSIGNED:
+    return UNSIGNED[tip]
+  found = False
+  deadline = time.monotonic() + UNSIGNED_WALK_SECONDS
+  with subprocess.Popen(
+    ["git", "rev-list", "--header", tip],
+    cwd=cwd,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.DEVNULL,
+  ) as walk:
+    assert walk.stdout is not None
+    rest = b""
+    for chunk in iter(lambda: walk.stdout.read(65536), b""):
+      *records, rest = (rest + chunk).split(b"\0")
+      found = any(b"\ngpgsig" not in r.split(b"\n\n", 1)[0] for r in records if r)
+      if found or time.monotonic() > deadline:
+        found = True
+        walk.kill()
+        break
+  if len(UNSIGNED) >= UNSIGNED_CACHE_MAX:
+    UNSIGNED.clear()
+  UNSIGNED[tip] = found
+  return found
+
+
 def reset_to_origin(repo: dict[str, Any]) -> str:
   """Put the clone back on the default branch at origin's tip. Untracked files stay."""
   cwd = repo["path"]
@@ -831,6 +873,9 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
   # The default tip's commit time: the stamp of a repo without an arena branch.
   default_tip = f"origin/{default}" if default else "HEAD"
   default_at = int(git("log", "-1", "--format=%ct", default_tip, cwd=cwd) or 0)
+  # Without an arena branch the run signs the default branch in place, when it
+  # holds an unsigned commit.
+  unsigned_default = has_unsigned(cwd, default_tip)
 
   # PR state per arena branch, bounded so many branches stay few API calls per load.
   # `pr_checked` tells a signed-out gh ("cannot see checks") from an empty dict ("no PR").
@@ -852,6 +897,7 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
     "ahead": ahead,
     "activity": activity,
     "default_at": default_at,
+    "unsigned_default": unsigned_default,
     "arena": arena,
     "tips": tips,
     "pr": checks,

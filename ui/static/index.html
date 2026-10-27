@@ -2281,10 +2281,13 @@
     // the value stays empty. A clone parked on another branch keeps that
     // branch as "current" and offers the default branch cleaned in place.
     // Parked on an arena branch, the clone gets the default branch alone.
+    // Without an arena branch the run names the default branch, and cleans
+    // it in place.
     const parked = !onDefault && !s.branch.startsWith("arena/");
-    const options = [el("option", { value: onDefault ? "" : main }, `${main} (default)`)];
+    const named = !onDefault || (s.ok && !byActivity(s).length);
+    const options = [el("option", { value: named ? main : "" }, `${main} (default)`)];
     if (parked) options.push(el("option", { value: "" }, `current (${s.branch})`));
-    if (!onDefault && !parked && state.branch !== main) state.branch = main;
+    if (!parked) state.branch = named ? main : "";
     $("branch").replaceChildren(...options);
     $("branch").value = state.branch;
   }
@@ -2467,12 +2470,16 @@
     return moved ? `a clean would overwrite commits on ${s.default || "the default branch"}` : "";
   }
   // why Clean & Push is grey for a status, on the card as in the repo view:
-  // a clean would overwrite the default branch, or nothing is ahead
+  // a clean would overwrite the default branch, nothing is ahead, or without
+  // an arena branch the default branch has nothing unsigned
   function cleanBlock(s, chosen = "") {
     const reason = overwriteReason(s, chosen);
     if (reason) return reason;
     const name = runArena(s, chosen);
-    return name && s.ahead?.[name] === 0 ? `nothing to clean on ${name}` : "";
+    if (!name) {
+      return s.unsigned_default === false ? `nothing to sign on ${s.default || "the default branch"}` : "";
+    }
+    return s.ahead?.[name] === 0 ? `nothing to clean on ${name}` : "";
   }
   // the repo view adds its own reasons: a run just ended and the branch state
   // is on its way, or the target is not the default branch
@@ -2991,10 +2998,15 @@
     if (mode === "idle") renderCommand();
   };
 
+  // One click runs with the defaults. Without an arena branch the run names
+  // the default branch, as the repo view does, and signs it in place.
   async function oneClick(repo) {
     await openRepo(repo.id);
     if (state.repo?.id !== repo.id) return;
-    await startJob(state.arena ? { action: "clean", arena: state.arena } : { action: "clean" });
+    const body = { action: "clean" };
+    if (state.arena) body.arena = state.arena;
+    else if (state.branch && !byActivity(state.repo.status).length) body.branch = state.branch;
+    await startJob(body);
   }
 
   function paintDone(snap) {
