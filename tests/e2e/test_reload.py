@@ -17,7 +17,10 @@ BRANCH = "arena/late-branch"
 def test_reload_fetches_a_branch_that_appeared_on_origin(
   desktop: Walker, demo: Demo
 ) -> None:
-  desktop.goto()
+  # the page fetches once after the cached cards are on screen. A Reload that
+  # lands during that fetch takes its result and fetches nothing itself
+  with desktop.page.expect_response("**/api/fetch"):
+    desktop.goto()
   desktop.page.wait_for_selector(f"{CARD} .arena-row")
   rows = desktop.page.locator(f"{CARD} .arena-row")
   before = rows.count()
@@ -27,7 +30,9 @@ def test_reload_fetches_a_branch_that_appeared_on_origin(
     ["git", f"--git-dir={origin}", "update-ref", f"refs/heads/{BRANCH}", "main"],
     check=True,
   )
-  desktop.page.click("#repos-refresh")
+  # Reload fetches every origin before it redraws: hold on its answer, not a clock
+  with desktop.page.expect_response("**/api/fetch"):
+    desktop.page.click("#repos-refresh")
   desktop.page.wait_for_selector(f"{CARD} .arena-row:has-text('{BRANCH}')")
   assert rows.count() == before + 1
   assert desktop.page.eval_on_selector("#repos-refresh", "e => e.disabled") is False
