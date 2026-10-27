@@ -338,7 +338,10 @@
   /* the ring has to survive the rule above: keyboard focus gets a solid one */
   .field:focus-visible { outline: 2px solid var(--accent-hi); outline-offset: 1px; }
   .mono-field { font-family: var(--mono); font-size: var(--fs-2); }
-  select.field { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--dim) 50%), linear-gradient(135deg, var(--dim) 50%, transparent 50%); background-position: right 12px center, right 8px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 24px; }
+  select.field { appearance: none; padding-right: 28px; }
+  /* the caret is the chevron-down glyph beside the select, so it sits on the icon ladder */
+  .select-wrap { position: relative; display: inline-grid; min-width: 0; }
+  .select-wrap > .ico-svg { position: absolute; right: 8px; top: 50%; translate: 0 -50%; --ico: var(--ico-s); color: var(--dim); pointer-events: none; }
 
   /* above 1200 the repos are one table: a header row, then one row per repo with four cells, the icon and
      name, the default branch, the arena rows, and the actions. Content sizes the first columns, the arena
@@ -926,7 +929,7 @@
     .btn, .btn.back { min-height: 44px; }
     .field, select.field, .hero-tools .field { height: 44px; }
     .hero-tools { flex: 1 1 100%; }
-    .hero-tools .field { flex: 1; min-width: 0; }
+    .hero-tools .select-wrap { flex: 1; min-width: 0; }
     .check { min-height: 44px; }
     .check input { width: 20px; height: 20px; }
     .check input::after { width: 15px; height: 15px; }
@@ -1000,11 +1003,14 @@
       <div class="hero">
         <h1 tabindex="-1">Repos</h1>
         <div class="hero-tools">
-          <select class="field" id="repo-sort" aria-label="Sort repos" title="Sort repos">
-            <option value="newest">Newest activity first</option>
-            <option value="name">Name A–Z</option>
-            <option value="pr">PR state, failures first</option>
-          </select>
+          <span class="select-wrap">
+            <select class="field" id="repo-sort" aria-label="Sort repos" title="Sort repos">
+              <option value="newest">Newest activity first</option>
+              <option value="name">Name A–Z</option>
+              <option value="pr">PR state, failures first</option>
+            </select>
+            <span class="ico-svg" data-icon="chevron-down" aria-hidden="true"></span>
+          </span>
           <button class="icon-btn" id="repos-refresh" aria-label="Reload repos" title="Reload repos"><span class="ico-svg" data-icon="refresh-cw" aria-hidden="true"></span></button>
         </div>
       </div>
@@ -1065,11 +1071,17 @@
           <div class="card-body options" id="options">
             <div class="opt row" id="opt-branch">
               <label for="branch">Target branch</label>
-              <select class="field mono-field" id="branch" title="The default branch runs via the arena branch. The run cleans a named branch in place."></select>
+              <span class="select-wrap">
+                <select class="field mono-field" id="branch" title="The default branch runs via the arena branch. The run cleans a named branch in place."></select>
+                <span class="ico-svg" data-icon="chevron-down" aria-hidden="true"></span>
+              </span>
             </div>
             <div class="opt row" id="opt-arena" hidden>
               <label for="arena">Arena branch</label>
-              <select class="field mono-field" id="arena" title="The session this run cleans, newest activity first."></select>
+              <span class="select-wrap">
+                <select class="field mono-field" id="arena" title="The session this run cleans, newest activity first."></select>
+                <span class="ico-svg" data-icon="chevron-down" aria-hidden="true"></span>
+              </span>
             </div>
             <div class="opt row" id="opt-paths">
               <label for="pathin">Remove paths</label>
@@ -1225,6 +1237,7 @@
     "arrow-up": svg(paths("m5 12 7-7 7 7", "M12 19V5")),
     "arrow-down": svg(paths("M12 5v14", "m19 12-7 7-7-7")),
     "chevron-right": svg(paths("m9 18 6-6-6-6")),
+    "chevron-down": svg(paths("m6 9 6 6 6-6")),
     folder: svg(paths("M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z")),
     file: svg(paths("M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z", "M14 2v5a1 1 0 0 0 1 1h5")),
     plus: svg(paths("M5 12h14", "M12 5v14")),

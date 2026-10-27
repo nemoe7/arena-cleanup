@@ -16,6 +16,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The GitHub mark is the Simple Icons glyph on the 24 px grid, so every icon
   comes from the nuu ladder. The Octicons glyph and its licence file go, and
   `LICENSE-simple-icons.txt` carries the CC0 notice.
+- The three selects draw their caret with the Lucide chevron-down glyph beside
+  the control, at the 14 px step of the ladder. The CSS gradient caret goes.
 
 ### Fixed
 

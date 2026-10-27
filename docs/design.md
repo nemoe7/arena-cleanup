@@ -122,8 +122,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Buttons, phase rows, tree rows, and banners take `--ico-m`, 16 px.
     - Icon buttons, the card mark, and the brand mark take `--ico-l`, 18 px.
     - A glyph in running text stays at 1 em.
-- Navigation and file glyphs in use: arrow-left, settings, arrow-up, arrow-down, chevron-right, folder, folder-tree, file, and plus.
-- State and action glyphs in use: check, x, triangle-alert, minus, circle-small, git-branch, refresh-cw, copy, user, and broom-sparkles.
+- Navigation and file glyphs in use: arrow-left, settings, arrow-up, arrow-down, chevron-right, chevron-down, folder, folder-tree, file, and plus.
+- State and action glyphs in use: check, x, trash-2, triangle-alert, minus, circle-small, git-branch, refresh-cw, copy, user, and broom-sparkles.
 - Buttons with a glyph: Reload is `refresh-cw` alone, named `Reload commits` in `aria-label` and `title`.
   - Copy log is `copy` alone, named `Copy log` the same way.
   - Re-check and Retry lead with `refresh-cw`, Copy public key with `copy`, and Browse with `folder-tree`.
@@ -215,6 +215,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - A run that kept no checks, one before this snapshot or one without a PR, names its steps: `Found PR #<n>`, `No open PR for <branch>`, `PR check skipped`, or `PR #<n> checks passed`.
     - `All <n> checks finished` counts the check lines seen when the engine's own total is lower, since engines before 0.3.7 froze it at the first read.
 - `opt.row`: a grid of three columns, `128px minmax(0, 1fr) auto`, for the label, the control, and the trailing Browse or slider readout.
+- `select-wrap`: the span around a select, with the chevron-down glyph at the 14 px step inside the 28 px right padding of the control. The glyph is dim and takes no pointer events.
   - `check`: a label with a drawn checkbox.
     - The box is 16 px, 20 px on a phone, with a 4 px radius and the surface-2 fill.
     - Checked, it takes the accent fill and a white Lucide check.
@@ -599,3 +600,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-27: without an arena branch the run names the default branch and signs it in place. Clean & Push greys with `nothing to sign on main` once every commit there carries a signature, and stays live while one has none.
 - Accepted 2026-10-27: the GitHub mark is the Simple Icons glyph on the 24 px grid. Every icon then sits on the nuu ladder, Lucide first and Simple Icons for brand marks, and the Octicons tag with its audit waiver goes.
 - Accepted 2026-10-27: the PR checks row shows the checks of the last run, not the live PR. The server keeps them at the end of the run's read, while the PR is open, and the row opens the pill view on them.
+- Accepted 2026-10-27: the select caret is the Lucide chevron-down glyph beside the control, not a CSS gradient. Every select then sits on the icon ladder with the rest of the controls.
