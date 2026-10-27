@@ -8,3 +8,18 @@ files = [
   { path = "ui/static/fonts/inter.woff2", family = "Inter", weight = "100 900" },
   { path = "ui/static/fonts/monaspace-neon.woff2", family = "Monaspace Neon", weight = "200 800" },
 ]
+
+# Annotations and boards render at 2x. Boards take the page tokens from the live
+# stylesheet, so report images carry the house style without flags.
+[annotate]
+scale = 2
+
+[board]
+stylesheet = "ui/static/index.html"
+columns = 2
+scale = 2
+
+# The audit widths match the three walk viewports: desktop, laptop, and phone.
+[audit]
+widths = [1920, 1280, 411]
+report_widths = [1920, 411]

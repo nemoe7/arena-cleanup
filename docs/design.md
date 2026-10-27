@@ -334,6 +334,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Boards: `docs/boards.json` names the seven boards below. Six are HTML fragments in `docs/boards/`, styled by the live stylesheet, and one frames the demo views.
   - Shoot the views: `uv run scripts/walk.py --views --out docs/walk/views`. Its `dashboard` view doubles as `docs/ui-overview.png` in README: copy it over.
   - Render: `nuu board -T design -s docs/boards.json -o docs/design` after a token, glyph, or component change. Edit the fragment when a token or glyph joins `index.html`.
+  - Report images are design boards too: a spec of framed shots beside the report, the stylesheet and scale from `[board]` in `nuu.toml`.
 
 ### Boards
 
