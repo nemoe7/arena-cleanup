@@ -400,7 +400,7 @@
   .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
 
   .arena-list { grid-area: arena; align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 12px; }
-  /* one line in a row: the name, the ahead chip, and the PR pill. A card breaks it after the name */
+  /* one line in a row: the name, the PR pill, and the ahead chip. A card breaks it after the name */
   .arena-row { flex: none; display: flex; align-items: center; gap: 8px; font-size: var(--fs-2); min-width: 0; }
   .arena-row .bname { min-width: 0; font-family: var(--mono); font-size: var(--fs-1); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .arena-tail { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -1754,8 +1754,8 @@
           const pr = (s.pr || {})[name];
           arena.append(el("div", { class: "arena-row" },
             el("span", { class: "bname", title: name }, slugOf(name, repo.name)),
+            // the PR pill leads: the ahead chip hides at zero, and a trailing chip moves nothing
             el("div", { class: "arena-tail" },
-              aheadPill((s.ahead || {})[name], s.default),
               pr && pr.total
                 ? checksPill(pr, s.pr_checked, s.pr_reason, () => openChecks(repo.id, name))
                 : pr && pr.url
@@ -1764,7 +1764,8 @@
                       "aria-label": `Open PR ${pr.number ? "#" + pr.number : ""} on GitHub`,
                       onclick: (e) => e.stopPropagation() },
                       checksPill(pr, s.pr_checked, s.pr_reason))
-                  : checksPill(pr, s.pr_checked, s.pr_reason))));
+                  : checksPill(pr, s.pr_checked, s.pr_reason),
+              aheadPill((s.ahead || {})[name], s.default))));
         }
       }
     }

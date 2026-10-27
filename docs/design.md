@@ -41,7 +41,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - The repo name is a button that opens the repo, and a click on its card body does the same.
     - The card itself has no role.
   - Empty: a hint with the add command. Error: a banner above the rows.
-  - Arena rows: each has two lines at every width, the branch name, then `↑ N` and the PR pill. A name shaped `arena/<slug>-<repo>` reads as its slug, with the full name in the title.
+  - Arena rows: each has two lines at every width, the branch name, then the PR pill and `↑ N`. A name shaped `arena/<slug>-<repo>` reads as its slug, with the full name in the title.
     - `↑ N` is the net count, the commits that branch holds beyond `origin/<default>` minus the commits `origin/<default>` holds beyond it, with a tooltip.
     - The chip hides below 1, so absorbed work and a default branch that moved on show no chip.
     - No dot sits before the name or in the PR pill, its colour carries the state.
@@ -233,7 +233,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Last active is the newest of a check completion, an arena tip commit, and a PR edit. Without an arena branch it is the default tip commit, and the title names the source.
     - The actions cell holds Clean, and Remove with the trash glyph.
     - The arena area takes the free width, so Clean and Remove sit at the right edge.
-    - In a row an arena row is one line: the name, the ahead chip, and the PR pill.
+    - In a row an arena row is one line: the name, the PR pill, and the ahead chip.
     - A clean in flight turns Clean & Push into Running: disabled, an amber pulsing dot, the same box, and the reason as its title. The row carries `aria-busy`.
     - A run started on this page marks its row Running the moment the job starts, so Back from the repo view finds it grey. The list confirms the run on its next read, and a read from before the start cannot undo the mark.
   - Card: a wrapping flex card once the table, laid out at its natural width, no longer fits its room. The page measures after each render, on each resize, and once more when the fonts are ready.
