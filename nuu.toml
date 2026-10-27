@@ -1,0 +1,10 @@
+# nuu reads this file for annotations, boards, and audits of the UI in ui/static.
+# The font stacks and files match the page, so annotation text renders in its faces.
+
+[fonts]
+sans = '"Inter", "Inter Fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+mono = '"Monaspace Neon", "Monaspace Neon Fallback", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
+files = [
+  { path = "ui/static/fonts/inter.woff2", family = "Inter", weight = "100 900" },
+  { path = "ui/static/fonts/monaspace-neon.woff2", family = "Monaspace Neon", weight = "200 800" },
+]
