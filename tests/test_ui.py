@@ -292,6 +292,8 @@ def test_add_by_path(ui: UI, world: World, ids: dict[str, str]) -> None:
   assert set(status["ahead"]) == set(status["arena"]), "one count per arena branch"
   assert set(status["activity"]) == set(status["arena"]), "one tip time per branch"
   assert all(stamp > 0 for stamp in status["activity"].values())
+  main_tip_at = int(world.git("log", "-1", "--format=%ct", "origin/main"))
+  assert status["default_at"] == main_tip_at, "the default tip's commit time"
   assert set(status["tips"]) == set(status["arena"]), "one tip per branch"
   assert all(len(sha) == 40 for sha in status["tips"].values())
   assert added["managed"] is False

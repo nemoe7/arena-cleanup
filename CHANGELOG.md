@@ -9,6 +9,13 @@ The engine, `arena-cleanup.py`, carries its own number and its own file,
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.17] - 2026-10-27
+
+### Changed
+
+- The card of a repo without an arena branch keeps its stamp. The default
+  tip commit gives the time, and the title names it.
+
 ## [0.3.16] - 2026-10-26
 
 ### Added

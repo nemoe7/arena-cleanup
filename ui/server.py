@@ -828,6 +828,9 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
     name: int(git("log", "-1", "--format=%ct", f"origin/{name}", cwd=cwd) or 0)
     for name in arena
   }
+  # The default tip's commit time: the stamp of a repo without an arena branch.
+  default_tip = f"origin/{default}" if default else "HEAD"
+  default_at = int(git("log", "-1", "--format=%ct", default_tip, cwd=cwd) or 0)
 
   # PR state per arena branch, bounded so many branches stay few API calls per load.
   # `pr_checked` tells a signed-out gh ("cannot see checks") from an empty dict ("no PR").
@@ -848,6 +851,7 @@ def repo_status(repo: dict[str, Any]) -> dict[str, Any]:
     "dirty": len(dirty),
     "ahead": ahead,
     "activity": activity,
+    "default_at": default_at,
     "arena": arena,
     "tips": tips,
     "pr": checks,

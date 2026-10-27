@@ -1794,7 +1794,8 @@
   function newestTip(repo) {
     return Math.max(0, ...Object.values((repo.status || {}).activity || {}));
   }
-  // Last active: the newest of a check completion, an arena tip commit, and a PR edit
+  // Last active: the newest of a check completion, an arena tip commit, and a
+  // PR edit. Without an arena branch, the default tip commit keeps the stamp.
   function lastActive(s) {
     let best = { at: 0, what: "" };
     const take = (at, what) => { if (at > best.at) best = { at, what }; };
@@ -1803,6 +1804,7 @@
       take(Date.parse(pr.updated) || 0, `PR #${pr.number} edit`);
       take(Date.parse(pr.checked) || 0, `PR #${pr.number} check`);
     }
+    if (!best.at && s.default_at) take(s.default_at * 1000, `${s.default} tip commit`);
     return best;
   }
   function sinceStamp(s) {

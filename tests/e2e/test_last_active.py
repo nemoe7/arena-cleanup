@@ -1,9 +1,9 @@
 """A dashboard card names the time since the repo was last active.
 
 The stamp is the newest of three: a check completion, an arena tip commit, and
-a PR edit. A desktop reads the full form, `30 minutes ago`, and a phone the
-compact one, `30min ago`. The title names the full form with the source
-(docs/design.md).
+a PR edit. Without an arena branch the default tip commit keeps it. A desktop
+reads the full form, `30 minutes ago`, and a phone the compact one, `30min
+ago`. The title names the full form with the source (docs/design.md).
 """
 
 from __future__ import annotations
@@ -72,6 +72,31 @@ def test_the_newest_of_check_tip_and_edit_is_the_stamp(desktop: Walker) -> None:
     )
     assert since["left"] >= name["right"]
     assert since["bottom"] <= name["bottom"] + 1 and since["top"] >= name["top"] - 1
+  finally:
+    page.unroute_all(behavior="ignoreErrors")
+
+
+def no_arena(route: Any) -> None:
+  """docs-site: no arena branch, no PR, the main tip 5 days ago."""
+  reply = route.fetch()
+  repos = reply.json()
+  for repo in repos:
+    if repo["name"] == "docs-site":
+      status = repo["status"]
+      status.update(arena=[], activity={}, pr={}, ahead={}, tips={})
+      status["default_at"] = int(time.time() - 5 * 24 * HOUR)
+  route.fulfill(response=reply, body=json.dumps(repos))
+
+
+def test_a_repo_without_an_arena_branch_keeps_its_stamp(desktop: Walker) -> None:
+  page = desktop.page
+  page.route("**/api/repos", no_arena)
+  page.route("**/api/fetch", no_arena)
+  try:
+    desktop.goto()
+    page.wait_for_selector(f"{DOCS} .arena-row:has-text('no arena/* branches')")
+    docs = page.eval_on_selector(f"{DOCS} .repo-since", "e => [e.innerText, e.title]")
+    assert docs == ["5 days ago", "Last active 5 days ago: main tip commit"]
   finally:
     page.unroute_all(behavior="ignoreErrors")
 
