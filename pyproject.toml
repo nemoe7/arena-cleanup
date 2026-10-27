@@ -12,7 +12,7 @@ dev = [
   "git-filter-repo>=2.47",
   "pytest>=8.3",
   "pytest-xdist>=3.6",
-  "ruff==0.16.6",
+  "ruff==0.17.3",
   "shfmt-py>=4.2",
 ]
 qa = [
@@ -21,7 +21,7 @@ qa = [
 
 [tool.ruff]
 indent-width = 2
-required-version = "0.16.6"
+required-version = "0.17.3"
 exclude = [".agents"]
 
 [tool.ruff.lint]
