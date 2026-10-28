@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from scripts.walk import Walker
+from tests.e2e.harness import Walker
 from tests.e2e.test_done_button import open_repo
 
 pytestmark = pytest.mark.e2e

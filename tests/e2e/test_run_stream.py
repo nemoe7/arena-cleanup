@@ -14,7 +14,7 @@ import time
 
 import pytest
 
-from scripts.walk import Demo, Walker
+from tests.e2e.harness import Demo, Walker
 
 pytestmark = pytest.mark.e2e
 

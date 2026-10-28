@@ -31,6 +31,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - An unsigned commit draws its minus glyph again. The row asked the icon
   table for a name the Lucide table of 0.3.2 dropped.
 
+### Removed
+
+- The browser walk, `scripts/walk.py`. The browser tests keep its harness in
+  `tests/e2e/harness.py`, and `scripts/views.py` shoots the four board views.
+
 ## [0.3.18] - 2026-10-27
 
 ### Changed

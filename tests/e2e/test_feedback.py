@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from scripts.walk import Walker
+from tests.e2e.harness import Walker
 
 # the two calls that fill the dashboard: a plain read and a fetch-first read
 REPOS_API = re.compile(r"/api/(repos|fetch)$")

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from scripts.walk import Walker
+from tests.e2e.harness import Walker
 
 
 def length(walker: Walker) -> int:

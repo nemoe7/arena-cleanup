@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from itertools import pairwise
 
-from scripts.walk import Walker
+from tests.e2e.harness import Walker
 
 TAP_TARGET_PX = 44
 FIELD_TEXT_PX = 16.0

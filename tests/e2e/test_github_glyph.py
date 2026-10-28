@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from scripts.walk import Demo, Walker
+from tests.e2e.harness import Demo, Walker
 
 from .test_phase_modals import RUN, close_phase, open_phase, open_run
 

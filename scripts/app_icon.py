@@ -21,7 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts.walk import launch_browser
+from tests.e2e.harness import launch_browser
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ui" / "static" / "icons"
@@ -76,7 +76,7 @@ def main() -> int:
   )
   parser.add_argument(
     "--chromium",
-    default=os.environ.get("WALK_CHROMIUM"),
+    default=os.environ.get("E2E_CHROMIUM"),
     help="a Chromium binary to use instead of the one `playwright install` fetched",
   )
   args = parser.parse_args()

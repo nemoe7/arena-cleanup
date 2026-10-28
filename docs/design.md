@@ -279,7 +279,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Applied so far: a skip link, `aria-label` on icon buttons, `role="status"` for the run state, and focus rings.
   - Focus rings follow the keyboard. Tab or an arrow key sets `data-keyboard-nav` on the root, a pointer press clears it, and `:focus-visible` draws its ring under the flag alone.
   - Targets are 44 px on a phone and at least 24 px under a pointer.
-- Test methods: the browser walk in `scripts/walk.py` (keyboard and names) and the measure reports (target sizes).
+- Test methods: the browser tests in `tests/e2e/` (keyboard and names) and the measure reports (target sizes).
 - Not run: screen reader sessions, contrast measurement.
 
 ## Content and assets
@@ -335,9 +335,9 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - They show five sizes at 1280 px, stacked rows at 360 px, and inline SVG icons.
   - The 8 px scale check still reports the 6, 10, and 12 px steps.
   - See the decision below.
-- Readiness: implemented. The spacing audit runs in `tests/e2e/`, the walk from `scripts/walk.py`.
+- Readiness: implemented. The spacing audit runs in `tests/e2e/`, and `scripts/views.py` shoots the board views.
 - Boards: `docs/boards.json` names the seven boards below. Six are HTML fragments in `docs/boards/`, styled by the live stylesheet, and one frames the demo views.
-  - Shoot the views: `uv run scripts/walk.py --views --out docs/walk/views`. Its `dashboard` view doubles as `docs/ui-overview.png` in README: copy it over.
+  - Shoot the views: `uv run scripts/views.py --out docs/shots/views`. Its `dashboard` view doubles as `docs/ui-overview.png` in README: copy it over.
   - Render: `nuu board -T design -s docs/boards.json -o docs/design` after a token, glyph, or component change. Edit the fragment when a token or glyph joins `index.html`.
   - Report images are design boards too: a spec of framed shots beside the report, the stylesheet and scale from `[board]` in `nuu.toml`.
 

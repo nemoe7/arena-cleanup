@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from scripts.walk import Walker
+from tests.e2e.harness import Walker
 
 from .test_phase_modals import RUN, open_phase, open_run
 

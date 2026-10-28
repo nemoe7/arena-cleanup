@@ -5,10 +5,10 @@
     "table": "ICONS"
   },
   "shots": {
-    "dashboard": "docs/walk/views/dashboard.png",
-    "signed-out": "docs/walk/views/signed-out.png",
-    "after-run": "docs/walk/views/after-run.png",
-    "settings": "docs/walk/views/settings.png"
+    "dashboard": "docs/shots/views/dashboard.png",
+    "signed-out": "docs/shots/views/signed-out.png",
+    "after-run": "docs/shots/views/after-run.png",
+    "settings": "docs/shots/views/settings.png"
   },
   "boards": [
     {

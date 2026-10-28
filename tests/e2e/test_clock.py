@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from scripts.walk import DESKTOP, Demo, Walker
+from tests.e2e.harness import DESKTOP, Demo, Walker
 
 # a zone the server is not in, so a stamp passed through unchanged is caught
 ZONE = "UTC" if time.localtime().tm_gmtoff else "Asia/Manila"

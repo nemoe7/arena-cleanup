@@ -1,7 +1,7 @@
 """A demo instance plus a real Chromium for the browser tests.
 
-The page objects live in `scripts/walk.py`, the hand-run walk. Set
-`E2E_CHROMIUM` to a Chromium binary to run without `playwright install`.
+The page objects live in `tests/e2e/harness.py`. Set `E2E_CHROMIUM` to a
+Chromium binary to run without `playwright install`.
 
 The contexts ask for reduced motion, which the page honours. No tween runs,
 so each settled wait ends at its floor. A module marked `motion` keeps the
@@ -17,7 +17,7 @@ from typing import Any
 
 import pytest
 
-from scripts.walk import DESKTOP, PHONE_DEVICE, Demo, Walker, launch_browser
+from tests.e2e.harness import DESKTOP, PHONE_DEVICE, Demo, Walker, launch_browser
 
 
 @pytest.fixture(scope="session")

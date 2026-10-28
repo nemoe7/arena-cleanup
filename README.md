@@ -189,7 +189,6 @@ install chromium`, or a Chromium of your own.
 
 ```console
 uv run pytest tests/e2e                           # the browser checks of the UI
-uv run scripts/walk.py --out /tmp/walk            # press every control, one screenshot per step
 ```
 
 Four workflows run on GitHub. `ci.yml` runs the lint, format, Markdown,
