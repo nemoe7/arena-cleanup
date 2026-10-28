@@ -58,6 +58,7 @@ def test_the_modal_asks_before_the_branch_goes(desktop: Walker) -> None:
   desktop.click(f"{ROW} .arena-del")
   desktop.click("#confirm-go")
   assert page.evaluate(OPEN) is False
+  desktop.until(lambda: bool(bodies), "the delete request did not go out")
   assert bodies == [{"branch": BRANCH}]
   page.unroute("**/api/repos/*/arena/delete")
 
