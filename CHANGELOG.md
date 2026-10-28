@@ -20,6 +20,16 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   under PR checks.
 - A phase step reads like a job step of a check: a state glyph, the name,
   and the duration. The clock stamps go.
+- A commit row takes the GitHub app's shape: the subject on one line, the
+  check state of that commit from GitHub, and a short age, then the author.
+  A tap opens the hash and the full stamp in the row.
+- The commits API gains `ci`, the check state per commit, read once per page
+  and kept per hash for a minute.
+
+### Fixed
+
+- An unsigned commit draws its minus glyph again. The row asked the icon
+  table for a name the Lucide table of 0.3.2 dropped.
 
 ## [0.3.18] - 2026-10-27
 

@@ -127,7 +127,7 @@ def test_the_log_stays_open_and_copy_is_a_glyph(desktop: Walker) -> None:
 LONG_SUBJECT = ".commit:has-text('fixed sleep in the flaky config timing test')"
 
 
-def test_a_long_subject_clamps_to_two_lines_until_a_tap(phone: Walker) -> None:
+def test_a_long_subject_keeps_one_line_until_a_tap(phone: Walker) -> None:
   phone.goto()
   phone.click(".repo-card .repo-name")
   page = phone.page
@@ -137,12 +137,15 @@ def test_a_long_subject_clamps_to_two_lines_until_a_tap(phone: Walker) -> None:
     subject, "e => parseFloat(getComputedStyle(e).lineHeight)"
   )
   shown = page.eval_on_selector(subject, "e => e.getBoundingClientRect().height")
-  assert line < shown <= 2 * line + 1, (line, shown)
+  assert shown <= line + 1, (line, shown)
+  assert page.eval_on_selector(subject, "e => e.scrollWidth > e.clientWidth"), (
+    "the ellipsis cut the subject"
+  )
   assert page.get_attribute(LONG_SUBJECT, "aria-expanded") == "false"
   phone.click(LONG_SUBJECT)
   assert page.get_attribute(LONG_SUBJECT, "aria-expanded") == "true"
   whole = page.eval_on_selector(subject, "e => e.getBoundingClientRect().height")
-  assert whole > 2 * line + 1, (line, whole)  # the clamp did cut a third line
+  assert whole > line + 1, (line, whole)  # the whole subject wraps
   phone.click(LONG_SUBJECT)
   assert page.get_attribute(LONG_SUBJECT, "aria-expanded") == "false"
   assert (

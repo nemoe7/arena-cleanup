@@ -68,7 +68,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Its hint is the commit count with thousands separators.
     - Reload sits in its label.
   - Commit list: 30 commits a page, and a scroll near the end appends the older page. It reads the selected arena branch on origin, and the clone HEAD when the repo has none.
-    - Each row shows hash, subject, author, and date. The hash reads 7 characters, the GitHub short SHA.
+    - Each row shows the subject, the check state, and the age, then the author. A tap opens the hash, 7 characters as the GitHub short SHA, and the full stamp.
     - Each arena row shows the PR state and is a button that selects the branch to pull from.
   - Flow: the page runs the full flow only.
     - `strip` is a CLI command.
@@ -176,9 +176,10 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - All of them are flat: a fill and a 1 px border, no highlight, and no shadow.
   - The close x in a dialog head rests bare, no fill and no border, and shows the surface under a pointer and while pressed.
 - `pill`: dot and word, 8 px gap, 1000 px radius, `ok`, `warn`, `mono` variants.
-- `commit`: grid `auto minmax(0, 1fr)`, the subject clamped to two lines with an ellipsis, the metadata on a second row.
-  - The row is a button with `aria-expanded`, and a tap shows the whole subject.
-  - The metadata carries the author's GitHub picture, 20 px and round, or a `user` glyph in the same disc when the server has none.
+- `commit`: the GitHub app's row. Line one holds the subject on one line with an ellipsis, the check state glyph, and the age at the right edge, `32m`, `1h`, `3d`.
+  - The check state comes from GitHub per commit: a green check, a red x, or the amber live dot. A commit without checks shows none.
+  - Line two carries the author's GitHub picture, 20 px and round, or a `user` glyph in the same disc. The author, a dim `authored`, and the signature glyph follow.
+  - The row is a button with `aria-expanded`. A tap wraps the whole subject and opens a third line with the hash and the full stamp, the age's title too.
 - `row-btn.select`: a sidebar arena row, a button with `aria-pressed`, two lines: the dot and the branch slug, then the tail under it. The amber dot of a running PR pulses.
   - A selected row carries text colour. Its tint and 2 px accent bar sit on its `arena-item`.
   - The name reads `Pull from <branch>`.
@@ -604,3 +605,6 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-27: the PR checks row shows the checks of the last run, not the live PR. The server keeps them at the end of the run's read, while the PR is open, and the row opens the pill view on them.
 - Accepted 2026-10-27: the select caret is the Lucide chevron-down glyph beside the control, not a CSS gradient. Every select then sits on the icon ladder with the rest of the controls.
 - Accepted 2026-10-28: the scrollbar thumb is the recipe colour `#302e2c` and highlights only under keyboard navigation. The hover tint kept on 2026-10-25 goes.
+- Accepted 2026-10-28: the commit row takes the GitHub app's shape. The subject, the check state of that commit, and a short age lead, and the author follows.
+  - A tap opens the hash and the full stamp in the row, and no page opens.
+  - The server reads the check states of a page in one GraphQL call and keeps each hash for a minute.

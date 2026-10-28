@@ -1170,7 +1170,7 @@ def test_the_container_log_names_jobs_and_errors_in_the_tz_zone(
   assert any("GET /api/repos/deadbeef1234 -> 404" in line for line in stamped)
 
 
-COMMIT_FIELDS = {"sha", "short", "subject", "author", "date", "signed", "avatar"}
+COMMIT_FIELDS = {"sha", "short", "subject", "author", "date", "signed", "avatar", "ci"}
 SHORT_SHA = 7
 
 
@@ -1223,6 +1223,57 @@ def test_the_commit_list_and_the_page_shell(ui: UI, ids: dict[str, str]) -> None
 
 
 TREE_FILES = {"docs/guide.md": "# guide\n", "notes.txt": "notes\n"}
+
+
+def test_the_commit_states_come_from_one_read_per_page(
+  monkeypatch: pytest.MonkeyPatch,
+) -> None:
+  """One GraphQL read answers a page of hashes, and a hash keeps its state for a minute."""
+  from ui import server
+
+  calls: list[str] = []
+  answers = {
+    "c0": {"statusCheckRollup": {"state": "SUCCESS"}},
+    "c1": {"statusCheckRollup": {"state": "ERROR"}},
+    "c2": {"statusCheckRollup": {"state": "EXPECTED"}},
+    "c3": {"statusCheckRollup": None},
+  }
+
+  def fake_gh(argv: list[str], **_: Any) -> tuple[int, str, str]:
+    calls.append(argv[-1])
+    return 0, json.dumps({"data": {"repository": answers}}), ""
+
+  monkeypatch.setattr(server, "run_cmd", fake_gh)
+  monkeypatch.setattr(server.shutil, "which", lambda name: "/usr/bin/gh")
+  monkeypatch.setattr(server, "CI_CACHE", {})
+  shas = ["a" * 40, "b" * 40, "c" * 40, "d" * 40]
+  states = server.commit_states("acme/shop", shas, str(ROOT))
+  assert states == {
+    shas[0]: "success",
+    shas[1]: "failure",
+    shas[2]: "pending",
+    shas[3]: None,
+  }
+  assert len(calls) == 1 and calls[0].count("object(oid:") == 4, "one read for the page"
+  assert 'repository(owner: "acme", name: "shop")' in calls[0]
+  assert server.commit_states("acme/shop", shas[:2], str(ROOT)) == {
+    shas[0]: "success",
+    shas[1]: "failure",
+  }
+  assert len(calls) == 1, "a cached hash asks GitHub nothing"
+  assert server.commit_states("", shas, str(ROOT)) == {}, "no GitHub remote, no state"
+  monkeypatch.setattr(server, "run_cmd", lambda argv, **_: (1, "", "offline"))
+  assert server.commit_states("acme/shop", ["e" * 40], str(ROOT)) == {"e" * 40: None}
+  monkeypatch.setattr(server, "run_cmd", fake_gh)
+  assert server.commit_states("acme/shop", ["e" * 40], str(ROOT)) == {"e" * 40: None}, (
+    "a failed read holds for the cache time too"
+  )
+  assert len(calls) == 1
+  monkeypatch.setattr(server.shutil, "which", lambda name: None)
+  assert server.commit_states("acme/shop", ["f" * 40], str(ROOT)) == {}, (
+    "no gh, no state"
+  )
+  assert len(calls) == 1
 
 
 def test_the_commit_pictures_come_once_per_address(

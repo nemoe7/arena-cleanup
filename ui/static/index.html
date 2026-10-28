@@ -707,25 +707,34 @@
   .log-row.cont .msg { color: var(--log-dim); }
 
   .commits { display: flex; flex-direction: column; }
+  /* the GitHub app's row: the subject on one line with the check state and the age,
+     the author under it, and the hash with the full stamp on a tap */
   .commit {
-    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 8px;
-    align-items: baseline; padding: 8px 6px; border-top: 1px solid var(--line); font-size: var(--fs-2);
+    display: flex; flex-direction: column; gap: 4px; contain: inline-size;
+    padding: 10px 6px; border-top: 1px solid var(--line); font-size: var(--fs-2);
     cursor: pointer;
   }
   .commit:first-child { border-top: 0; }
-  .commit .sha { font: var(--fs-1) var(--mono); color: var(--dim); }
-  /* two lines, then an ellipsis; a tap on the row shows the whole subject */
-  .commit .subject {
-    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
-    overflow: hidden; overflow-wrap: anywhere;
-  }
-  .commit[aria-expanded="true"] .subject { display: block; }
+  .commit .head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .commit .subject { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .commit[aria-expanded="true"] .subject { white-space: normal; overflow-wrap: anywhere; }
+  .commit .ci { --ico: var(--ico-s); display: inline-flex; flex: none; }
+  .commit .ci .dot { width: 6px; height: 6px; }
+  .commit .ci.success { color: var(--ok); }
+  .commit .ci.failure { color: var(--err); }
+  .commit .ci.pending { color: var(--warn); }
+  .commit .age { flex: none; margin-left: auto; color: var(--dim); font-size: var(--fs-1); font-variant-numeric: tabular-nums; }
   .commit .meta {
-    grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; color: var(--dim);
-    font-size: var(--fs-1); white-space: nowrap; flex-wrap: wrap;
+    display: flex; align-items: center; gap: 8px; color: var(--text);
+    font-size: var(--fs-1); white-space: nowrap; min-width: 0;
   }
+  .commit .meta .author { overflow: hidden; text-overflow: ellipsis; }
+  .commit .meta .did { color: var(--dim); }
   .commit .sig { --ico: var(--ico-s); color: var(--ok); font-size: var(--fs-1); }
   .commit .sig.none { color: var(--dim); }
+  .commit .more { display: none; align-items: center; gap: 8px; color: var(--dim); font-size: var(--fs-1); }
+  .commit[aria-expanded="true"] .more { display: flex; }
+  .commit .sha { font: var(--fs-1) var(--mono); color: var(--dim); }
   .commit .avatar { width: 20px; height: 20px; border-radius: 1000px; background: var(--surface-2); flex: none; }
   .commit .avatar.none { --ico: var(--ico-s); display: inline-flex; align-items: center; justify-content: center; color: var(--dim); }
 
@@ -868,7 +877,7 @@
     .btn { font-size: 14px; }
     .pill { font-size: 12px; }
     .repo-name { font-size: 15px; }
-    .hint, .opt-label .desc, .phase-sub, .run-foot .hint, .commit .meta { font-size: 12px; }
+    .hint, .opt-label .desc, .phase-sub, .run-foot .hint, .commit .meta, .commit .age, .commit .more { font-size: 12px; }
     .phase-head { min-height: 44px; padding: 8px 12px; font-size: 13px; }
     .check-row, .step { min-height: 44px; }
     .commit { font-size: 13px; }
@@ -1909,6 +1918,7 @@
       node.querySelector(".short").textContent = relativeTime(at, true);
       node.title = `Last active ${relativeTime(at)}: ${node.dataset.what}`;
     }
+    for (const node of $("commits").querySelectorAll(".age[data-at]")) node.textContent = age(Number(node.dataset.at));
   }
 
   // the rows fold into cards when the table, laid out at its natural width, outgrows
@@ -3103,21 +3113,46 @@
     return d.toLocaleString(undefined, parts);
   }
 
+  // the age of a commit as the GitHub app writes it: 32m, 1h, 10h, 3d, 2w, 4mo, 1y
+  function age(iso, now = Date.now()) {
+    const mins = Math.floor(Math.max(0, now - new Date(iso).getTime()) / 60000);
+    if (mins < 1) return "now";
+    if (mins < 60) return `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d`;
+    if (days < 30) return `${Math.floor(days / 7)}w`;
+    if (days < 365) return `${Math.max(1, Math.floor(days / 30))}mo`;
+    return `${Math.floor(days / 365)}y`;
+  }
+  const CI_TITLE = { success: "Checks passed", failure: "Checks failed", pending: "Checks running" };
+  function ciGlyph(state) {
+    if (!state) return null;
+    const glyph = state === "pending" ? liveDot() : icon(state === "success" ? "check" : "x");
+    return el("span", { class: `ci ${state}`, title: CI_TITLE[state] }, glyph);
+  }
+
   const COMMITS_PAGE = 30;
   function commitRow(c) {
     const row = el("div", { class: "commit", role: "button", tabindex: "0", "aria-expanded": "false",
       onclick: () => row.setAttribute("aria-expanded", String(row.getAttribute("aria-expanded") !== "true")),
       onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); row.click(); } } },
-      el("span", { class: "sha" }, c.short),
-      el("span", { class: "subject", title: c.subject }, c.subject),
+      el("span", { class: "head" },
+        el("span", { class: "subject", title: c.subject }, c.subject),
+        ciGlyph(c.ci),
+        el("span", { class: "age", "data-at": new Date(c.date).getTime(), title: when(c.date) }, age(c.date))),
       el("span", { class: "meta" },
-        el("span", { class: c.signed ? "sig" : "sig none", title: c.signed ? "Signed commit" : "Unsigned commit" },
-          icon(c.signed ? "check" : "dash")),
         c.avatar
           ? el("img", { class: "avatar", src: `/api/avatars/${c.avatar}`, alt: "", width: "20", height: "20", loading: "lazy" })
           : el("span", { class: "avatar none", "aria-hidden": "true" }, icon("user")),
-        el("span", {}, c.author),
-        el("span", {}, when(c.date))));
+        el("span", { class: "author" }, c.author),
+        el("span", { class: "did" }, "authored"),
+        el("span", { class: c.signed ? "sig" : "sig none", title: c.signed ? "Signed commit" : "Unsigned commit" },
+          icon(c.signed ? "check" : "minus"))),
+      el("span", { class: "more" },
+        el("span", { class: "sha" }, c.short),
+        el("span", { class: "stamp" }, when(c.date))));
     return row;
   }
 

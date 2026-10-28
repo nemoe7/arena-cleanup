@@ -1,4 +1,7 @@
-"""Commit dates read in 24-hour time, with no AM or PM (docs/design.md)."""
+"""Commit dates read in 24-hour time, with no AM or PM (docs/design.md).
+
+The full stamp sits in the age's title, and in the row once a tap expands it.
+"""
 
 from __future__ import annotations
 
@@ -40,7 +43,10 @@ def test_a_commit_date_uses_the_24_hour_clock(desktop: Walker) -> None:
   )
   desktop.goto()
   desktop.click(".repo-card:has-text('shop-web') .repo-name")
-  shown = desktop.text("#commits .commit .meta > span:last-child")
+  page.wait_for_selector("#commits .commit")
+  desktop.click("#commits .commit")
+  shown = desktop.text("#commits .commit .more .stamp")
   assert DATE.match(shown), shown
   assert f", {page.evaluate(LOCAL_HOUR)}:11" in shown
   assert "AM" not in shown and "PM" not in shown
+  assert page.get_attribute("#commits .commit .age", "title") == shown

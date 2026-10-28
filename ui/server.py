@@ -1161,6 +1161,62 @@ def arena_ref(repo: dict[str, Any], name: str) -> str | None:
   return ref if git("rev-parse", "--verify", "--quiet", ref, cwd=repo["path"]) else None
 
 
+# the check state of a commit, by hash, as GitHub's rollup names it
+CI_STATES = {
+  "SUCCESS": "success",
+  "FAILURE": "failure",
+  "ERROR": "failure",
+  "PENDING": "pending",
+  "EXPECTED": "pending",
+}
+CI_CACHE: dict[str, tuple[float, str | None]] = {}
+CI_CACHE_LOCK = threading.Lock()
+
+
+def commit_states(slug: str, shas: list[str], cwd: str) -> dict[str, str | None]:
+  """The check state per commit, from one GraphQL read of the hashes not cached.
+
+  A hash keeps its answer for PR_TTL, since a running check moves on. No `gh`
+  or no GitHub remote leaves the commits without a state. A failed read leaves
+  them so for PR_TTL, and an offline page waits on one read a minute.
+  """
+  if not slug or not shas or not shutil.which("gh"):
+    return {}
+  now = time.time()
+  with CI_CACHE_LOCK:
+    states = {
+      sha: CI_CACHE[sha][1]
+      for sha in shas
+      if sha in CI_CACHE and now - CI_CACHE[sha][0] < PR_TTL
+    }
+  missing = [sha for sha in shas if sha not in states]
+  if not missing:
+    return states
+  owner, name = slug.split("/", 1)
+  fields = " ".join(
+    f'c{i}: object(oid: "{sha}") {{ ... on Commit {{ statusCheckRollup {{ state }} }} }}'
+    for i, sha in enumerate(missing)
+  )
+  query = f'query {{ repository(owner: "{owner}", name: "{name}") {{ {fields} }} }}'
+  rc, out, _ = run_cmd(
+    ["gh", "api", "graphql", "-f", f"query={query}"], cwd=cwd, timeout=25
+  )
+  found: dict[str, Any] = {}
+  if rc == 0 and out:
+    try:
+      found = json.loads(out).get("data", {}).get("repository") or {}
+    except (json.JSONDecodeError, AttributeError):
+      found = {}
+  with CI_CACHE_LOCK:
+    for i, sha in enumerate(missing):
+      rollup = (found.get(f"c{i}") or {}).get("statusCheckRollup") or {}
+      states[sha] = CI_STATES.get(rollup.get("state") or "")
+      CI_CACHE[sha] = (now, states[sha])
+    for sha in [k for k, hit in CI_CACHE.items() if now - hit[0] >= PR_TTL]:
+      del CI_CACHE[sha]
+  return states
+
+
 def commits_report(
   repo: dict[str, Any],
   limit: int = 30,
@@ -1168,11 +1224,12 @@ def commits_report(
   before: str | None = None,
   ref: str | None = None,
 ) -> dict[str, Any]:
-  """The most recent commits on a ref, with their signature state and picture.
+  """The most recent commits on a ref, with their signature, picture, and check state.
 
   The run card shows which commits a cleanup produced. This is the git answer,
   read after the run rather than parsed out of its log. `ref` is the remote
-  arena branch the page selected, else the clone's HEAD.
+  arena branch the page selected, else the clone's HEAD. `ci` is the state of
+  the commit's checks on GitHub, or None without checks.
 
   `before` names the last commit of the caller's page, so the answer is one
   page older. `next` is the cursor for the following page, or None once pages
@@ -1210,10 +1267,13 @@ def commits_report(
         "signed": sig in ("G", "U"),
       }
     )
-  pictures = avatars.resolve(emails, lambda: github_slug(repo)) if avatars else {}
+  slug = github_slug(repo)
+  pictures = avatars.resolve(emails, lambda: slug) if avatars else {}
+  commits = commits[:limit]
+  states = commit_states(slug, [c["sha"] for c in commits], cwd)
   for commit in commits:
     commit["avatar"] = pictures.get(commit.pop("email"))
-  commits = commits[:limit]
+    commit["ci"] = states.get(commit["sha"])
   return {
     "branch": branch,
     "total": int(total) if total.isdigit() else len(commits),

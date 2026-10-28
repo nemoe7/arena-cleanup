@@ -200,6 +200,7 @@ MAIN_LATER = [
 GH_STUB = '''#!/usr/bin/env python3
 """Demo stand-in for gh: state lives in files next to this script's data."""
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -349,6 +350,17 @@ if args[:2] == ["pr", "view"]:
       sys.exit(0)
   print("no PR found for %%d" %% number, file=sys.stderr)
   sys.exit(1)
+if args[:2] == ["api", "graphql"]:
+  # the check state per commit: a stable pattern per hash, with gaps like a real branch
+  need_auth()
+  query = next((a.split("=", 1)[1] for a in args if a.startswith("query=")), "")
+  states = ["SUCCESS", "SUCCESS", "FAILURE", "SUCCESS", "PENDING", None, "SUCCESS", "SUCCESS"]
+  found = {}
+  for alias, sha in re.findall(r'(c\\d+): object\\(oid: "([0-9a-f]+)"\\)', query):
+    state = states[int(sha[:2], 16) %% len(states)]
+    found[alias] = {"statusCheckRollup": {"state": state} if state else None}
+  print(json.dumps({"data": {"repository": found}}))
+  sys.exit(0)
 if args[0:1] == ["api"] and "/actions/jobs/" in args[1]:
   need_auth()
   tail = args[1].split("/actions/jobs/", 1)[1]
