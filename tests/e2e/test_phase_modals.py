@@ -103,6 +103,9 @@ def open_run(
   try:
     walker.goto()
     walker.click(".repo-card:has-text('infra-tools') .repo-name")
+    # the route stays until the rows hold the run. A request still in flight
+    # would fall through to the demo.
+    walker.page.wait_for_selector("#phases .phase-head:not([disabled])")
   finally:
     walker.page.unroute(PATTERN)
 
@@ -334,27 +337,45 @@ WAITED = [
 ]
 
 
-def test_the_gate_after_the_rewrite_waits_in_its_own_phase(desktop: Walker) -> None:
-  """The engine rewrites first, then reads the checks: the wait row follows the read."""
+def test_the_gate_after_the_rewrite_waits_inside_the_pr_checks_row(
+  desktop: Walker,
+) -> None:
+  """The engine rewrites first, then reads and waits on the checks in one row."""
   open_run(desktop, WAITED)
   rows = desktop.page.evaluate(
     """() => [...document.querySelectorAll('#phases .phase')]
       .map((li) => [li.dataset.phase, li.dataset.state, li.querySelector('.phase-sub').textContent])"""
   )
-  assert [r[0] for r in rows] == ["prepare", "rewrite", "pr", "wait", "publish", "sync"]
-  assert [r[1] for r in rows] == ["done"] * 6
+  assert [r[0] for r in rows] == ["prepare", "rewrite", "pr", "publish", "sync"]
+  assert [r[1] for r in rows] == ["done"] * 5
   subs = {r[0]: r[2] for r in rows}
-  assert subs["pr"] == "3/3" and subs["wait"] == "3/3"
+  assert subs["pr"] == "3/3"
   modal = open_phase(desktop, "pr")
-  assert [s[1] for s in modal["steps"]] == ["Found PR #119", "1 check still running"]
-  close_phase(desktop)
-  modal = open_phase(desktop, "wait")
-  assert modal["title"] == "Checks wait"
   assert [s[1] for s in modal["steps"]] == [
+    "Found PR #119",
+    "1 check still running",
     "All 3 checks finished",
     "PR #119 checks passed",
   ]
   close_phase(desktop)
+  desktop.click("#back")
+
+
+def test_a_running_wait_names_the_running_checks_in_the_pr_row(desktop: Walker) -> None:
+  open_run(desktop, WAITED[:12], status="running")
+  desktop.page.wait_for_selector('.phase[data-phase="pr"][data-state="run"]')
+  assert desktop.text('.phase[data-phase="pr"] .phase-sub') == "1/2"
+  modal = open_phase(desktop, "pr")
+  assert [s[1] for s in modal["steps"]] == [
+    "Found PR #119",
+    "1 check still running",
+    "Waiting for 1 running check…",
+  ]
+  assert [s[0] for s in modal["steps"]] == ["ok", "ok", "run"], (
+    "the wait is the open step"
+  )
+  close_phase(desktop)
+  desktop.page.unroute(JOB)
   desktop.click("#back")
 
 
@@ -389,7 +410,7 @@ def test_a_running_rewrite_names_the_collected_commits_and_the_open_step(
 
 def test_idle_rows_do_not_open(desktop: Walker) -> None:
   open_run(desktop, None)
-  assert desktop.count(".phase-head:disabled") == 6
+  assert desktop.count(".phase-head:disabled") == 5
 
 
 RUN_GLYPH = """() => {
