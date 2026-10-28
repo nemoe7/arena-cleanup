@@ -16,9 +16,9 @@ from scripts.walk import Walker
 pytestmark = pytest.mark.e2e
 
 # a run's lines in engine order. A stale branch at the start and the
-# commit scan after the PR gate once moved the clock back.
+# PR read after the rewrite once moved the clock back.
 RUN = [
-  ("INFO", "arena-cleanup 0.3.1 starting"),
+  ("INFO", "arena-cleanup 0.3.8 starting"),
   ("INFO", "claimed emails=nemo@example.com; claimed names=nemo"),
   ("OK", "fetched and pruned origin"),
   ("INFO", "scanning local arena/* branches"),
@@ -27,14 +27,14 @@ RUN = [
     "INFO",
     "switching to arena/4c3a9b5f-infra-tools (tracking origin/arena/4c3a9b5f-infra-tools)",
   ),
-  ("INFO", "checking PR status for arena/4c3a9b5f-infra-tools"),
-  ("OK", 'check "lint": SUCCESS'),
-  ("OK", "PR #57 checks ok"),
   ("INFO", "scanning 23 commit(s) as Nemo <nemo@example.com>"),
   (
     "OK",
     "history rewritten: 23 commit(s): 20 rewritten, 20 signed, 3 untouched (4.2s)",
   ),
+  ("INFO", "checking PR status for arena/4c3a9b5f-infra-tools"),
+  ("OK", 'check "lint": SUCCESS'),
+  ("OK", "PR #57 checks ok"),
   ("INFO", "pushing (with lease) HEAD -> refs/heads/main"),
   ("OK", "pushed 2222222 to origin/main"),
   ("INFO", "returning to main"),
@@ -92,10 +92,10 @@ def test_the_rows_add_up_to_the_wall_clock(desktop: Walker) -> None:
 def test_an_early_deletion_and_a_late_scan_stay_in_their_phases(
   desktop: Walker,
 ) -> None:
-  rows = rows_after(desktop, RUN[:10])
+  rows = rows_after(desktop, RUN[:7])
   assert rows["prepare"] == "6.0s", "the stale branch deletion stays in Prepare"
-  assert rows["pr"] == "3.0s", (
+  assert rows["rewrite"] == "<0.1s", (
     "the commit scan opens the rewrite, it does not stretch Prepare"
   )
-  assert rows["rewrite"] == "<0.1s"
+  assert rows["pr"] == "", "the PR read follows the rewrite"
   assert rows["sync"] == "", "Clean up does not start before the push"

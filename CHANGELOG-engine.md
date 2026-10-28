@@ -7,6 +7,12 @@ file, `CHANGELOG.md`.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the engine uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.8] - 2026-10-28
+
+- The PR gate runs after the rewrite, its read and its wait alike, so a
+  red check costs no push. A missing PR, a red check, a timeout, or a cancel
+  at the gate puts the branch and its tags back at the fetched tip.
+
 ## [0.3.7] - 2026-10-26
 
 - The rewrite and the signing run before the wait for running checks, so

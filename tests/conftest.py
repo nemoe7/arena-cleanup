@@ -106,7 +106,7 @@ if [ "$1 $2" = "pr view" ]; then
         echo '@PENDING_RUNNING@'
       fi ;;
     pending-red)
-      # one check runs on the first poll, then it fails: the wait after the rewrite stops the run
+      # one check runs on the first poll, then it fails: the gate after the rewrite stops the run
       n="$(cat "$state_file.count" 2>/dev/null || echo 0)"; n=$((n+1)); echo "$n" > "$state_file.count"
       if [ "$n" -ge 2 ]; then
         echo '@PENDING_RED@'

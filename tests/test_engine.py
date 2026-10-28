@@ -145,10 +145,14 @@ def test_second_run_is_a_clean_no_op(world: World) -> None:
 def test_pr_gate(world: World) -> None:
   world.git("checkout", "-q", "arena/session-1")
   world.agent_commit("chore: bot work 2")
+  tip = world.rev("arena/session-1")
   world.gh_state("none")
   res = world.cleanup("run", "-K")
   assert res.rc == 1
   assert res.says("no open PR"), res.text
+  # the gate comes after the rewrite: a missing PR puts the branch back
+  assert res.says("PR gate failed after the rewrite"), res.text
+  assert world.rev("arena/session-1") == tip, "the branch is back at its tip"
   assert world.cleanup("run", "--skip-pr-check", "--dry-run").rc == 0
 
   world.gh_state("failing")
@@ -234,7 +238,7 @@ def test_checks_added_during_the_wait_count_in_the_total(world: World) -> None:
 
 
 def test_a_red_check_after_the_rewrite_restores_the_branch(world: World) -> None:
-  """The wait follows the rewrite. A red check then puts the branch back, unpushed."""
+  """The gate follows the rewrite. A red check then puts the branch back, unpushed."""
   world.git("fetch", "-q", "origin")
   world.git("checkout", "-q", "-B", "arena/session-wait", "origin/main")
   world.commit(
@@ -256,17 +260,18 @@ def test_a_red_check_after_the_rewrite_restores_the_branch(world: World) -> None
       "30",
     )
     assert res.rc == 1
-    assert res.says("still running, waiting up to", "after the rewrite"), res.text
+    assert res.says("still running, waiting up to"), res.text
     assert res.says("waiting for PR #42 checks"), res.text
     assert res.says("has failing check(s)"), res.text
-    assert res.says("checks failed after the rewrite"), res.text
+    assert res.says("PR gate failed after the rewrite"), res.text
     assert not res.says("pushed", "origin/main")
     assert world.rev("arena/session-wait") == tip, "the branch is back at its tip"
     assert world.rev("origin/main") == main_before
-    waited_after = res.text.index("waiting for PR #42") > res.text.index(
-      "nothing to rewrite"
+    rewritten_at = res.text.index("nothing to rewrite")
+    assert res.text.index("checking PR status") > rewritten_at, (
+      "the gate follows the rewrite"
     )
-    assert waited_after, "the wait comes after the rewrite"
+    assert res.text.index("waiting for PR #42") > rewritten_at, "so does its wait"
   finally:
     world.git("checkout", "-q", "main")
     world.git("push", "-q", "origin", "--delete", "arena/session-wait")

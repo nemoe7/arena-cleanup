@@ -107,7 +107,7 @@ def wait_done(walker: Walker, name: str) -> None:
 
 
 def test_a_poll_left_over_never_paints_another_repo(
-  desktop: Walker, demo: Demo
+  desktop: Walker, demo: Demo, signing: None
 ) -> None:
   page = desktop.page
   desktop.goto()

@@ -15,6 +15,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The scrollbar thumb takes the nuu recipe colour, `#302e2c`, and highlights
   in the accent under keyboard navigation alone. The pointer hover tint goes.
+- The run timeline lists Rewrite and sign before PR checks, the order engine
+  0.3.8 runs them. A run logged by an older engine keeps its rewrite lines
+  under PR checks.
 
 ## [0.3.18] - 2026-10-27
 

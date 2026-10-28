@@ -67,8 +67,8 @@ def test_a_failed_pr_check_fails_the_pr_phase_alone(desktop: Walker) -> None:
   )
   assert dict(states) == {
     "prepare": "done",
+    "rewrite": "done",
     "pr": "fail",
-    "rewrite": "skip",
     "wait": "skip",
     "publish": "skip",
     "sync": "skip",

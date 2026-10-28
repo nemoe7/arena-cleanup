@@ -2528,20 +2528,20 @@
   // text until the engine reports a count for it.
   const PHASES = [
     { id: "prepare", name: "Prepare", sub: "" },
-    { id: "pr", name: "PR checks", sub: "" },
     { id: "rewrite", name: "Rewrite and sign", sub: "" },
+    { id: "pr", name: "PR checks", sub: "" },
     { id: "wait", name: "Checks wait", sub: "" },
     { id: "publish", name: "Push", sub: "" },
     { id: "sync", name: "Clean up", sub: "" },
   ];
   // Each test is the start of an engine line, so a branch or repo name that
-  // contains a phase word cannot move the run. Lines before the first PR
-  // check line stay in Prepare, and an unknown line stays in its phase.
+  // contains a phase word cannot move the run. Lines before the first rewrite
+  // line stay in Prepare, and an unknown line stays in its phase.
   const PHASE_TESTS = [
-    ["pr", /^(?:--skip-pr-check set|checking pr status for |found pr #|no open pr for |pr #\d+ |check "|would wait for \d+ still-running check|\d+ check\(s\) still running|still waiting: |all \d+ check\(s\) finished|timed out after .* waiting for pr #)/],
     ["rewrite", /^(?:creating backup bundle|backup written to |would remove .*: \d+ file\(s\)|removing .* from every branch and tag|removed .*: \d+ file\(s\) gone|\d+ commit\(s\) only touched those paths|scanning \d+ commit\(s\) as |scanning\.\.\. |rewriting\.\.\. |nothing to rewrite|history rewritten: |history already clean|\d+ tag\(s\) (?:now point at|point into) |could not sign commit |restored remote )/],
-    // the wait after the rewrite opens on its own line; its later lines read as PR
-    // checks lines, an earlier phase, so they stay where the run is
+    ["pr", /^(?:--skip-pr-check set|checking pr status for |found pr #|no open pr for |pr #\d+ |check "|would wait for \d+ still-running check|\d+ check\(s\) still running|still waiting: |all \d+ check\(s\) finished|timed out after .* waiting for pr #)/],
+    // the wait opens on its own line; its later lines read as PR checks
+    // lines, an earlier phase, so they stay where the run is
     ["wait", /^waiting for pr #/],
     ["publish", /^(?:would (?:force-)?push |(?:pushing \(with lease\)|force-pushing \(no lease\)) head -> |pushed \w+ to |a real run would (?:push anyway|stop here)|this push replaces origin\/|--force set, pushing anyway|confirmed, pushing anyway|cancelled before pushing|nothing to push: |origin\/\S+ already contains |declining to push|moved tag |updated \d+ tag\(s\) on origin|--no-tags set: |\d+ tag\(s\) not moved on origin|\d+ other branch\(es\) on origin still contain |clean one too with: )/],
     ["sync", /^(?:done\b|staying on |returning to |would return to |resetting \S+ to origin\/|switching to \S+ first, so |(?:would delete|deleted|deleting) (?:local branch |origin\/)|deleting \S+ also closes pr #|local branch \S+ is still checked out|origin\/\S+ is already gone|cancelled: )/],

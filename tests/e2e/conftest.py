@@ -48,7 +48,7 @@ def browser(playwright: Any) -> Iterator[Any]:
 
 @pytest.fixture
 def signing() -> None:
-  """A parked run signs before it waits for its checks, so it needs gpg."""
+  """A parked run signs before its PR gate, so it needs gpg."""
   if shutil.which("gpg") is None:
     pytest.skip("no gpg: the run cannot reach its checks wait")
 

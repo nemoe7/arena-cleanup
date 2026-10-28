@@ -43,7 +43,7 @@ def test_a_dry_run_counts_checks_commits_and_tags(desktop: Walker) -> None:
   assert rows["sync"] == ""
 
 
-# a real run's lines, as the engine writes them, up to the tag push
+# a 0.2.4 run's lines, as that engine wrote them, up to the tag push
 REAL_RUN = [
   ("INFO", "arena-cleanup 0.2.4 on main"),
   ("OK", 'check "unit": pass'),

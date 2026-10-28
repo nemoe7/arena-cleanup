@@ -19,22 +19,22 @@ from scripts.walk import Walker
 pytestmark = pytest.mark.e2e
 
 RUN = [
-  ("INFO", "arena-cleanup 0.3.2 starting"),
+  ("INFO", "arena-cleanup 0.3.8 starting"),
   ("OK", "fetched and pruned origin"),
   (
     "INFO",
     "switching to arena/4c3a9b5f-infra-tools (tracking origin/arena/4c3a9b5f-infra-tools)",
   ),
   ("OK", "already up to date (de96315)"),
-  ("INFO", "checking PR status for arena/4c3a9b5f-infra-tools"),
-  ("OK", 'check "lint": SUCCESS'),
-  ("OK", "PR #57 checks ok"),
   ("INFO", "scanning 23 commit(s) as Nemo <nemo@example.com>"),
   (
     "OK",
     "history rewritten: 23 commit(s): 20 rewritten, 20 signed, 3 untouched (4.2s)",
   ),
   ("OK", "2 tag(s) now point at the rewritten commits"),
+  ("INFO", "checking PR status for arena/4c3a9b5f-infra-tools"),
+  ("OK", 'check "lint": SUCCESS'),
+  ("OK", "PR #57 checks ok"),
   ("INFO", "pushing (with lease) HEAD -> refs/heads/main"),
   ("OK", "pushed 2222222 to origin/main"),
   ("OK", "moved tag v1.0 11111111 -> 22222222"),
@@ -305,20 +305,17 @@ GROWING = [
 
 
 WAITED = [
-  ("INFO", "arena-cleanup 0.3.7 starting"),
+  ("INFO", "arena-cleanup 0.3.8 starting"),
   ("OK", "fetched and pruned origin"),
   ("INFO", "switching to arena/elsewhere (tracking origin/arena/elsewhere)"),
   ("OK", "already up to date (de96315)"),
+  ("INFO", "scanning 2 commit(s) as Nemo <nemo@example.com>"),
+  ("OK", "history rewritten: 2 commit(s): 1 rewritten, 1 signed, 1 untouched (0.3s)"),
   ("INFO", "checking PR status for arena/elsewhere"),
   ("INFO", "found PR #119"),
   ("WARN", 'check "Repository Quality": IN_PROGRESS'),
   ("OK", 'check "Review Dependencies": SUCCESS'),
-  (
-    "INFO",
-    "1 check(s) still running, waiting up to 15m00s after the rewrite (polling every 1s)",
-  ),
-  ("INFO", "scanning 2 commit(s) as Nemo <nemo@example.com>"),
-  ("OK", "history rewritten: 2 commit(s): 1 rewritten, 1 signed, 1 untouched (0.3s)"),
+  ("INFO", "1 check(s) still running, waiting up to 15m00s (polling every 1s)"),
   ("INFO", "waiting for PR #119 checks (1 still running)"),
   ("OK", 'check "Repository Quality": SUCCESS'),
   ("OK", 'check "CodeQL": SUCCESS'),
@@ -331,14 +328,14 @@ WAITED = [
 ]
 
 
-def test_the_wait_after_the_rewrite_is_its_own_phase(desktop: Walker) -> None:
-  """The engine rewrites first, then waits: its wait row sits between the two."""
+def test_the_gate_after_the_rewrite_waits_in_its_own_phase(desktop: Walker) -> None:
+  """The engine rewrites first, then reads the checks: the wait row follows the read."""
   open_run(desktop, WAITED)
   rows = desktop.page.evaluate(
     """() => [...document.querySelectorAll('#phases .phase')]
       .map((li) => [li.dataset.phase, li.dataset.state, li.querySelector('.phase-sub').textContent])"""
   )
-  assert [r[0] for r in rows] == ["prepare", "pr", "rewrite", "wait", "publish", "sync"]
+  assert [r[0] for r in rows] == ["prepare", "rewrite", "pr", "wait", "publish", "sync"]
   assert [r[1] for r in rows] == ["done"] * 6
   subs = {r[0]: r[2] for r in rows}
   assert subs["pr"] == "3/3" and subs["wait"] == "3/3"
@@ -373,7 +370,7 @@ def test_checks_added_during_the_wait_count_in_the_pr_steps(desktop: Walker) -> 
 def test_a_running_rewrite_names_the_collected_commits_and_the_open_step(
   desktop: Walker,
 ) -> None:
-  open_run(desktop, RUN[:8], status="running")
+  open_run(desktop, RUN[:5], status="running")
   desktop.page.wait_for_selector('.phase[data-phase="rewrite"][data-state="run"]')
   modal = open_phase(desktop, "rewrite")
   assert [s[1] for s in modal["steps"]] == ["Collected 23 commits", "Signing…"]
@@ -405,7 +402,7 @@ RUN_GLYPH = """() => {
 
 def test_a_running_row_pulses_an_amber_dot(desktop: Walker) -> None:
   """The live row is an amber state, so its glyph slot holds the pulsing dot."""
-  open_run(desktop, RUN[:8], status="running")
+  open_run(desktop, RUN[:5], status="running")
   desktop.page.wait_for_selector('.phase[data-state="run"] .phase-ico .dot')
   glyph = desktop.page.evaluate(RUN_GLYPH)
   assert glyph["color"] == glyph["want"], "the running slot is amber"

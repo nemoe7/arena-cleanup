@@ -17,7 +17,7 @@ pytestmark = pytest.mark.e2e
 
 BRANCH = "arena/cleanup-done"
 RUN = [
-  ("INFO", "arena-cleanup 0.3.6 starting"),
+  ("INFO", "arena-cleanup 0.3.8 starting"),
   ("INFO", "claimed emails=bot@example.com; claimed names=bot; sign=yes"),
   ("OK", "fetched and pruned origin"),
   ("INFO", "default branch: main"),
@@ -25,15 +25,15 @@ RUN = [
   ("INFO", "on main, locating origin/arena/* branch"),
   ("INFO", f"switching to {BRANCH} (tracking origin/{BRANCH})"),
   ("OK", "already up to date (de96315)"),
+  ("INFO", "creating backup bundle"),
+  ("OK", "backup written to /srv/done-work/push-tags/.git/cleanup-done.bundle"),
+  ("INFO", "scanning 5 commit(s) as Nemo <nemo@example.com>"),
+  ("OK", "history rewritten: 5 commit(s): 5 rewritten, 5 signed, 0 untouched (1.2s)"),
   ("INFO", f"checking PR status for {BRANCH}"),
   ("INFO", "found PR #57"),
   ("OK", 'check "lint": SUCCESS'),
   ("OK", 'check "deleted-files-done": SUCCESS'),
   ("OK", "PR #57 checks ok"),
-  ("INFO", "creating backup bundle"),
-  ("OK", "backup written to /srv/done-work/push-tags/.git/cleanup-done.bundle"),
-  ("INFO", "scanning 5 commit(s) as Nemo <nemo@example.com>"),
-  ("OK", "history rewritten: 5 commit(s): 5 rewritten, 5 signed, 0 untouched (1.2s)"),
   ("INFO", "pushing (with lease) HEAD -> refs/heads/main"),
   ("OK", "pushed 2222222 to origin/main"),
   ("INFO", "returning to main"),

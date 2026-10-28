@@ -20,7 +20,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Identifier: the server-minted `id`.
   - The card shows `name` only.
 - Arena branch: a branch under the `arena/` prefix with its PR and check count.
-- Run: one engine execution with six phases: Prepare, PR checks, Rewrite and sign, Checks wait, Push, Clean up. The wait holds the checks that still ran at the gate, so the push follows the last green check at once.
+- Run: one engine execution with six phases: Prepare, Rewrite and sign, PR checks, Checks wait, Push, Clean up. The gate follows the rewrite and waits for running checks, so a red check costs no push and the push follows the last green one.
 
 ## Journeys and information architecture
 
@@ -224,8 +224,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Phone: the checkboxes form a grid with 160 px columns. Browse, the fold head, and the 16 px path field are 44 px targets there.
 - `phase`: a row with the state glyph, a name, a count, and the time. The running row holds the amber pulsing dot in its glyph slot.
   - Counts: the count comes from the engine's lines.
-    - PR checks reads `passed/total`.
     - Rewrite and sign reads `collecting N commits`, then `signing X/Y`, then `signed X commits`.
+    - PR checks reads `passed/total`.
     - Checks wait reads `N running`, then `finished/total`, and stays skipped when every check was green at the gate.
   - Push reads `moving`, `pushing`, then `pushed X tags`, and stays empty without a tag.
     - A dry run reads `would sign` and `would move`.
