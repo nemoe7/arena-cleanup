@@ -57,6 +57,11 @@ def test_a_github_remote_links_owner_and_repo(desktop: Walker) -> None:
     page.route(pattern, lambda route: patch(route, OTHER, {"remote": local}))
   try:
     desktop.click(CARD.format(name=OTHER))
+    # the view paints the cached card first, then the patched read lands
+    page.wait_for_function(
+      "(local) => document.querySelector('#side-top').innerText.includes(local)",
+      arg=local,
+    )
     assert page.query_selector("#side-top .kv dd .remote-link") is None
     cells = page.eval_on_selector_all(
       "#side-top .kv dd", "(ds) => ds.map((d) => d.textContent)"
