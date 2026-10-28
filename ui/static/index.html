@@ -85,8 +85,7 @@
     --line-check-hover: #525c6b;
     --card-hover: #0f1216;
     --card-hover-line: #2c333c;
-    --thumb: #2b313a;
-    --thumb-hover: #3c4450;
+    --thumb: #302e2c;
     --glass: rgba(8, 9, 11, .86);
     --glass-2: rgba(10, 12, 15, .94);
     --scrim: rgba(0, 0, 0, .55);
@@ -137,7 +136,8 @@
   ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--thumb); border-radius: 8px; }
   ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
-  @media (hover: hover) { ::-webkit-scrollbar-thumb:hover { background: var(--thumb-hover); } }
+  /* the recipe highlights the thumb under keyboard navigation alone, never under a pointer */
+  @media (hover: hover) { :root[data-keyboard-nav="true"] ::-webkit-scrollbar-thumb:hover, :root[data-keyboard-nav="true"] ::-webkit-scrollbar-thumb:active { background: var(--accent); } }
   @supports not selector(::-webkit-scrollbar) {
     * { scrollbar-width: thin; scrollbar-color: var(--thumb) var(--bg); }
   }

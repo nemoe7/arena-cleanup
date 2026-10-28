@@ -96,7 +96,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 ### Colour
 
 - Roles: `bg`, `surface`, `surface-2`, `surface-3`, `line`, `line-2`, `text`, `muted`, `dim`, `accent`, `accent-hi`, `accent-deep`, `accent-deep-hi`, `accent-soft`, `ok`, `warn`, `err`, `info`.
-- Tints and edges, also in `:root`: `on-accent`, `accent-edge`, `selection`, `line-hover`, `line-3`, `line-check-hover`, `card-hover`, `card-hover-line`, `thumb`, `thumb-hover`, `glass`, `glass-2`, `scrim`, `kbd-text`, `kbd-line`, `log-text`, `log-dim`, and `on-danger`.
+- Tints and edges, also in `:root`: `on-accent`, `accent-edge`, `selection`, `line-hover`, `line-3`, `line-check-hover`, `card-hover`, `card-hover-line`, `thumb`, `glass`, `glass-2`, `scrim`, `kbd-text`, `kbd-line`, `log-text`, `log-dim`, and `on-danger`.
   - Each tone has `-text`, `-line`, and `-tint`, and `err-line-hi` edges the armed button.
   - No rule below `:root` names a colour.
 - One dark theme, `color-scheme: dark`.
@@ -161,7 +161,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - A view only fades, as a transform would unpin the fixed tab bar inside it.
   - The tween takes 180 ms on `power2.out`, and a list spreads its rows over 120 ms more.
   - `prefers-reduced-motion: reduce` skips the tweens.
-- Scrollbars, the nuu recipe: a 10 px bar with an 8 px radius thumb in `--thumb`, the `--bg` track, and no arrow buttons.
+- Scrollbars, the nuu recipe: a 10 px bar, an 8 px radius thumb in `--thumb`, the `--bg` track, and no arrow buttons. `--thumb` is the recipe `#302e2c`.
+  - The thumb highlights in the accent under keyboard navigation alone. A pointer gets no hover tint.
   - `scrollbar-width` and `scrollbar-color` apply only where `::-webkit-scrollbar` is unknown, so Chromium keeps the drawn thumb.
   - Each scrolling view reserves its gutter with `scrollbar-gutter: stable`. The page root reserves none, since on a desktop it never scrolls.
 - Scroll-edge fade, the nuu recipe: the commit list and log carry `scroll-panel`.
@@ -601,3 +602,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-27: the GitHub mark is the Simple Icons glyph on the 24 px grid. Every icon then sits on the nuu ladder, Lucide first and Simple Icons for brand marks, and the Octicons tag with its audit waiver goes.
 - Accepted 2026-10-27: the PR checks row shows the checks of the last run, not the live PR. The server keeps them at the end of the run's read, while the PR is open, and the row opens the pill view on them.
 - Accepted 2026-10-27: the select caret is the Lucide chevron-down glyph beside the control, not a CSS gradient. Every select then sits on the icon ladder with the rest of the controls.
+- Accepted 2026-10-28: the scrollbar thumb is the recipe colour `#302e2c` and highlights only under keyboard navigation. The hover tint kept on 2026-10-25 goes.
