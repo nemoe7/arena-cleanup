@@ -26,6 +26,11 @@ DELAY = """([id, ms]) => {
     : orig(u, i);
 }"""
 RESTORE = "() => { if (window.__fetch) window.fetch = window.__fetch; }"
+# the view waits for its first status read
+READING = """() => {
+  const b = document.querySelector('#start');
+  return b.disabled && b.title === 'reading branch state';
+}"""
 
 
 def repo_id(walker: Walker, name: str) -> str:
@@ -41,10 +46,9 @@ def test_a_slow_status_answer_stays_with_its_repo(desktop: Walker) -> None:
   page.evaluate(DELAY, [billing, LATE_MS])
   try:
     page.click(CARD.format(name="billing-api"))
-    page.wait_for_timeout(250)
+    page.wait_for_function(READING)
     page.click("#back")
     page.wait_for_selector(CARD.format(name="shop-web"))
-    page.wait_for_timeout(150)
     page.click(CARD.format(name="shop-web"))
     with page.expect_response(f"**/api/repos/{billing}"):
       page.clock.run_for(LATE_MS)
@@ -78,8 +82,9 @@ def test_a_deleted_branch_takes_its_commits_off_the_list(desktop: Walker) -> Non
   desktop.click(f"{ROWS}:not(.selected) .select")
   chosen = page.get_attribute(f"{ROWS}.selected .select", "data-branch")
   other = page.get_attribute(f"{ROWS}:not(.selected) .select", "data-branch")
-  assert (
-    page.inner_text("#commits .commit .subject") == subjects(desktop, rid, chosen)[0]
+  first = subjects(desktop, rid, chosen)[0]
+  page.wait_for_function(
+    f"document.querySelector('#commits .commit .subject').textContent === {first!r}"
   )
   # other tests need this branch on the server, so this route answers its delete
   page.route(
@@ -138,9 +143,7 @@ def test_clean_and_push_waits_for_the_first_fresh_status(desktop: Walker) -> Non
   page.evaluate(DELAY, [repo_id(desktop, "shop-web"), LATE_MS])
   try:
     page.click(CARD.format(name="shop-web"))
-    page.wait_for_timeout(300)
-    assert page.eval_on_selector("#start", "e => e.disabled")
-    assert page.get_attribute("#start", "title") == "reading branch state"
+    page.wait_for_function(READING)
     page.clock.run_for(LATE_MS)
     page.wait_for_function(
       "() => !document.querySelector('#start').disabled", timeout=5000

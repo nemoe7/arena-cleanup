@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from scripts.walk import Walker
 
-SETTLE_MS = 600
-
 
 def length(walker: Walker) -> int:
   return int(walker.page.evaluate("history.length"))
@@ -33,8 +31,7 @@ def test_a_sub_view_is_one_entry_deep(desktop: Walker) -> None:
 
   # browser Back lands on the dashboard, the root entry
   desktop.page.go_back()
-  desktop.page.wait_for_timeout(SETTLE_MS)
-  assert desktop.visible("#view-dashboard")
+  desktop.page.wait_for_selector("#view-dashboard", state="visible")
   assert not pushed(desktop)
 
 
@@ -73,6 +70,5 @@ def test_the_tab_title_names_the_page(desktop: Walker) -> None:
 
   # browser Back pops to the dashboard, the root entry
   desktop.page.go_back()
-  desktop.page.wait_for_timeout(SETTLE_MS)
-  assert desktop.visible("#view-dashboard")
-  assert desktop.page.title() == "arena-cleanup"
+  desktop.page.wait_for_selector("#view-dashboard", state="visible")
+  desktop.page.wait_for_function("document.title === 'arena-cleanup'")

@@ -22,6 +22,10 @@ CLEAR = {"rgba(0, 0, 0, 0)", "transparent"}
 BG = "e => getComputedStyle(e).backgroundColor"
 RIGHT = "e => e.getBoundingClientRect().right"
 SELECTED = "e => e.classList.contains('selected')"
+# true once the element's own surface is clear, or tinted, as `want` says
+SURFACE = """([e, clear, want]) => {
+  return clear.includes(getComputedStyle(e).backgroundColor) === want;
+}"""
 
 
 def open_repo(walker: Walker) -> None:
@@ -62,11 +66,10 @@ def test_the_hover_tint_covers_the_row_under_a_pointer(desktop: Walker) -> None:
   page = desktop.page
   # a click leaves its pointer over this row list, so park it top left
   page.mouse.move(0, 0)
-  page.wait_for_timeout(200)
+  row = page.query_selector(ROW)
+  page.wait_for_function(SURFACE, arg=[row, sorted(CLEAR), True])
   assert page.eval_on_selector(ROW, SELECTED) is False
-  assert page.eval_on_selector(ROW, BG) in CLEAR
   page.hover(f"{ROW} .arena-del")
-  page.wait_for_timeout(200)
-  assert page.eval_on_selector(ROW, BG) not in CLEAR
+  page.wait_for_function(SURFACE, arg=[row, sorted(CLEAR), False])
   # the icon button keeps its own ring on top of the row tint
   assert page.eval_on_selector(f"{ROW} .arena-del", BG) not in CLEAR

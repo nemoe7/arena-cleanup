@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-import time
 from collections.abc import Iterator
 from typing import Any
 
@@ -44,10 +43,7 @@ def test_the_dashboard_says_loading_until_the_first_answer(desktop: Walker) -> N
     desktop.page.wait_for_selector("#repo-loading", state="visible")
     assert desktop.count(".repo-card") == 0, "no cards before the first answer"
     assert not desktop.visible("#repo-empty"), "and no empty state either"
-    deadline = time.monotonic() + 5
-    while not held and time.monotonic() < deadline:
-      desktop.page.wait_for_timeout(50)
-    assert held, "the page asked for its repos"
+    desktop.until(lambda: bool(held), "the page asked for its repos")
     for route in held:
       route.continue_()
     desktop.page.wait_for_selector(".repo-card")

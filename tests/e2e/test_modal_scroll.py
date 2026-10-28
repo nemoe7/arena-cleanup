@@ -26,7 +26,7 @@ def test_the_page_holds_still_under_an_open_dialog(phone: Walker) -> None:
   start = page.evaluate(TOP)
   page.mouse.move(40, 40)
   page.mouse.wheel(0, 300)
-  page.wait_for_timeout(250)
+  phone.frames(3)
   assert page.evaluate(TOP) == start, "the wheel moved the page under the dialog"
   close_phase(phone)
   assert page.evaluate(ROOT_OVERFLOW) != "hidden"

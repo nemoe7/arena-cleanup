@@ -11,7 +11,6 @@ one. Another run repaints the view (docs/design.md).
 from __future__ import annotations
 
 import json
-import time
 from typing import Any
 
 import pytest
@@ -70,7 +69,7 @@ def test_settings_paint_their_last_answer_while_the_fresh_read_runs(
   )
   assert painted == {"name": True, "loading": False}, "the last answer paints at once"
   page.wait_for_function(f"() => !{LOADING}")
-  page.wait_for_timeout(500)
+  desktop.until(lambda: len(settings) + len(signing) >= 4, "the fresh read still runs")
   assert (len(settings), len(signing)) == (2, 2), "the fresh read still runs"
   desktop.click("#settings-back")
 
@@ -111,10 +110,7 @@ def test_the_last_run_paints_before_the_server_answers(desktop: Walker) -> None:
     page.click(SHOP)
     page.wait_for_selector("#view-repo", state="visible")
     assert desktop.count(ROWS) == 3, "the known run paints before the answer"
-    deadline = time.monotonic() + 5
-    while not held and time.monotonic() < deadline:
-      page.wait_for_timeout(50)
-    assert held, "the fresh read went out"
+    desktop.until(lambda: bool(held), "the fresh read went out")
     with page.expect_response("**/jobs/latest"):
       reply(held.pop())
     desktop.settle()

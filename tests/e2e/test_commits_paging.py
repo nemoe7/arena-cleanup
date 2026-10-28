@@ -70,18 +70,16 @@ def test_the_hint_is_the_count_and_a_scroll_loads_the_older_page(
   assert urls[-1].endswith(f"limit={PAGE}{REF}")
   # scroll to the end: one request with the cursor, older page appended below
   page.eval_on_selector("#commits", "e => { e.scrollTop = e.scrollHeight; }")
-  page.wait_for_timeout(600)
-  assert page.evaluate(ROWS) == 2 * PAGE
+  page.wait_for_function(f"{ROWS_JS} === {2 * PAGE}")
   assert urls[-1].endswith(f"limit={PAGE}{REF}&before={LAST_OF_FIRST}")
   assert len(urls) == 2
-  # the last page has no cursor, so a further scroll asks for nothing
+  # the last page has no cursor, so a further scroll asks for nothing.
+  # The Reload that follows restarts at the first page.
   page.eval_on_selector(
     "#commits", "e => { e.scrollTop = 0; e.scrollTop = e.scrollHeight; }"
   )
-  page.wait_for_timeout(400)
-  assert len(urls) == 2
-  # Reload restarts at the first page
   desktop.click("#commits-refresh")
   page.wait_for_function(f"{ROWS_JS} === {PAGE}")
+  assert len(urls) == 3, "the scroll asked for nothing, the Reload once"
   assert urls[-1].endswith(f"limit={PAGE}{REF}")
   page.unroute("**/api/repos/*/commits?*")

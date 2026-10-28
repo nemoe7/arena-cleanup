@@ -45,7 +45,11 @@ def open_with_a_run(
     walker.click('input[data-opt="dry_run"]')
     walker.click("#start")
     walker.wait_status("exit")
-    walker.page.wait_for_timeout(300)
+    # the run end reads the branch state, and the view repaints on its answer
+    walker.page.wait_for_function(
+      "() => document.querySelector('#start').title !== 'reading branch state'"
+    )
+    walker.settle()
     return walker.page.evaluate(PROBE)
   finally:
     context.close()

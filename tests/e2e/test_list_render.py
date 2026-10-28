@@ -25,6 +25,8 @@ pytestmark = pytest.mark.e2e
 CARD = ".repo-card:has-text('{name}')"
 ROWS = "#side-top .arena-item"
 ONLINE = "() => window.dispatchEvent(new Event('online'))"
+# a changed list rebuilds every card, so the old node leaves the document
+REBUILT = "e => !e.isConnected"
 # the test holds the delete answer this long
 DELETE_MS = 3000
 # the page disarms an armed Remove after this long
@@ -44,6 +46,14 @@ def fail(route: Any, message: str) -> None:
   route.fulfill(
     status=500, content_type="application/json", body=json.dumps({"error": message})
   )
+
+
+def tick(walker: Walker) -> None:
+  """Fire the online event, and return once the page painted the list it read."""
+  page = walker.page
+  with page.expect_event("requestfinished", lambda r: r.url.endswith("/api/repos")):
+    page.evaluate(ONLINE)
+  walker.frames()
 
 
 def dirty(name: str):
@@ -74,7 +84,7 @@ def test_a_removal_in_flight_stays_out_of_a_status_refresh(desktop: Walker) -> N
   try:
     desktop.click(f"{ROWS}:not(.selected) .arena-del")
     desktop.click("#confirm-go")
-    assert desktop.count(ROWS) == 1, "the row leaves before the reply"
+    assert desktop.count_settled(ROWS, 1) == 1, "the row leaves before the reply"
     desktop.click("#settings-btn")
     desktop.click("#settings-back")
     assert desktop.count(ROWS) == 1, "the status refresh brought the deleted row back"
@@ -97,8 +107,7 @@ def test_a_tick_that_changed_nothing_keeps_focus_and_an_armed_remove(
   assert page.eval_on_selector(
     rm, "e => e.classList.contains('armed') && e === document.activeElement"
   )
-  page.evaluate(ONLINE)
-  page.wait_for_timeout(800)
+  tick(desktop)
   assert page.eval_on_selector(rm, "e => e.classList.contains('armed')"), (
     "the tick disarmed Remove"
   )
@@ -116,8 +125,9 @@ def test_a_changed_list_keeps_the_focus_on_the_same_control(desktop: Walker) -> 
   page.focus(name)
   page.route(lambda url: url.endswith("/api/repos"), dirty("docs-site"))
   try:
+    old = page.query_selector(name)
     page.evaluate(ONLINE)
-    page.wait_for_timeout(800)
+    page.wait_for_function(REBUILT, arg=old)
     assert page.eval_on_selector(name, "e => e === document.activeElement"), (
       "focus fell off the card"
     )
@@ -138,8 +148,9 @@ def test_a_changed_list_keeps_the_job_log_scroll(desktop: Walker) -> None:
   assert before > 0
   page.route(lambda url: url.endswith("/api/repos"), dirty("billing-api"))
   try:
+    old = page.query_selector(CARD.format(name="billing-api"))
     page.evaluate(ONLINE)
-    page.wait_for_timeout(800)
+    page.wait_for_function(REBUILT, arg=old)
     assert abs(page.eval_on_selector(pre, "e => e.scrollTop") - before) <= 2, (
       "the render moved the log"
     )
@@ -222,11 +233,12 @@ def test_the_reload_glyph_spins_until_the_last_fetch_ends(desktop: Walker) -> No
   try:
     desktop.goto()
     page.click("#repos-refresh")
-    page.wait_for_timeout(300)
+    desktop.until(lambda: len(held) >= 2, "the Reload click sent its fetch")
     assert len(held) == 2, "the page-load fetch and the Reload click are both in flight"
     assert page.evaluate(busy) == "true"
-    held[0].continue_()
-    page.wait_for_timeout(600)
+    with page.expect_event("requestfinished", lambda r: r.url.endswith("/api/fetch")):
+      held[0].continue_()
+    desktop.frames()
     assert page.evaluate(busy) == "true", (
       "the first fetch's end stopped the glyph early"
     )

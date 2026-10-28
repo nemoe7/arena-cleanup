@@ -43,6 +43,12 @@ STATUS_CACHE_SECONDS = 15
 REPOS_READY = "#repo-loading"
 
 SETTLE_MS = 100
+PUMP_MS = 5
+REDUCED = "matchMedia('(prefers-reduced-motion: reduce)').matches"
+FRAMES = """(n) => new Promise((done) => {
+  const tick = () => (--n > 0 ? requestAnimationFrame(tick) : done());
+  requestAnimationFrame(tick);
+})"""
 MOTION_DONE = """() => {
   // pulses never end, and a scroll-driven fade runs as long as its timeline does
   const ends = (a) => {
@@ -185,13 +191,27 @@ class Walker:
     self.settle()
 
   def settle(self, floor_ms: int = SETTLE_MS) -> None:
-    """Wait until the page motion ends, then a short floor.
+    """Wait until the page motion ends, then a short floor under motion alone.
 
     GSAP tweens and finite document-timeline animations count. The pulsing
     dots and the scroll-driven fades never end, so they do not hold the wait.
+    A page that prefers reduced motion starts no tween, so it skips the floor.
     """
     self.page.wait_for_function(MOTION_DONE, timeout=5000)
-    self.page.wait_for_timeout(floor_ms)
+    if floor_ms and not self.page.evaluate(REDUCED):
+      self.page.wait_for_timeout(floor_ms)
+
+  def frames(self, count: int = 2) -> None:
+    """Wait for `count` animation frames: hover, scroll, and input land by then."""
+    self.page.evaluate(FRAMES, count)
+
+  def until(self, ready: Callable[[], bool], what: str, timeout_ms: int = 5000) -> None:
+    """Pump the browser events until `ready()`, for a held route or a counted request."""
+    deadline = time.monotonic() + timeout_ms / 1000
+    while not ready():
+      if time.monotonic() > deadline:
+        raise AssertionError(what)
+      self.page.wait_for_timeout(PUMP_MS)
 
   def visible(self, selector: str) -> bool:
     return self.page.is_visible(selector)
@@ -204,9 +224,12 @@ class Walker:
 
   def count_settled(self, selector: str, want: int, timeout_ms: int = 2000) -> int:
     """Read a count once it reaches `want`, or whatever stands at the timeout."""
-    deadline = time.monotonic() + timeout_ms / 1000
-    while self.count(selector) != want and time.monotonic() < deadline:
-      self.page.wait_for_timeout(50)
+    from playwright.sync_api import expect
+
+    try:
+      expect(self.page.locator(selector)).to_have_count(want, timeout=timeout_ms)
+    except AssertionError:
+      pass
     return self.count(selector)
 
   def click(self, selector: str) -> None:

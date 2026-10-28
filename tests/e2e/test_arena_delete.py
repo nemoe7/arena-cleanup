@@ -14,6 +14,7 @@ pytestmark = pytest.mark.e2e
 BRANCH = "arena/3f7c2e1a-shop-web"
 ROW = f".arena-item:has(.row-btn[data-branch='{BRANCH}'])"
 OPEN = "() => document.querySelector('#modal').open"
+CLOSED = "() => !document.querySelector('#modal').open"
 BOX = "e => { const b = e.getBoundingClientRect(); return [b.width, b.height]; }"
 CANCEL = "#modal .modal-actions button[value='cancel']"
 
@@ -51,8 +52,7 @@ def test_the_modal_asks_before_the_branch_goes(desktop: Walker) -> None:
   # Escape closes it too
   desktop.click(f"{ROW} .arena-del")
   page.keyboard.press("Escape")
-  page.wait_for_timeout(200)
-  assert page.evaluate(OPEN) is False
+  page.wait_for_function(CLOSED)
   assert bodies == []
   # Delete: one request that names the branch
   desktop.click(f"{ROW} .arena-del")

@@ -75,13 +75,12 @@ def test_a_dropped_stream_resumes_without_repeating_lines(desktop: Walker) -> No
     set_dry(desktop, True)
     desktop.click("#start")
     desktop.wait_status("exit")
-    page.wait_for_timeout(300)
-    rows = page.eval_on_selector_all("#log .log-row", "els => els.length")
     repos = page.request.get(f"{desktop.url}/api/repos").json()
     repo_id = next(r["id"] for r in repos if r["name"] == "shop-web")
     snap = page.request.get(f"{desktop.url}/api/repos/{repo_id}/jobs/latest").json()
-    assert rows == len(snap["lines"]), (
-      "each line once: the poll asks for the lines it lacks"
+    # each line once: the poll asks for the lines it lacks
+    page.wait_for_function(
+      f"document.querySelectorAll('#log .log-row').length === {len(snap['lines'])}"
     )
   finally:
     page.unroute_all(behavior="ignoreErrors")

@@ -156,13 +156,15 @@ def test_a_hovered_table_row_tints(desktop: Walker) -> None:
   desktop.goto()
   page.wait_for_selector(f"{CARD} .arena-row .arena-tail .pill")
   page.mouse.move(0, 0)
-  page.wait_for_timeout(200)
-  bg = "e => getComputedStyle(e).backgroundColor"
-  clear = {"rgba(0, 0, 0, 0)", "transparent"}
-  assert page.eval_on_selector(CARD, bg) in clear, "a resting row has no own surface"
+  clear = ["rgba(0, 0, 0, 0)", "transparent"]
+  surface = (
+    "([e, clear, want]) => clear.includes(getComputedStyle(e).backgroundColor) === want"
+  )
+  card = page.query_selector(CARD)
+  # a resting row has no own surface, and the pointer tints the row
+  page.wait_for_function(surface, arg=[card, clear, True])
   page.hover(f"{CARD} .bname")
-  page.wait_for_timeout(200)
-  assert page.eval_on_selector(CARD, bg) not in clear, "the pointer tints the row"
+  page.wait_for_function(surface, arg=[card, clear, False])
 
 
 def test_the_rows_fold_into_cards_when_the_table_outgrows_its_room(

@@ -9,7 +9,6 @@ the list again, so the row shows a run started there (docs/design.md).
 from __future__ import annotations
 
 import json
-import time
 from typing import Any
 
 import pytest
@@ -94,9 +93,7 @@ def test_a_live_job_marks_its_row(desktop: Walker) -> None:
     desktop.click(f"{CARD} .repo-name")
     desktop.click("#back")
     page.wait_for_selector(f"{CARD} button.clean.running")
-    deadline = time.monotonic() + 5
-    while len(reads) < before + 1 and time.monotonic() < deadline:
-      page.wait_for_timeout(100)
+    desktop.until(lambda: len(reads) > before, "one fresh read on return")
     assert len(reads) == before + 1, "one fresh read on return"
   finally:
     page.unroute("**/api/repos")
@@ -138,13 +135,12 @@ def test_a_run_started_here_marks_its_row_before_the_list_answers(
     assert page.eval_on_selector(card, ROW)["running"] is True, (
       "the card behind the repo view is marked at once"
     )
-    desktop.click("#back")
-    assert page.eval_on_selector(card, ROW)["running"] is True, "Back finds it grey"
-    deadline = time.monotonic() + 5
-    while not reads and time.monotonic() < deadline:
-      page.wait_for_timeout(100)
+    # the return reads the list, and the page paints that answer by the next frames
+    with page.expect_event("requestfinished", lambda r: r.url.endswith("/api/repos")):
+      desktop.click("#back")
+      assert page.eval_on_selector(card, ROW)["running"] is True, "Back finds it grey"
     assert reads, "the return reads the list"
-    page.wait_for_timeout(200)
+    desktop.frames()
     assert page.eval_on_selector(card, ROW)["running"] is True, (
       "a read from before the start cannot undo it"
     )

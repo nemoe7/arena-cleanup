@@ -28,7 +28,7 @@ def pr_rank(repo: dict) -> int:
 
 def choose(walker: Walker, value: str) -> None:
   walker.page.select_option("#repo-sort", value)
-  walker.page.wait_for_timeout(200)
+  walker.settle()
 
 
 def test_the_default_order_is_the_newest_arena_tip_first(desktop: Walker) -> None:

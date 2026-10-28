@@ -24,15 +24,6 @@ def repo_hash(demo: Demo) -> str:
   return "#/repo/" + repos[0]["id"]
 
 
-def wait_held(page: Any, held: list[Any]) -> None:
-  """The route event lands after the navigation returns, so give it a moment."""
-  for _ in range(40):
-    if held:
-      return
-    page.wait_for_timeout(50)
-  raise AssertionError("the boot sequence asked for the environment")
-
-
 @pytest.mark.parametrize(
   ("route", "settled", "view"),
   [
@@ -51,7 +42,8 @@ def test_a_reload_shows_the_named_view_before_the_status_loads(
   page.route("**/api/env", lambda r: held.append(r))
   try:
     page.goto(f"{desktop.url}/{target}", wait_until="domcontentloaded")
-    wait_held(page, held)
+    # the route event lands after the navigation returns
+    desktop.until(lambda: bool(held), "the boot sequence asked for the environment")
     assert page.evaluate(VIEWS) == {
       "dashboard": False,
       "repo": view == "repo",

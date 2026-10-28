@@ -47,4 +47,5 @@ def test_desktop_keeps_the_visual_hit_box(desktop: Walker, selector: str) -> Non
 def test_phone_claim_inputs_are_44_px_tall(phone: Walker) -> None:
   phone.goto()
   phone.click("#settings-btn")
+  phone.page.wait_for_selector(".chip-edit input")
   assert phone.page.evaluate(INPUT_HEIGHT) >= TOUCH_PX

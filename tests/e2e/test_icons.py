@@ -68,7 +68,7 @@ def hover_shift(walker: Walker) -> tuple[str, str]:
   walker.goto()
   before = walker.page.eval_on_selector("#repos-refresh", BACKGROUND)
   walker.page.hover("#repos-refresh")
-  walker.page.wait_for_timeout(300)
+  walker.frames()
   return before, walker.page.eval_on_selector("#repos-refresh", BACKGROUND)
 
 
@@ -89,7 +89,8 @@ def squares(walker: Walker) -> list[list[float | str]]:
   seen += walker.page.evaluate(ICON_ONLY)
   walker.page.goto("about:blank")
   walker.page.goto(walker.url + "#/settings")
-  walker.page.wait_for_timeout(600)
+  walker.page.wait_for_selector("#card-identity")
+  walker.settle()
   return seen + walker.page.evaluate(ICON_ONLY)
 
 

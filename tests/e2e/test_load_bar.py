@@ -28,6 +28,10 @@ BAR = """() => {
     busy: document.getElementById('repos-refresh').getAttribute('aria-busy') };
 }"""
 BAR_HIDDEN = "document.getElementById('load-bar').hidden"
+# jump the bar's own animation to `ms` from its start, delay included
+FORWARD = """(ms) => {
+  for (const a of document.getElementById('load-bar').getAnimations()) a.currentTime = ms;
+}"""
 DELAY_MS = 200
 GROWTH_START = 0.05
 GROWTH_END = 0.92
@@ -53,7 +57,7 @@ def test_the_bar_grows_from_the_left_while_the_first_list_loads(
     assert bar["region"] == "true", "the dashboard view is busy"
     assert bar["busy"] != "true", "the Reload glyph stays still"
     assert page.is_visible("#repo-loading"), "the text line stays with the bar"
-    page.wait_for_timeout(DELAY_MS + 800)
+    page.evaluate(FORWARD, DELAY_MS + 800)
     late = page.evaluate(BAR)
     assert bar["scale"] <= late["scale"] <= GROWTH_END, (bar, late)
     assert late["scale"] > GROWTH_START, "the bar has grown"
@@ -126,7 +130,7 @@ def test_a_fetch_spins_the_reload_glyph_without_the_bar(
     page.wait_for_function(
       "document.getElementById('repos-refresh').getAttribute('aria-busy') === 'true'"
     )
-    page.wait_for_timeout(900)
+    walker.frames()
     bar = page.evaluate(BAR)
     assert bar["hidden"] is True, "a fetch of the repo states shows no bar"
     assert bar["busy"] == "true", "the Reload glyph spins"

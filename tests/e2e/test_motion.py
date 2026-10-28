@@ -118,7 +118,7 @@ def test_every_commit_row_enters_within_one_spread(desktop: Walker) -> None:
   page.evaluate(RECORD_ENTERS)
   page.click(".repo-card:has-text('shop-web') .repo-name")
   page.wait_for_selector("#commits .commit")
-  page.wait_for_timeout(500)
+  desktop.settle()
   rows = page.evaluate(ROWS)
   assert rows > 12, "the demo page holds more rows than the old slice"
   enters = [e for e in page.evaluate("window.__enters") if e[1]]
