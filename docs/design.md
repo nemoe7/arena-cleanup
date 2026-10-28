@@ -206,7 +206,8 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - A running job shows a note instead, since GitHub serves the log once the job ends.
   - Steps refresh every 10 s while a job runs. Closing the modal or the row stops the timer.
 - `phase`: the wide view behind each run phase row, which is a button once the row has lines.
-  - A step list with stamp, message, and duration, the commit list after a rewrite, or the push facts as a `kv` list. No view repeats the log lines.
+  - A step list, the commit list after a rewrite, or the push facts as a `kv` list. No view repeats the log lines.
+    - A step row reads like a job step of a check: a state glyph, the name, and the duration in the mono face. A done step carries the green check, the open step the amber live dot, and a failed step the red x.
     - Prepare names three steps: `Fetched`, `Located remote arena branch`, and `Pulled arena/<slug>`. Each takes the stamp and duration of the line that ends it, and the open step reads `Fetching…`.
     - Rewrite and sign names `Collected <n> commits`, `Commits rewritten`, `Backup written`, `Signed <k> of <n> commits`, and the tag move, and reads `Signing <i>/<n>…` while it runs. A dry run reads `Would sign <k> commits`.
     - Clean up names the return, reset, branch deletes, and `Done`. A step the run skipped is left out.

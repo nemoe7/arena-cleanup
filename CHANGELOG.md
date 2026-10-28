@@ -18,6 +18,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The run timeline lists Rewrite and sign before PR checks, the order engine
   0.3.8 runs them. A run logged by an older engine keeps its rewrite lines
   under PR checks.
+- A phase step reads like a job step of a check: a state glyph, the name,
+  and the duration. The clock stamps go.
 
 ## [0.3.18] - 2026-10-27
 

@@ -647,14 +647,18 @@
   .modal-body { max-height: 60vh; overflow: auto; overscroll-behavior: contain; margin: 0; }
   .modal-body > :last-child { margin-bottom: 0; }
   .modal-body:focus { outline: none; }
+  /* a phase step reads like a job step of a check: glyph, name, duration */
   .step-list { list-style: none; margin: 0; padding: 0; }
-  .step-list li { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 12px; min-height: 28px;
-    align-items: baseline; border-top: 1px solid var(--line); padding: 4px 0; font-size: var(--fs-2); }
+  .step-list li { display: flex; align-items: center; gap: 8px; min-height: 28px;
+    border-top: 1px solid var(--line); padding: 4px 0; font-size: var(--fs-2); }
   .step-list li:first-child { border-top: 0; }
-  .step-list .t, .step-list .d { color: var(--dim); font: var(--fs-1) var(--mono); font-variant-numeric: tabular-nums; }
-  .step-list .msg { min-width: 0; overflow-wrap: anywhere; }
-  .step-list .warn .msg { color: var(--warn-text); }
-  .step-list .error .msg { color: var(--err-text); }
+  .step-list .ico-svg { --ico: var(--ico-s); flex: none; color: var(--dim); }
+  .step-list .ok .ico-svg { color: var(--ok); }
+  .step-list .error .ico-svg { color: var(--err); }
+  .step-list .run .ico-svg { color: var(--warn); }
+  .step-list .name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .step-list .error .name { color: var(--err-text); }
+  .step-list .d { color: var(--dim); font: var(--fs-1) var(--mono); font-variant-numeric: tabular-nums; }
   .modal-body .kv { grid-template-columns: 84px 1fr; padding: 0; font-size: var(--fs-2); }
   .modal-body .kv dd { white-space: normal; }
   .modal-body .commit { padding: 8px 0; }
@@ -942,11 +946,6 @@
     button.pill, .repo-name { position: relative; }
     button.pill::before, .repo-name::before { content: ""; position: absolute; inset: -10px 0; }
     .chips input, .chip-edit input { height: 44px; }
-    /* a phone step row: the stamp and the duration on one line, the text under them at full width */
-    .step-list li { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; }
-    .step-list .t { grid-row: 1; }
-    .step-list .d { grid-row: 1; grid-column: 2; }
-    .step-list .msg { grid-row: 2; grid-column: 1 / -1; }
     /* a grid instead of a ragged wrap: one column at 360 px, more on wider phones */
     .checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 12px; }
     .opt.row > label { grid-column: 1 / -1; }
@@ -2780,9 +2779,10 @@
   function secsText(secs) {
     return secs < 0.1 ? "<0.1s" : secs.toFixed(1) + "s";
   }
-  const stepRow = (level, stamp, msg, took) => el("li", { class: level },
-    el("span", { class: "t" }, clock(stamp)),
-    el("span", { class: "msg" }, msg),
+  const STEP_ICON = { ok: "check", error: "x" };
+  const stepRow = (level, msg, took) => el("li", { class: level },
+    level in STEP_ICON ? icon(STEP_ICON[level]) : liveDot(),
+    el("span", { class: "name" }, msg),
     el("span", { class: "d" }, secsText(took)));
   // A phase names its steps instead of repeating the log. A step ends at the
   // engine line that completes it, a step the run skipped is left out, and
@@ -2895,7 +2895,7 @@
       if (!hit) continue;
       if (hit.end[2]) Object.assign(vars, hit.end[2](hit.m));
       if (hit.end[1] === null) continue;
-      rows.push(stepRow("ok", r.stamp, text(hit.end[1], hit.m), r.t - start));
+      rows.push(stepRow("ok", text(hit.end[1], hit.m), r.t - start));
       start = r.t;
       i = hit.at + 1;
       vars.doing = "";
@@ -2905,9 +2905,9 @@
     const doing = () => vars.doing || text(open.doing);
     if (p.state === "fail" && last) {
       const err = [...p.rows].reverse().find((r) => r.level === "error") || last;
-      rows.push(stepRow("error", err.stamp, err === last && open && err.level !== "error" ? doing() : err.msg, p.end - start));
+      rows.push(stepRow("error", err === last && open && err.level !== "error" ? doing() : err.msg, p.end - start));
     } else if (open && last && p.state === "run") {
-      rows.push(stepRow("info", last.stamp, doing(), Date.now() / 1000 - start));
+      rows.push(stepRow("run", doing(), Date.now() / 1000 - start));
     }
     return el("ol", { class: "step-list" }, ...rows);
   }

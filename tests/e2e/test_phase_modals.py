@@ -1,16 +1,16 @@
 # nonemo: STE902
 """Each run phase row opens a modal with its detail.
 
-Prepare and Clean up name their steps with stamps and durations. PR checks
-shows the checks the run kept, or names its steps without them. Rewrite and
-sign lists the commits after the rewrite, and Push shows the ref move, the
-lease, and the tags.
+Prepare and Clean up name their steps as rows like the job steps of a check.
+Each row holds a state glyph, the name, and the duration. PR checks shows the
+checks the run kept, or names its steps without them. Rewrite and sign lists
+the commits after the rewrite, and Push shows the ref move, the lease, and the
+tags.
 """
 
 from __future__ import annotations
 
 import json
-import re
 
 import pytest
 
@@ -49,7 +49,7 @@ MODAL = """() => {
   return { open: dlg.open, title: document.getElementById('modal-title').textContent,
     sub: document.getElementById('modal-sub').textContent,
     steps: [...body.querySelectorAll('.step-list li')]
-      .map((li) => ['.t', '.msg', '.d'].map((c) => li.querySelector(c).textContent)),
+      .map((li) => [li.className, ...['.name', '.d'].map((c) => li.querySelector(c).textContent)]),
     kv: [...body.querySelectorAll('.kv dt, .kv dd')].map((e) => e.textContent),
     commits: body.querySelectorAll('.commit').length,
     link: Boolean(document.getElementById('phase-link')) && !document.getElementById('phase-link').hidden,
@@ -107,29 +107,37 @@ def open_run(
     walker.page.unroute(PATTERN)
 
 
-STEP_BOXES = """() => {
+STEP_ROW = """() => {
   const li = document.querySelector('#modal-body .step-list li');
-  const box = (sel) => li.querySelector(sel).getBoundingClientRect();
-  const [t, msg, d] = ['.t', '.msg', '.d'].map(box);
-  return { row: li.getBoundingClientRect().width, t, msg, d };
+  const mid = (e) => { const b = e.getBoundingClientRect(); return b.top + b.height / 2; };
+  const glyph = li.querySelector('.ico-svg');
+  const want = getComputedStyle(document.documentElement).getPropertyValue('--ok').trim();
+  const probe = document.createElement('span');
+  probe.style.color = want;
+  document.body.append(probe);
+  const ok = getComputedStyle(probe).color;
+  probe.remove();
+  return { parts: [...li.children].map((e) => e.className.split(' ')[0]),
+    stamp: Boolean(li.querySelector('.t')),
+    oneLine: Math.max(mid(glyph), mid(li.querySelector('.name')), mid(li.querySelector('.d')))
+      - Math.min(mid(glyph), mid(li.querySelector('.name')), mid(li.querySelector('.d'))) < 2,
+    check: Boolean(glyph.querySelector('svg')), colour: getComputedStyle(glyph).color, ok };
 }"""
 
 
 @pytest.mark.parametrize("width", ["desktop", "phone"])
-def test_a_step_row_stacks_its_text_on_a_phone_only(
+def test_a_step_row_reads_glyph_name_and_duration_on_one_line(
   request: pytest.FixtureRequest, width: str
 ) -> None:
+  """The row matches a job step of a check at both widths, with no clock stamp."""
   walker: Walker = request.getfixturevalue(width)
   open_run(walker, RUN)
   open_phase(walker, "prepare")
-  boxes = walker.page.evaluate(STEP_BOXES)
-  stacked = boxes["msg"]["top"] > boxes["t"]["bottom"] - 1
-  assert stacked == (width == "phone")
-  if stacked:
-    assert boxes["msg"]["width"] > boxes["row"] * 0.9, "the text takes the row"
-    assert abs(boxes["d"]["top"] - boxes["t"]["top"]) < 2, (
-      "the duration shares the stamp line"
-    )
+  row = walker.page.evaluate(STEP_ROW)
+  assert row["parts"] == ["ico-svg", "name", "d"]
+  assert not row["stamp"], "the clock stamp is gone"
+  assert row["oneLine"], "glyph, name, and duration share one line"
+  assert row["check"] and row["colour"] == row["ok"], "a green check per done step"
   close_phase(walker)
   walker.click("#back")
 
@@ -157,9 +165,7 @@ def test_the_prepare_row_opens_its_steps_with_stamps_and_durations(
   assert [s[1] for s in modal["steps"]] == PREPARE_STEPS, (
     "three named steps, not the log"
   )
-  assert all(re.fullmatch(r"\d\d:\d\d:\d\d", s[0]) for s in modal["steps"]), (
-    "a clock stamp per step"
-  )
+  assert all(s[0] == "ok" for s in modal["steps"]), "a done glyph per step"
   assert [s[2] for s in modal["steps"]] == ["1.0s"] * 3, (
     "each step lasts until the line that ends it"
   )
@@ -374,6 +380,8 @@ def test_a_running_rewrite_names_the_collected_commits_and_the_open_step(
   desktop.page.wait_for_selector('.phase[data-phase="rewrite"][data-state="run"]')
   modal = open_phase(desktop, "rewrite")
   assert [s[1] for s in modal["steps"]] == ["Collected 23 commits", "Signing…"]
+  assert [s[0] for s in modal["steps"]] == ["ok", "run"], "the open step is live"
+  assert desktop.count("#modal-body .step-list .run .ico-svg .dot") == 1
   close_phase(desktop)
   desktop.page.unroute(JOB)
   desktop.click("#back")
