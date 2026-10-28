@@ -47,13 +47,10 @@ ROWS = """() => [...document.querySelectorAll('#phases .phase')]
 def test_phase_words_in_names_leave_every_row_done(desktop: Walker) -> None:
   open_run(desktop, RUN)
   desktop.page.wait_for_function(
-    "() => document.querySelectorAll('#phases .phase').length === 6"
+    "() => document.querySelectorAll('#phases .phase').length === 5"
   )
   rows = desktop.page.evaluate(ROWS)
-  assert [row[1] for row in rows] == ["done"] * 3 + ["skip"] + ["done"] * 2, (
-    rows,
-    "no check ran at the gate, so the wait is skipped",
-  )
+  assert [row[1] for row in rows] == ["done"] * 5, rows
   subs = {row[0]: row[2] for row in rows}
   assert subs["pr"] == "2/2"
   assert subs["rewrite"] == "signed 5 commits"
