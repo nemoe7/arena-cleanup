@@ -20,6 +20,8 @@ PARKED = {"shop-web": "arena/9a0e5c3b-shop-web", "billing-api": "feature/invoice
 CARD = ".repo-card:has-text('{name}') .repo-name"
 ROUTES = ("**/api/fetch", "**/api/repos", "**/api/repos/*")
 SELECT = "(s) => ({ value: s.value, options: [...s.options].map((o) => [o.value, o.textContent]) })"
+# the branch fact leads the sidebar: once it names the parked branch, the status landed
+BRANCH_FACT = "(b) => document.querySelector('#side-top .kv dd')?.textContent === b"
 
 
 def test_an_arena_branch_is_never_the_current_target(desktop: Walker) -> None:
@@ -36,18 +38,23 @@ def test_an_arena_branch_is_never_the_current_target(desktop: Walker) -> None:
   for pattern in ROUTES:
     page.route(pattern, park)
   try:
-    desktop.goto()
+    # the page-load fetch and the list reload behind Back pass through `park`
+    # too. Each lands before the test moves on, so none is in flight at the end.
+    with page.expect_response("**/api/fetch"):
+      desktop.goto()
     desktop.click(CARD.format(name="shop-web"))
+    page.wait_for_function(BRANCH_FACT, arg=PARKED["shop-web"])
     select = page.eval_on_selector("#branch", SELECT)
     assert select == {"value": "main", "options": [["main", "main (default)"]]}
     # parked on a plain branch, the clone keeps it as the current target
-    desktop.click("#back")
+    with page.expect_response(lambda r: r.url.endswith("/api/repos")):
+      desktop.click("#back")
     desktop.click(CARD.format(name="billing-api"))
+    page.wait_for_function(BRANCH_FACT, arg=PARKED["billing-api"])
     select = page.eval_on_selector("#branch", SELECT)
     assert select == {
       "value": "",
       "options": [["main", "main (default)"], ["", "current (feature/invoices)"]],
     }
   finally:
-    for pattern in ROUTES:
-      page.unroute(pattern)
+    page.unroute_all(behavior="ignoreErrors")
