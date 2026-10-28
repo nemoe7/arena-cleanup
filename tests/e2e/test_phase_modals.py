@@ -103,6 +103,9 @@ def open_run(
   try:
     walker.goto()
     walker.click(".repo-card:has-text('infra-tools') .repo-name")
+    # the route stays until the rows hold the run. A request still in flight
+    # would fall through to the demo.
+    walker.page.wait_for_selector("#phases .phase-head:not([disabled])")
   finally:
     walker.page.unroute(PATTERN)
 
