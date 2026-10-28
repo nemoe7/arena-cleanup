@@ -45,7 +45,6 @@ TIMES = {
   "prepare": "6.0s",
   "pr": "3.0s",
   "rewrite": "2.0s",
-  "wait": "",
   "publish": "2.0s",
   "sync": "2.0s",
 }

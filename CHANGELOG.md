@@ -9,6 +9,13 @@ The engine, `arena-cleanup.py`, carries its own number and its own file,
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.20] - 2026-10-28
+
+### Removed
+
+- The Checks wait phase row. The PR checks row runs while the engine waits
+  on the checks, and its view names the wait as a step.
+
 ## [0.3.19] - 2026-10-28
 
 ### Changed

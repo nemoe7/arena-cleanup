@@ -20,7 +20,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
   - Identifier: the server-minted `id`.
   - The card shows `name` only.
 - Arena branch: a branch under the `arena/` prefix with its PR and check count.
-- Run: one engine execution with six phases: Prepare, Rewrite and sign, PR checks, Checks wait, Push, Clean up. The gate follows the rewrite and waits for running checks, so a red check costs no push and the push follows the last green one.
+- Run: one engine execution with five phases: Prepare, Rewrite and sign, PR checks, Push, Clean up. The gate follows the rewrite and waits for running checks, so a red check costs no push and the push follows the last green one.
 
 ## Journeys and information architecture
 
@@ -212,7 +212,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
     - Prepare names three steps: `Fetched`, `Located remote arena branch`, and `Pulled arena/<slug>`. Each takes the stamp and duration of the line that ends it, and the open step reads `Fetching…`.
     - Rewrite and sign names `Collected <n> commits`, `Commits rewritten`, `Backup written`, `Signed <k> of <n> commits`, and the tag move, and reads `Signing <i>/<n>…` while it runs. A dry run reads `Would sign <k> commits`.
     - Clean up names the return, reset, branch deletes, and `Done`. A step the run skipped is left out.
-    - Checks wait reads `Waiting for <n> running checks…`, then `Waiting, <x>/<y> finished…`, and names `All <n> checks finished` and `PR #<n> checks passed`.
+    - PR checks reads `Waiting for <n> running checks…`, then `Waiting, <x>/<y> finished…`, while the engine waits. It then names `All <n> checks finished` and `PR #<n> checks passed`.
     - A failed phase ends on its error line.
   - PR checks opens the pill view of the PR as the run read it, with the same rows, job logs, and Open PR. The server keeps those checks at the end of the run's read, and the sub ends in `when the run read them`.
     - A run that kept no checks, one before this snapshot or one without a PR, names its steps: `Found PR #<n>`, `No open PR for <branch>`, `PR check skipped`, or `PR #<n> checks passed`.
@@ -227,8 +227,7 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - `phase`: a row with the state glyph, a name, a count, and the time. The running row holds the amber pulsing dot in its glyph slot.
   - Counts: the count comes from the engine's lines.
     - Rewrite and sign reads `collecting N commits`, then `signing X/Y`, then `signed X commits`.
-    - PR checks reads `passed/total`.
-    - Checks wait reads `N running`, then `finished/total`, and stays skipped when every check was green at the gate.
+    - PR checks reads `passed/total`, and the count grows while the engine waits on the running checks.
   - Push reads `moving`, `pushing`, then `pushed X tags`, and stays empty without a tag.
     - A dry run reads `would sign` and `would move`.
     - Before a count the row carries the name alone.
@@ -608,3 +607,4 @@ The one design record for the arena-cleanup web app. Its sections follow the nem
 - Accepted 2026-10-28: the commit row takes the GitHub app's shape. The subject, the check state of that commit, and a short age lead, and the author follows.
   - A tap opens the hash and the full stamp in the row, and no page opens.
   - The server reads the check states of a page in one GraphQL call and keeps each hash for a minute.
+- Accepted 2026-10-28: the Checks wait row of 2026-10-26 goes, since it made one gate read as two. The PR checks row runs while the engine waits on the checks, and its view names the wait as a step.
